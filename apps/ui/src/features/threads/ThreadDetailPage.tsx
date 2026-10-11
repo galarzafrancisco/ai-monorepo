@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { io } from "socket.io-client";
+import { Bot } from "lucide-react";
 import {
   TaskAssignedWireEvent,
   TaskDeletedWireEvent,
@@ -22,6 +23,7 @@ import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
 import { ThreadTaskRow } from "./ThreadTaskRow";
 import { ThreadChat } from "./ThreadChat";
+import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
@@ -285,6 +287,18 @@ export function ThreadDetailPage() {
   }
 }
 
+/** The model answering in this thread, marked with an icon so it reads as a model id. */
+function ThreadModelLabel({ label }: { label: string }) {
+  return (
+    <span className="thread-detail-page__model" title="Model answering in this thread">
+      <Bot size={14} strokeWidth={1.8} aria-hidden="true" />
+      <Text size="1" tone="muted">
+        {label}
+      </Text>
+    </span>
+  );
+}
+
 function ThreadDetailPageDesktop({
   thread,
   onDelete,
@@ -292,6 +306,7 @@ function ThreadDetailPageDesktop({
   thread: Thread;
   onDelete: () => Promise<void>;
 }) {
+  const { conversationModel } = useChatReadiness();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
@@ -312,6 +327,11 @@ function ThreadDetailPageDesktop({
                   <Text size="1" tone="muted">
                     {thread.participants.length} participants
                   </Text>
+                  {conversationModel && (
+                    <ThreadModelLabel
+                      label={`${conversationModel.modelId} via ${conversationModel.providerName}`}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -427,6 +447,7 @@ function ThreadDetailPageMobile({
   thread: Thread;
   onDelete: () => Promise<void>;
 }) {
+  const { conversationModel } = useChatReadiness();
   const navigate = useNavigate();
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
@@ -451,9 +472,12 @@ function ThreadDetailPageMobile({
           <Text size="2" weight="semibold">
             {thread.title}
           </Text>
-          <Text size="1" tone="muted">
-            #{thread.id.slice(0, 6)} · {thread.participants.length} participants
-          </Text>
+          <div className="thread-detail-page__mobile-meta">
+            <Text size="1" tone="muted">
+              #{thread.id.slice(0, 6)} · {thread.participants.length} participants
+            </Text>
+            {conversationModel && <ThreadModelLabel label={conversationModel.modelId} />}
+          </div>
         </div>
       </header>
 
