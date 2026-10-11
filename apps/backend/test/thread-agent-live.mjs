@@ -7,6 +7,7 @@
 //      including a real MCP tool call
 //   2. messages sent to both processes at once are queued, never run in parallel
 //   3. switching provider and model mid-thread replays the stored history
+//   4. both processes shut down cleanly on SIGTERM
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -181,6 +182,17 @@ try {
   log(`model switch OK (${lastReq.messages.length} messages replayed to fake-model-2)`);
 
   socket.close();
+
+  // 4. clean shutdown: both processes exit on SIGTERM without socket adapter errors
+  const exits = procs.map((p) => new Promise((resolve) => p.once('exit', resolve)));
+  for (const p of procs) p.kill('SIGTERM');
+  const exited = await Promise.race([Promise.all(exits).then(() => true), sleep(10_000).then(() => false)]);
+  assert.ok(exited, 'backend processes did not exit within 10s of SIGTERM');
+  for (const p of procs) {
+    assert.ok(!/Socket adapter (pool )?error|Failed to close socket adapter/.test(p.getOutput()), 'socket adapter errors during shutdown');
+  }
+  log('shutdown OK');
+
   log('ALL LIVE CHECKS PASSED');
 } catch (error) {
   failed = true;

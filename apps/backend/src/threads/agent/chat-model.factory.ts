@@ -9,6 +9,11 @@ import { ChatProvidersService } from 'src/chat-providers/chat-providers.service'
 import { ChatProviderConfigResult } from 'src/chat-providers/dto/service/chat-providers.service.types';
 import { ChatProviderType } from 'src/chat-providers/enums';
 import { ChatProviderNotConfiguredError } from 'src/chat-providers/errors/chat-providers.errors';
+import {
+  googleApiKeyFromEnv,
+  vertexLocationFromEnv,
+  vertexProjectFromEnv,
+} from 'src/chat-providers/google-environment';
 
 type ProviderOptions = Record<string, Record<string, string | number | boolean | null>>;
 
@@ -40,22 +45,6 @@ const DEFAULT_MODELS: Partial<Record<ChatProviderType, string>> = {
 };
 
 const LEGACY_MODEL_PROVIDER_TYPES = [ChatProviderType.OPENAI];
-
-function vertexProjectFromEnv(): string | undefined {
-  return process.env.GOOGLE_VERTEX_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT;
-}
-
-function vertexLocationFromEnv(): string | undefined {
-  return process.env.GOOGLE_VERTEX_LOCATION ?? process.env.GOOGLE_CLOUD_LOCATION;
-}
-
-function googleApiKeyFromEnv(): string | undefined {
-  return (
-    process.env.GOOGLE_API_KEY ??
-    process.env.GEMINI_API_KEY ??
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  );
-}
 
 /** Maps a configured chat provider and model id to an AI SDK model. */
 @Injectable()

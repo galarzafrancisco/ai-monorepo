@@ -17,6 +17,11 @@ import {
   NoActiveChatProviderError,
 } from './errors/chat-providers.errors';
 import { ChatProviderType } from './enums';
+import {
+  googleApiKeyFromEnv,
+  vertexLocationFromEnv,
+  vertexProjectFromEnv,
+} from './google-environment';
 
 /** Trims text input. Undefined means "leave unchanged"; blank means "clear". */
 function normalizeOptionalText(value: string | null | undefined): string | null | undefined {
@@ -27,13 +32,19 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 }
 
 /**
- * Whether a provider has what it needs to make a call. Vertex AI can run
- * purely on environment credentials.
+ * Whether a provider has the settings it needs to make a call. Vertex AI needs
+ * a project and a location, stored or from the environment; its credentials
+ * may come from application default credentials, which cannot be checked here.
  */
 function isChatProviderConfigured(provider: ChatProviderEntity): boolean {
   switch (provider.type) {
     case ChatProviderType.GOOGLE_VERTEX:
-      return true;
+      return (
+        !!(provider.project ?? vertexProjectFromEnv()) &&
+        !!(provider.location ?? vertexLocationFromEnv())
+      );
+    case ChatProviderType.GOOGLE:
+      return !!provider.secretId || !!googleApiKeyFromEnv();
     case ChatProviderType.OPENAI_COMPATIBLE:
       return !!provider.baseUrl && !!provider.modelId;
     default:

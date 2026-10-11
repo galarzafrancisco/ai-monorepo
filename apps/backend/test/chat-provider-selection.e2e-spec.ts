@@ -120,21 +120,37 @@ describe('Chat provider selection E2E', () => {
   });
 
   it('resolves Vertex AI from stored settings and from the environment', async () => {
-    const vertex = (
-      await api('post', '/chat-providers')
-        .send({ name: 'Vertex', type: 'google_vertex', project: 'stored-project', location: 'europe-west4' })
-        .expect(201)
-    ).body;
-    expect(vertex).toMatchObject({ isConfigured: true, project: 'stored-project' });
+    const savedEnv = { ...process.env };
+    for (const key of ['GOOGLE_VERTEX_PROJECT', 'GOOGLE_CLOUD_PROJECT', 'GOOGLE_VERTEX_LOCATION', 'GOOGLE_CLOUD_LOCATION']) {
+      delete process.env[key];
+    }
 
-    const resolved = await app.get(ChatModelFactory).resolve({ chatProviderId: vertex.id });
-    expect(resolved).toMatchObject({ providerType: 'google_vertex', modelId: 'gemini-3.6-flash' });
+    try {
+      const vertex = (
+        await api('post', '/chat-providers')
+          .send({ name: 'Vertex', type: 'google_vertex', project: 'stored-project', location: 'europe-west4' })
+          .expect(201)
+      ).body;
+      expect(vertex).toMatchObject({ isConfigured: true, project: 'stored-project' });
 
-    // Clearing the stored values falls back to the environment.
-    const cleared = (
-      await api('patch', `/chat-providers/${vertex.id}`).send({ project: '', location: '' }).expect(200)
-    ).body;
-    expect(cleared).toMatchObject({ project: null, location: null, isConfigured: true });
+      const resolved = await app.get(ChatModelFactory).resolve({ chatProviderId: vertex.id });
+      expect(resolved).toMatchObject({ providerType: 'google_vertex', modelId: 'gemini-3.6-flash' });
+
+      // With nothing stored and nothing in the environment it is not usable.
+      const cleared = (
+        await api('patch', `/chat-providers/${vertex.id}`).send({ project: '', location: '' }).expect(200)
+      ).body;
+      expect(cleared).toMatchObject({ project: null, location: null, isConfigured: false });
+      await api('post', '/chat-providers/set-active').send({ providerId: vertex.id }).expect(400);
+
+      // The environment fills in what is not stored.
+      process.env.GOOGLE_CLOUD_PROJECT = 'env-project';
+      process.env.GOOGLE_CLOUD_LOCATION = 'global';
+      const fromEnv = (await api('get', `/chat-providers/${vertex.id}`).expect(200)).body;
+      expect(fromEnv.isConfigured).toBe(true);
+    } finally {
+      process.env = savedEnv;
+    }
   });
 
   it('clears the selection on threads when the provider is deactivated', async () => {

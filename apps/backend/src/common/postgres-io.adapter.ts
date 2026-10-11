@@ -2,7 +2,7 @@ import { INestApplicationContext, Logger } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/postgres-adapter';
 import { Pool } from 'pg';
-import { ServerOptions } from 'socket.io';
+import { Server, ServerOptions } from 'socket.io';
 import { getConfig } from 'src/config/env.config';
 
 /**
@@ -51,9 +51,25 @@ export class PostgresIoAdapter extends IoAdapter {
 
   async close(server: Parameters<IoAdapter['close']>[0]): Promise<void> {
     await super.close(server);
-    if (!this.poolClosed) {
-      this.poolClosed = true;
-      await this.pool.end();
+    if (this.poolClosed) {
+      return;
     }
+    this.poolClosed = true;
+
+    // Nest may leave the socket server open for the HTTP server to tear down.
+    // Stop every namespace's adapter first so nothing uses the pool after it ends.
+    const io: Server = (server as { server?: Server }).server ?? (server as Server);
+    for (const namespace of io._nsps.values()) {
+      try {
+        await namespace.adapter.close();
+      } catch (error) {
+        this.logger.warn({
+          message: 'Failed to close socket adapter',
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    await this.pool.end();
   }
 }
