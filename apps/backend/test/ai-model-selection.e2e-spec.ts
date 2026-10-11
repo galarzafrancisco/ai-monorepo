@@ -220,6 +220,30 @@ describe('AI model selection E2E', () => {
         { id: 'text-embedding-small', displayName: null, kind: 'embedding' },
         { id: 'zeta-chat', displayName: null, kind: 'language' },
       ]);
+
+      // xAI lists models the same way; its own endpoint is replaced by the fake one here.
+      const grok = (
+        await api('post', '/ai-providers')
+          .send({ name: 'Grok', type: 'xai', baseUrl: `http://127.0.0.1:${port}/v1` })
+          .expect(201)
+      ).body;
+      expect(grok).toMatchObject({ type: 'xai', isConfigured: false });
+      await api('patch', `/ai-providers/${grok.id}`).send({ apiKey: 'sk-local' }).expect(200);
+      const grokModels = (await api('get', `/ai-providers/${grok.id}/models`).expect(200)).body;
+      expect(grokModels.map((model: { id: string }) => model.id)).toEqual([
+        'alpha-chat',
+        'text-embedding-small',
+        'zeta-chat',
+      ]);
+
+      await api('put', '/ai-model-selections/quick_tasks')
+        .send({ aiProviderId: grok.id, modelId: 'grok-4' })
+        .expect(200);
+      expect(await factory().resolve({ job: AiModelJob.QUICK_TASKS })).toMatchObject({
+        providerType: 'xai',
+        modelId: 'grok-4',
+      });
+      await api('delete', '/ai-model-selections/quick_tasks').expect(204);
     } finally {
       await new Promise((resolve) => llm.close(resolve));
     }

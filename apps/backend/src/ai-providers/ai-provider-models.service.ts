@@ -17,6 +17,7 @@ const MAX_PAGES = 10;
 
 const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 const ANTHROPIC_BASE_URL = 'https://api.anthropic.com/v1';
+const XAI_BASE_URL = 'https://api.x.ai/v1';
 const GOOGLE_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 /**
  * The global endpoint lists the Gemini models. Regional endpoints return the
@@ -81,6 +82,9 @@ export class AiProviderModelsService {
     switch (config.type) {
       case AiProviderType.OPENAI:
         return this.listOpenAi(config.baseUrl ?? OPENAI_BASE_URL, config.apiKey);
+      case AiProviderType.XAI:
+        // xAI serves the same model list shape as OpenAI.
+        return this.listOpenAi(config.baseUrl ?? XAI_BASE_URL, config.apiKey);
       case AiProviderType.OPENAI_COMPATIBLE:
         if (!config.baseUrl) {
           throw new AiProviderNotConfiguredError(config.id);

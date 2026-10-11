@@ -12154,6 +12154,7 @@
               "anthropic",
               "google",
               "google_vertex",
+              "xai",
               "openai_compatible"
             ],
             "example": "openai"
@@ -12208,6 +12209,7 @@
               "anthropic",
               "google",
               "google_vertex",
+              "xai",
               "openai_compatible"
             ],
             "example": "openai"

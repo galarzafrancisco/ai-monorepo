@@ -923,7 +923,7 @@ export interface MoveBlockDto {
 
 export interface CreateAiProviderDto {
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
   secretId?: string;
   baseUrl?: string | null;
   project?: string | null;
@@ -933,7 +933,7 @@ export interface CreateAiProviderDto {
 export interface AiProviderResponseDto {
   id: string;
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
   secretId?: string | null;
   baseUrl?: string | null;
   project?: string | null;

@@ -5,6 +5,7 @@ import { createGoogle } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createXai } from '@ai-sdk/xai';
 import { AiProvidersService } from 'src/ai-providers/ai-providers.service';
 import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
@@ -82,6 +83,13 @@ export class ChatModelFactory {
 
       case AiProviderType.GOOGLE_VERTEX:
         return this.buildVertex(config, modelId);
+
+      case AiProviderType.XAI:
+        return {
+          model: createXai({ apiKey, baseURL })(modelId),
+          providerType: config.type,
+          modelId,
+        };
 
       case AiProviderType.OPENAI_COMPATIBLE:
         if (!baseURL) {
