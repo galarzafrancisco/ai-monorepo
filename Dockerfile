@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 
 # Build the container projects (nx caches into .nx/cache; the buildkit cache mount keeps it across builds)
-RUN --mount=type=cache,target=/workdir/.nx/cache npx nx run-many -t assemble-public,build:prod -p @taico/authorization-server,@taico/taico,@taico/worker
+RUN --mount=type=cache,target=/workdir/.nx/cache npx nx run-many -t assemble-public,build:prod -p @taico/taico,@taico/worker
 
 # Production stage
 FROM node:24-alpine
