@@ -13,6 +13,7 @@ import {
 } from "@google/adk";
 import { randomUUID } from "node:crypto";
 import { Pool, QueryResultRow } from "pg";
+import { paginateSessions } from "./paginate-sessions.js";
 
 export interface PostgresSessionServiceOptions {
   connectionString: string;
@@ -119,15 +120,16 @@ export class PostgresSessionService extends BaseSessionService {
   async listSessions({
     appName,
     userId,
+    ...pagination
   }: ListSessionsRequest): Promise<ListSessionsResponse> {
     await this.ready;
     const rows = await this.many<SessionRow>(
       `SELECT app_name, user_id, session_id, state_json, last_update_time
-       FROM adk_sessions WHERE app_name = $1 AND user_id = $2`,
-      [appName, userId],
+       FROM adk_sessions WHERE app_name = $1${userId === undefined ? "" : " AND user_id = $2"}`,
+      userId === undefined ? [appName] : [appName, userId],
     );
-    return {
-      sessions: rows.map((row) =>
+    return paginateSessions(
+      rows.map((row) =>
         createSession({
           id: row.session_id,
           appName: row.app_name,
@@ -137,7 +139,8 @@ export class PostgresSessionService extends BaseSessionService {
           lastUpdateTime: Number(row.last_update_time),
         }),
       ),
-    };
+      pagination,
+    );
   }
 
   async deleteSession({

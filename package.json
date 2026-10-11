@@ -60,7 +60,7 @@
     "fast-xml-parser": "^5.5.7",
     "handlebars": "^4.7.9",
     "hono": "^4.12.7",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.2",
     "minimatch": "^5.1.8",
     "nx": "^21.0.0",
     "path-to-regexp": "^8.4.0",
@@ -90,6 +90,12 @@
     "ajv": "^8.18.0",
     "path-to-regexp": "^8.4.0",
     "picomatch": "^4.0.4",
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "@nestjs/swagger": {
+      "js-yaml": "^5.4.3"
+    },
+    "gaxios": {
+      "uuid": "^11.1.1"
+    }
   }
 }
