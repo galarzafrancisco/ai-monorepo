@@ -57,8 +57,27 @@ const getChatReadiness = (
   };
 };
 
+/** The provider and model that answer in threads. */
+export type ConversationModel = {
+  providerName: string;
+  modelId: string;
+};
+
+const getConversationModel = (
+  providers: AiProviderResponseDto[],
+  selections: AiModelSelectionResponseDto[],
+): ConversationModel | null => {
+  const conversation = selections.find((selection) => selection.job === 'conversation');
+  const provider = providers.find((p) => p.id === conversation?.effectiveAiProviderId);
+
+  return conversation?.isReady && conversation.effectiveModelId && provider
+    ? { providerName: provider.name, modelId: conversation.effectiveModelId }
+    : null;
+};
+
 export function useChatReadiness() {
   const [readiness, setReadiness] = useState<ChatReadiness | null>(null);
+  const [conversationModel, setConversationModel] = useState<ConversationModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -70,8 +89,10 @@ export function useChatReadiness() {
         AiModelSelectionsService.aiModelSelectionsControllerListAiModelSelections(),
       ]);
       setReadiness(getChatReadiness(providers, selections));
+      setConversationModel(getConversationModel(providers, selections));
     } catch {
       setReadiness(null);
+      setConversationModel(null);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +104,7 @@ export function useChatReadiness() {
 
   return {
     readiness,
+    conversationModel,
     isLoading,
     isReady: readiness?.isReady ?? true,
     refresh,

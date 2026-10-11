@@ -428,3 +428,17 @@
 .thread-detail-page__mobile-drawer-label {
   font-size: var(--fs-2);
 }
+
+.thread-detail-page__model {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+}
+
+.thread-detail-page__mobile-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
