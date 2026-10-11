@@ -1,3 +1,13 @@
+.settings-subpage.settings-models {
+  /* The shell sizes pages to the viewport; this page is taller and scrolls with the shell. */
+  flex: 0 0 auto;
+  padding-bottom: var(--space-7);
+}
+
+.settings-models .settings-panel-card {
+  border-radius: 0;
+}
+
 .settings-models__jobs {
   display: flex;
   flex-direction: column;
@@ -92,18 +102,45 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-.settings-models__secret-textarea {
+textarea.settings-models__secret-textarea {
+  height: auto;
+  padding: var(--space-2);
   font-family: var(--font-mono, monospace);
   resize: vertical;
 }
 
-.settings-models__add-row {
+.settings-models__provider {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-models__provider:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.settings-models__provider:last-child {
+  padding-bottom: 0;
+}
+
+/* Name on the left, actions on the right, until the row opens into its edit form. */
+.settings-models__provider[data-layout='row'] > .stack {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-models__actions {
   flex-wrap: wrap;
 }
 
-.settings-models__add-field {
-  flex: 1 1 200px;
-  width: auto;
+.settings-models__add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  max-width: 560px;
 }
 
 @media (max-width: 760px) {
@@ -111,7 +148,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .settings-models__job-controls {
+  .settings-models__job-controls,
+  .settings-models__add-row {
     grid-template-columns: minmax(0, 1fr);
   }
 

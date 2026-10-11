@@ -10,7 +10,6 @@ import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useHomeCtx } from './HomeProvider';
-import '../../auth/LoginPage.css';
 import './SettingsPage.css';
 import './SettingsModelsPage.css';
 
@@ -286,7 +285,7 @@ export function SettingsModelsPage() {
     ).map((info) => info.label);
 
   return (
-    <Stack spacing="6" className="settings-subpage">
+    <Stack spacing="6" className="settings-subpage settings-models">
       <Text tone="muted" className="settings-subpage__intro">
         Providers are the AI services Taico can call. Models are picked per job, so each job can
         use a different model from a different provider.
@@ -330,62 +329,66 @@ export function SettingsModelsPage() {
           Providers
         </Text>
 
-        {providers.length === 0 ? (
-          <Card padding="5" className="settings-panel-card">
-            <Text tone="muted">No providers yet. Add one below to pick models from it.</Text>
-          </Card>
-        ) : (
-          providers.map((provider) => (
-            <ProviderCard
-              key={provider.id}
-              provider={provider}
-              usedBy={jobsByProvider(provider.id)}
-              models={modelsByProvider[provider.id]}
-              isEditing={editingProviderId === provider.id}
-              onEdit={() => {
-                setError('');
-                setEditingProviderId(provider.id);
-              }}
-              onCancel={() => setEditingProviderId(null)}
-              onSave={(form) => handleSaveProvider(provider, form)}
-              onDelete={() => handleDeleteProvider(provider)}
-              onTest={() => loadModels(provider.id, true)}
-            />
-          ))
-        )}
-
         <Card padding="5" className="settings-panel-card">
-          <Stack spacing="3">
-            <Text size="3" weight="semibold">
-              Add a provider
-            </Text>
-            <Row spacing="2" align="center" className="settings-models__add-row">
-              <select
-                ref={addProviderRef}
-                value={newProviderType}
-                onChange={(e) => setNewProviderType(e.target.value as ProviderType)}
-                className="login-input settings-models__add-field"
-                aria-label="Provider type"
-              >
-                {CREATABLE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {PROVIDER_TYPES[type].label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={newProviderName}
-                onChange={(e) => setNewProviderName(e.target.value)}
-                className="login-input settings-models__add-field"
-                placeholder={`Name (default: ${PROVIDER_TYPES[newProviderType].label})`}
-                aria-label="Provider name"
-              />
-              <Button variant="primary" size="sm" onClick={handleAddProvider}>
-                Add
-              </Button>
-            </Row>
-          </Stack>
+          <div className="settings-models__jobs">
+            {providers.length === 0 ? (
+              <div className="settings-models__provider">
+                <Text tone="muted">No providers yet. Add one below to pick models from it.</Text>
+              </div>
+            ) : (
+              providers.map((provider) => (
+                <ProviderRow
+                  key={provider.id}
+                  provider={provider}
+                  usedBy={jobsByProvider(provider.id)}
+                  models={modelsByProvider[provider.id]}
+                  isEditing={editingProviderId === provider.id}
+                  onEdit={() => {
+                    setError('');
+                    setEditingProviderId(provider.id);
+                  }}
+                  onCancel={() => setEditingProviderId(null)}
+                  onSave={(form) => handleSaveProvider(provider, form)}
+                  onDelete={() => handleDeleteProvider(provider)}
+                  onTest={() => loadModels(provider.id, true)}
+                />
+              ))
+            )}
+
+            <div className="settings-models__provider">
+              <Stack spacing="2">
+                <Text size="2" weight="semibold">
+                  Add a provider
+                </Text>
+                <div className="settings-models__add-row">
+                  <select
+                    ref={addProviderRef}
+                    value={newProviderType}
+                    onChange={(e) => setNewProviderType(e.target.value as ProviderType)}
+                    className="settings-models__control"
+                    aria-label="Provider type"
+                  >
+                    {CREATABLE_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {PROVIDER_TYPES[type].label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={newProviderName}
+                    onChange={(e) => setNewProviderName(e.target.value)}
+                    className="settings-models__control"
+                    placeholder={`Name (default: ${PROVIDER_TYPES[newProviderType].label})`}
+                    aria-label="Provider name"
+                  />
+                  <Button variant="primary" size="sm" onClick={handleAddProvider}>
+                    Add
+                  </Button>
+                </div>
+              </Stack>
+            </div>
+          </div>
         </Card>
       </Stack>
     </Stack>
@@ -574,7 +577,7 @@ function JobRow({
   );
 }
 
-function ProviderCard({
+function ProviderRow({
   provider,
   usedBy,
   models,
@@ -627,7 +630,7 @@ function ProviderCard({
         type="text"
         value={form[key]}
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-        className="login-input"
+        className="settings-models__control"
         placeholder={placeholder}
       />
     </Stack>
@@ -644,8 +647,8 @@ function ProviderCard({
   }
 
   return (
-    <Card padding="5" className="settings-panel-card">
-      <Stack spacing="4">
+    <div className="settings-models__provider" data-layout={isEditing ? 'form' : 'row'}>
+      <Stack spacing="3">
         <Stack spacing="1" className="settings-models__header-copy">
           <Row spacing="2" align="center" className="settings-models__job-title">
             <Text size="3" weight="semibold">
@@ -680,7 +683,7 @@ function ProviderCard({
                   <textarea
                     value={form.apiKey}
                     onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                    className="login-input settings-models__secret-textarea"
+                    className="settings-models__control settings-models__secret-textarea"
                     placeholder={info.secretPlaceholder}
                     rows={4}
                   />
@@ -689,7 +692,7 @@ function ProviderCard({
                     type="password"
                     value={form.apiKey}
                     onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                    className="login-input"
+                    className="settings-models__control"
                     placeholder={info.secretPlaceholder}
                   />
                 )}
@@ -717,7 +720,7 @@ function ProviderCard({
             </Row>
           </Stack>
         ) : isConfirmingDelete ? (
-          <Row spacing="2" align="center" className="settings-models__add-row">
+          <Row spacing="2" align="center" className="settings-models__actions">
             <Text size="2">Delete {provider.name}?</Text>
             <Button
               variant="danger"
@@ -734,7 +737,7 @@ function ProviderCard({
             </Button>
           </Row>
         ) : (
-          <Row spacing="2" align="center" className="settings-models__add-row">
+          <Row spacing="2" align="center" className="settings-models__actions">
             <Button variant="secondary" size="sm" onClick={onEdit}>
               {provider.isConfigured ? 'Edit' : 'Set up'}
             </Button>
@@ -760,6 +763,6 @@ function ProviderCard({
           </Row>
         )}
       </Stack>
-    </Card>
+    </div>
   );
 }
