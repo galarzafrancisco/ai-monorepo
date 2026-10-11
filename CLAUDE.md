@@ -40,7 +40,7 @@ If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a differen
 
 ```
 apps/
-├── backend/         # NestJS 11 API server (SQLite + TypeORM)
+├── backend/         # NestJS 11 API server (PostgreSQL + TypeORM)
 ├── llm-benchmarker/ # LLM benchmark and evaluation tooling
 ├── ui/              # React 19 + Vite frontend (active development)
 ├── ui-v1/           # DEPRECATED - only needs to compile
@@ -101,7 +101,7 @@ OpenAPI artifacts are generated from the backend spec and flow through `packages
 
 ## Key Technologies
 
-- **Backend**: NestJS 11, TypeORM, SQLite, Socket.io, MCP SDK
+- **Backend**: NestJS 11, TypeORM, PostgreSQL, Socket.io, MCP SDK
 - **Frontend**: React 19 (ui), Vite, React Router 7, Radix UI
 - **Testing**: Jest (backend), Vitest (frontend)
 - **Real-time**: Socket.io WebSocket gateways per feature
