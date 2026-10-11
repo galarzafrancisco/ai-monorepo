@@ -4012,7 +4012,7 @@
             "items": {
               "type": "array",
               "items": {
-                "type": "a"
+                "type": "string"
               }
             },
             "type": "array"
@@ -5645,6 +5645,7 @@
           },
           "parent": {
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/CommentDto"

@@ -12,6 +12,7 @@ import {
   createSession,
 } from '@google/adk';
 import * as sqlite3 from 'sqlite3';
+import { paginateSessions } from './paginate-sessions.js';
 import { randomUUID } from 'node:crypto';
 
 type Sqlite3Module = typeof import('sqlite3');
@@ -115,15 +116,17 @@ export class SqliteSessionService extends BaseSessionService {
     return this.mergeState(session);
   }
 
-  async listSessions({ appName, userId }: ListSessionsRequest): Promise<ListSessionsResponse> {
+  async listSessions({ appName, userId, ...pagination }: ListSessionsRequest): Promise<ListSessionsResponse> {
     await this.ready;
     const rows = await this.all<SessionRow>(
-      'SELECT app_name, user_id, session_id, last_update_time FROM sessions WHERE app_name = ? AND user_id = ?',
-      [appName, userId],
+      userId === undefined
+        ? 'SELECT app_name, user_id, session_id, last_update_time FROM sessions WHERE app_name = ?'
+        : 'SELECT app_name, user_id, session_id, last_update_time FROM sessions WHERE app_name = ? AND user_id = ?',
+      userId === undefined ? [appName] : [appName, userId],
     );
 
-    return {
-      sessions: rows.map((row) =>
+    return paginateSessions(
+      rows.map((row) =>
         createSession({
           id: row.session_id,
           appName: row.app_name,
@@ -133,7 +136,8 @@ export class SqliteSessionService extends BaseSessionService {
           lastUpdateTime: row.last_update_time,
         }),
       ),
-    };
+      pagination,
+    );
   }
 
   async deleteSession({ appName, userId, sessionId }: DeleteSessionRequest): Promise<void> {

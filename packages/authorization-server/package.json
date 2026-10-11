@@ -43,7 +43,7 @@
     "cookie": "^0.7.2",
     "express": "^5.1.0",
     "jose": "^6.1.0",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
