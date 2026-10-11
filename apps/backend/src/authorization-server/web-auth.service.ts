@@ -1,3 +1,4 @@
+import { WEB_SESSION_AUDIENCE } from '../auth/core/resource-audience';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import { SignJWT, importPKCS8 } from 'jose';
@@ -114,7 +115,7 @@ export class WebAuthService {
       displayName: actor.displayName,
       email: user.email,
       scope: scopes.map((s) => s.id),
-      aud: 'ai-backend',
+      aud: WEB_SESSION_AUDIENCE,
       client_id: 'web-app',
       // mcp_server_identifier: 'not needed for non-mcp',
       resource: `${config.issuerUrl}`,

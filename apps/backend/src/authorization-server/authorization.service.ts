@@ -26,6 +26,7 @@ import {
   NoPendingConnectionFlowsError,
   ConnectionFlowNotFoundError,
   TokenExchangeFailedError,
+  ResourceMismatchError,
 } from './errors/authorization.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { ConsentMetadata } from './dto/service/authorization.service.types';
@@ -33,6 +34,10 @@ import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.e
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { ALL_API_SCOPES } from 'src/auth/core/scopes/all-api.scopes';
+import {
+  getMcpServerResourceUrl,
+  isSameResource,
+} from 'src/auth/core/resource-audience';
 
 @Injectable()
 export class AuthorizationService {
@@ -82,6 +87,16 @@ export class AuthorizationService {
       );
     }
 
+    // Validate the resource indicator (RFC 8707). The server being authorized
+    // comes from the URL, so a resource that names anything else is rejected.
+    const serverResource = getMcpServerResourceUrl(mcpServer);
+    if (
+      authRequest.resource &&
+      !isSameResource(authRequest.resource, serverResource)
+    ) {
+      throw new ResourceMismatchError(serverResource, authRequest.resource);
+    }
+
     // Validate the scopes requested
     // Note: The client can also request scopes during Dynamic Client Registration. They usually don't.
     // This authorisation server will ignore any scopes requested by the client at registration time
@@ -116,7 +131,7 @@ export class AuthorizationService {
     mcpAuthFlow.codeChallengeMethod = authRequest.code_challenge_method;
     mcpAuthFlow.state = authRequest.state;
     mcpAuthFlow.redirectUri = authRequest.redirect_uri;
-    mcpAuthFlow.resource = authRequest.resource;
+    mcpAuthFlow.resource = serverResource;
     mcpAuthFlow.scopes = scopes;
 
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);

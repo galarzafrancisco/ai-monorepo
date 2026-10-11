@@ -42,8 +42,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         url: instance,
       });
 
+      const resourceMetadataUrl = `${this.config.issuerUrl}/.well-known/oauth-protected-resource${instance}`;
       if (exception.code == ErrorCodes.MISSING_ACCESS_TOKEN) {
-        const resourceMetadataUrl = `${this.config.issuerUrl}/.well-known/oauth-protected-resource${instance}`;
         // TODO: this realm MCP feels wrong to throw system wide
         response.setHeaders(
           new Headers({
@@ -53,7 +53,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       } else if (exception.code == ErrorCodes.INVALID_ACCESS_TOKEN) {
         response.setHeaders(
           new Headers({
-            'WWW-Authenticate': `Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="invalid_token", error_description="The access token is invalid or has expired"`,
+            'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="The access token is invalid or has expired"`,
           }),
         );
       } else if (exception.code == ErrorCodes.INSUFFICIENT_SCOPE) {

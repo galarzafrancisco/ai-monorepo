@@ -206,7 +206,9 @@ export class WorkerAuth {
     authorizationUrl.searchParams.set('state', state);
     authorizationUrl.searchParams.set('code_challenge', codeChallenge);
     authorizationUrl.searchParams.set('code_challenge_method', 'S256');
-    authorizationUrl.searchParams.set('resource', `${this.serverUrl}/api/v1`);
+    // No `resource`: the worker target is identified by the authorization URL,
+    // and the server binds the token to its own canonical API URL. The URL this
+    // worker reaches the server on may differ from that public URL.
 
     console.log('[worker] Open this URL in your browser to authorize the worker:');
     console.log(authorizationUrl.toString());

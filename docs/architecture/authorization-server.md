@@ -102,7 +102,7 @@ The authorization server enables MCP clients to access resources from downstream
 - Manages token expiration (1 hour access tokens)
 
 **Key Methods**:
-- `exchangeAuthorizationCode()` - Validates code and PKCE, issues JWT
+- `handleTokenRequest()` - Validates code, PKCE and server binding, issues JWT
 - `generateAccessToken()` - Creates signed JWT with claims
 - `introspectToken()` - Returns token metadata and validity status
 - `validatePkce()` - Verifies code_verifier matches code_challenge (S256 or plain)
@@ -112,17 +112,27 @@ The authorization server enables MCP clients to access resources from downstream
 {
   "iss": "authorization-server-url",
   "sub": "user-id",
-  "aud": "mcp-server-id",
+  "aud": "https://taico.example.com/api/v1/tasks/tasks/mcp",
   "client_id": "mcp-client-id",
   "scope": "read:tasks write:tasks",
-  "server_identifier": "tasks",
-  "resource": "downstream-resource-url",
-  "version": "1.0",
+  "mcp_server_identifier": "tasks",
+  "resource": "https://taico.example.com/api/v1/tasks/tasks/mcp",
+  "version": "0.0.0",
   "exp": 1234567890,
   "iat": 1234567890,
   "jti": "unique-token-id"
 }
 ```
+
+**Issuer and audience**:
+
+Each MCP server has its own authorization server URL, because the server a client is authorizing is decided at dynamic client registration and a registration request carries nothing but the URL to identify it.
+
+- **Issuer in discovery**: protected resource metadata advertises `{ISSUER_URL}/mcp/{providedId}/{version}`, and the metadata at `/.well-known/oauth-authorization-server/mcp/{providedId}/{version}` returns that exact value as `issuer` (RFC 8414). The `iss` claim of the tokens stays `ISSUER_URL`.
+- **Audience**: `aud` is the server's canonical resource URI, the same value as `resource` in its protected resource metadata. `mcp_server_identifier` carries the `providedId`.
+- **Resource indicators (RFC 8707)**: `resource` is optional on authorization and token requests, because the URL already identifies the server. When present it must name that server, otherwise the request is rejected.
+- **Grant binding**: a code or refresh token can only be redeemed at the token endpoint of the server it was authorized for.
+- **Validation**: MCP endpoints carry `@McpResource(...)`. `AccessTokenGuard` rejects tokens whose audience is another MCP server. First-party tokens (browser sessions, system-issued tokens, the internal worker target) are not bound to one MCP server and are accepted. Introspection and token exchange at a server's URL only accept tokens minted for that server.
 
 #### 3. JwksService
 **Location**: `/apps/backend/src/authorization-server/jwks.service.ts`
@@ -698,12 +708,12 @@ TokenService.generateAccessToken()
     |       {
     |         iss: 'https://auth-server.example.com',
     |         sub: 'user-id',
-    |         aud: 'mcp-server-id',
+    |         aud: 'https://taico.example.com/api/v1/tasks/tasks/mcp',
     |         client_id: 'mcp-client-id',
     |         scope: 'read:tasks write:tasks',
-    |         server_identifier: 'tasks',
-    |         resource: 'https://api.example.com',
-    |         version: '1.0',
+    |         mcp_server_identifier: 'tasks',
+    |         resource: 'https://taico.example.com/api/v1/tasks/tasks/mcp',
+    |         version: '0.0.0',
     |         exp: now + 3600,
     |         iat: now,
     |         jti: uuid()

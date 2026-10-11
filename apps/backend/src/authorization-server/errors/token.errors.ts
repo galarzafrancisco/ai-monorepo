@@ -1,4 +1,4 @@
-import { ErrorCodes } from "@taico/errors";
+import { ErrorCodes } from '@taico/errors';
 
 // Module-scoped re-export of error codes used by Token Service
 export const TokenErrorCodes = {
@@ -14,6 +14,8 @@ export const TokenErrorCodes = {
   INVALID_REFRESH_TOKEN: ErrorCodes.INVALID_REFRESH_TOKEN,
   REFRESH_TOKEN_EXPIRED: ErrorCodes.REFRESH_TOKEN_EXPIRED,
   REFRESH_TOKEN_REVOKED: ErrorCodes.REFRESH_TOKEN_REVOKED,
+  SERVER_IDENTIFIER_MISMATCH: ErrorCodes.SERVER_IDENTIFIER_MISMATCH,
+  RESOURCE_MISMATCH: ErrorCodes.RESOURCE_MISMATCH,
 } as const;
 
 type TokenErrorCode = (typeof TokenErrorCodes)[keyof typeof TokenErrorCodes];
@@ -120,6 +122,28 @@ export class RefreshTokenRevokedError extends TokenDomainError {
     super(
       'Refresh token has been revoked.',
       TokenErrorCodes.REFRESH_TOKEN_REVOKED,
+    );
+  }
+}
+
+/** Thrown when a code or refresh token is presented at another MCP server's token endpoint */
+export class TokenServerMismatchError extends TokenDomainError {
+  constructor(expected: string, actual: string) {
+    super(
+      'Grant was not issued for this MCP server.',
+      TokenErrorCodes.SERVER_IDENTIFIER_MISMATCH,
+      { expected, actual },
+    );
+  }
+}
+
+/** Thrown when the RFC 8707 `resource` does not identify the MCP server the grant is bound to */
+export class TokenResourceMismatchError extends TokenDomainError {
+  constructor(expected: string, actual: string) {
+    super(
+      'Resource does not match the MCP server the grant was issued for.',
+      TokenErrorCodes.RESOURCE_MISMATCH,
+      { expected, actual },
     );
   }
 }
