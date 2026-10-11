@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { AiProviderEntity } from './ai-provider.entity';
 import { AiModelSelectionEntity } from './ai-model-selection.entity';
 import { SecretsService } from '../secrets/secrets.service';
@@ -58,9 +58,8 @@ export class AiProvidersService {
   constructor(
     @InjectRepository(AiProviderEntity)
     private readonly aiProviderRepository: Repository<AiProviderEntity>,
-    @InjectRepository(AiModelSelectionEntity)
-    private readonly selectionRepository: Repository<AiModelSelectionEntity>,
     private readonly secretsService: SecretsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createAiProvider(
@@ -169,25 +168,31 @@ export class AiProvidersService {
   async deleteAiProvider(id: string): Promise<void> {
     this.logger.log({ message: 'Deleting AI provider', id });
 
-    const provider = await this.aiProviderRepository.findOne({
-      where: { id },
+    await this.dataSource.transaction(async (manager) => {
+      // Locked so a job cannot select this provider while it is being deleted.
+      const provider = await manager.getRepository(AiProviderEntity).findOne({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!provider) {
+        throw new AiProviderNotFoundError(id);
+      }
+
+      const selections = await manager
+        .getRepository(AiModelSelectionEntity)
+        .find({ where: { aiProviderId: id } });
+      if (selections.length > 0) {
+        throw new AiProviderInUseError(id, selections.map((selection) => selection.job));
+      }
+
+      await manager.getRepository(AiProviderEntity).softDelete(id);
+      // Threads pinned to this provider go back to following the conversation model.
+      await manager.query(
+        `UPDATE threads SET ai_provider_id = NULL, model_id = NULL WHERE ai_provider_id = $1`,
+        [id],
+      );
     });
-
-    if (!provider) {
-      throw new AiProviderNotFoundError(id);
-    }
-
-    const selections = await this.selectionRepository.find({ where: { aiProviderId: id } });
-    if (selections.length > 0) {
-      throw new AiProviderInUseError(id, selections.map((selection) => selection.job));
-    }
-
-    await this.aiProviderRepository.softDelete(id);
-    // Threads pinned to this provider go back to following the conversation model.
-    await this.aiProviderRepository.query(
-      `UPDATE threads SET ai_provider_id = NULL, model_id = NULL WHERE ai_provider_id = $1`,
-      [id],
-    );
   }
 
   async getAiProviderConfigById(

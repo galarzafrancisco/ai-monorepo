@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { AiModelSelectionEntity } from './ai-model-selection.entity';
 import { AiProviderEntity } from './ai-provider.entity';
 import { AiProvidersService, isAiProviderConfigured } from './ai-providers.service';
@@ -26,6 +26,7 @@ export class AiModelSelectionsService {
     @InjectRepository(AiProviderEntity)
     private readonly aiProviderRepository: Repository<AiProviderEntity>,
     private readonly aiProvidersService: AiProvidersService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /** Every job, selected or not, with what it effectively runs on. */
@@ -63,18 +64,24 @@ export class AiModelSelectionsService {
       modelId: input.modelId,
     });
 
-    const provider = await this.aiProviderRepository.findOne({
-      where: { id: input.aiProviderId },
-    });
-    if (!provider) {
-      throw new AiProviderNotFoundError(input.aiProviderId);
-    }
+    await this.dataSource.transaction(async (manager) => {
+      // Holds the provider until the selection is stored, so it cannot be deleted in between.
+      const provider = await manager.getRepository(AiProviderEntity).findOne({
+        where: { id: input.aiProviderId },
+        lock: { mode: 'pessimistic_read' },
+      });
+      if (!provider) {
+        throw new AiProviderNotFoundError(input.aiProviderId);
+      }
 
-    // Upsert so two processes setting the same job at once cannot both insert.
-    await this.selectionRepository.upsert(
-      { job: input.job, aiProviderId: input.aiProviderId, modelId: input.modelId.trim() },
-      ['job'],
-    );
+      // Upsert so two processes setting the same job at once cannot both insert.
+      await manager
+        .getRepository(AiModelSelectionEntity)
+        .upsert(
+          { job: input.job, aiProviderId: input.aiProviderId, modelId: input.modelId.trim() },
+          ['job'],
+        );
+    });
 
     return this.getSelection(input.job);
   }
