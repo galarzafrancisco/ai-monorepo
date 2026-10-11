@@ -84,7 +84,7 @@ const startBackend = (port) => {
 };
 const waitUp = async (base, proc) => {
   for (let i = 0; i < 120; i++) {
-    try { const r = await fetch(`${base}/api/v1/chat-providers`); if (r.status < 500) return; } catch {}
+    try { const r = await fetch(`${base}/api/v1/ai-providers`); if (r.status < 500) return; } catch {}
     if (proc.exitCode !== null) throw new Error(`backend exited:\n${proc.getOutput().slice(-3000)}`);
     await sleep(500);
   }
@@ -108,8 +108,8 @@ try {
   };
 
   // provider through the real factory (OpenAI-compatible -> fake server)
-  const p1 = await call(A, 'POST', '/chat-providers', { name: 'Fake 1', type: 'openai_compatible', baseUrl: `http://127.0.0.1:${PORT_LLM}/v1`, modelId: 'fake-model-1' });
-  await call(A, 'POST', '/chat-providers/set-active', { providerId: p1.id });
+  const p1 = await call(A, 'POST', '/ai-providers', { name: 'Fake 1', type: 'openai_compatible', baseUrl: `http://127.0.0.1:${PORT_LLM}/v1`});
+  await call(A, 'PUT', '/ai-model-selections/conversation', { aiProviderId: p1.id, modelId: 'fake-model-1' });
   const thread = await call(A, 'POST', '/threads', { title: 'Live thread' });
   log('thread', thread.id);
 
@@ -168,8 +168,8 @@ try {
   log(`queueing OK (${turns.length} turns, no overlap, nothing unseen)`);
 
   // 3. switch provider + model mid-thread; history is replayed to the new model
-  const p2 = await call(B, 'POST', '/chat-providers', { name: 'Fake 2', type: 'openai_compatible', baseUrl: `http://127.0.0.1:${PORT_LLM}/v1`, modelId: 'fake-model-2' });
-  await call(B, 'POST', '/chat-providers/set-active', { providerId: p2.id });
+  const p2 = await call(B, 'POST', '/ai-providers', { name: 'Fake 2', type: 'openai_compatible', baseUrl: `http://127.0.0.1:${PORT_LLM}/v1`});
+  await call(B, 'PUT', '/ai-model-selections/conversation', { aiProviderId: p2.id, modelId: 'fake-model-2' });
   const before = (await agentMessages()).length;
   await call(B, 'POST', `/threads/${thread.id}/messages`, { content: 'and now?' });
   const after = await waitReplies(before + 1);

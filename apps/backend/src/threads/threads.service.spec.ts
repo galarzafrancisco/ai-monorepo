@@ -66,7 +66,7 @@ describe('ThreadsService - Parent Task ID', () => {
     title: 'Test Thread',
     chatSessionId: null,
     headAgentMessageId: null,
-    chatProviderId: null,
+    aiProviderId: null,
     modelId: null,
     createdByActorId: 'actor-uuid',
     parentTaskId: 'parent-task-uuid',

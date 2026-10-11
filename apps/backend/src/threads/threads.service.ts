@@ -41,7 +41,6 @@ import {
   ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ThreadAgentService } from './agent/thread-agent.service';
-import { ChatProvidersService } from '../chat-providers/chat-providers.service';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
 
@@ -81,7 +80,6 @@ export class ThreadsService {
     private readonly contextService: ContextService,
     private readonly eventEmitter: EventEmitter2,
     private readonly threadAgentService: ThreadAgentService,
-    private readonly chatProvidersService: ChatProvidersService,
     private readonly threadTitleService: ThreadTitleService,
   ) { }
 
@@ -133,15 +131,10 @@ export class ThreadsService {
       tagNames: ['thread:state'],
     });
 
-    // New threads start on the globally selected provider and model.
-    const selection = await this.chatProvidersService.getActiveChatSelection();
-
     const thread = this.threadRepository.create({
       id: randomUUID(),
       title,
       chatSessionId: null,
-      chatProviderId: selection?.chatProviderId ?? null,
-      modelId: selection?.modelId ?? null,
       createdByActorId: input.createdByActorId,
       parentTaskId: input.parentTaskId || null,
       stateContextBlockId: stateBlock.id,

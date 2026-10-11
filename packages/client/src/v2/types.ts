@@ -923,44 +923,57 @@ export interface MoveBlockDto {
   newParentId: Record<string, any> | null;
 }
 
-export interface CreateChatProviderDto {
+export interface CreateAiProviderDto {
   name: string;
   type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible';
   secretId?: string;
-  modelId?: string | null;
   baseUrl?: string | null;
   project?: string | null;
   location?: string | null;
 }
 
-export interface ChatProviderResponseDto {
+export interface AiProviderResponseDto {
   id: string;
   name: string;
   type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible';
   secretId?: string | null;
-  modelId?: string | null;
   baseUrl?: string | null;
   project?: string | null;
   location?: string | null;
-  isActive: boolean;
   isConfigured: boolean;
   rowVersion: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface UpdateChatProviderDto {
+export interface UpdateAiProviderDto {
   name?: string;
   secretId?: string;
   apiKey?: string;
-  modelId?: string | null;
   baseUrl?: string | null;
   project?: string | null;
   location?: string | null;
 }
 
-export interface SetActiveChatProviderDto {
-  providerId: string;
+export interface AiProviderModelResponseDto {
+  id: string;
+  displayName?: string | null;
+  kind: 'language' | 'embedding';
+}
+
+export interface AiModelSelectionResponseDto {
+  job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings';
+  aiProviderId?: string | null;
+  modelId?: string | null;
+  followsConversation: boolean;
+  effectiveAiProviderId?: string | null;
+  effectiveModelId?: string | null;
+  isReady: boolean;
+}
+
+export interface SetAiModelSelectionDto {
+  aiProviderId: string;
+  modelId: string;
 }
 
 export interface CreateSecretDto {
@@ -1205,6 +1218,7 @@ export interface UserWalkthroughStatusResponseDto {
   projectConfigured: boolean;
   contextBlockCreated: boolean;
   threadConfigured: boolean;
+  conversationModelReady: boolean;
   taskWithProjectCreated: boolean;
   onboardingDisplayMode: 'FULL_PAGE' | 'BANNER' | 'OFF';
 }

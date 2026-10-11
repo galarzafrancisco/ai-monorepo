@@ -11,6 +11,7 @@ export { DataRow } from './DataRow';
 export { DataRowContainer } from './DataRowContainer';
 export { Divider } from './Divider';
 export { ListRow } from './ListRow';
+export { Modal } from './Modal';
 export { Tabs } from './Tabs';
 
 export type { AvatarProps } from './Avatar';
@@ -25,4 +26,5 @@ export type { BoardCardProps, BoardCardAnimation } from './BoardCard';
 export type { DataRowProps, DataRowAnimation, DataRowTag } from './DataRow';
 export type { DividerProps } from './Divider';
 export type { ListRowProps } from './ListRow';
+export type { ModalProps } from './Modal';
 export type { TabsProps, TabItem } from './Tabs';

@@ -8,8 +8,8 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useToast } from "../../shared/context/ToastContext";
 import { useCommandPalette } from "../../ui/components";
-import { useChatReadiness } from "../chat-providers/useChatReadiness";
-import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
+import { useChatReadiness } from "../ai-models/useChatReadiness";
+import { ChatSetupCallout } from "../ai-models/ChatSetupCallout";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { ThreadsService } from "./api";
 import { ThreadContextCard } from "./ThreadContextCard";
@@ -45,7 +45,7 @@ export function ThreadsPage() {
 
     if (!isChatReady) {
       showToast('Thread chat unlocks in Chat Settings.', 'info');
-      navigate('/settings/chat');
+      navigate('/settings/models');
       return;
     }
 
@@ -86,7 +86,7 @@ export function ThreadsPage() {
             title={readiness.title}
             description={readiness.description}
             ctaLabel={readiness.ctaLabel}
-            onOpenSettings={() => navigate('/settings/chat')}
+            onOpenSettings={() => navigate('/settings/models')}
           />
         ) : null}
 
@@ -204,7 +204,7 @@ function DesktopNewThreadPage() {
               title={readiness.title}
               description={readiness.description}
               ctaLabel={readiness.ctaLabel}
-              onOpenSettings={() => navigate('/settings/chat')}
+              onOpenSettings={() => navigate('/settings/models')}
             />
           </div>
         ) : (

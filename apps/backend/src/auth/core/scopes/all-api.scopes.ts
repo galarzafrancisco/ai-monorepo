@@ -8,7 +8,7 @@ import { ALL_MCP_SCOPES } from './mcp.scopes';
 import { ALL_THREADS_SCOPES } from 'src/threads/threads.scopes';
 import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
 import { ALL_SECRETS_SCOPES } from 'src/secrets/secrets.scopes';
-import { ALL_CHAT_PROVIDERS_SCOPES } from 'src/chat-providers/chat-providers.scopes';
+import { ALL_AI_PROVIDERS_SCOPES } from 'src/ai-providers/ai-providers.scopes';
 import { ALL_WORKERS_SCOPES } from 'src/executions/workers.scopes';
 
 export const ALL_API_SCOPES: Scope[] = [
@@ -30,8 +30,8 @@ export const ALL_API_SCOPES: Scope[] = [
   ...ALL_MCP_SCOPES,
   // Secrets
   ...ALL_SECRETS_SCOPES,
-  // Chat Providers
-  ...ALL_CHAT_PROVIDERS_SCOPES,
+  // AI Providers
+  ...ALL_AI_PROVIDERS_SCOPES,
   // Workers
   ...ALL_WORKERS_SCOPES,
 ];

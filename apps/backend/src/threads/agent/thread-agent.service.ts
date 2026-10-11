@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { isStepCount, ModelMessage, streamText } from 'ai';
 import { AgentsService } from 'src/agents/agents.service';
+import { AiModelJob } from 'src/ai-providers/enums';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadEntity } from '../thread.entity';
@@ -136,9 +137,9 @@ export class ThreadAgentService {
 
     const thread = await this.threadRepository.findOne({ where: { id: threadId } });
     const resolved = await this.chatModelFactory.resolve({
-      chatProviderId: thread?.chatProviderId,
+      job: AiModelJob.CONVERSATION,
+      aiProviderId: thread?.aiProviderId,
       modelId: thread?.modelId,
-      legacyModelId: self.modelId,
     });
 
     let rows = await this.agentLog.loadContext(threadId);

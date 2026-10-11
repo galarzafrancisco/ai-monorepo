@@ -5753,27 +5753,27 @@
         ]
       }
     },
-    "/api/v1/chat-providers": {
+    "/api/v1/ai-providers": {
       "post": {
-        "operationId": "ChatProvidersController_createChatProvider",
+        "operationId": "AiProvidersController_createAiProvider",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateChatProviderDto"
+                "$ref": "#/components/schemas/CreateAiProviderDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Chat provider created successfully",
+            "description": "AI provider created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                  "$ref": "#/components/schemas/AiProviderResponseDto"
                 }
               }
             }
@@ -5784,23 +5784,23 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Create a new chat provider",
+        "summary": "Create an AI provider",
         "tags": [
-          "Chat Providers"
+          "AI Providers"
         ]
       },
       "get": {
-        "operationId": "ChatProvidersController_listChatProviders",
+        "operationId": "AiProvidersController_listAiProviders",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "List of chat providers",
+            "description": "List of AI providers",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ChatProviderResponseDto"
+                    "$ref": "#/components/schemas/AiProviderResponseDto"
                   }
                 }
               }
@@ -5812,21 +5812,21 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "List all chat providers",
+        "summary": "List all AI providers",
         "tags": [
-          "Chat Providers"
+          "AI Providers"
         ]
       }
     },
-    "/api/v1/chat-providers/{id}": {
+    "/api/v1/ai-providers/{id}": {
       "get": {
-        "operationId": "ChatProvidersController_getChatProvider",
+        "operationId": "AiProvidersController_getAiProvider",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Chat provider identifier",
+            "description": "AI provider identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -5835,17 +5835,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Chat provider details",
+            "description": "AI provider details",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                  "$ref": "#/components/schemas/AiProviderResponseDto"
                 }
               }
             }
           },
           "404": {
-            "description": "Chat provider not found"
+            "description": "AI provider not found"
           }
         },
         "security": [
@@ -5853,19 +5853,19 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Get chat provider by ID",
+        "summary": "Get AI provider by ID",
         "tags": [
-          "Chat Providers"
+          "AI Providers"
         ]
       },
       "patch": {
-        "operationId": "ChatProvidersController_updateChatProvider",
+        "operationId": "AiProvidersController_updateAiProvider",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Chat provider identifier",
+            "description": "AI provider identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -5877,24 +5877,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateChatProviderDto"
+                "$ref": "#/components/schemas/UpdateAiProviderDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Chat provider updated successfully",
+            "description": "AI provider updated successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                  "$ref": "#/components/schemas/AiProviderResponseDto"
                 }
               }
             }
           },
           "404": {
-            "description": "Chat provider not found"
+            "description": "AI provider not found"
           }
         },
         "security": [
@@ -5902,19 +5902,19 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Update a chat provider",
+        "summary": "Update an AI provider",
         "tags": [
-          "Chat Providers"
+          "AI Providers"
         ]
       },
       "delete": {
-        "operationId": "ChatProvidersController_deleteChatProvider",
+        "operationId": "AiProvidersController_deleteAiProvider",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Chat provider identifier",
+            "description": "AI provider identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -5923,10 +5923,10 @@
         ],
         "responses": {
           "204": {
-            "description": "Chat provider deleted successfully"
+            "description": "AI provider deleted successfully"
           },
           "404": {
-            "description": "Chat provider not found"
+            "description": "AI provider not found"
           }
         },
         "security": [
@@ -5934,39 +5934,130 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Delete a chat provider",
+        "summary": "Delete an AI provider",
         "tags": [
-          "Chat Providers"
+          "AI Providers"
         ]
       }
     },
-    "/api/v1/chat-providers/set-active": {
-      "post": {
-        "operationId": "ChatProvidersController_setActiveChatProvider",
+    "/api/v1/ai-providers/{id}/models": {
+      "get": {
+        "operationId": "AiProvidersController_listAiProviderModels",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Models offered by the provider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProviderModelResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List the models the provider offers, fetched live from the provider",
+        "tags": [
+          "AI Providers"
+        ]
+      }
+    },
+    "/api/v1/ai-model-selections": {
+      "get": {
+        "operationId": "AiModelSelectionsController_listAiModelSelections",
         "parameters": [],
+        "responses": {
+          "200": {
+            "description": "One entry per job, selected or not",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiModelSelectionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List which model each job uses",
+        "tags": [
+          "AI Model Selections"
+        ]
+      }
+    },
+    "/api/v1/ai-model-selections/{job}": {
+      "put": {
+        "operationId": "AiModelSelectionsController_setAiModelSelection",
+        "parameters": [
+          {
+            "name": "job",
+            "required": true,
+            "in": "path",
+            "description": "The job the model is selected for",
+            "schema": {
+              "example": "conversation",
+              "type": "string",
+              "enum": [
+                "conversation",
+                "quick_tasks",
+                "middle_manager",
+                "embeddings"
+              ]
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetActiveChatProviderDto"
+                "$ref": "#/components/schemas/SetAiModelSelectionDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Active chat provider set successfully",
+            "description": "Selection saved",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                  "$ref": "#/components/schemas/AiModelSelectionResponseDto"
                 }
               }
             }
           },
           "404": {
-            "description": "Chat provider not found"
+            "description": "AI provider not found"
           }
         },
         "security": [
@@ -5974,19 +6065,34 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Set the active chat provider",
+        "summary": "Select the provider and model a job uses",
         "tags": [
-          "Chat Providers"
+          "AI Model Selections"
         ]
-      }
-    },
-    "/api/v1/chat-providers/deactivate": {
-      "post": {
-        "operationId": "ChatProvidersController_deactivateActiveChatProvider",
-        "parameters": [],
+      },
+      "delete": {
+        "operationId": "AiModelSelectionsController_clearAiModelSelection",
+        "parameters": [
+          {
+            "name": "job",
+            "required": true,
+            "in": "path",
+            "description": "The job the model is selected for",
+            "schema": {
+              "example": "conversation",
+              "type": "string",
+              "enum": [
+                "conversation",
+                "quick_tasks",
+                "middle_manager",
+                "embeddings"
+              ]
+            }
+          }
+        ],
         "responses": {
           "204": {
-            "description": "Active chat provider deactivated successfully"
+            "description": "Selection cleared"
           }
         },
         "security": [
@@ -5994,9 +6100,9 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Deactivate the active chat provider",
+        "summary": "Clear a job's selection",
         "tags": [
-          "Chat Providers"
+          "AI Model Selections"
         ]
       }
     },
@@ -12046,17 +12152,17 @@
           "newParentId"
         ]
       },
-      "CreateChatProviderDto": {
+      "CreateAiProviderDto": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "Display name for the chat provider",
+            "description": "Display name for the AI provider",
             "example": "OpenAI Production"
           },
           "type": {
             "type": "string",
-            "description": "Type of chat provider",
+            "description": "Type of AI provider",
             "enum": [
               "openai",
               "anthropic",
@@ -12070,12 +12176,6 @@
             "type": "string",
             "description": "ID of the secret containing the API key",
             "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model to use with this provider. Blank uses the provider default.",
-            "example": "claude-opus-5-5",
-            "nullable": true
           },
           "baseUrl": {
             "type": "string",
@@ -12101,22 +12201,22 @@
           "type"
         ]
       },
-      "ChatProviderResponseDto": {
+      "AiProviderResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Chat provider identifier",
+            "description": "AI provider identifier",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "name": {
             "type": "string",
-            "description": "Display name of the chat provider",
+            "description": "Display name of the AI provider",
             "example": "OpenAI Production"
           },
           "type": {
             "type": "string",
-            "description": "Type of chat provider",
+            "description": "Type of AI provider",
             "enum": [
               "openai",
               "anthropic",
@@ -12130,12 +12230,6 @@
             "type": "string",
             "description": "ID of the secret containing the API key",
             "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model used with this provider",
-            "example": "claude-opus-5-5",
             "nullable": true
           },
           "baseUrl": {
@@ -12155,11 +12249,6 @@
             "description": "Google Cloud location for Vertex AI",
             "example": "us-central1",
             "nullable": true
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Whether this provider is currently active",
-            "example": true
           },
           "isConfigured": {
             "type": "boolean",
@@ -12186,19 +12275,18 @@
           "id",
           "name",
           "type",
-          "isActive",
           "isConfigured",
           "rowVersion",
           "createdAt",
           "updatedAt"
         ]
       },
-      "UpdateChatProviderDto": {
+      "UpdateAiProviderDto": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "Display name for the chat provider",
+            "description": "Display name for the AI provider",
             "example": "OpenAI Production"
           },
           "secretId": {
@@ -12208,14 +12296,8 @@
           },
           "apiKey": {
             "type": "string",
-            "description": "API key for the chat provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.",
+            "description": "API key for the AI provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.",
             "example": "sk-..."
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model to use with this provider. Blank uses the provider default.",
-            "example": "claude-opus-5-5",
-            "nullable": true
           },
           "baseUrl": {
             "type": "string",
@@ -12237,17 +12319,107 @@
           }
         }
       },
-      "SetActiveChatProviderDto": {
+      "AiProviderModelResponseDto": {
         "type": "object",
         "properties": {
-          "providerId": {
+          "id": {
             "type": "string",
-            "description": "ID of the chat provider to set as active",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Model id as the provider names it",
+            "example": "claude-haiku-5-5"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human-readable name, when the provider gives one",
+            "example": "Claude Haiku 5.5",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "description": "What the model is for",
+            "enum": [
+              "language",
+              "embedding"
+            ],
+            "example": "language"
           }
         },
         "required": [
-          "providerId"
+          "id",
+          "kind"
+        ]
+      },
+      "AiModelSelectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "type": "string",
+            "description": "The job the model is selected for",
+            "enum": [
+              "conversation",
+              "quick_tasks",
+              "middle_manager",
+              "embeddings"
+            ],
+            "example": "conversation"
+          },
+          "aiProviderId": {
+            "type": "string",
+            "description": "Provider of the job's own selection. Null when nothing is selected for it.",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model of the job's own selection. Null when nothing is selected for it.",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "followsConversation": {
+            "type": "boolean",
+            "description": "True when the job has no selection of its own and uses the conversation model",
+            "example": false
+          },
+          "effectiveAiProviderId": {
+            "type": "string",
+            "description": "Provider the job runs on after applying the fallback",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "effectiveModelId": {
+            "type": "string",
+            "description": "Model the job runs on after applying the fallback",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "isReady": {
+            "type": "boolean",
+            "description": "Whether the job can make a call: a model is selected and its provider is configured",
+            "example": true
+          }
+        },
+        "required": [
+          "job",
+          "followsConversation",
+          "isReady"
+        ]
+      },
+      "SetAiModelSelectionDto": {
+        "type": "object",
+        "properties": {
+          "aiProviderId": {
+            "type": "string",
+            "description": "ID of the AI provider to call",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model id as the provider names it",
+            "example": "claude-haiku-5-5"
+          }
+        },
+        "required": [
+          "aiProviderId",
+          "modelId"
         ]
       },
       "CreateSecretDto": {
@@ -13559,6 +13731,11 @@
             "type": "boolean",
             "example": true
           },
+          "conversationModelReady": {
+            "type": "boolean",
+            "description": "Whether a usable model is selected for thread conversations",
+            "example": true
+          },
           "taskWithProjectCreated": {
             "type": "boolean",
             "example": true
@@ -13581,6 +13758,7 @@
           "projectConfigured",
           "contextBlockCreated",
           "threadConfigured",
+          "conversationModelReady",
           "taskWithProjectCreated",
           "onboardingDisplayMode"
         ]

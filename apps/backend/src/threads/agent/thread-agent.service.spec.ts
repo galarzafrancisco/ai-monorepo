@@ -115,7 +115,7 @@ function createHarness(steps: unknown[][]) {
   };
 
   const service = new ThreadAgentService(
-    { findOne: jest.fn().mockResolvedValue({ id: THREAD_ID, chatProviderId: null, modelId: null }) } as never,
+    { findOne: jest.fn().mockResolvedValue({ id: THREAD_ID, aiProviderId: null, modelId: null }) } as never,
     threadMessageRepository as never,
     {
       getAgentBySlug: jest.fn().mockResolvedValue({

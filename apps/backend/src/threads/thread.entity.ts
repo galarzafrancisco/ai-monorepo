@@ -44,18 +44,17 @@ export class ThreadEntity {
   headAgentMessageId!: string | null;
 
   /**
-   * Provider powering this thread. Null follows the active chat provider.
-   * Changed through the chat provider selection, not by saving the entity.
+   * This thread's own provider and model. Null, the normal case, follows the
+   * model selected for conversations. Not written by saving the entity.
    */
   @Column({
     type: 'uuid',
     nullable: true,
-    name: 'chat_provider_id',
+    name: 'ai_provider_id',
     update: false,
   })
-  chatProviderId!: string | null;
+  aiProviderId!: string | null;
 
-  /** Model powering this thread. Null follows the provider's model. */
   @Column({ type: 'text', nullable: true, name: 'model_id', update: false })
   modelId!: string | null;
 

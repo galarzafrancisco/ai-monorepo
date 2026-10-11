@@ -48,6 +48,7 @@ export class WalkthroughController {
       projectConfigured: status.projectConfigured,
       contextBlockCreated: status.contextBlockCreated,
       threadConfigured: status.threadConfigured,
+      conversationModelReady: status.conversationModelReady,
       taskWithProjectCreated: status.taskWithProjectCreated,
       onboardingDisplayMode: status.onboardingDisplayMode,
     };

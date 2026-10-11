@@ -83,11 +83,11 @@ export function useWalkthrough() {
           },
           {
             id: 'thread',
-            label: 'Configure threads',
+            label: 'Connect an AI model',
             description:
-              'Threads coordinate parallel work when a task branches into sub-tasks. They are created automatically when a task spawns children. Explore the Threads section to see how work is organized.',
-            href: '/settings/chat',
-            completed: data.threadConfigured,
+              'Threads are conversations with the Taico agent. Add an AI provider and pick the model that answers. You can also pick a cheaper model for small background jobs.',
+            href: '/settings/models',
+            completed: data.conversationModelReady,
           },
         ];
 
