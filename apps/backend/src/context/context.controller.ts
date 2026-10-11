@@ -63,9 +63,6 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { ContextScopes } from './context.scopes';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
-import { McpResource } from 'src/auth/guards/decorators/mcp-resource.decorator';
-import { getMcpServerResourceUrl } from 'src/auth/core/resource-audience';
-import { createContext } from 'src/app-init/mcp/context.mcp';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 
 @ApiTags('Context')
@@ -439,7 +436,6 @@ export class ContextController {
 
   @All('mcp')
   @RequireScopes(McpScopes.USE.id)
-  @McpResource(() => getMcpServerResourceUrl(createContext()))
   async handleMcp(
     @CurrentUser() user: UserContext,
     @CurrentAuth() authContext: AuthContext,

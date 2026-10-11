@@ -154,10 +154,12 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
   async function obtainTokens(
     serverId: string,
     resource?: string,
+    scope?: string,
   ): Promise<TokenSet> {
     const { clientId, code, codeVerifier } = await obtainAuthorizationCode(
       serverId,
       resource,
+      scope,
     );
     const response = await requestToken(serverId, {
       grant_type: 'authorization_code',
@@ -441,6 +443,86 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
       await exchange('context').expect(401);
       // Accepted as a tasks token; tasks simply has no downstream connection
       await exchange('tasks').expect(404);
+    });
+  });
+
+  describe('REST API and browser session', () => {
+    let tasksTokens: TokenSet;
+    const listTasks = (token: string) =>
+      request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Authorization', `Bearer ${token}`);
+
+    beforeAll(async () => {
+      // An MCP token that carries the scope the REST endpoint requires
+      tasksTokens = await obtainTokens(
+        'tasks',
+        tasksResource,
+        'mcp:use tasks:read',
+      );
+      expect(tasksTokens.claims.scope).toContain('tasks:read');
+    });
+
+    it('rejects an MCP server token on the REST API even with the right scope', async () => {
+      const response = await listTasks(tasksTokens.accessToken).expect(401);
+      expect(response.body.code).toBe('INVALID_ACCESS_TOKEN');
+    });
+
+    it.each([
+      ['no audience', undefined],
+      [
+        'an externally hosted MCP server as audience',
+        'https://mcp.example.com/mcp',
+      ],
+      ['a URL under the API that is not the one requested', '/api/v1/tasks'],
+    ])('rejects a token with %s on the REST API', async (_label, aud) => {
+      const token = await signWithAudience(
+        tasksTokens.claims,
+        aud?.startsWith('/') ? `${issuerUrl}${aud}` : aud,
+      );
+      await listTasks(token).expect(401);
+    });
+
+    it.each([
+      ['the API root', '/api/v1'],
+      ['the issuer', ''],
+    ])(
+      'accepts a first-party token for %s on the REST API',
+      async (_label, path) => {
+        const token = await signWithAudience(
+          tasksTokens.claims,
+          `${issuerUrl}${path}`,
+        );
+        await listTasks(token).expect(200);
+      },
+    );
+
+    it('accepts worker tokens minted before audiences became URLs', async () => {
+      const token = await signWithAudience(
+        tasksTokens.claims,
+        INTERNAL_WORKER_AUTH_TARGET_ID,
+      );
+      await listTasks(token).expect(200);
+    });
+
+    it('accepts the browser session on the REST API', async () => {
+      await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .expect(200);
+    });
+
+    it('does not accept an MCP or worker token as a session cookie', async () => {
+      const me = (cookie: string) =>
+        request(httpServer).get('/api/v1/auth/me').set('Cookie', cookie);
+
+      await me(authCookies).expect(200);
+      await me(`access_token=${tasksTokens.accessToken}`).expect(401);
+      const workerToken = await signWithAudience(
+        tasksTokens.claims,
+        `${issuerUrl}/api/v1`,
+      );
+      await me(`access_token=${workerToken}`).expect(401);
     });
   });
 

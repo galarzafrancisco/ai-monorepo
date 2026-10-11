@@ -292,7 +292,7 @@ export class WebAuthController {
 
     // Validate token and get payload
     const payload =
-      await this.tokenVerifierService.verifyAndDecode(accessToken);
+      await this.tokenVerifierService.verifySessionToken(accessToken);
 
     payload.actor_id;
     // Get user from database
@@ -347,7 +347,7 @@ export class WebAuthController {
 
     // Validate token and get payload
     const payload =
-      await this.tokenVerifierService.verifyAndDecode(accessToken);
+      await this.tokenVerifierService.verifySessionToken(accessToken);
 
     // Get user from database
     const actor = await this.actorService.getActorById(payload.actor_id, true);
@@ -466,7 +466,7 @@ export class WebAuthController {
     }
 
     // Validate token and get payload
-    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+    const payload = await this.tokenVerifierService.verifySessionToken(accessToken);
 
     // Get user from database
     const actor = await this.actorService.getActorById(payload.actor_id, true);
@@ -492,7 +492,7 @@ export class WebAuthController {
       throw new UnauthorizedException('Not authenticated');
     }
 
-    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+    const payload = await this.tokenVerifierService.verifySessionToken(accessToken);
     const actor = await this.actorService.getActorById(payload.actor_id, true);
     if (!actor?.user || !actor.user.isActive) {
       throw new UnauthorizedException('User not found');

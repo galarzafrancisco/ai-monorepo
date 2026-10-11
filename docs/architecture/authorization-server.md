@@ -132,7 +132,7 @@ Each MCP server has its own authorization server URL, because the server a clien
 - **Audience**: `aud` is the server's canonical resource URI, the same value as `resource` in its protected resource metadata. `mcp_server_identifier` carries the `providedId`.
 - **Resource indicators (RFC 8707)**: `resource` is optional on authorization and token requests, because the URL already identifies the server. When present it must name that server, otherwise the request is rejected.
 - **Grant binding**: a code or refresh token can only be redeemed at the token endpoint of the server it was authorized for.
-- **Validation**: MCP endpoints carry `@McpResource(...)`. `AccessTokenGuard` rejects tokens whose audience is another MCP server. First-party tokens (browser sessions, system-issued tokens, the internal worker target) are not bound to one MCP server and are accepted. Introspection and token exchange at a server's URL only accept tokens minted for that server.
+- **Validation**: every route behind `AccessTokenGuard` checks the audience. A token is accepted if it is first-party (browser session, system-issued, or the internal worker / display target, which cover the whole API), or if its audience is exactly the URL being requested, which is how an MCP server token is accepted on its own endpoint and nowhere else. WebSocket gateways accept first-party tokens only. Endpoints that read the session cookie directly accept web session tokens only. Introspection and token exchange at a server's URL only accept tokens minted for that server.
 
 #### 3. JwksService
 **Location**: `/apps/backend/src/authorization-server/jwks.service.ts`

@@ -243,7 +243,7 @@ export class AuthorizationService {
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
         const payload =
-          await this.tokenVerifierService.verifyAndDecode(accessToken);
+          await this.tokenVerifierService.verifySessionToken(accessToken);
         mcpAuthFlow.authJourney.actorId = payload.sub;
         await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
       } catch (error) {

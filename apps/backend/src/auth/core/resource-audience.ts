@@ -1,4 +1,5 @@
 import { getConfig } from 'src/config/env.config';
+import { INTERNAL_WORKER_AUTH_TARGET_ID } from './constants/internal-auth-target.constant';
 
 /**
  * Audience of browser session tokens.
@@ -46,34 +47,44 @@ export function isSameResource(a: string, b: string): boolean {
 }
 
 /**
- * Audiences of tokens that are not bound to a single MCP server: browser
- * sessions, system-issued tokens (aud = issuer) and the internal worker /
- * display targets (aud = the whole REST API).
+ * Audiences of tokens for the Taico API as a whole: browser sessions,
+ * system-issued tokens (aud = issuer) and the internal worker / display
+ * targets (aud = the REST API root).
  */
-function getFirstPartyAudiences(): string[] {
+export function isFirstPartyAudience(
+  audience: string | string[] | undefined,
+): boolean {
   const { issuerUrl } = getConfig();
-  return [WEB_SESSION_AUDIENCE, issuerUrl, `${issuerUrl}/api/v1`];
+  const firstParty = [issuerUrl, `${issuerUrl}/api/v1`];
+  return toAudienceList(audience).some(
+    (aud) =>
+      aud === WEB_SESSION_AUDIENCE ||
+      // TODO: remove once worker tokens minted before audiences became
+      // resource URLs have expired (they are refreshed every few minutes).
+      aud === INTERNAL_WORKER_AUTH_TARGET_ID ||
+      firstParty.some((allowed) => isSameResource(allowed, aud)),
+  );
 }
 
 /**
- * Decides whether a token may be used on an MCP server endpoint.
- * Accepts tokens minted for that server and first-party tokens. Rejects
- * everything else, including tokens minted for a different MCP server and
- * tokens without an audience.
+ * Decides whether a token may be used on a request to `requestUrl`.
+ * Accepts first-party tokens anywhere, and a token bound to one resource
+ * (an MCP server) only on that resource's own URL. Rejects everything else,
+ * including tokens minted for another MCP server and tokens without an
+ * audience.
  */
-export function isAudienceAcceptedForMcpResource(
+export function isAudienceAcceptedForRequest(
   audience: string | string[] | undefined,
-  resourceUrl: string,
+  requestUrl: string,
 ): boolean {
-  const audiences = (Array.isArray(audience) ? audience : [audience]).filter(
-    (aud): aud is string => typeof aud === 'string' && aud.length > 0,
+  return (
+    isFirstPartyAudience(audience) ||
+    toAudienceList(audience).some((aud) => isSameResource(aud, requestUrl))
   );
-  const firstParty = getFirstPartyAudiences();
-  return audiences.some(
-    (aud) =>
-      isSameResource(aud, resourceUrl) ||
-      firstParty.some(
-        (allowed) => allowed === aud || isSameResource(allowed, aud),
-      ),
+}
+
+function toAudienceList(audience: string | string[] | undefined): string[] {
+  return (Array.isArray(audience) ? audience : [audience]).filter(
+    (aud): aud is string => typeof aud === 'string' && aud.length > 0,
   );
 }

@@ -56,9 +56,6 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from './tasks.scopes';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
-import { McpResource } from 'src/auth/guards/decorators/mcp-resource.decorator';
-import { getMcpServerResourceUrl } from 'src/auth/core/resource-audience';
-import { createTasks } from 'src/app-init/mcp/tasks.mcp';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 import { CurrentRunId } from 'src/auth/guards/decorators/current-run-id.decorator';
 import { CurrentExecutionId } from 'src/auth/guards/decorators/current-execution-id.decorator';
@@ -428,7 +425,6 @@ export class TasksController {
 
   @All('mcp')
   @RequireScopes(McpScopes.USE.id)
-  @McpResource(() => getMcpServerResourceUrl(createTasks()))
   async handleMcp(
     @CurrentUser() user: UserContext,
     @CurrentAuth() authContext: AuthContext,
