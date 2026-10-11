@@ -42,8 +42,10 @@ const DEFAULT_MODELS: Partial<Record<ChatProviderType, string>> = {
 
 const LEGACY_MODEL_PROVIDER_TYPES = [ChatProviderType.OPENAI, ChatProviderType.ADK];
 
+/** Matches the Google SDKs, which read this flag case-insensitively ("True", "true", "1"). */
 function isEnvFlagEnabled(value: string | undefined): boolean {
-  return value === 'true' || value === '1';
+  const normalized = value?.trim().toLowerCase();
+  return normalized === 'true' || normalized === '1';
 }
 
 function vertexProjectFromEnv(): string | undefined {
