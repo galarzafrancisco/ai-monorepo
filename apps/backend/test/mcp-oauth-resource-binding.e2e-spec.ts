@@ -427,6 +427,18 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
 
       const other = await introspect('context').expect(201);
       expect(other.body).toEqual({ active: false });
+
+      // A first-party token is not bound to any MCP server
+      const { mcp_server_identifier: _id, ...unbound } = tasksTokens.claims;
+      const issuedToken = await signWithAudience(
+        unbound as AccessTokenClaims,
+        issuerUrl,
+      );
+      const firstParty = await request(httpServer)
+        .post(`/api/v1/auth/introspect/mcp/tasks/${VERSION}`)
+        .send({ token: issuedToken })
+        .expect(201);
+      expect(firstParty.body).toEqual({ active: false });
     });
 
     it('only exchanges a token at the server it was issued for', async () => {
@@ -494,6 +506,20 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
           `${issuerUrl}${path}`,
         );
         await listTasks(token).expect(200);
+      },
+    );
+
+    it.each([
+      ['dot segments', `${TASKS_MCP_PATH}/../../tasks`],
+      ['encoded dot segments', `${TASKS_MCP_PATH}/%2e%2e/%2e%2e/tasks`],
+      ['a longer path', `${TASKS_MCP_PATH}/extra`],
+    ])(
+      'does not match an MCP token to another path through %s',
+      async (_label, path) => {
+        const response = await request(httpServer)
+          .get(path)
+          .set('Authorization', `Bearer ${tasksTokens.accessToken}`);
+        expect([401, 404]).toContain(response.status);
       },
     );
 

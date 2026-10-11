@@ -72,14 +72,21 @@ export function isFirstPartyAudience(
  * (an MCP server) only on that resource's own URL. Rejects everything else,
  * including tokens minted for another MCP server and tokens without an
  * audience.
+ *
+ * The request URL is compared as a plain string, on purpose. Parsing it would
+ * resolve dot segments and percent-encoding that the router does not, so the
+ * URL checked here could differ from the route that handles the request.
  */
 export function isAudienceAcceptedForRequest(
   audience: string | string[] | undefined,
   requestUrl: string,
 ): boolean {
+  const withoutTrailingSlash = (value: string) => value.replace(/\/$/, '');
   return (
     isFirstPartyAudience(audience) ||
-    toAudienceList(audience).some((aud) => isSameResource(aud, requestUrl))
+    toAudienceList(audience).some(
+      (aud) => withoutTrailingSlash(aud) === withoutTrailingSlash(requestUrl),
+    )
   );
 }
 

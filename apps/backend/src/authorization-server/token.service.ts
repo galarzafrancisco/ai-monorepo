@@ -450,13 +450,10 @@ export class TokenService {
       return { active: false };
     }
 
-    // A token minted for one MCP server is not active for another. This is how
-    // MCP servers that validate through introspection enforce their audience.
-    if (
-      serverIdentifier &&
-      claims.mcp_server_identifier &&
-      claims.mcp_server_identifier !== serverIdentifier
-    ) {
+    // Only a token minted for this MCP server is active here, which excludes
+    // other servers' tokens and first-party tokens. This is how MCP servers
+    // that validate through introspection enforce their audience.
+    if (serverIdentifier && claims.mcp_server_identifier !== serverIdentifier) {
       this.logger.warn('Token introspected at another MCP server endpoint');
       return { active: false };
     }
