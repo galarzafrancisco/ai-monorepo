@@ -76,6 +76,63 @@
   cursor: not-allowed;
 }
 
+.settings-models__combobox {
+  position: relative;
+  min-width: 0;
+}
+
+.settings-models__combobox .settings-models__control {
+  padding-right: var(--space-5);
+}
+
+/* Marks the field as one that opens a list. */
+.settings-models__combobox::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  right: var(--space-2);
+  border: 4px solid transparent;
+  border-top-color: var(--text-muted);
+  pointer-events: none;
+}
+
+.settings-models__combobox-list {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 20;
+  min-width: 100%;
+  max-width: 420px;
+  max-height: 260px;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-2);
+}
+
+.settings-models__combobox-option {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--r-1);
+  font-size: var(--fs-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.settings-models__combobox-option[data-active='true'] {
+  background: var(--surface);
+}
+
+.settings-models__combobox-option[aria-selected='true'] {
+  color: var(--accent);
+  font-weight: var(--fw-medium);
+}
+
 .settings-models__job-note {
   grid-column: 2;
 }

@@ -113,7 +113,6 @@ const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
 const CREATABLE_TYPES = Object.keys(PROVIDER_TYPES) as ProviderType[];
 
 const ADD_PROVIDER_OPTION = '__add_provider__';
-const CUSTOM_MODEL_OPTION = '__custom_model__';
 
 type ProviderModels =
   | { status: 'loading' }
@@ -539,6 +538,119 @@ function AddProviderModal({
   );
 }
 
+/**
+ * Text field with a filtered list of suggestions under it. Any text is a valid
+ * value, so a model the provider did not list can still be entered.
+ */
+function ModelCombobox({
+  value,
+  onChange,
+  options,
+  placeholder,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+  label: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  // Until the user types, the field shows the saved model and the list shows everything.
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  const query = value.trim().toLowerCase();
+  const visible =
+    isFiltering && query ? options.filter((id) => id.toLowerCase().includes(query)) : options;
+
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[data-active="true"]')
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
+
+  const close = () => {
+    setIsOpen(false);
+    setIsFiltering(false);
+    setActiveIndex(-1);
+  };
+
+  const pick = (id: string) => {
+    onChange(id);
+    close();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        return;
+      }
+      if (visible.length > 0) {
+        const step = e.key === 'ArrowDown' ? 1 : -1;
+        setActiveIndex((current) => (current + step + visible.length) % visible.length);
+      }
+    } else if (e.key === 'Enter' && isOpen && activeIndex >= 0 && visible[activeIndex]) {
+      e.preventDefault();
+      pick(visible[activeIndex]);
+    } else if (e.key === 'Escape' && isOpen) {
+      e.preventDefault();
+      close();
+    }
+  };
+
+  return (
+    <div className="settings-models__combobox">
+      <input
+        type="text"
+        role="combobox"
+        aria-label={label}
+        aria-expanded={isOpen}
+        aria-autocomplete="list"
+        autoComplete="off"
+        spellCheck={false}
+        value={value}
+        placeholder={placeholder}
+        className="settings-models__control"
+        onFocus={(e) => {
+          setIsOpen(true);
+          e.target.select();
+        }}
+        onBlur={close}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+          setIsFiltering(true);
+          setActiveIndex(-1);
+        }}
+        onKeyDown={handleKeyDown}
+      />
+      {isOpen && visible.length > 0 ? (
+        <ul ref={listRef} role="listbox" className="settings-models__combobox-list">
+          {visible.map((id, index) => (
+            <li
+              key={id}
+              role="option"
+              aria-selected={id === value}
+              data-active={index === activeIndex}
+              className="settings-models__combobox-option"
+              // Keeps focus in the field so the blur does not close the list before the click.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(id)}
+              onMouseEnter={() => setActiveIndex(index)}
+            >
+              {id}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function JobRow({
   info,
   selection,
@@ -560,14 +672,12 @@ function JobRow({
   const savedModelId = selection.modelId ?? '';
   const [providerId, setProviderId] = useState(savedProviderId);
   const [modelId, setModelId] = useState(savedModelId);
-  const [isTypingModel, setIsTypingModel] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
   useEffect(() => {
     setProviderId(savedProviderId);
     setModelId(savedModelId);
-    setIsTypingModel(false);
   }, [savedProviderId, savedModelId]);
 
   const provider = providers.find((p) => p.id === providerId);
@@ -592,10 +702,7 @@ function JobRow({
   const ofKind = offered.filter((model) => model.kind === info.kind);
   // A provider that does not label its models still lets the user pick from everything.
   const options = (ofKind.length > 0 ? ofKind : offered).map((model) => model.id);
-  if (modelId && !isTypingModel && !options.includes(modelId)) {
-    options.unshift(modelId);
-  }
-  const showTextInput = isTypingModel || listing?.status === 'error' || !canListModels;
+  const isLoadingModels = canListModels && listing?.status !== 'ready' && listing?.status !== 'error';
 
   const isDirty = providerId !== savedProviderId || modelId.trim() !== savedModelId;
   const canSave = isDirty && !isSaving && (providerId === '' || modelId.trim() !== '');
@@ -607,7 +714,6 @@ function JobRow({
     }
     setProviderId(value);
     setModelId(value === savedProviderId ? savedModelId : '');
-    setIsTypingModel(false);
   };
 
   const handleSave = async () => {
@@ -666,40 +772,14 @@ function JobRow({
           <option value={ADD_PROVIDER_OPTION}>Add provider…</option>
         </select>
 
-        {providerId === '' ? null : showTextInput ? (
-          <input
-            type="text"
+        {providerId === '' ? null : (
+          <ModelCombobox
             value={modelId}
-            onChange={(e) => setModelId(e.target.value)}
-            className="settings-models__control"
-            placeholder="Model id"
-            aria-label={`${info.label} model id`}
+            onChange={setModelId}
+            options={options}
+            placeholder={isLoadingModels ? 'Loading models…' : 'Search or type a model id'}
+            label={`${info.label} model`}
           />
-        ) : (
-          <select
-            value={modelId}
-            onChange={(e) => {
-              if (e.target.value === CUSTOM_MODEL_OPTION) {
-                setIsTypingModel(true);
-                setModelId('');
-                return;
-              }
-              setModelId(e.target.value);
-            }}
-            className="settings-models__control"
-            aria-label={`${info.label} model`}
-            disabled={listing?.status !== 'ready'}
-          >
-            <option value="">
-              {listing?.status === 'ready' ? 'Choose a model' : 'Loading models…'}
-            </option>
-            {options.map((id) => (
-              <option key={id} value={id}>
-                {id}
-              </option>
-            ))}
-            <option value={CUSTOM_MODEL_OPTION}>Type a model id…</option>
-          </select>
         )}
 
         <Button variant="primary" size="sm" onClick={handleSave} disabled={!canSave}>
