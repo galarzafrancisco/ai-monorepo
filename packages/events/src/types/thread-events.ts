@@ -72,7 +72,6 @@ export interface Actor {
 export interface ThreadWirePayload {
   id: string;
   title: string;
-  chatSessionId: string | null;
   createdByActor: Actor;
   parentTaskId: string | null;
   stateContextBlockId: string;

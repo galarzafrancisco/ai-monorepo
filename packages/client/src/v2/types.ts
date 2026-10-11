@@ -588,7 +588,6 @@ export interface ContextBlockSummaryResponseDto {
 export interface ThreadResponseDto {
   id: string;
   title: string;
-  chatSessionId: string | null;
   createdByActor: ActorResponseDto;
   parentTaskId?: string | null;
   stateContextBlockId: string;
@@ -608,7 +607,6 @@ export interface UpdateThreadDto {
 export interface ThreadListItemResponseDto {
   id: string;
   title: string;
-  chatSessionId: string | null;
   stateContextBlockId: string;
 }
 

@@ -78,7 +78,6 @@ describe('ThreadsService - State Context Block', () => {
   const mockThread: ThreadEntity = {
     id: 'thread-uuid',
     title: 'Test Thread',
-    chatSessionId: null,
     headAgentMessageId: null,
     aiProviderId: null,
     modelId: null,

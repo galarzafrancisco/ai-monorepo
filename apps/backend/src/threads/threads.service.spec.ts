@@ -64,7 +64,6 @@ describe('ThreadsService - Parent Task ID', () => {
   const mockThread: ThreadEntity = {
     id: 'thread-uuid',
     title: 'Test Thread',
-    chatSessionId: null,
     headAgentMessageId: null,
     aiProviderId: null,
     modelId: null,
@@ -200,7 +199,6 @@ describe('ThreadsService - Parent Task ID', () => {
         });
         expect(threadRepository.create).toHaveBeenCalledWith({
           title: 'Test Thread',
-          chatSessionId: null,
           createdByActorId: 'actor-uuid',
           parentTaskId: 'parent-task-uuid',
           stateContextBlockId: 'state-block-uuid',

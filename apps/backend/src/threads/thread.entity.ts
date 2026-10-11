@@ -26,9 +26,6 @@ export class ThreadEntity {
   @Column({ type: 'text' })
   title!: string;
 
-  @Column({ type: 'text', nullable: true, name: 'chat_session_id' })
-  chatSessionId!: string | null;
-
   /**
    * Tip of the active branch in thread_agent_messages.
    *

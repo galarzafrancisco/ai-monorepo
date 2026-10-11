@@ -10416,12 +10416,6 @@
             "description": "Thread title",
             "example": "Implement authentication feature"
           },
-          "chatSessionId": {
-            "type": "string",
-            "description": "Provider-specific chat session/conversation ID associated with this thread",
-            "example": "conv_123abc",
-            "nullable": true
-          },
           "createdByActor": {
             "description": "Actor who created the thread",
             "allOf": [
@@ -10488,7 +10482,6 @@
         "required": [
           "id",
           "title",
-          "chatSessionId",
           "createdByActor",
           "stateContextBlockId",
           "tasks",
@@ -10523,12 +10516,6 @@
             "description": "Thread title",
             "example": "Implement authentication feature"
           },
-          "chatSessionId": {
-            "type": "string",
-            "description": "Provider-specific chat session/conversation ID associated with this thread",
-            "example": "conv_123abc",
-            "nullable": true
-          },
           "stateContextBlockId": {
             "type": "string",
             "description": "State context block ID that tracks the evolving state of this thread",
@@ -10538,7 +10525,6 @@
         "required": [
           "id",
           "title",
-          "chatSessionId",
           "stateContextBlockId"
         ]
       },
