@@ -869,6 +869,11 @@ function ProviderRow({
             {provider.baseUrl ? ` · ${provider.baseUrl}` : ''}
             {usedBy.length > 0 ? ` · Used by ${usedBy.join(', ')}` : ' · Not used by any job'}
           </Text>
+          {testResult && !isEditing ? (
+            <Text size="1" tone="muted">
+              {testResult}
+            </Text>
+          ) : null}
         </Stack>
 
         {isEditing ? (
@@ -924,11 +929,6 @@ function ProviderRow({
             <Button variant="secondary" size="sm" onClick={() => setIsConfirmingDelete(true)}>
               Delete
             </Button>
-            {testResult ? (
-              <Text size="1" tone="muted">
-                {testResult}
-              </Text>
-            ) : null}
           </Row>
         )}
       </Stack>

@@ -184,12 +184,19 @@ textarea.settings-models__secret-textarea {
 .settings-models__provider[data-layout='row'] > .stack {
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
+  /* Top-aligned so a test result appearing under the name does not shift the buttons. */
+  align-items: flex-start;
   justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* The name column takes the slack and wraps; the actions never move. */
+.settings-models__provider[data-layout='row'] .settings-models__header-copy {
+  flex: 1 1 240px;
 }
 
 .settings-models__actions {
-  flex-wrap: wrap;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 760px) {
