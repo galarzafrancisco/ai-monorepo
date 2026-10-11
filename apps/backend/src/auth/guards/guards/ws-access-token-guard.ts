@@ -11,6 +11,7 @@ import { tokenFromCookies } from '../extractors/token-cookie.extractor';
 import * as cookie from 'cookie';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { AuthContext } from '../context/auth-context.types';
+import { isFirstPartyAudience } from 'src/auth/core/resource-audience';
 
 @Injectable()
 export class WsAccessTokenGuard implements CanActivate {
@@ -51,7 +52,13 @@ export class WsAccessTokenGuard implements CanActivate {
       return false;
     }
 
-    // 3) Attach context (same shape as HTTP)
+    // 3) Sockets are part of the API itself, so only first-party tokens
+    if (!isFirstPartyAudience(claims.aud)) {
+      client.disconnect(true);
+      return false;
+    }
+
+    // 4) Attach context (same shape as HTTP)
     const authContext: AuthContext = {
       token,
       claims,

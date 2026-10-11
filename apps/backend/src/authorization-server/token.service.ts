@@ -27,12 +27,19 @@ import {
   InvalidRefreshTokenError,
   RefreshTokenExpiredError,
   RefreshTokenRevokedError,
+  TokenServerMismatchError,
+  TokenResourceMismatchError,
 } from './errors/token.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
+import {
+  MCP_AUTH_SERVER_VERSION,
+  getMcpServerResourceUrl,
+  isSameResource,
+} from '../auth/core/resource-audience';
 
 @Injectable()
 export class TokenService {
@@ -52,6 +59,7 @@ export class TokenService {
    */
   async handleTokenRequest(
     tokenRequest: TokenRequestDto,
+    serverIdentifier: string,
   ): Promise<TokenResponseDto> {
     this.logger.debug(
       `Processing token request for client: ${tokenRequest.client_id}, grant_type: ${tokenRequest.grant_type}`,
@@ -59,23 +67,15 @@ export class TokenService {
 
     switch (tokenRequest.grant_type) {
       case GrantType.AUTHORIZATION_CODE:
-        return this.handleAuthorizationCodeGrant(tokenRequest);
+        return this.handleAuthorizationCodeGrant(
+          tokenRequest,
+          serverIdentifier,
+        );
       case GrantType.REFRESH_TOKEN:
-        return this.handleRefreshTokenGrant(tokenRequest);
+        return this.handleRefreshTokenGrant(tokenRequest, serverIdentifier);
       default:
         throw new InvalidGrantTypeError(tokenRequest.grant_type);
     }
-  }
-
-  /**
-   * Exchange authorization code for access token
-   * Implements OAuth 2.0 authorization code grant with PKCE validation
-   * @deprecated Use handleTokenRequest instead
-   */
-  async exchangeAuthorizationCode(
-    tokenRequest: TokenRequestDto,
-  ): Promise<TokenResponseDto> {
-    return this.handleTokenRequest(tokenRequest);
   }
 
   /**
@@ -83,6 +83,7 @@ export class TokenService {
    */
   private async handleAuthorizationCodeGrant(
     tokenRequest: TokenRequestDto,
+    serverIdentifier: string,
   ): Promise<TokenResponseDto> {
     // Validate required parameters
     if (
@@ -116,6 +117,8 @@ export class TokenService {
       this.logger.warn(`Client ID mismatch for authorization code`);
       throw new ClientIdMismatchError();
     }
+
+    this.assertGrantBoundToServer(mcpAuthFlow, tokenRequest, serverIdentifier);
 
     // Validate authorization code hasn't been used (single-use protection)
     if (mcpAuthFlow.authorizationCodeUsed) {
@@ -197,6 +200,7 @@ export class TokenService {
    */
   private async handleRefreshTokenGrant(
     tokenRequest: TokenRequestDto,
+    serverIdentifier: string,
   ): Promise<TokenResponseDto> {
     this.logger.debug('refresh token request');
     // Validate required parameters
@@ -247,6 +251,8 @@ export class TokenService {
 
     const mcpAuthFlow = storedToken.mcpAuthorizationFlow;
 
+    this.assertGrantBoundToServer(mcpAuthFlow, tokenRequest, serverIdentifier);
+
     // Revoke the old refresh token (rotation)
     storedToken.revokedAt = new Date();
     await this.mcpRefreshTokenRepository.save(storedToken);
@@ -275,6 +281,38 @@ export class TokenService {
     );
 
     return tokenResponse;
+  }
+
+  /**
+   * A code or refresh token is bound to the MCP server it was authorized for.
+   * It can only be redeemed at that server's token endpoint, and an RFC 8707
+   * `resource` in the request must name that same server.
+   */
+  private assertGrantBoundToServer(
+    mcpAuthFlow: McpAuthorizationFlowEntity,
+    tokenRequest: TokenRequestDto,
+    serverIdentifier: string,
+  ): void {
+    const server = mcpAuthFlow.server;
+    if (
+      server.providedId !== serverIdentifier &&
+      server.id !== serverIdentifier
+    ) {
+      this.logger.warn('Grant presented at another MCP server token endpoint');
+      throw new TokenServerMismatchError(serverIdentifier, server.providedId);
+    }
+
+    const serverResource = getMcpServerResourceUrl(server);
+    if (
+      tokenRequest.resource &&
+      !isSameResource(tokenRequest.resource, serverResource)
+    ) {
+      this.logger.warn('Token request resource does not match the grant');
+      throw new TokenResourceMismatchError(
+        serverResource,
+        tokenRequest.resource,
+      );
+    }
   }
 
   /**
@@ -317,6 +355,9 @@ export class TokenService {
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
+    // The audience is the server's canonical resource URI (RFC 8707), derived
+    // from the server the grant is bound to, never from client input.
+    const serverResource = getMcpServerResourceUrl(mcpAuthFlow.server);
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
       sub: mcpAuthFlow.authJourney.actorId,
@@ -325,15 +366,15 @@ export class TokenService {
       actor_type: mcpAuthFlow.authJourney.actor.type,
       email: mcpAuthFlow.authJourney.actor.user.email,
       displayName: mcpAuthFlow.authJourney.actor.displayName,
-      aud: mcpAuthFlow.server.providedId, // MCP server identifier
+      aud: serverResource,
       exp: now + config.mcpAccessTokenDurationSeconds,
       iat: now,
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
       scope: mcpAuthFlow.scopes || [], // Handle null scopes
       mcp_server_identifier: mcpAuthFlow.server.providedId,
-      resource: mcpAuthFlow.resource || '',
-      version: '1.0.0', // Hardcoded version as requested in task description
+      resource: serverResource,
+      version: MCP_AUTH_SERVER_VERSION,
     };
 
     // Sign the JWT
@@ -386,6 +427,7 @@ export class TokenService {
    */
   async introspectToken(
     input: IntrospectTokenInput,
+    serverIdentifier?: string,
   ): Promise<IntrospectTokenResult> {
     this.logger.debug(
       `Introspecting token${input.client_id ? ` for client: ${input.client_id}` : ''}`,
@@ -405,6 +447,14 @@ export class TokenService {
     // Per RFC 7662, client_id is not required in the request - it's extracted from the token
     if (input.client_id && claims.client_id !== input.client_id) {
       this.logger.warn('Client ID mismatch during introspection');
+      return { active: false };
+    }
+
+    // Only a token minted for this MCP server is active here, which excludes
+    // other servers' tokens and first-party tokens. This is how MCP servers
+    // that validate through introspection enforce their audience.
+    if (serverIdentifier && claims.mcp_server_identifier !== serverIdentifier) {
+      this.logger.warn('Token introspected at another MCP server endpoint');
       return { active: false };
     }
 

@@ -42,6 +42,7 @@ import { ConsentMetadata } from './dto/service/authorization.service.types';
 import { getFrontendPath } from '../config/frontend.config';
 import { ALL_API_SCOPES } from '../auth/core/scopes/all-api.scopes';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
+import { ResourceMismatchError } from './errors/authorization.errors';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -92,7 +93,12 @@ export class AuthorizationController {
       // If there's an error, redirect back with error parameters
       if (authRequest.redirect_uri) {
         const errorUrl = new URL(authRequest.redirect_uri);
-        errorUrl.searchParams.set('error', 'server_error');
+        errorUrl.searchParams.set(
+          'error',
+          error instanceof ResourceMismatchError
+            ? 'invalid_target'
+            : 'server_error',
+        );
         errorUrl.searchParams.set(
           'error_description',
           error instanceof Error ? error.message : 'Unknown error',
@@ -205,7 +211,7 @@ export class AuthorizationController {
     @Param('serverIdentifier') serverIdentifier: string,
     @Param('version') version: string,
   ): Promise<TokenResponseDto> {
-    return this.tokenService.exchangeAuthorizationCode(tokenRequest);
+    return this.tokenService.handleTokenRequest(tokenRequest, serverIdentifier);
   }
 
   @Post('introspect/mcp/:serverIdentifier/:version')
@@ -236,7 +242,10 @@ export class AuthorizationController {
     };
 
     // Call service with transport-agnostic types
-    const result = await this.tokenService.introspectToken(serviceInput);
+    const result = await this.tokenService.introspectToken(
+      serviceInput,
+      serverIdentifier,
+    );
 
     // Short-circuit for inactive tokens - per RFC 7662, only 'active: false' is returned
     if (!result.active) {

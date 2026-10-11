@@ -1,3 +1,4 @@
+import { isFirstPartyAudience } from 'src/auth/core/resource-audience';
 import {
   ConnectedSocket,
   MessageBody,
@@ -51,7 +52,10 @@ export class ExecutionsWorkerGateway
   server!: Server;
 
   private readonly logger = new Logger(ExecutionsWorkerGateway.name);
-  private readonly socketExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly socketExpiryTimers = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
   private readonly harnessReportRequestedSocketIds = new Set<string>();
   private readonly workerSocketsByClientId = new Map<string, Set<string>>();
 
@@ -210,7 +214,9 @@ export class ExecutionsWorkerGateway
     }
 
     const timer = setTimeout(() => {
-      this.logger.log(`Disconnecting worker socket ${client.id} because its auth token expired`);
+      this.logger.log(
+        `Disconnecting worker socket ${client.id} because its auth token expired`,
+      );
       client.disconnect(true);
     }, delayMs);
 
@@ -287,7 +293,11 @@ export class ExecutionsWorkerGateway
       throw new Error('missing token');
     }
 
-    const claims = await this.accessTokenValidationService.validateAccessToken(token);
+    const claims =
+      await this.accessTokenValidationService.validateAccessToken(token);
+    if (!isFirstPartyAudience(claims.aud)) {
+      throw new Error('token was not issued for the Taico API');
+    }
     if (!claims.scope.includes(WorkersScopes.CONNECT.id)) {
       throw new Error(`missing required scope ${WorkersScopes.CONNECT.id}`);
     }
@@ -334,7 +344,9 @@ export class ExecutionsWorkerGateway
     );
 
     // Find the worker socket(s) for this worker client ID
-    const socketIds = this.workerSocketsByClientId.get(event.payload.workerClientId);
+    const socketIds = this.workerSocketsByClientId.get(
+      event.payload.workerClientId,
+    );
     if (!socketIds || socketIds.size === 0) {
       this.logger.warn(
         `No connected sockets found for worker ${event.payload.workerClientId} when interrupting execution ${event.payload.executionId}`,
@@ -346,7 +358,9 @@ export class ExecutionsWorkerGateway
       `Emitting ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker client ${event.payload.workerClientId} on sockets ${[...socketIds].join(',')}`,
     );
 
-    this.server.to([...socketIds]).emit(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, wireEvent);
+    this.server
+      .to([...socketIds])
+      .emit(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, wireEvent);
     this.logger.log(
       `Emitted ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to ${socketIds.size} worker socket(s)`,
     );

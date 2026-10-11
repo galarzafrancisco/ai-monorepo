@@ -111,7 +111,7 @@ export class TokenExchangeService {
    */
   private async validateMcpJwt(
     token: string,
-    expectedAudience: string,
+    expectedServerIdentifier: string,
   ): Promise<AccessTokenClaims> {
     let claims: AccessTokenClaims;
     try {
@@ -120,10 +120,11 @@ export class TokenExchangeService {
       throw new UnauthorizedException('Token validation failed');
     }
 
-    // Additional checks: audience
-    if (claims.aud !== expectedAudience) {
+    // Additional checks: the token must have been minted for this MCP server.
+    // `aud` is the server's resource URI, so the server is matched on its id.
+    if (claims.mcp_server_identifier !== expectedServerIdentifier) {
       this.logger.warn(
-        `MCP JWT audience mismatch: expected ${expectedAudience}, got ${claims.aud}`,
+        `MCP JWT server mismatch: expected ${expectedServerIdentifier}, got ${claims.mcp_server_identifier}`,
       );
       throw new UnauthorizedException('MCP JWT audience mismatch');
     }

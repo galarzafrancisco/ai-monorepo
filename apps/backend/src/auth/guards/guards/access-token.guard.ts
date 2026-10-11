@@ -29,6 +29,8 @@ import {
   TokenExpiredError,
 } from '../../core/errors/jwt.errors';
 import { AccessTokenClaims } from '../../core/types/access-token-claims.type';
+import { getConfig } from 'src/config/env.config';
+import { isAudienceAcceptedForRequest } from '../../core/resource-audience';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -78,7 +80,17 @@ export class AccessTokenGuard implements CanActivate {
       );
     }
 
-    // 3) Attach auth context
+    // 3) Reject tokens minted for another resource. A token is good for the
+    //    whole API (first-party) or only for the URL it was issued for (MCP).
+    const requestUrl = `${getConfig().issuerUrl}${req.originalUrl.split('?')[0]}`;
+    if (!isAudienceAcceptedForRequest(claims.aud, requestUrl)) {
+      this.logger.warn('Access token audience does not match this resource');
+      throw new InvalidAccessTokenError(
+        'Token was not issued for this resource',
+      );
+    }
+
+    // 4) Attach auth context
     const authContext: AuthContext = {
       token,
       claims,

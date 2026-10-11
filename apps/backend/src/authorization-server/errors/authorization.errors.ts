@@ -1,4 +1,4 @@
-import { ErrorCodes } from "@taico/errors";
+import { ErrorCodes } from '@taico/errors';
 
 // Module-scoped re-export of error codes used by Authorization Service
 export const AuthorizationErrorCodes = {
@@ -6,6 +6,7 @@ export const AuthorizationErrorCodes = {
   AUTH_FLOW_ALREADY_COMPLETED: ErrorCodes.AUTH_FLOW_ALREADY_COMPLETED,
   INVALID_FLOW_STATE: ErrorCodes.INVALID_FLOW_STATE,
   SERVER_IDENTIFIER_MISMATCH: ErrorCodes.SERVER_IDENTIFIER_MISMATCH,
+  RESOURCE_MISMATCH: ErrorCodes.RESOURCE_MISMATCH,
   DOWNSTREAM_AUTH_FAILED: ErrorCodes.DOWNSTREAM_AUTH_FAILED,
   NO_PENDING_CONNECTION_FLOWS: ErrorCodes.NO_PENDING_CONNECTION_FLOWS,
   CONNECTION_FLOW_NOT_FOUND: ErrorCodes.CONNECTION_FLOW_NOT_FOUND,
@@ -68,6 +69,17 @@ export class ServerIdentifierMismatchError extends AuthorizationDomainError {
     super(
       'Server identifier mismatch.',
       AuthorizationErrorCodes.SERVER_IDENTIFIER_MISMATCH,
+      { expected, actual },
+    );
+  }
+}
+
+/** Thrown when the RFC 8707 `resource` does not identify the MCP server being authorized */
+export class ResourceMismatchError extends AuthorizationDomainError {
+  constructor(expected: string, actual: string) {
+    super(
+      'Resource does not match the MCP server being authorized.',
+      AuthorizationErrorCodes.RESOURCE_MISMATCH,
       { expected, actual },
     );
   }

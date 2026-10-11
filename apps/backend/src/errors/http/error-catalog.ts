@@ -255,6 +255,12 @@ export const ErrorCatalog: Record<
     type: '/errors/authz/server-identifier-mismatch',
     retryable: false,
   },
+  [ErrorCodes.RESOURCE_MISMATCH]: {
+    status: 400,
+    title: 'Resource indicator mismatch',
+    type: '/errors/authz/resource-mismatch',
+    retryable: false,
+  },
   [ErrorCodes.DOWNSTREAM_AUTH_FAILED]: {
     status: 400,
     title: 'Downstream authorization failed',

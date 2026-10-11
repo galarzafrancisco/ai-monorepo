@@ -15,6 +15,7 @@ import {
   createContextScopes,
 } from 'src/app-init/mcp/context.mcp';
 import { Scope } from 'src/auth/core/types/scope.type';
+import { MCP_AUTH_SERVER_VERSION } from 'src/auth/core/resource-audience';
 import { InvalidServerConfigurationError } from 'src/mcp-registry/errors/mcp-registry.errors';
 import {
   createInternalWorkerAuthScopes,
@@ -35,7 +36,10 @@ export class DiscoveryService {
       createInternalWorkerAuthTarget(),
       createInternalWorkerAuthScopes,
     );
-    this.populateSystemServer(createDisplayAuthTarget(), createDisplayAuthScopes);
+    this.populateSystemServer(
+      createDisplayAuthTarget(),
+      createDisplayAuthScopes,
+    );
     this.populateSystemServer(createTasks(), createTasksScopes);
     this.populateSystemServer(createContext(), createContextScopes);
   }
@@ -55,7 +59,7 @@ export class DiscoveryService {
         resource: server.url,
         // No need to add the .well-known/oauth-authorization-server part, the client will add it automatically
         authorization_servers: [
-          `${config.issuerUrl}/mcp/${server.providedId}/0.0.0`,
+          `${config.issuerUrl}/mcp/${server.providedId}/${MCP_AUTH_SERVER_VERSION}`,
         ],
         scopes_supported: scopes.map((s) => s.id),
         bearer_methods_supported: ['header'],
@@ -87,7 +91,9 @@ export class DiscoveryService {
     }
 
     return {
-      issuer: input.issuer,
+      // RFC 8414: must be identical to the identifier the client built the
+      // well-known URL from, i.e. what protected resource metadata advertises.
+      issuer: `${input.issuer}/mcp/${input.serverIdentifier}/${input.version}`,
       authorization_endpoint: `${input.issuer}/api/v1/auth/authorize/mcp/${serverIdentifier}/${input.version}`,
       token_endpoint: `${input.issuer}/api/v1/auth/token/mcp/${serverIdentifier}/${input.version}`,
       registration_endpoint: `${input.issuer}/api/v1/auth/clients/register/mcp/${serverIdentifier}/${input.version}`,

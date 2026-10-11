@@ -3,8 +3,10 @@ import { JwksService } from './jwks.service';
 import { AccessTokenClaims } from '../core/types/access-token-claims.type';
 import { errors, JWK, jwtVerify } from 'jose';
 import { getConfig } from 'src/config/env.config';
+import { WEB_SESSION_AUDIENCE } from '../core/resource-audience';
 import {
   InvalidTokenSignaturedError,
+  NotSessionTokenError,
   TokenExpiredError,
   TokenValidationError,
 } from '../core/errors/jwt.errors';
@@ -16,7 +18,22 @@ export class TokenVerifierService {
   constructor(private readonly jwksService: JwksService) {}
 
   /**
-   * Decodes a JWT
+   * Verifies a token taken from the browser session cookie. Only tokens minted
+   * for a web session are accepted, so a token issued to an MCP client or a
+   * worker cannot be replayed as a logged-in user.
+   */
+  async verifySessionToken(token: string): Promise<AccessTokenClaims> {
+    const claims = await this.verifyAndDecode(token);
+    if (claims.aud !== WEB_SESSION_AUDIENCE) {
+      this.logger.warn('Non-session token presented as a session cookie');
+      throw new NotSessionTokenError();
+    }
+    return claims;
+  }
+
+  /**
+   * Verifies signature, issuer and expiry, and decodes a JWT.
+   * Does not check the audience: callers decide which audiences they accept.
    */
   async verifyAndDecode(token: string): Promise<AccessTokenClaims> {
     try {
