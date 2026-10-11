@@ -1,6 +1,6 @@
 # @taico/adk-session-store
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.5.0)](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.5.0)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.5.1)](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.5.1)
 
 PostgreSQL and SQLite session storage for Google ADK. Taico production uses
 `PostgresSessionService`; the SQLite implementation remains available to package
