@@ -1,3 +1,4 @@
+import { IgnoresUnknownProperties } from '../../http/app-validation.pipe';
 import {
   IsString,
   IsNotEmpty,
@@ -14,6 +15,7 @@ import { ResponseType } from '../enums';
  * OAuth 2.0 Authorization Request DTO
  * Based on RFC 6749 Section 4.1.1 and RFC 7636 (PKCE)
  */
+@IgnoresUnknownProperties()
 export class AuthorizationRequestDto {
   @ApiProperty({
     description:

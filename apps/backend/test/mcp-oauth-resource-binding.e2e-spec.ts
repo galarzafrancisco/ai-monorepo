@@ -1,8 +1,4 @@
-import {
-  INestApplication,
-  RequestMethod,
-  ValidationPipe,
-} from '@nestjs/common';
+import { INestApplication, RequestMethod } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import { createHash, randomBytes } from 'crypto';
@@ -14,6 +10,7 @@ import { INTERNAL_WORKER_AUTH_TARGET_ID } from '../src/auth/core/constants/inter
 import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.type';
 import { TokenSignerService } from '../src/auth/crypto/token-signer.service';
 import { getConfig } from '../src/config/env.config';
+import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
@@ -44,13 +41,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser());
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
+    app.useGlobalPipes(new AppValidationPipe());
     app.useGlobalFilters(new ProblemDetailsFilter());
     app.setGlobalPrefix('api/v1', {
       exclude: [{ path: '/.well-known/*path', method: RequestMethod.ALL }],
@@ -255,6 +246,76 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
       );
       expect(tasks.body.issuer).toBe(`${issuerUrl}/mcp/tasks/${VERSION}`);
       expect(context.body.issuer).toBe(`${issuerUrl}/mcp/context/${VERSION}`);
+    });
+  });
+
+  describe('unknown parameters from OAuth clients', () => {
+    // RFC 7591 section 2 and RFC 6749 section 3.1: ignore what we do not understand
+    it('completes the flow when the client sends parameters we do not know', async () => {
+      const registration = await request(httpServer)
+        .post(`/api/v1/auth/clients/register/mcp/tasks/${VERSION}`)
+        .send({
+          client_name: 'Client with newer metadata',
+          redirect_uris: [REDIRECT_URI],
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'none',
+          application_type: 'native',
+          software_id: 'some-client',
+          software_version: '1.2.3',
+        })
+        .expect(201);
+      const clientId: string = registration.body.client_id;
+      expect(registration.body.application_type).toBeUndefined();
+
+      const codeVerifier = randomBytes(32).toString('base64url');
+      const authorize = await startAuthorization(
+        'tasks',
+        clientId,
+        createHash('sha256').update(codeVerifier).digest('base64url'),
+        tasksResource,
+      )
+        .query({ prompt: 'consent', some_future_parameter: 'x' })
+        .expect(302);
+      const flowId = new URL(authorize.headers.location).searchParams.get(
+        'flow',
+      );
+      expect(flowId).toBeTruthy();
+
+      const consent = await request(httpServer)
+        .post(`/api/v1/auth/authorize/mcp/tasks/${VERSION}`)
+        .set('Cookie', authCookies)
+        .send({ flow_id: flowId, approved: true })
+        .expect(302);
+      const code = new URL(consent.headers.location).searchParams.get('code');
+
+      await requestToken('tasks', {
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        code: code!,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: codeVerifier,
+        some_future_parameter: 'x',
+      }).expect(201);
+    });
+
+    it('still validates the parameters it does know', async () => {
+      await request(httpServer)
+        .post(`/api/v1/auth/clients/register/mcp/tasks/${VERSION}`)
+        .send({
+          client_name: 'Client with a bad redirect',
+          redirect_uris: ['not a url'],
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'none',
+          application_type: 'native',
+        })
+        .expect(400);
+
+      await requestToken('tasks', {
+        grant_type: 'nonsense',
+        client_id: 'x',
+      }).expect(400);
     });
   });
 

@@ -1,3 +1,4 @@
+import { IgnoresUnknownProperties } from '../../http/app-validation.pipe';
 import {
   IsEnum,
   IsNotEmpty,
@@ -15,6 +16,7 @@ import { GrantType } from '../enums';
  * OAuth 2.0 token request DTO.
  * Covers both authorization_code (with PKCE) and refresh_token grants.
  */
+@IgnoresUnknownProperties()
 export class TokenRequestDto {
   @ApiProperty({
     description: 'Grant type that determines which parameters must be supplied',
