@@ -135,21 +135,12 @@ textarea.settings-models__secret-textarea {
   flex-wrap: wrap;
 }
 
-.settings-models__add-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: var(--space-2);
-  align-items: center;
-  max-width: 560px;
-}
-
 @media (max-width: 760px) {
   .settings-models__job {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .settings-models__job-controls,
-  .settings-models__add-row {
+  .settings-models__job-controls {
     grid-template-columns: minmax(0, 1fr);
   }
 

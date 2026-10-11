@@ -6,7 +6,7 @@ import {
   type AiProviderModelResponseDto,
   type AiProviderResponseDto,
 } from '@taico/client';
-import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
+import { Stack, Text, Card, Button, Modal, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useHomeCtx } from './HomeProvider';
@@ -139,9 +139,7 @@ export function SettingsModelsPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
-  const [newProviderName, setNewProviderName] = useState('');
-  const [newProviderType, setNewProviderType] = useState<ProviderType>('anthropic');
-  const addProviderRef = useRef<HTMLSelectElement>(null);
+  const [isAddingProvider, setIsAddingProvider] = useState(false);
   const requestedModels = useRef(new Set<string>());
 
   useDocumentTitle();
@@ -186,11 +184,6 @@ export function SettingsModelsPage() {
     }
   }, []);
 
-  const focusAddProvider = () => {
-    addProviderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    addProviderRef.current?.focus();
-  };
-
   const handleSaveSelection = async (job: Job, aiProviderId: string, modelId: string) => {
     setError('');
     try {
@@ -210,36 +203,44 @@ export function SettingsModelsPage() {
     }
   };
 
-  const handleAddProvider = async () => {
-    const name = newProviderName.trim() || PROVIDER_TYPES[newProviderType].label;
+  /** Returns an error message, or null when the provider was added. */
+  const handleAddProvider = async (type: ProviderType, form: ProviderForm) => {
+    const invalid = validateProviderForm(type, form, false);
+    if (invalid) {
+      return invalid;
+    }
 
-    setError('');
+    const info = PROVIDER_TYPES[type];
     try {
       const created = await AiProvidersService.aiProvidersControllerCreateAiProvider({
-        name,
-        type: newProviderType as never,
+        name: form.name.trim() || info.label,
+        type: type as never,
+        ...(info.hasBaseUrl ? { baseUrl: form.baseUrl } : {}),
+        ...(info.hasVertexSettings ? { project: form.project, location: form.location } : {}),
       });
-      setNewProviderName('');
+      if (form.apiKey.trim()) {
+        await AiProvidersService.aiProvidersControllerUpdateAiProvider(created.id, {
+          apiKey: form.apiKey.trim(),
+        });
+      }
+      setIsAddingProvider(false);
       await loadData();
-      setEditingProviderId(created.id);
+      return null;
     } catch (err) {
-      setError(errorDetail(err, 'Failed to add provider'));
+      // The provider may exist without its key; show it so it can be finished or deleted.
+      await loadData();
+      return errorDetail(err, 'Failed to add provider');
     }
   };
 
   const handleSaveProvider = async (provider: AiProviderResponseDto, form: ProviderForm) => {
     const info = PROVIDER_TYPES[provider.type];
 
-    if (!form.name.trim()) {
-      setError('Please enter a name');
-      return;
-    }
-    if (info.secretRequired && !provider.secretId && !form.apiKey.trim()) {
-      setError('Please enter an API key');
-      return;
-    }
-    if (info.hasBaseUrl && !form.baseUrl.trim()) {
-      setError('Please enter a base URL');
+    const invalid = form.name.trim()
+      ? validateProviderForm(provider.type, form, !!provider.secretId)
+      : 'Please enter a name';
+    if (invalid) {
+      setError(invalid);
       return;
     }
 
@@ -316,7 +317,7 @@ export function SettingsModelsPage() {
                   onSave={(providerId, modelId) =>
                     handleSaveSelection(info.job, providerId, modelId)
                   }
-                  onAddProvider={focusAddProvider}
+                  onAddProvider={() => setIsAddingProvider(true)}
                 />
               ) : null;
             })}
@@ -325,15 +326,20 @@ export function SettingsModelsPage() {
       </Stack>
 
       <Stack spacing="3">
-        <Text size="4" weight="semibold">
-          Providers
-        </Text>
+        <Row justify="space-between" align="center">
+          <Text size="4" weight="semibold">
+            Providers
+          </Text>
+          <Button variant="primary" size="sm" onClick={() => setIsAddingProvider(true)}>
+            Add provider
+          </Button>
+        </Row>
 
         <Card padding="5" className="settings-panel-card">
           <div className="settings-models__jobs">
             {providers.length === 0 ? (
               <div className="settings-models__provider">
-                <Text tone="muted">No providers yet. Add one below to pick models from it.</Text>
+                <Text tone="muted">No providers yet. Add one to pick models from it.</Text>
               </div>
             ) : (
               providers.map((provider) => (
@@ -354,44 +360,182 @@ export function SettingsModelsPage() {
                 />
               ))
             )}
-
-            <div className="settings-models__provider">
-              <Stack spacing="2">
-                <Text size="2" weight="semibold">
-                  Add a provider
-                </Text>
-                <div className="settings-models__add-row">
-                  <select
-                    ref={addProviderRef}
-                    value={newProviderType}
-                    onChange={(e) => setNewProviderType(e.target.value as ProviderType)}
-                    className="settings-models__control"
-                    aria-label="Provider type"
-                  >
-                    {CREATABLE_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {PROVIDER_TYPES[type].label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={newProviderName}
-                    onChange={(e) => setNewProviderName(e.target.value)}
-                    className="settings-models__control"
-                    placeholder={`Name (default: ${PROVIDER_TYPES[newProviderType].label})`}
-                    aria-label="Provider name"
-                  />
-                  <Button variant="primary" size="sm" onClick={handleAddProvider}>
-                    Add
-                  </Button>
-                </div>
-              </Stack>
-            </div>
           </div>
         </Card>
       </Stack>
+
+      <AddProviderModal
+        open={isAddingProvider}
+        onOpenChange={setIsAddingProvider}
+        onAdd={handleAddProvider}
+      />
     </Stack>
+  );
+}
+
+function validateProviderForm(
+  type: ProviderType,
+  form: ProviderForm,
+  hasStoredSecret: boolean,
+): string | null {
+  const info = PROVIDER_TYPES[type];
+  if (info.secretRequired && !hasStoredSecret && !form.apiKey.trim()) {
+    return 'Please enter an API key';
+  }
+  if (info.hasBaseUrl && !form.baseUrl.trim()) {
+    return 'Please enter a base URL';
+  }
+  return null;
+}
+
+const EMPTY_PROVIDER_FORM: ProviderForm = {
+  name: '',
+  apiKey: '',
+  baseUrl: '',
+  project: '',
+  location: '',
+};
+
+function ProviderFields({
+  type,
+  form,
+  onChange,
+  hasStoredSecret,
+}: {
+  type: ProviderType;
+  form: ProviderForm;
+  onChange: (form: ProviderForm) => void;
+  hasStoredSecret: boolean;
+}) {
+  const info = PROVIDER_TYPES[type];
+
+  const field = (label: string, key: keyof ProviderForm, placeholder: string) => (
+    <Stack spacing="2">
+      <Text size="2" weight="medium">
+        {label}
+      </Text>
+      <input
+        type="text"
+        value={form[key]}
+        onChange={(e) => onChange({ ...form, [key]: e.target.value })}
+        className="settings-models__control"
+        placeholder={placeholder}
+      />
+    </Stack>
+  );
+
+  return (
+    <>
+      <Text size="1" tone="muted">
+        {info.help}
+      </Text>
+      {field('Name', 'name', info.label)}
+      {info.secretLabel ? (
+        <Stack spacing="2">
+          <Text size="2" weight="medium">
+            {info.secretLabel}
+          </Text>
+          {info.multilineSecret ? (
+            <textarea
+              value={form.apiKey}
+              onChange={(e) => onChange({ ...form, apiKey: e.target.value })}
+              className="settings-models__control settings-models__secret-textarea"
+              placeholder={info.secretPlaceholder}
+              rows={4}
+            />
+          ) : (
+            <input
+              type="password"
+              value={form.apiKey}
+              onChange={(e) => onChange({ ...form, apiKey: e.target.value })}
+              className="settings-models__control"
+              placeholder={info.secretPlaceholder}
+            />
+          )}
+          <Text size="1" tone="muted">
+            {hasStoredSecret
+              ? 'A value is already stored. Leave empty to keep it.'
+              : 'Stored securely on the server.'}
+          </Text>
+        </Stack>
+      ) : null}
+      {info.hasBaseUrl ? field('Base URL', 'baseUrl', 'http://localhost:11434/v1') : null}
+      {info.hasVertexSettings ? (
+        <>
+          {field('Project ID', 'project', 'From GOOGLE_CLOUD_PROJECT')}
+          {field('Location', 'location', 'From GOOGLE_CLOUD_LOCATION')}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function AddProviderModal({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (type: ProviderType, form: ProviderForm) => Promise<string | null>;
+}) {
+  const [type, setType] = useState<ProviderType>('anthropic');
+  const [form, setForm] = useState<ProviderForm>(EMPTY_PROVIDER_FORM);
+  const [error, setError] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm(EMPTY_PROVIDER_FORM);
+      setError('');
+    }
+  }, [open]);
+
+  const handleAdd = async () => {
+    setIsAdding(true);
+    setError((await onAdd(type, form)) ?? '');
+    setIsAdding(false);
+  };
+
+  return (
+    <Modal open={open} onOpenChange={onOpenChange} title="Add a provider">
+      <Stack spacing="3">
+        <Stack spacing="2">
+          <Text size="2" weight="medium">
+            Type
+          </Text>
+          <select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value as ProviderType);
+              setError('');
+            }}
+            className="settings-models__control"
+            aria-label="Provider type"
+          >
+            {CREATABLE_TYPES.map((option) => (
+              <option key={option} value={option}>
+                {PROVIDER_TYPES[option].label}
+              </option>
+            ))}
+          </select>
+        </Stack>
+        <ProviderFields type={type} form={form} onChange={setForm} hasStoredSecret={false} />
+        {error ? (
+          <ErrorText size="2" weight="medium">
+            {error}
+          </ErrorText>
+        ) : null}
+        <Row spacing="2" justify="end">
+          <Button variant="secondary" size="sm" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleAdd} disabled={isAdding}>
+            Add provider
+          </Button>
+        </Row>
+      </Stack>
+    </Modal>
   );
 }
 
@@ -599,13 +743,7 @@ function ProviderRow({
   onTest: () => void;
 }) {
   const info = PROVIDER_TYPES[provider.type];
-  const [form, setForm] = useState<ProviderForm>({
-    name: '',
-    apiKey: '',
-    baseUrl: '',
-    project: '',
-    location: '',
-  });
+  const [form, setForm] = useState<ProviderForm>(EMPTY_PROVIDER_FORM);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [hasTested, setHasTested] = useState(false);
 
@@ -620,21 +758,6 @@ function ProviderRow({
       });
     }
   }, [isEditing, provider]);
-
-  const field = (label: string, key: keyof ProviderForm, placeholder: string) => (
-    <Stack spacing="2">
-      <Text size="2" weight="medium">
-        {label}
-      </Text>
-      <input
-        type="text"
-        value={form[key]}
-        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-        className="settings-models__control"
-        placeholder={placeholder}
-      />
-    </Stack>
-  );
 
   let testResult: string | null = null;
   if (hasTested && models) {
@@ -670,46 +793,12 @@ function ProviderRow({
 
         {isEditing ? (
           <Stack spacing="3">
-            <Text size="1" tone="muted">
-              {info.help}
-            </Text>
-            {field('Name', 'name', info.label)}
-            {info.secretLabel ? (
-              <Stack spacing="2">
-                <Text size="2" weight="medium">
-                  {info.secretLabel}
-                </Text>
-                {info.multilineSecret ? (
-                  <textarea
-                    value={form.apiKey}
-                    onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                    className="settings-models__control settings-models__secret-textarea"
-                    placeholder={info.secretPlaceholder}
-                    rows={4}
-                  />
-                ) : (
-                  <input
-                    type="password"
-                    value={form.apiKey}
-                    onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                    className="settings-models__control"
-                    placeholder={info.secretPlaceholder}
-                  />
-                )}
-                <Text size="1" tone="muted">
-                  {provider.secretId
-                    ? 'A value is already stored. Leave empty to keep it.'
-                    : 'Stored securely on the server.'}
-                </Text>
-              </Stack>
-            ) : null}
-            {info.hasBaseUrl ? field('Base URL', 'baseUrl', 'http://localhost:11434/v1') : null}
-            {info.hasVertexSettings ? (
-              <>
-                {field('Project ID', 'project', 'From GOOGLE_CLOUD_PROJECT')}
-                {field('Location', 'location', 'From GOOGLE_CLOUD_LOCATION')}
-              </>
-            ) : null}
+            <ProviderFields
+              type={provider.type}
+              form={form}
+              onChange={setForm}
+              hasStoredSecret={!!provider.secretId}
+            />
             <Row spacing="2">
               <Button variant="primary" size="sm" onClick={() => onSave(form)}>
                 Save

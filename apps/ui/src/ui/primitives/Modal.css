@@ -1,0 +1,42 @@
+.modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: color-mix(in srgb, var(--text) 40%, transparent);
+}
+
+.modal__content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1001;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100vw - var(--space-6)));
+  max-height: calc(100vh - var(--space-6));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: var(--shadow-3);
+}
+
+.modal__content:focus {
+  outline: none;
+}
+
+.modal__title {
+  margin: 0;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+}
+
+.modal__description {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+}
