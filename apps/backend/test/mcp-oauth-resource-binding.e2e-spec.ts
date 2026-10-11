@@ -90,6 +90,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
     clientId: string,
     codeChallenge: string,
     resource?: string,
+    scope = 'mcp:use',
   ) {
     return request(httpServer)
       .get(`/api/v1/auth/authorize/mcp/${serverId}/${VERSION}`)
@@ -97,7 +98,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
         response_type: 'code',
         client_id: clientId,
         redirect_uri: REDIRECT_URI,
-        scope: 'mcp:use',
+        scope,
         state: 'test-state',
         code_challenge: codeChallenge,
         code_challenge_method: 'S256',
@@ -111,6 +112,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
   async function obtainAuthorizationCode(
     serverId: string,
     resource?: string,
+    scope?: string,
   ): Promise<{ clientId: string; code: string; codeVerifier: string }> {
     const clientId = await registerClient(serverId);
     const codeVerifier = randomBytes(32).toString('base64url');
@@ -123,6 +125,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
       clientId,
       codeChallenge,
       resource,
+      scope,
     ).expect(302);
     const flowId = new URL(authorizeResponse.headers.location).searchParams.get(
       'flow',
@@ -197,12 +200,10 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
     aud: string | string[] | undefined,
   ): Promise<string> {
     const { aud: _aud, ...rest } = claims;
-    return app
-      .get(TokenSignerService)
-      .signToken({
-        ...rest,
-        ...(aud === undefined ? {} : { aud }),
-      } as AccessTokenClaims);
+    return app.get(TokenSignerService).signToken({
+      ...rest,
+      ...(aud === undefined ? {} : { aud }),
+    } as AccessTokenClaims);
   }
 
   describe('discovery', () => {
@@ -445,8 +446,11 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
 
   describe('internal worker target', () => {
     it('issues a token for the whole API that the REST and MCP endpoints accept', async () => {
+      // Same request shape as the worker: no resource, worker scopes
       const { clientId, code, codeVerifier } = await obtainAuthorizationCode(
         INTERNAL_WORKER_AUTH_TARGET_ID,
+        undefined,
+        'tasks:read workers:connect',
       );
       const response = await requestToken(INTERNAL_WORKER_AUTH_TARGET_ID, {
         grant_type: 'authorization_code',
@@ -466,6 +470,17 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
         .send({ token: response.body.access_token, client_id: clientId })
         .expect(201);
       expect(introspection.body.active).toBe(true);
+
+      await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Authorization', `Bearer ${response.body.access_token}`)
+        .expect(200);
+
+      // The MCP endpoint accepts the audience too: it gets as far as the scope
+      // check, which the worker target does not grant.
+      const mcp = await callMcp(TASKS_MCP_PATH, response.body.access_token);
+      expect(mcp.status).toBe(403);
+      expect(mcp.body.code).toBe('INSUFFICIENT_SCOPE');
     });
   });
 });
