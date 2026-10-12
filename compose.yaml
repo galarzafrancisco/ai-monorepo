@@ -1,8 +1,8 @@
 services:
   postgres:
-    # postgres:16-alpine with pgvector added; see dev/postgres/Dockerfile.
-    build: ./dev/postgres
-    image: taico-postgres:16-pgvector
+    # PostgreSQL 16 with the pgvector extension, which semantic search needs.
+    # The same image runs in CI and in production.
+    image: pgvector/pgvector:0.8.7-pg16-bookworm
     restart: unless-stopped
     environment:
       POSTGRES_DB: taico
@@ -11,7 +11,9 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - taico-postgres-data:/var/lib/postgresql/data
+      # Not the volume the Alpine image used: a data directory created there must not be
+      # opened by this Debian image (different text sort order). See docs/how-to-guides/search.md.
+      - taico-pgvector-data:/var/lib/postgresql/data
       - ./dev/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U taico -d taico"]
@@ -20,4 +22,4 @@ services:
       retries: 20
 
 volumes:
-  taico-postgres-data:
+  taico-pgvector-data:

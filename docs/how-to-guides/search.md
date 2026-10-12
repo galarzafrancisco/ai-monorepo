@@ -71,17 +71,27 @@ The backend creates `search_chunks` at runtime once pgvector is available, and c
 
 ### Local development
 
-`compose.yaml` builds its PostgreSQL image from `dev/postgres/Dockerfile`: the same `postgres:16-alpine` as before with pgvector compiled in. To upgrade an existing local database:
+`compose.yaml` runs `pgvector/pgvector:0.8.7-pg16-bookworm`, the official PostgreSQL 16 image with pgvector. CI and production use the same image.
+
+It stores its data in a new volume, `taico-pgvector-data`. That is deliberate: the previous image was Alpine, and a data directory created on Alpine must not be opened by this Debian image, because text sort order differs and existing indexes would be silently wrong. So after pulling this change, `docker compose up -d postgres` starts with empty databases and leaves the old volume untouched.
+
+To carry local data over, dump from the old container before switching and restore into the new one:
 
 ```bash
-docker compose up -d --build postgres
+# Before pulling the change, while the old container is running:
+docker exec ai-monorepo-postgres-1 pg_dumpall -U taico | gzip > taico-dev.sql.gz
+
+# After pulling:
+docker compose down
+docker compose up -d postgres
+gunzip -c taico-dev.sql.gz | docker exec -i ai-monorepo-postgres-1 psql -U taico -d postgres
 ```
 
-The data volume is kept. The image stays on Alpine on purpose: the official `pgvector/pgvector` image is Debian, and opening a data directory created on Alpine there changes text sort order, which can corrupt existing indexes.
+"Already exists" errors for the role and the databases are expected. Once the new database looks right, the old volume can be removed with `docker volume rm ai-monorepo_taico-postgres-data`.
 
 ### Production and other existing databases
 
-1. Install pgvector on the PostgreSQL server (a package such as `postgresql-16-pgvector`, or an image that includes it; managed services usually have it available).
+1. Install pgvector on the PostgreSQL server. The simplest way is to run the same `pgvector/pgvector` image as above. When replacing an Alpine-based `postgres` image, move the data with a dump and restore into a fresh data directory rather than reusing the old one, for the reason given above.
 2. In the Taico database, as a superuser: `CREATE EXTENSION vector;`
    The extension is not marked trusted, so the application's own role can only do this itself if it is a superuser.
 3. Nothing else. Within a minute the backend notices, creates its table and starts embedding.
