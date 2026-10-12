@@ -48,6 +48,7 @@ apps/
 └── worker-v1/       # Legacy worker runtime (being phased out)
 packages/
 ├── adk-session-store/ # PostgreSQL/SQLite Google ADK session services
+├── auth/              # OAuth resource server + authorization server (`@taico/auth`), framework adapters
 ├── client/            # Generated TypeScript API client package (`@taico/client`)
 ├── errors/            # Shared error classes and codes
 ├── events/            # Shared real-time event contracts
@@ -71,7 +72,7 @@ Key modules in `apps/backend/src/`:
 - `search/` - Search index, embeddings, and hybrid search (see `docs/how-to-guides/search.md`)
 - `authorization-server/` - OAuth2/OIDC implementation
 - `identity-provider/` - Identity provider integration
-- `auth/` + `auth-journeys/` - Authentication flows
+- `auth/` + `auth-journeys/` - Authentication flows. Token verification, signing keys and the guards come from `packages/auth` (see `docs/how-to-guides/auth-package.md`)
 
 ### Layered Architecture Pattern
 

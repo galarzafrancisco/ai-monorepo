@@ -70,6 +70,7 @@
     "@nestjs/websockets": "^11.1.17",
     "@opencode-ai/sdk": "^1.1.28",
     "@socket.io/postgres-adapter": "^0.5.0",
+    "@taico/auth": "^0.6.0",
     "@taico/errors": "^0.6.0",
     "@taico/events": "^0.6.0",
     "@taico/shared": "^0.6.0",

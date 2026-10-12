@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { parseScope } from '@taico/auth';
 import { Repository, In } from 'typeorm';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
@@ -68,7 +69,7 @@ export class TokenExchangeService {
     );
 
     // Step 3: Extract MCP scopes from JWT
-    const mcpScopes = mcpTokenPayload.scope;
+    const mcpScopes = parseScope(mcpTokenPayload.scope);
 
     // Step 4: Lookup connection by resource (providedId or UUID)
     const connection = await this.findConnection(request.resource, serverId);
