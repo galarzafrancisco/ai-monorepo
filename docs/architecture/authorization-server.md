@@ -569,6 +569,19 @@ A key set at `jwks_uri` is fetched under the same rules as the document
 in the cached copy, the key set is fetched again, at most once a minute per
 client, so key rotation needs no action on our side.
 
+Clients choose how to authenticate from what this server advertised when they
+discovered it, and some keep that answer. ChatGPT reads the OAuth settings when
+a connector is created and does not read them again. A connector created while
+this server advertised only `none` keeps sending unsigned token requests, which
+are refused with "this client must authenticate with a client_assertion"
+because its document asks for `private_key_jwt`. The user sees "We couldn't
+connect your account" and the authorization stays at "authorization code
+issued". Deleting the connector and adding it again fixes it. The same applies
+whenever `token_endpoint_auth_methods_supported` changes.
+
+Confirmed working with real clients on 2026-10-12: ChatGPT (`private_key_jwt`)
+and Claude, both through a metadata document.
+
 Not done: assertions are not tracked by `jti`, so one could be replayed until
 it expires by someone who can already read the client's TLS traffic to us.
 Clients that register dynamically cannot use `private_key_jwt`; they have
