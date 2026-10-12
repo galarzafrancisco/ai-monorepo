@@ -88,6 +88,9 @@ export class ThreadTaskSubscriptionsService {
   /**
    * Records that a task reached a status its subscribers are told about.
    * Returns the threads that now have a notification waiting.
+   *
+   * One notification waits per subscription: if the task changes again before
+   * the agent is told, the agent hears the latest status only.
    */
   async markTriggered(task: SubscribedTask): Promise<string[]> {
     if (!NOTIFIED_TASK_STATUSES.includes(task.status)) {
