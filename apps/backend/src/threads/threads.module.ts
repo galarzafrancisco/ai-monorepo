@@ -20,6 +20,10 @@ import { ThreadAgentLogService } from './agent/thread-agent-log.service';
 import { ThreadTurnsService } from './agent/thread-turns.service';
 import { ChatModelFactory } from './agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from './agent/taico-mcp-tools.factory';
+import { ThreadAgentToolsFactory } from './agent/thread-agent-tools.factory';
+import { ThreadTaskSubscriptionEntity } from './task-subscriptions/thread-task-subscription.entity';
+import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
+import { ThreadTaskSubscriptionNotifierService } from './task-subscriptions/thread-task-subscription-notifier.service';
 import { THREAD_AGENT_HOOKS } from './agent/hooks/thread-agent-hook.interface';
 import { ThreadAgentHooksRunner } from './agent/hooks/thread-agent-hooks.runner';
 import { EasterEggHook } from './agent/hooks/easter-egg.hook';
@@ -38,6 +42,7 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
       ThreadMessageEntity,
       ThreadAgentMessageEntity,
       ThreadTurnEntity,
+      ThreadTaskSubscriptionEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
@@ -60,6 +65,9 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ThreadTurnsService,
     ChatModelFactory,
     TaicoMcpToolsFactory,
+    ThreadAgentToolsFactory,
+    ThreadTaskSubscriptionsService,
+    ThreadTaskSubscriptionNotifierService,
     ThreadAgentHooksRunner,
     EasterEggHook,
     CompactionHook,

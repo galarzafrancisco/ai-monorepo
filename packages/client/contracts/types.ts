@@ -4194,6 +4194,29 @@ export interface components {
              */
             title: string;
         };
+        TaskSubscriptionResponseDto: {
+            /**
+             * @description ID of the task the thread is subscribed to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskId: string;
+            /**
+             * @description Task name
+             * @example Find public holidays
+             */
+            name: string;
+            /**
+             * @description Current task status
+             * @example IN_PROGRESS
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /**
+             * @description When the thread subscribed to the task
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            createdAt: string;
+        };
         ThreadResponseDto: {
             /**
              * @description Thread ID
@@ -4225,6 +4248,8 @@ export interface components {
             tags: components["schemas"]["MetaTagResponseDto"][];
             /** @description Participants in this thread */
             participants: components["schemas"]["ActorResponseDto"][];
+            /** @description Tasks the threads agent will be notified about when they go to review or are done */
+            taskSubscriptions: components["schemas"]["TaskSubscriptionResponseDto"][];
             /**
              * @description Row version for optimistic locking
              * @example 1

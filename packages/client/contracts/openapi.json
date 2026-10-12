@@ -10437,6 +10437,43 @@
           "title"
         ]
       },
+      "TaskSubscriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task the thread is subscribed to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Task name",
+            "example": "Find public holidays"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current task status",
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "FOR_REVIEW",
+              "DONE"
+            ],
+            "example": "IN_PROGRESS"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the thread subscribed to the task",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "taskId",
+          "name",
+          "status",
+          "createdAt"
+        ]
+      },
       "ThreadResponseDto": {
         "type": "object",
         "properties": {
@@ -10497,6 +10534,13 @@
               "$ref": "#/components/schemas/ActorResponseDto"
             }
           },
+          "taskSubscriptions": {
+            "description": "Tasks the threads agent will be notified about when they go to review or are done",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSubscriptionResponseDto"
+            }
+          },
           "rowVersion": {
             "type": "number",
             "description": "Row version for optimistic locking",
@@ -10522,6 +10566,7 @@
           "referencedContextBlocks",
           "tags",
           "participants",
+          "taskSubscriptions",
           "rowVersion",
           "createdAt",
           "updatedAt"

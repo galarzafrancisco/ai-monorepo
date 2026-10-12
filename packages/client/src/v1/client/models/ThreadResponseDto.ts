@@ -5,6 +5,7 @@
 import type { ActorResponseDto } from './ActorResponseDto.js';
 import type { ContextBlockSummaryResponseDto } from './ContextBlockSummaryResponseDto.js';
 import type { MetaTagResponseDto } from './MetaTagResponseDto.js';
+import type { TaskSubscriptionResponseDto } from './TaskSubscriptionResponseDto.js';
 import type { TaskSummaryResponseDto } from './TaskSummaryResponseDto.js';
 export type ThreadResponseDto = {
     /**
@@ -43,6 +44,10 @@ export type ThreadResponseDto = {
      * Participants in this thread
      */
     participants: Array<ActorResponseDto>;
+    /**
+     * Tasks the threads agent will be notified about when they go to review or are done
+     */
+    taskSubscriptions: Array<TaskSubscriptionResponseDto>;
     /**
      * Row version for optimistic locking
      */

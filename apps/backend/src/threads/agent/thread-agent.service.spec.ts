@@ -3,6 +3,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import {
   MessageCreatedEvent,
   ThreadAgentResponseDeltaEvent,
+  ThreadUpdatedEvent,
 } from '../events/threads.events';
 import { ThreadAgentService } from './thread-agent.service';
 import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
@@ -12,6 +13,7 @@ import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
 jest.mock('src/agents/agents.service', () => ({ AgentsService: class {} }));
 jest.mock('./chat-model.factory', () => ({ ChatModelFactory: class {} }));
 jest.mock('./taico-mcp-tools.factory', () => ({ TaicoMcpToolsFactory: class {} }));
+jest.mock('./thread-agent-tools.factory', () => ({ ThreadAgentToolsFactory: class {} }));
 jest.mock('./thread-agent-log.service', () => ({ ThreadAgentLogService: class {} }));
 jest.mock('./hooks/thread-agent-hooks.runner', () => ({ ThreadAgentHooksRunner: class {} }));
 
@@ -44,6 +46,13 @@ const toolCallStep = [
   finish('tool-calls'),
 ];
 
+const staySilentStep = [
+  { type: 'tool-call' as const, toolCallId: 'c2', toolName: 'stay_silent', input: '{}' },
+  finish('tool-calls'),
+];
+
+const USER = { id: 'user-1', slug: 'fran', type: 'human', displayName: 'Fran' };
+
 function createHarness(steps: unknown[][]) {
   let call = 0;
   const prompts: unknown[] = [];
@@ -65,10 +74,14 @@ function createHarness(steps: unknown[][]) {
 
   const agentLog = {
     ingestPending: jest.fn().mockResolvedValue({
-      triggerActor: { id: 'user-1', slug: 'fran', type: 'human', displayName: 'Fran' },
+      triggerActor: USER,
       newUserMessages: ['hello'],
     }),
     hasPending: jest.fn().mockResolvedValue(false),
+    ingestTaskNotifications: jest
+      .fn()
+      .mockResolvedValue({ triggerActor: null, notifiedTaskIds: [] }),
+    hasPendingTaskNotifications: jest.fn().mockResolvedValue(false),
     loadContext: jest.fn().mockResolvedValue([
       {
         id: 'm0',
@@ -114,6 +127,24 @@ function createHarness(steps: unknown[][]) {
     runAfterTurn: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mcpOpen = jest.fn().mockResolvedValue({
+    tools: {
+      tasks__fetch: {
+        inputSchema: jsonSchema({ type: 'object', properties: { id: { type: 'string' } } }),
+        execute: async () => ({ name: 'Ship it' }),
+      },
+    },
+    close: mcpClose,
+  });
+  const threadTools = {
+    build: jest.fn().mockReturnValue({
+      stay_silent: {
+        inputSchema: jsonSchema({ type: 'object', properties: {} }),
+        execute: async () => 'Turn ended without a message.',
+      },
+    }),
+  };
+
   const service = new ThreadAgentService(
     { findOne: jest.fn().mockResolvedValue({ id: THREAD_ID, aiProviderId: null, modelId: null }) } as never,
     threadMessageRepository as never,
@@ -131,22 +162,13 @@ function createHarness(steps: unknown[][]) {
     {
       resolve: jest.fn().mockResolvedValue({ model, providerType: 'mock', modelId: 'mock-model-id' }),
     } as never,
-    {
-      open: jest.fn().mockResolvedValue({
-        tools: {
-          tasks__fetch: {
-            inputSchema: jsonSchema({ type: 'object', properties: { id: { type: 'string' } } }),
-            execute: async () => ({ name: 'Ship it' }),
-          },
-        },
-        close: mcpClose,
-      }),
-    } as never,
+    { open: mcpOpen } as never,
+    threadTools as never,
     hooks as never,
     { emit: (event: symbol, payload: unknown) => emitted.push({ event, payload }) } as never,
   );
 
-  return { hooks, service, agentLog, turns, appended, displayMessages, emitted, finished, prompts, mcpClose };
+  return { hooks, service, mcpOpen, threadTools, agentLog, turns, appended, displayMessages, emitted, finished, prompts, mcpClose };
 }
 
 describe('ThreadAgentService', () => {
@@ -227,5 +249,62 @@ describe('ThreadAgentService', () => {
       }),
     ]);
     expect(h.mcpClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs a turn for a task notification when there is no new user message', async () => {
+    const h = createHarness([textStep('The holidays task is done.')]);
+    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+    h.agentLog.ingestTaskNotifications.mockResolvedValue({
+      triggerActor: USER,
+      notifiedTaskIds: ['task-1'],
+    });
+
+    await h.service.drain(THREAD_ID);
+
+    // The turn acts for whoever the agent subscribed for.
+    expect(h.mcpOpen).toHaveBeenCalledWith(expect.objectContaining({ issuedBy: USER }));
+    expect(h.threadTools.build).toHaveBeenCalledWith({
+      threadId: THREAD_ID,
+      agentActorId: AGENT_ACTOR_ID,
+      forActorId: USER.id,
+    });
+    expect(h.displayMessages.map((m) => m.content)).toEqual(['The holidays task is done.']);
+    expect(h.emitted.filter((e) => e.event === ThreadUpdatedEvent.INTERNAL)).toHaveLength(1);
+    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+  });
+
+  it('does not call the model when there is neither a message nor a notification', async () => {
+    const h = createHarness([textStep('Hi.')]);
+    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.prompts).toEqual([]);
+    expect(h.displayMessages).toEqual([]);
+    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+  });
+
+  it('runs another turn when a task notification arrived while the first one was running', async () => {
+    const h = createHarness([textStep('First.'), textStep('Second.')]);
+    h.agentLog.hasPendingTaskNotifications.mockResolvedValueOnce(true).mockResolvedValue(false);
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.turns.tryClaim).toHaveBeenCalledTimes(2);
+  });
+
+  it('ends the turn without a message when the agent chooses to stay silent', async () => {
+    // A second model call would fail: there is no second step.
+    const h = createHarness([staySilentStep]);
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.prompts).toHaveLength(1);
+    expect(h.displayMessages).toEqual([]);
+    expect(h.appended.map((row) => row.role)).toEqual([
+      ThreadAgentMessageRole.ASSISTANT,
+      ThreadAgentMessageRole.TOOL,
+    ]);
+    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
   });
 });

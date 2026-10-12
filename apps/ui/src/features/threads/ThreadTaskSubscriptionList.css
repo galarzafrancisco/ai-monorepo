@@ -1,0 +1,38 @@
+.thread-task-subscription-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-2) var(--space-3);
+  list-style: none;
+}
+
+.thread-task-subscription-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--r-2);
+  color: var(--text);
+  font-size: var(--fs-2);
+  text-decoration: none;
+}
+
+.thread-task-subscription-list__item:hover {
+  background: var(--card-bg);
+}
+
+.thread-task-subscription-list__icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.thread-task-subscription-list__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.thread-task-subscription-list__status {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}
