@@ -14,7 +14,7 @@ import {
   SetupManagedUserInput,
   UpdateUserRoleInput,
 } from './dto/service/identity-provider.service.types';
-import { ActorService } from './actor.service';
+import { ActorService, buildDeletedActorSlug } from './actor.service';
 import { ActorEntity } from './actor.entity';
 import { ActorType, OnboardingDisplayMode, UserRole } from './enums';
 import {
@@ -180,12 +180,13 @@ export class IdentityProviderService {
     }
 
     user.isActive = false;
-    // Mark the actor too, so it stops being assignable and shows as deleted
-    // on the work it touched.
+    // Mark the actor too, so it stops being assignable, shows as deleted on
+    // the work it touched, and gives its slug back.
     const actor = user.actor;
     return this.userRepository.manager.transaction(async (manager) => {
       if (actor) {
         actor.deletedAt = new Date();
+        actor.slug = buildDeletedActorSlug(actor);
         await manager.save(actor);
       }
       return manager.save(user);
