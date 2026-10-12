@@ -67,10 +67,14 @@ export function isAcceptableRedirectUri(uri: string): boolean {
     return false;
   }
   if (url.protocol === 'https:') {
-    return true;
+    // "https:callback" also parses; only the absolute form is a redirect URI
+    return uri.toLowerCase().startsWith('https://') && url.hostname !== '';
   }
   if (url.protocol === 'http:') {
-    return LOOPBACK_HOSTS.has(url.hostname);
+    return (
+      uri.toLowerCase().startsWith('http://') &&
+      LOOPBACK_HOSTS.has(url.hostname)
+    );
   }
   return !FORBIDDEN_SCHEMES.has(url.protocol);
 }

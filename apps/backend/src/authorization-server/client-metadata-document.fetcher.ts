@@ -3,7 +3,7 @@ import { lookup as dnsLookup, LookupAddress } from 'dns';
 import * as http from 'http';
 import * as https from 'https';
 import { isIP, LookupFunction } from 'net';
-import { isPublicAddress } from './utils/public-address';
+import { isLoopbackAddress, isPublicAddress } from './utils/public-address';
 
 export const CLIENT_METADATA_FETCH_OPTIONS = Symbol(
   'CLIENT_METADATA_FETCH_OPTIONS',
@@ -11,10 +11,11 @@ export const CLIENT_METADATA_FETCH_OPTIONS = Symbol(
 
 export type ClientMetadataFetchOptions = {
   /**
-   * Accept http:// URLs and hosts on loopback or private networks.
+   * Also accept http:// URLs and this machine's loopback addresses.
    * Only for tests, where the client's document is served from 127.0.0.1.
+   * Private networks and link-local addresses stay refused.
    */
-  allowInsecureLocal: boolean;
+  allowInsecureLoopback: boolean;
   timeoutMs: number;
   /** The CIMD draft recommends refusing documents larger than 5 kB */
   maxBytes: number;
@@ -22,7 +23,7 @@ export type ClientMetadataFetchOptions = {
 
 export const DEFAULT_CLIENT_METADATA_FETCH_OPTIONS: ClientMetadataFetchOptions =
   {
-    allowInsecureLocal: false,
+    allowInsecureLoopback: false,
     timeoutMs: 5000,
     maxBytes: 5 * 1024,
   };
@@ -48,23 +49,27 @@ export class ClientMetadataDocumentFetcher {
     private readonly options: ClientMetadataFetchOptions,
   ) {}
 
-  get allowsInsecureLocal(): boolean {
-    return this.options.allowInsecureLocal;
+  get allowsInsecureLoopback(): boolean {
+    return this.options.allowInsecureLoopback;
   }
 
   async fetch(url: URL): Promise<FetchedClientMetadataDocument> {
-    const { allowInsecureLocal, timeoutMs, maxBytes } = this.options;
+    const { allowInsecureLoopback, timeoutMs, maxBytes } = this.options;
 
     if (
       url.protocol !== 'https:' &&
-      !(allowInsecureLocal && url.protocol === 'http:')
+      !(allowInsecureLoopback && url.protocol === 'http:')
     ) {
       throw new ClientMetadataFetchError('the URL must use https');
     }
 
+    const isAllowedAddress = (address: string) =>
+      isPublicAddress(address) ||
+      (allowInsecureLoopback && isLoopbackAddress(address));
+
     // net.connect skips the DNS lookup for IP literals, so check those here
     const host = url.hostname.replace(/^\[|\]$/g, '');
-    if (isIP(host) && !allowInsecureLocal && !isPublicAddress(host)) {
+    if (isIP(host) && !isAllowedAddress(host)) {
       throw new ClientMetadataFetchError(
         'the URL resolves to a non-public address',
       );
@@ -84,7 +89,7 @@ export class ClientMetadataDocumentFetcher {
           // A fresh connection per fetch: the address checked by the lookup
           // is the address connected to, with no pooled socket in between.
           agent: false,
-          lookup: allowInsecureLocal ? undefined : publicOnlyLookup,
+          lookup: restrictedLookup(isAllowedAddress),
           signal: AbortSignal.timeout(timeoutMs),
         },
         (response) => {
@@ -141,38 +146,42 @@ export class ClientMetadataDocumentFetcher {
 }
 
 /**
- * DNS lookup that only hands public addresses to the socket, and fails when a
- * host has none. Passing it as the socket's lookup means the connection uses
+ * DNS lookup that only hands allowed addresses to the socket, and fails when
+ * a host has none. A host can legitimately answer with a mix, for example
+ * split-horizon DNS; its other addresses are dropped rather than the whole
+ * host refused. Passing this as the socket's lookup means the connection uses
  * the very addresses that were checked, so a second DNS answer cannot swap in
  * an internal address.
  */
-const publicOnlyLookup: LookupFunction = (hostname, options, callback) => {
-  dnsLookup(hostname, { ...options, all: true }, (error, addresses) => {
-    if (error) {
-      return callback(error, '', 0);
-    }
-    const publicAddresses = publicAddressesOf(addresses);
-    if (publicAddresses.length === 0) {
-      return callback(
-        new ClientMetadataFetchError(
-          'the URL resolves to a non-public address',
-        ),
-        '',
-        0,
-      );
-    }
-    if (options.all) {
-      return callback(null, publicAddresses);
-    }
-    callback(null, publicAddresses[0].address, publicAddresses[0].family);
-  });
-};
+function restrictedLookup(
+  isAllowedAddress: (address: string) => boolean,
+): LookupFunction {
+  return (hostname, options, callback) => {
+    dnsLookup(hostname, { ...options, all: true }, (error, addresses) => {
+      if (error) {
+        return callback(error, '', 0);
+      }
+      const allowed = allowedAddressesOf(addresses, isAllowedAddress);
+      if (allowed.length === 0) {
+        return callback(
+          new ClientMetadataFetchError(
+            'the URL resolves to a non-public address',
+          ),
+          '',
+          0,
+        );
+      }
+      if (options.all) {
+        return callback(null, allowed);
+      }
+      callback(null, allowed[0].address, allowed[0].family);
+    });
+  };
+}
 
-/**
- * The addresses of a host that may be connected to. A host can legitimately
- * answer with a mix, for example split-horizon DNS; its non-public addresses
- * are dropped rather than the whole host refused.
- */
-export function publicAddressesOf(addresses: LookupAddress[]): LookupAddress[] {
-  return addresses.filter(({ address }) => isPublicAddress(address));
+export function allowedAddressesOf(
+  addresses: LookupAddress[],
+  isAllowedAddress: (address: string) => boolean,
+): LookupAddress[] {
+  return addresses.filter(({ address }) => isAllowedAddress(address));
 }

@@ -45,7 +45,7 @@ export class ClientIdMetadataService {
   isMetadataDocumentClientId(clientId: string): boolean {
     return (
       clientId.startsWith('https://') ||
-      (this.fetcher.allowsInsecureLocal && clientId.startsWith('http://'))
+      (this.fetcher.allowsInsecureLoopback && clientId.startsWith('http://'))
     );
   }
 
@@ -127,7 +127,7 @@ export class ClientIdMetadataService {
     }
     if (
       url.protocol !== 'https:' &&
-      !(this.fetcher.allowsInsecureLocal && url.protocol === 'http:')
+      !(this.fetcher.allowsInsecureLoopback && url.protocol === 'http:')
     ) {
       reject('the client_id URL must use https');
     }

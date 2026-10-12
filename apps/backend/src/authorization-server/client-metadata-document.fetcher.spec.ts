@@ -4,8 +4,9 @@ import {
   ClientMetadataDocumentFetcher,
   ClientMetadataFetchError,
   DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
-  publicAddressesOf,
+  allowedAddressesOf,
 } from './client-metadata-document.fetcher';
+import { isPublicAddress } from './utils/public-address';
 
 describe('ClientMetadataDocumentFetcher', () => {
   describe('with the production policy', () => {
@@ -41,23 +42,29 @@ describe('ClientMetadataDocumentFetcher', () => {
     });
   });
 
-  describe('publicAddressesOf', () => {
-    it('keeps only the public addresses of a host that also has private ones', () => {
+  describe('allowedAddressesOf', () => {
+    it('keeps only the allowed addresses of a host that also has others', () => {
       expect(
-        publicAddressesOf([
-          { address: '10.0.0.5', family: 4 },
-          { address: '93.184.216.34', family: 4 },
-          { address: 'fd00::1', family: 6 },
-        ]),
+        allowedAddressesOf(
+          [
+            { address: '10.0.0.5', family: 4 },
+            { address: '93.184.216.34', family: 4 },
+            { address: 'fd00::1', family: 6 },
+          ],
+          isPublicAddress,
+        ),
       ).toEqual([{ address: '93.184.216.34', family: 4 }]);
     });
 
-    it('leaves nothing to connect to for a host with no public address', () => {
+    it('leaves nothing to connect to for a host with no allowed address', () => {
       expect(
-        publicAddressesOf([
-          { address: '10.0.0.5', family: 4 },
-          { address: '::1', family: 6 },
-        ]),
+        allowedAddressesOf(
+          [
+            { address: '10.0.0.5', family: 4 },
+            { address: '::1', family: 6 },
+          ],
+          isPublicAddress,
+        ),
       ).toEqual([]);
     });
   });
@@ -69,7 +76,7 @@ describe('ClientMetadataDocumentFetcher', () => {
       undefined;
 
     const fetcher = new ClientMetadataDocumentFetcher({
-      allowInsecureLocal: true,
+      allowInsecureLoopback: true,
       timeoutMs: 300,
       maxBytes: 1024,
     });
@@ -88,6 +95,17 @@ describe('ClientMetadataDocumentFetcher', () => {
     });
 
     const json = { 'content-type': 'application/json' };
+
+    it.each([
+      ['a private address', 'http://10.0.0.5/client.json'],
+      ['the cloud metadata address', 'http://169.254.169.254/latest'],
+      ['a link-local IPv6 address', 'http://[fe80::1]/client.json'],
+    ])(
+      'still refuses %s when loopback is allowed for tests',
+      async (_name, url) => {
+        await expect(fetcher.fetch(new URL(url))).rejects.toThrow(/non-public/);
+      },
+    );
 
     it('returns the parsed document and its Cache-Control header', async () => {
       respond = (response) =>

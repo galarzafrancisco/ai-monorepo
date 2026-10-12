@@ -32,6 +32,8 @@ describe('isAcceptableRedirectUri', () => {
     ['mailto:', 'mailto:someone@example.com'],
     ['an Android intent', 'intent://example.com/#Intent;scheme=http;end'],
     ['not a URL', 'not a url'],
+    ['https without the slashes', 'https:callback'],
+    ['http without the slashes', 'http:localhost/callback'],
   ])('refuses %s', (_name, uri) => {
     expect(isAcceptableRedirectUri(uri)).toBe(false);
   });

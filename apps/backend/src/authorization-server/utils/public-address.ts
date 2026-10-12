@@ -39,6 +39,9 @@ for (const [network, prefix] of [
   nonPublicAddresses.addSubnet(network, prefix, 'ipv6');
 }
 
+const loopbackV6 = new BlockList();
+loopbackV6.addAddress('::1', 'ipv6');
+
 const IPV4_MAPPED_PREFIX = /^::ffff:/i;
 
 /**
@@ -59,4 +62,13 @@ export function isPublicAddress(address: string): boolean {
     return isIP(mapped) === 4 ? isPublicAddress(mapped) : false;
   }
   return !nonPublicAddresses.check(address, 'ipv6');
+}
+
+/** True when `address` is an IP literal for this machine itself (127.0.0.0/8 or ::1) */
+export function isLoopbackAddress(address: string): boolean {
+  const unmapped = address.replace(IPV4_MAPPED_PREFIX, '');
+  if (isIP(unmapped) === 4) {
+    return unmapped.startsWith('127.');
+  }
+  return isIP(address) === 6 && loopbackV6.check(address, 'ipv6');
 }

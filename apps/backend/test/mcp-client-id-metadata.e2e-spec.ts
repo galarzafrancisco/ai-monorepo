@@ -46,7 +46,7 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
       .overrideProvider(CLIENT_METADATA_FETCH_OPTIONS)
       .useValue({
         ...DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
-        allowInsecureLocal: true,
+        allowInsecureLoopback: true,
       })
       .compile();
 

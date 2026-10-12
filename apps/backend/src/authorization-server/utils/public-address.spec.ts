@@ -1,4 +1,4 @@
-import { isPublicAddress } from './public-address';
+import { isLoopbackAddress, isPublicAddress } from './public-address';
 
 describe('isPublicAddress', () => {
   it.each([
@@ -46,5 +46,29 @@ describe('isPublicAddress', () => {
 
   it('accepts a public address written as IPv4-mapped IPv6', () => {
     expect(isPublicAddress('::ffff:8.8.8.8')).toBe(true);
+  });
+});
+
+describe('isLoopbackAddress', () => {
+  it.each([
+    '127.0.0.1',
+    '127.9.9.9',
+    '::1',
+    '0:0:0:0:0:0:0:1',
+    '::ffff:127.0.0.1',
+  ])('recognises %s', (address) => {
+    expect(isLoopbackAddress(address)).toBe(true);
+  });
+
+  it.each([
+    '10.0.0.1',
+    '169.254.169.254',
+    '192.168.1.1',
+    '8.8.8.8',
+    'fe80::1',
+    'localhost',
+    '1270.0.0.1',
+  ])('does not treat %s as loopback', (address) => {
+    expect(isLoopbackAddress(address)).toBe(false);
   });
 });
