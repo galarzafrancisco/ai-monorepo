@@ -111,6 +111,12 @@ export const ErrorCatalog: Record<
     type: '/errors/agents/slug-conflict',
     retryable: false,
   },
+  [ErrorCodes.AGENT_DELETION_NOT_ALLOWED]: {
+    status: 409,
+    title: 'Agent cannot be deleted',
+    type: '/errors/agents/deletion-not-allowed',
+    retryable: false,
+  },
   [ErrorCodes.AGENT_TOOL_PERMISSION_NOT_FOUND]: {
     status: 404,
     title: 'Agent tool permission not found',

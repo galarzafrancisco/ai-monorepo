@@ -3,6 +3,7 @@ import { PopShell } from "../../app/shells/PopShell";
 import { useActorsCtx } from "./ActorsProvider";
 import { ActorsService } from "./api";
 import { Avatar, Text } from "../../ui/primitives";
+import { isDeactivated } from "./deactivated";
 import type { Actor } from "./types";
 import "./ActorSearchPop.css";
 
@@ -80,7 +81,9 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
     if (query.trim()) {
       return searchResults ?? [];
     }
-    return actors;
+    // The provider keeps deleted actors so past work can be attributed; they
+    // cannot be assigned anything new.
+    return actors.filter((actor) => !isDeactivated(actor));
   }, [actors, query, searchResults]);
 
   // Reset highlighted index when filtered results change

@@ -45,6 +45,16 @@ export class ActorResponseDto {
   })
   introduction!: string | null;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description:
+      'When the actor was deleted, or null while active. Deleted actors stay attached to the work they touched but cannot be assigned anything new.',
+    example: null,
+    nullable: true,
+  })
+  deletedAt!: string | null;
+
   /**
    * Factory method to create an ActorResponseDto from an ActorResult.
    * Centralizes mapping logic from service layer result to wire DTO.
@@ -57,6 +67,7 @@ export class ActorResponseDto {
       displayName: result.displayName,
       avatarUrl: result.avatarUrl,
       introduction: result.introduction,
+      deletedAt: result.deletedAt ? result.deletedAt.toISOString() : null,
     };
   }
 
@@ -72,6 +83,7 @@ export class ActorResponseDto {
       displayName: entity.displayName,
       avatarUrl: entity.avatarUrl,
       introduction: entity.introduction,
+      deletedAt: entity.deletedAt ? entity.deletedAt.toISOString() : null,
     };
   }
 }

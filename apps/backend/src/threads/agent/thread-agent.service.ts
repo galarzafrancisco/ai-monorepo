@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { isStepCount, ModelMessage, streamText } from 'ai';
 import { AgentsService } from 'src/agents/agents.service';
+import { THREAD_AGENT_SLUG } from 'src/agents/protected-agents';
 import { AiModelJob } from 'src/ai-providers/enums';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { ActorType } from 'src/identity-provider/enums';
@@ -25,7 +26,7 @@ import { buildThreadScopedInstructions } from './thread-agent.prompts';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
 
-export const THREAD_AGENT_SLUG = 'taico';
+export { THREAD_AGENT_SLUG };
 export const THREAD_AGENT_MAX_STEPS = 25;
 
 type StepOutput = {

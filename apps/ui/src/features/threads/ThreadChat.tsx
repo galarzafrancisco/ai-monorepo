@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Text, Button, Avatar } from "../../ui/primitives";
 import { useThread } from "./useThread";
 import { useAuth } from "../../auth";
+import { actorHandle, isDeactivated } from "../actors";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { ChatSetupCallout } from "../ai-models/ChatSetupCallout";
@@ -103,7 +104,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             const author = message.createdByActor;
             const isOwnMessage = Boolean(user?.actorId && user.actorId === message.createdByActorId);
             const authorName = author?.displayName || "Anonymous";
-            const authorSlug = author?.slug;
+            const authorHandle = author ? actorHandle(author) : null;
 
             return (
               <div
@@ -112,13 +113,13 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               >
                 <div className="thread-chat__message-header">
                   <div className="thread-chat__author">
-                    <Avatar name={authorName} src={author?.avatarUrl || undefined} size="xs" />
+                    <Avatar name={authorName} inactive={isDeactivated(author)} src={author?.avatarUrl || undefined} size="xs" />
                     <Text size="1" weight="semibold">
                       {authorName}
                     </Text>
-                    {authorSlug && (
+                    {authorHandle && (
                       <Text size="1" tone="muted">
-                        @{authorSlug}
+                        {authorHandle}
                       </Text>
                     )}
                   </div>

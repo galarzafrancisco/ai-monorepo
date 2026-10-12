@@ -63,6 +63,8 @@ export interface Actor {
   displayName: string;
   avatarUrl: string | null;
   introduction: string | null;
+  /** Set once the actor has been deleted; absent or null while active. */
+  deletedAt?: string | null;
 }
 
 /**

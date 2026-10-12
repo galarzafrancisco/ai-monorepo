@@ -254,6 +254,7 @@ export class AuthJourneysService {
             displayName: journey.actor.displayName,
             avatarUrl: journey.actor.avatarUrl,
             introduction: journey.actor.introduction,
+            deletedAt: journey.actor.deletedAt ?? null,
           }
         : null,
       mcpAuthorizationFlow: this.mapMcpFlowToResult(

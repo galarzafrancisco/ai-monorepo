@@ -27,6 +27,10 @@ export type ActorResponseDto = {
      * Short description of what this actor is good at and when to assign them tasks
      */
     introduction?: string | null;
+    /**
+     * When the actor was deleted, or null while active. Deleted actors stay attached to the work they touched but cannot be assigned anything new.
+     */
+    deletedAt: string | null;
 };
 export namespace ActorResponseDto {
     /**

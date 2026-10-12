@@ -9,7 +9,7 @@ import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class ActorsService {
     /**
-     * List all actors (users and agents)
+     * List all actors (users and agents), including deleted ones so past work can still be attributed
      * @returns ActorResponseDto List of all actors
      * @throws ApiError
      */
@@ -20,7 +20,7 @@ export class ActorsService {
         });
     }
     /**
-     * Search actors by display name or slug
+     * Search active actors by display name or slug
      * @param query Search query string
      * @param limit Maximum number of results to return
      * @param threshold Minimum score threshold (0-1, higher is stricter)

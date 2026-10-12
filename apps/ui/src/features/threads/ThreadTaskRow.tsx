@@ -2,6 +2,7 @@ import { Avatar, DataRow, Text } from "../../ui/primitives";
 import type { TaskSummaryResponseDto } from "@taico/client/v2";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import "../tasks/TaskRow.css";
+import { actorHandle, isDeactivated } from "../actors";
 
 export function ThreadTaskRow({
   task,
@@ -27,6 +28,7 @@ export function ThreadTaskRow({
       leading={
         <Avatar
           name={avatarActor.displayName}
+          inactive={isDeactivated(avatarActor)}
           size="lg"
           src={avatarActor.avatarUrl || undefined}
         />
@@ -48,9 +50,9 @@ export function ThreadTaskRow({
         {task.description}
       </div>
       <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {task.assigneeActor ? `Assigned: @${task.assigneeActor.slug}` : "unassigned"}
+        {task.assigneeActor ? `Assigned: ${actorHandle(task.assigneeActor)}` : "unassigned"}
         {" - "}
-        {`Created by @${task.createdByActor.slug}`}
+        {`Created by ${actorHandle(task.createdByActor)}`}
       </div>
     </DataRow>
   );

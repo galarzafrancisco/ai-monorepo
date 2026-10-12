@@ -3,6 +3,7 @@ import { ErrorCodes } from "@taico/errors";
 export const AgentsErrorCodes = {
   AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,
   AGENT_SLUG_CONFLICT: ErrorCodes.AGENT_SLUG_CONFLICT,
+  AGENT_DELETION_NOT_ALLOWED: ErrorCodes.AGENT_DELETION_NOT_ALLOWED,
   AGENT_TOOL_PERMISSION_NOT_FOUND: ErrorCodes.AGENT_TOOL_PERMISSION_NOT_FOUND,
   VALIDATION_FAILED: ErrorCodes.VALIDATION_FAILED,
 } as const;
@@ -29,6 +30,16 @@ export class AgentSlugConflictError extends AgentsDomainError {
     super(
       'An agent with this slug already exists.',
       AgentsErrorCodes.AGENT_SLUG_CONFLICT,
+      { slug },
+    );
+  }
+}
+
+export class AgentDeletionNotAllowedError extends AgentsDomainError {
+  constructor(slug: string) {
+    super(
+      'This agent is required by the system and cannot be deleted.',
+      AgentsErrorCodes.AGENT_DELETION_NOT_ALLOWED,
       { slug },
     );
   }

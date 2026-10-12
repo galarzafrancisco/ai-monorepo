@@ -34,6 +34,7 @@ describe('ThreadsService - Parent Task ID', () => {
     displayName: 'Test User',
     avatarUrl: null,
     introduction: null,
+    deletedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   } as ActorEntity;

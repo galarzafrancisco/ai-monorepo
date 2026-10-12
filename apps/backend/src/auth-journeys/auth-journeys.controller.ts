@@ -7,6 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthJourneysService } from './auth-journeys.service';
+import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
 import { AccessTokenGuard } from 'src/auth/guards/guards/access-token.guard';
 import {
   ApiCookieAuth,
@@ -61,14 +62,7 @@ export class AuthJourneysController {
       id: journey.id,
       status: journey.status,
       actor: journey.actor
-        ? {
-            id: journey.actor.id,
-            type: journey.actor.type,
-            slug: journey.actor.slug,
-            displayName: journey.actor.displayName,
-            avatarUrl: journey.actor.avatarUrl,
-            introduction: journey.actor.introduction,
-          }
+        ? ActorResponseDto.fromResult(journey.actor)
         : null,
       mcpAuthorizationFlow: this.mapMcpFlowToResponse(
         journey.mcpAuthorizationFlow,

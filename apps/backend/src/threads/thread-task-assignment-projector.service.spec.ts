@@ -30,6 +30,7 @@ describe('ThreadTaskAssignmentProjectorService', () => {
         displayName: 'Actor One',
         avatarUrl: null,
         introduction: null,
+        deletedAt: null,
       },
     ],
   } as ThreadResult;
@@ -75,6 +76,7 @@ describe('ThreadTaskAssignmentProjectorService', () => {
           displayName: 'Actor Two',
           avatarUrl: null,
           introduction: null,
+          deletedAt: null,
         },
       ],
     });

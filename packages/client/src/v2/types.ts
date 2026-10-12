@@ -244,6 +244,7 @@ export interface ActorResponseDto {
   displayName: string;
   avatarUrl?: string | null;
   introduction?: string | null;
+  deletedAt: string | null;
 }
 
 export interface McpFlowResponseDto {

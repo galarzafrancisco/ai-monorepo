@@ -10,7 +10,7 @@ import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { TaskSearchPop } from './TaskSearchPop';
-import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
+import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import {
   InputRequestResponseDto,
@@ -668,7 +668,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
       <DataRowContainer className='task-detail-page__section'>
         <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
+          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
             getTaskStatusTag(task.status as TaskStatus),
             ...task.tags.map(tag => ({
@@ -688,7 +688,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             {task.createdByActor.displayName}
           </Text>
           <Text as='span' weight='normal' tone='muted' size='3'>
-            {` @${task.createdByActor.slug} created `}
+            {` ${actorHandle(task.createdByActor)} created `}
           </Text>
           <Text as='span' tone='muted' style='mono'>
             #{task.id.slice(0, 6)}
@@ -704,14 +704,14 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
         {task.assigneeActor ? (
           <DataRow
-            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} src={task.assigneeActor.avatarUrl || undefined} />}
+            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} inactive={isDeactivated(task.assigneeActor)} src={task.assigneeActor.avatarUrl || undefined} />}
             onClick={() => setShowAssignPop(true)}
           >
             <Text as='span' weight='medium' size='3'>
               {task.assigneeActor.displayName}
             </Text>
             <Text as='span' weight='normal' tone='muted' size='3'>
-              {` @${task.assigneeActor.slug} assigned`}
+              {` ${actorHandle(task.assigneeActor)} assigned`}
             </Text>
             <Text size='1' tone='muted'>tap to reassign</Text>
           </DataRow>
@@ -797,7 +797,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
       <DataRowContainer className='task-detail-page__section' >
         <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
+          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.createdAt)}</Text>}
         >
@@ -805,7 +805,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             {task.createdByActor.displayName}
           </Text>
           <Text as='span' weight='normal' tone='muted' size='3'>
-            {` @${task.createdByActor.slug}`}
+            {` ${actorHandle(task.createdByActor)}`}
           </Text>
           <Text>
             {task.description ? (
@@ -825,18 +825,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           if (item.type === 'comment') {
             const comment = item.data;
             const name = comment.commenterActor?.displayName || 'unknown';
-            const slug = comment.commenterActor?.slug || 'unknown';
+            const handle = comment.commenterActor ? actorHandle(comment.commenterActor) : '@unknown';
             return (
               <DataRow
                 key={`comment-${comment.id}`}
-                leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined} />}
+                leading={<Avatar size={'sm'} name={name} inactive={isDeactivated(comment.commenterActor)} src={comment.commenterActor?.avatarUrl || undefined} />}
                 topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
               >
                 <Text as='span' weight='medium' size='3'>
                   {name}
                 </Text>
                 <Text as='span' weight='normal' tone='muted' size='3'>
-                  {` @${slug}`}
+                  {` ${handle}`}
                 </Text>
                 <Text>
                   {comment.content}
@@ -849,9 +849,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           const askedByActor = actors.find(a => a.id === inputRequest.askedByActorId);
           const assignedToActor = actors.find(a => a.id === inputRequest.assignedToActorId);
           const name = askedByActor?.displayName || 'Unknown';
-          const slug = askedByActor?.slug || 'unknown';
+          const handle = askedByActor ? actorHandle(askedByActor) : '@unknown';
           const answerName = assignedToActor?.displayName || 'Unknown';
-          const answerSlug = assignedToActor?.slug || 'unknown';
+          const answerHandle = assignedToActor ? actorHandle(assignedToActor) : '@unknown';
           const isResolved = !!inputRequest.resolvedAt;
           const isAssignedToMe = user && inputRequest.assignedToActorId === user.actorId;
           const answerText = typeof inputRequest.answer === 'string'
@@ -869,11 +869,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               key={`input-request-${inputRequest.id}`}
               leading={isResolved ? (
                 <div className="task-detail-page__input-request-avatars">
-                  <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
-                  <Avatar size={'sm'} name={answerName} src={assignedToActor?.avatarUrl || undefined} />
+                  <Avatar size={'sm'} name={name} inactive={isDeactivated(askedByActor)} src={askedByActor?.avatarUrl || undefined} />
+                  <Avatar size={'sm'} name={answerName} inactive={isDeactivated(assignedToActor)} src={assignedToActor?.avatarUrl || undefined} />
                 </div>
               ) : (
-                <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
+                <Avatar size={'sm'} name={name} inactive={isDeactivated(askedByActor)} src={askedByActor?.avatarUrl || undefined} />
               )}
               tags={tags}
               topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.createdAt)}</Text>}
@@ -886,7 +886,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                         {name}
                       </Text>
                       <Text as='span' weight='normal' tone='muted' size='3'>
-                        {` @${slug}`}
+                        {` ${handle}`}
                       </Text>
                     </div>
                     <Text>
@@ -901,7 +901,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                           {answerName}
                         </Text>
                         <Text as='span' weight='normal' tone='muted' size='3'>
-                          {` @${answerSlug}`}
+                          {` ${answerHandle}`}
                         </Text>
                       </div>
                       <Text>
@@ -971,7 +971,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         {visibleExecutions.map((execution) => {
           const actor = actors.find((candidate) => candidate.id === execution.agentActorId);
           const actorName = actor?.displayName ?? shortId(execution.agentActorId);
-          const actorSlug = actor?.slug;
+          const actorHandleLabel = actor ? actorHandle(actor) : '';
           const statusTag = getExecutionStatusTag(execution.status);
           const hasFailureDetails =
             execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
@@ -992,7 +992,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           return (
             <DataRow
               key={execution.id}
-              leading={<Avatar size={'sm'} name={actorName} src={actor?.avatarUrl || undefined} />}
+              leading={<Avatar size={'sm'} name={actorName} inactive={isDeactivated(actor)} src={actor?.avatarUrl || undefined} />}
               tags={staleTag ? [statusTag, sourceTag, staleTag] : [statusTag, sourceTag]}
               topRight={
                 isActive ? (
@@ -1015,7 +1015,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                     {actorName}
                   </Text>
                   <Text as='span' weight='normal' tone='muted' size='3'>
-                    {actorSlug ? ` @${actorSlug}` : ''}
+                    {actorHandleLabel ? ` ${actorHandleLabel}` : ''}
                   </Text>
                 </div>
                 <Text as='span' tone='muted' size='2'>

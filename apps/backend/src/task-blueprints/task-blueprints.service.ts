@@ -51,7 +51,7 @@ export class TaskBlueprintsService {
     let assigneeActorId: string | null = null;
 
     if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActorByIdOrSlug(
+      const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
         input.assigneeActorId,
       );
       if (!assigneeActor) {
@@ -139,7 +139,7 @@ export class TaskBlueprintsService {
       if (input.assigneeActorId === null) {
         blueprint.assigneeActorId = null;
       } else {
-        const assigneeActor = await this.actorService.getActorByIdOrSlug(
+        const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
           input.assigneeActorId,
         );
         if (assigneeActor) {
@@ -338,6 +338,7 @@ export class TaskBlueprintsService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      deletedAt: actor.deletedAt ?? null,
     };
   }
 

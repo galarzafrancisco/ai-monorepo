@@ -7,6 +7,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { AgentsService } from 'src/agents/agents.service';
+import { PROTECTED_AGENT_SLUGS } from 'src/agents/protected-agents';
+import { ActorService } from 'src/identity-provider/actor.service';
 import { createClaudeDev } from './agent/claude-dev.agent';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { createTasks, createTasksScopes } from './mcp/tasks.mcp';
@@ -64,6 +66,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
   constructor(
     @Inject()
     private readonly agentsService: AgentsService,
+    private readonly actorService: ActorService,
     private readonly mcpRegistryService: McpRegistryService,
     private readonly identityProviderService: IdentityProviderService,
     private readonly metaService: MetaService,
@@ -304,6 +307,15 @@ export class AppInitRunner implements OnApplicationBootstrap {
       if (!(error instanceof AgentNotFoundError)) {
         throw error;
       }
+    }
+
+    // A built-in agent someone deleted stays deleted across restarts. Protected
+    // agents cannot be deleted, so they are always recreated when missing.
+    if (
+      !PROTECTED_AGENT_SLUGS.includes(agentConfig.slug) &&
+      (await this.actorService.hasDeletedActorForSlug(agentConfig.slug))
+    ) {
+      return null;
     }
 
     try {

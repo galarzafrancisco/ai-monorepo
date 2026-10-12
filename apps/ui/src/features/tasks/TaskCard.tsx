@@ -2,6 +2,7 @@ import { Avatar, BoardCard, BoardCardAnimation } from "../../ui/primitives";
 import { Task } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import './TaskCard.css';
+import { actorHandle, isDeactivated } from "../actors";
 
 export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void, pulseKey?: number }): React.JSX.Element {
   const avatarActor = task.assigneeActor ?? task.createdByActor;
@@ -24,7 +25,7 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
   }
   return (
     <BoardCard
-      leading={<Avatar name={avatarActor.displayName} size='md' src={avatarActor.avatarUrl || undefined} />}
+      leading={<Avatar name={avatarActor.displayName} inactive={isDeactivated(avatarActor)} size='md' src={avatarActor.avatarUrl || undefined} />}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
       animation={animation}
@@ -35,7 +36,7 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
         <>
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
           <span className="row-detail truncate">
-            {task.assigneeActor ? `Assigned: @${task.assigneeActor.slug}` : "unassigned"}
+            {task.assigneeActor ? `Assigned: ${actorHandle(task.assigneeActor)}` : "unassigned"}
           </span>
         </>
       }
