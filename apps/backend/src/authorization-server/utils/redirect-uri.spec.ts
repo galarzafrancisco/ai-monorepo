@@ -26,6 +26,11 @@ describe('isAcceptableRedirectUri', () => {
     ['javascript:', 'javascript:alert(1)'],
     ['data:', 'data:text/html,<script>alert(1)</script>'],
     ['file:', 'file:///etc/passwd'],
+    ["a browser's internal pages", 'chrome://settings/'],
+    ['a browser extension page', 'chrome-extension://abcdefgh/page.html'],
+    ['a websocket', 'wss://example.com/callback'],
+    ['mailto:', 'mailto:someone@example.com'],
+    ['an Android intent', 'intent://example.com/#Intent;scheme=http;end'],
     ['not a URL', 'not a url'],
   ])('refuses %s', (_name, uri) => {
     expect(isAcceptableRedirectUri(uri)).toBe(false);

@@ -4,6 +4,7 @@ import {
   ClientMetadataDocumentFetcher,
   ClientMetadataFetchError,
   DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
+  publicAddressesOf,
 } from './client-metadata-document.fetcher';
 
 describe('ClientMetadataDocumentFetcher', () => {
@@ -37,6 +38,27 @@ describe('ClientMetadataDocumentFetcher', () => {
       const fetching = fetcher.fetch(new URL(url));
       await expect(fetching).rejects.toBeInstanceOf(ClientMetadataFetchError);
       await expect(fetching).rejects.toThrow(reason);
+    });
+  });
+
+  describe('publicAddressesOf', () => {
+    it('keeps only the public addresses of a host that also has private ones', () => {
+      expect(
+        publicAddressesOf([
+          { address: '10.0.0.5', family: 4 },
+          { address: '93.184.216.34', family: 4 },
+          { address: 'fd00::1', family: 6 },
+        ]),
+      ).toEqual([{ address: '93.184.216.34', family: 4 }]);
+    });
+
+    it('leaves nothing to connect to for a host with no public address', () => {
+      expect(
+        publicAddressesOf([
+          { address: '10.0.0.5', family: 4 },
+          { address: '::1', family: 6 },
+        ]),
+      ).toEqual([]);
     });
   });
 

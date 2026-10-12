@@ -1,15 +1,45 @@
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-// Schemes that run or read content in the user's browser instead of handing
-// the authorization response to an application.
-const FORBIDDEN_SCHEMES = new Set([
-  'javascript:',
-  'data:',
-  'vbscript:',
-  'file:',
-  'blob:',
-  'about:',
-]);
+// A redirect URI with its own scheme hands the authorization response to a
+// native app (RFC 8252 section 7.1), and apps pick their scheme freely
+// (cursor://, vscode://, com.example.app:/). These schemes are not app links:
+// the browser handles them itself, by running or showing content, opening its
+// own internal pages, or starting another kind of request.
+const FORBIDDEN_SCHEMES = new Set(
+  [
+    'javascript',
+    'data',
+    'vbscript',
+    'file',
+    'blob',
+    'filesystem',
+    'about',
+    'view-source',
+    'chrome',
+    'chrome-extension',
+    'chrome-untrusted',
+    'devtools',
+    'edge',
+    'brave',
+    'opera',
+    'vivaldi',
+    'moz-extension',
+    'resource',
+    'jar',
+    'safari-extension',
+    'safari-web-extension',
+    'ms-browser-extension',
+    'res',
+    'ws',
+    'wss',
+    'ftp',
+    'sftp',
+    'mailto',
+    'tel',
+    'sms',
+    'intent',
+  ].map((scheme) => `${scheme}:`),
+);
 
 function parse(uri: string): URL | null {
   try {

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { lookup as dnsLookup } from 'dns';
+import { lookup as dnsLookup, LookupAddress } from 'dns';
 import * as http from 'http';
 import * as https from 'https';
 import { isIP, LookupFunction } from 'net';
@@ -141,19 +141,18 @@ export class ClientMetadataDocumentFetcher {
 }
 
 /**
- * DNS lookup that refuses hosts with any non-public address. Passing it as the
- * socket's lookup means the connection uses the very addresses that were
- * checked, so a second DNS answer cannot swap in an internal address.
+ * DNS lookup that only hands public addresses to the socket, and fails when a
+ * host has none. Passing it as the socket's lookup means the connection uses
+ * the very addresses that were checked, so a second DNS answer cannot swap in
+ * an internal address.
  */
 const publicOnlyLookup: LookupFunction = (hostname, options, callback) => {
   dnsLookup(hostname, { ...options, all: true }, (error, addresses) => {
     if (error) {
       return callback(error, '', 0);
     }
-    if (
-      addresses.length === 0 ||
-      addresses.some(({ address }) => !isPublicAddress(address))
-    ) {
+    const publicAddresses = publicAddressesOf(addresses);
+    if (publicAddresses.length === 0) {
       return callback(
         new ClientMetadataFetchError(
           'the URL resolves to a non-public address',
@@ -163,8 +162,17 @@ const publicOnlyLookup: LookupFunction = (hostname, options, callback) => {
       );
     }
     if (options.all) {
-      return callback(null, addresses);
+      return callback(null, publicAddresses);
     }
-    callback(null, addresses[0].address, addresses[0].family);
+    callback(null, publicAddresses[0].address, publicAddresses[0].family);
   });
 };
+
+/**
+ * The addresses of a host that may be connected to. A host can legitimately
+ * answer with a mix, for example split-horizon DNS; its non-public addresses
+ * are dropped rather than the whole host refused.
+ */
+export function publicAddressesOf(addresses: LookupAddress[]): LookupAddress[] {
+  return addresses.filter(({ address }) => isPublicAddress(address));
+}
