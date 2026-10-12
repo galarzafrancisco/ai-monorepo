@@ -5,6 +5,7 @@ import { useContextCtx } from "./ContextProvider";
 import { ContextBlockTree } from "./ContextBlockTree";
 import { Text, Row } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import "./ContextHome.css";
 
@@ -58,9 +59,7 @@ export function ContextLayout(): React.JSX.Element {
             </div>
             <nav className="context-layout__drawer-nav">
               {MAIN_NAVEGATION_ITEMS.map((item) => {
-                const isActive =
-                  location.pathname === item.path ||
-                  location.pathname.startsWith(item.path + '/');
+                const isActive = item.path === getActiveNavigationPath(location.pathname, MAIN_NAVEGATION_ITEMS);
                 return (
                   <Link
                     key={item.path}

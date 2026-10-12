@@ -4,6 +4,7 @@ import './BetaShellMobile.css';
 import './BetaShellDesktop.css';
 import { Stack } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
 import { Link, useLocation } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useAuth } from "../../auth/AuthContext";
@@ -46,6 +47,8 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
     setIsCollapsed(!isCollapsed);
   };
 
+  const activeNavPath = getActiveNavigationPath(location.pathname, navItems);
+
   return (
     <div className={`${isDesktop ? 'beta-shell__desktop' : 'beta-shell__mobile'}`} data-shell={`${isDesktop ? 'desktop' : 'mobile'}`}>
 
@@ -56,7 +59,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
             <div className="beta-shell__desktop__navInner">
               <Stack spacing="1">
                 {navItems.map(item => {
-                  const isActive = location.pathname.startsWith(item.path);
+                  const isActive = item.path === activeNavPath;
                   return (
                     <Link
                       key={item.path}
