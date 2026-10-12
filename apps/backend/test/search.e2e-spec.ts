@@ -5,7 +5,9 @@ import { App } from 'supertest/types';
 import cookieParser from 'cookie-parser';
 import { createServer, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
+import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { SearchIndexerService } from '../src/search/index/search-indexer.service';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
@@ -276,6 +278,22 @@ describe('Search E2E', () => {
 
       await api('delete', `/context/blocks/${id}`).expect(204);
       await eventually(async () => expect(await search('flights agency')).toEqual([]));
+    });
+
+    it('picks up a change the events did not report, such as a renamed tag', async () => {
+      const id = (
+        await api('post', '/context/blocks')
+          .send({ title: 'Tagged block', content: 'Plain content.', tagNames: ['zebrafish'] })
+          .expect(201)
+      ).body.id;
+      await eventually(async () => expect((await search('zebrafish'))[0]?.id).toBe(id));
+
+      // Renamed behind the application's back, so no event fires and no timestamp moves.
+      await app.get(DataSource).query(`UPDATE tags SET name = 'platypus' WHERE name = 'zebrafish'`);
+      await app.get(SearchIndexerService).sweep();
+
+      expect((await search('platypus'))[0]?.id).toBe(id);
+      expect(await search('zebrafish')).toEqual([]);
     });
 
     it('returns nothing for a query that matches nothing', async () => {

@@ -111,10 +111,13 @@ export class SearchIndexerService implements OnApplicationBootstrap {
     const parameters = scoped ? [resultId] : [];
     const entityType = `'${projection.entityType}'`;
 
-    // One result is always rewritten: a tag change alters it without touching its timestamp.
+    // Tags live in other tables: adding, removing or renaming one changes an item's
+    // keywords without touching its timestamp, so the keywords are compared as well.
     const outdated = scoped
       ? 'TRUE'
-      : `d."id" IS NULL OR d."source_updated_at" IS DISTINCT FROM src.source_updated_at`;
+      : `d."id" IS NULL
+         OR d."source_updated_at" IS DISTINCT FROM src.source_updated_at
+         OR d."keywords" IS DISTINCT FROM src.keywords`;
 
     const upserted: Array<{ count: string }> = await this.dataSource.query(
       `WITH written AS (
