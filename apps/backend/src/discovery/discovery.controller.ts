@@ -131,6 +131,8 @@ export class DiscoveryController {
       grant_types_supported: metadata.grant_types_supported,
       token_endpoint_auth_methods_supported:
         metadata.token_endpoint_auth_methods_supported,
+      token_endpoint_auth_signing_alg_values_supported:
+        metadata.token_endpoint_auth_signing_alg_values_supported,
       code_challenge_methods_supported: metadata.code_challenge_methods_supported,
       client_id_metadata_document_supported:
         metadata.client_id_metadata_document_supported,

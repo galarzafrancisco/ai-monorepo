@@ -1,6 +1,7 @@
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
+import { CryptoKey, exportJWK, generateKeyPair, JWK, SignJWT } from 'jose';
 
 /**
  * A small MCP client for tests. It follows the MCP authorization spec the way
@@ -12,7 +13,8 @@ import { AddressInfo } from 'net';
  *      OpenID Connect locations) and check the issuer
  *   4. get a client_id: a Client ID Metadata Document URL when the client has
  *      one and the server supports it, dynamic registration otherwise
- *   5. authorization code + PKCE, then the token request
+ *   5. authorization code + PKCE, then the token request, signed with the
+ *      client's private key when it has one (private_key_jwt)
  *
  * The one thing it cannot do is be the user, so the test supplies `approve`.
  */
@@ -24,7 +26,29 @@ export type AuthorizationServerMetadata = {
   registration_endpoint?: string;
   code_challenge_methods_supported?: string[];
   client_id_metadata_document_supported?: boolean;
+  token_endpoint_auth_methods_supported?: string[];
 };
+
+/** A key pair the client authenticates with, and the public half it publishes */
+export type ClientSigningKey = {
+  privateKey: CryptoKey;
+  publicJwk: JWK;
+  kid: string;
+  alg: string;
+};
+
+export async function generateClientSigningKey(
+  alg = 'RS256',
+): Promise<ClientSigningKey> {
+  const kid = `key-${randomBytes(4).toString('hex')}`;
+  const { privateKey, publicKey } = await generateKeyPair(alg);
+  return {
+    privateKey,
+    publicJwk: { ...(await exportJWK(publicKey)), kid, alg, use: 'sig' },
+    kid,
+    alg,
+  };
+}
 
 export type TokenSet = {
   access_token: string;
@@ -43,6 +67,8 @@ export type FakeMcpClientOptions = {
   redirectUri: string;
   /** Set when the client hosts a Client ID Metadata Document */
   clientMetadataUrl?: string;
+  /** Set when the client authenticates its token requests with private_key_jwt */
+  signingKey?: ClientSigningKey;
   /** Plays the user: opens the authorization URL and returns the URL the browser is sent back to */
   approve: (authorizationUrl: URL) => Promise<URL>;
   /**
@@ -193,6 +219,7 @@ export class FakeMcpClient {
   async finishAuthorization(
     pending: PendingAuthorization,
     callbackUrl: URL,
+    assertion?: string | null,
   ): Promise<TokenSet> {
     const error = callbackUrl.searchParams.get('error');
     if (error) {
@@ -203,12 +230,15 @@ export class FakeMcpClient {
     if (callbackUrl.searchParams.get('state') !== pending.state) {
       throw new Error('state mismatch in the authorization response');
     }
-    return this.requestToken({
-      grant_type: 'authorization_code',
-      code: callbackUrl.searchParams.get('code')!,
-      redirect_uri: this.options.redirectUri,
-      code_verifier: pending.codeVerifier,
-    });
+    return this.requestToken(
+      {
+        grant_type: 'authorization_code',
+        code: callbackUrl.searchParams.get('code')!,
+        redirect_uri: this.options.redirectUri,
+        code_verifier: pending.codeVerifier,
+      },
+      assertion,
+    );
   }
 
   /** The whole flow, from an MCP server URL to tokens */
@@ -227,26 +257,78 @@ export class FakeMcpClient {
     return this.finishAuthorization(pending, callbackUrl);
   }
 
-  async refresh(): Promise<TokenSet> {
-    return this.requestToken({
-      grant_type: 'refresh_token',
-      refresh_token: this.tokens!.refresh_token,
-    });
+  async refresh(assertion?: string | null): Promise<TokenSet> {
+    return this.requestToken(
+      {
+        grant_type: 'refresh_token',
+        refresh_token: this.tokens!.refresh_token,
+      },
+      assertion,
+    );
   }
 
-  async requestToken(parameters: Record<string, string>): Promise<TokenSet> {
-    const response = await this.fetch(this.requireMetadata().token_endpoint, {
+  /**
+   * The JWT a private_key_jwt client sends with every token request
+   * (RFC 7523): issued by and about the client, addressed to the
+   * authorization server, short-lived and used once.
+   */
+  async signAssertion(
+    claims: Record<string, unknown> = {},
+    key: ClientSigningKey = this.options.signingKey!,
+  ): Promise<string> {
+    const now = Math.floor(Date.now() / 1000);
+    return new SignJWT({
+      iss: this.clientId,
+      sub: this.clientId,
+      aud: this.requireMetadata().issuer,
+      jti: randomUUID(),
+      iat: now,
+      exp: now + 60,
+      ...claims,
+    })
+      .setProtectedHeader({ alg: key.alg, kid: key.kid })
+      .sign(key.privateKey);
+  }
+
+  /**
+   * Sends a token request. `assertion` replaces the client assertion the
+   * client would send, and `null` leaves it out.
+   */
+  async requestToken(
+    parameters: Record<string, string>,
+    assertion?: string | null,
+  ): Promise<TokenSet> {
+    const metadata = this.requireMetadata();
+    if (
+      assertion === undefined &&
+      this.options.signingKey &&
+      metadata.token_endpoint_auth_methods_supported?.includes(
+        'private_key_jwt',
+      )
+    ) {
+      assertion = await this.signAssertion();
+    }
+
+    const response = await this.fetch(metadata.token_endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: this.clientId!,
         resource: this.resource!,
+        ...(assertion
+          ? {
+              client_assertion_type:
+                'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+              client_assertion: assertion,
+            }
+          : {}),
         ...parameters,
       }).toString(),
     });
     if (!response.ok) {
+      const problem = await response.json().catch(() => ({}));
       throw new Error(
-        `token request failed: ${response.status} ${await response.text()}`,
+        `token request failed: ${response.status} ${problem.code}: ${problem.detail}`,
       );
     }
     this.tokens = await response.json();

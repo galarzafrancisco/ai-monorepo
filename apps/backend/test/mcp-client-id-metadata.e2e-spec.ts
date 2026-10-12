@@ -19,7 +19,12 @@ import { getConfig } from '../src/config/env.config';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
-import { ClientMetadataHost, FakeMcpClient } from './helpers/fake-mcp-client';
+import {
+  ClientMetadataHost,
+  ClientSigningKey,
+  FakeMcpClient,
+  generateClientSigningKey,
+} from './helpers/fake-mcp-client';
 
 const TASKS_MCP_PATH = '/api/v1/tasks/tasks/mcp';
 const CONTEXT_MCP_PATH = '/api/v1/context/blocks/mcp';
@@ -47,6 +52,8 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
       .useValue({
         ...DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
         allowInsecureLoopback: true,
+        // Lets a test rotate a client's keys without waiting a minute
+        minKeySetRefetchIntervalMs: 0,
       })
       .compile();
 
@@ -145,13 +152,35 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
   function newClient(
     clientMetadataUrl?: string,
     redirectUri = REDIRECT_URI,
+    signingKey?: ClientSigningKey,
   ): FakeMcpClient {
     return new FakeMcpClient({
       redirectUri,
       clientMetadataUrl,
+      signingKey,
       approve,
       route,
     });
+  }
+
+  /**
+   * A client set up the way ChatGPT is: its document asks for private_key_jwt
+   * and points at a key set it hosts next to it.
+   */
+  async function newSigningClient(document: Record<string, unknown> = {}) {
+    const key = await generateClientSigningKey();
+    const keysPath = `/keys/${++documentCounter}/jwks.json`;
+    const jwksUri = metadataHost.respond(keysPath, {
+      body: JSON.stringify({ keys: [key.publicJwk] }),
+    });
+    const clientId = publishDocument({
+      token_endpoint_auth_method: 'private_key_jwt',
+      token_endpoint_auth_signing_alg: 'RS256',
+      jwks_uri: jwksUri,
+      ...document,
+    });
+    const client = newClient(clientId, REDIRECT_URI, key);
+    return { client, clientId, key, keysPath, jwksUri };
   }
 
   /** Sends an authorization request directly, for requests the server must refuse */
@@ -179,6 +208,10 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
       const metadata = await client.discover(tasksMcpUrl);
 
       expect(metadata.client_id_metadata_document_supported).toBe(true);
+      expect(metadata.token_endpoint_auth_methods_supported).toEqual([
+        'none',
+        'private_key_jwt',
+      ]);
       expect(metadata.registration_endpoint).toBeDefined();
       expect(client.metadataUrl).toBe(
         `${issuerUrl}/.well-known/oauth-authorization-server/mcp/tasks/0.0.0`,
@@ -339,6 +372,265 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
     });
   });
 
+  describe('a client that authenticates with a private key (private_key_jwt)', () => {
+    it('connects, calls the MCP server and refreshes, signing each token request', async () => {
+      const { client, clientId } = await newSigningClient();
+
+      const tokens = await client.connect(tasksMcpUrl);
+
+      const stored = await clients.findOneByOrFail({ clientId });
+      expect(stored.tokenEndpointAuthMethod).toBe('private_key_jwt');
+      expect(decodeJwt(tokens.access_token).client_id).toBe(clientId);
+      expect((await client.callMcp()).status).toBe(200);
+
+      await client.refresh();
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('accepts the token endpoint as the audience of the assertion', async () => {
+      // Clients written before the audience was narrowed to the issuer send this
+      const { client } = await newSigningClient();
+      await client.discover(tasksMcpUrl);
+      await client.obtainClientId();
+      const pending = client.startAuthorization();
+      const callback = await approve(pending.authorizationUrl);
+
+      await client.finishAuthorization(
+        pending,
+        callback,
+        await client.signAssertion({ aud: client.metadata!.token_endpoint }),
+      );
+
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('accepts keys published inside the metadata document', async () => {
+      const key = await generateClientSigningKey();
+      const clientId = publishDocument({
+        token_endpoint_auth_method: 'private_key_jwt',
+        jwks: { keys: [key.publicJwk] },
+      });
+      const client = newClient(clientId, REDIRECT_URI, key);
+
+      await client.connect(tasksMcpUrl);
+
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('identifies the client by its assertion when client_id is left out', async () => {
+      const { client } = await newSigningClient();
+      await client.connect(tasksMcpUrl);
+
+      const response = await fetch(route(client.metadata!.token_endpoint), {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: client.tokens!.refresh_token,
+          client_assertion_type:
+            'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+          client_assertion: await client.signAssertion(),
+        }).toString(),
+      });
+
+      expect(response.status).toBe(201);
+    });
+
+    it('keeps working after the client rotates its keys', async () => {
+      const { client, key, keysPath } = await newSigningClient();
+      await client.connect(tasksMcpUrl);
+
+      const newKey = await generateClientSigningKey();
+      metadataHost.respond(keysPath, {
+        body: JSON.stringify({ keys: [newKey.publicJwk] }),
+      });
+
+      await client.refresh(await client.signAssertion({}, newKey));
+      expect((await client.callMcp()).status).toBe(200);
+      // and the key that was rotated out no longer works
+      await expect(
+        client.refresh(await client.signAssertion({}, key)),
+      ).rejects.toThrow(/not signed with one of the client's keys/);
+    });
+
+    describe('token requests that are refused', () => {
+      async function authorizedClient() {
+        const setup = await newSigningClient();
+        await setup.client.discover(tasksMcpUrl);
+        await setup.client.obtainClientId();
+        const pending = setup.client.startAuthorization();
+        const callback = await approve(pending.authorizationUrl);
+        return { ...setup, pending, callback };
+      }
+
+      it('refuses an authorization code presented without an assertion', async () => {
+        // What someone who intercepted the code and the PKCE verifier could send
+        const { client, pending, callback } = await authorizedClient();
+
+        await expect(
+          client.finishAuthorization(pending, callback, null),
+        ).rejects.toThrow(/401.*must authenticate with a client_assertion/);
+
+        // The refusal did not burn the code: the real client can still redeem it
+        await client.finishAuthorization(pending, callback);
+        expect((await client.callMcp()).status).toBe(200);
+      });
+
+      it('refuses a stolen refresh token presented without the key', async () => {
+        const { client } = await newSigningClient();
+        await client.connect(tasksMcpUrl);
+        const stolen = client.tokens!.refresh_token;
+
+        await expect(client.refresh(null)).rejects.toThrow(
+          /401.*INVALID_CLIENT_ASSERTION/,
+        );
+
+        // and it was not rotated away by the failed attempt
+        expect(client.tokens!.refresh_token).toBe(stolen);
+        await client.refresh();
+      });
+
+      it('refuses an assertion signed with another key', async () => {
+        const { client, pending, callback } = await authorizedClient();
+        const otherKey = await generateClientSigningKey();
+
+        await expect(
+          client.finishAuthorization(
+            pending,
+            callback,
+            await client.signAssertion({}, otherKey),
+          ),
+        ).rejects.toThrow(/not signed with one of the client's keys/);
+        // also when it claims the key id of the real key
+        await expect(
+          client.finishAuthorization(
+            pending,
+            callback,
+            await client.signAssertion(
+              {},
+              { ...otherKey, kid: client['options'].signingKey!.kid },
+            ),
+          ),
+        ).rejects.toThrow(/signature is invalid/);
+      });
+
+      it.each([
+        [
+          'issued by someone else',
+          { iss: 'https://other.example/client.json' },
+          /"iss" claim/,
+        ],
+        [
+          'about someone else',
+          { sub: 'https://other.example/client.json' },
+          /"sub" claim/,
+        ],
+        [
+          'addressed to another server',
+          { aud: 'https://other.example' },
+          /"aud" claim/,
+        ],
+        [
+          'that has expired',
+          { exp: Math.floor(Date.now() / 1000) - 300 },
+          /has expired/,
+        ],
+        ['without an expiry', { exp: undefined }, /"exp" claim/],
+      ])('refuses an assertion %s', async (_name, claims, reason) => {
+        const { client, pending, callback } = await authorizedClient();
+
+        await expect(
+          client.finishAuthorization(
+            pending,
+            callback,
+            await client.signAssertion(claims),
+          ),
+        ).rejects.toThrow(reason);
+      });
+
+      it('refuses an assertion addressed to another MCP server of this Taico', async () => {
+        const { client, pending, callback } = await authorizedClient();
+
+        await expect(
+          client.finishAuthorization(
+            pending,
+            callback,
+            await client.signAssertion({
+              aud: `${issuerUrl}/mcp/context/0.0.0`,
+            }),
+          ),
+        ).rejects.toThrow(/"aud" claim/);
+      });
+
+      it('refuses an unsigned assertion and one with the wrong type', async () => {
+        const { client, pending, callback } = await authorizedClient();
+        const unsigned = [
+          Buffer.from(JSON.stringify({ alg: 'none' })).toString('base64url'),
+          Buffer.from(
+            JSON.stringify({
+              iss: client.clientId,
+              sub: client.clientId,
+              aud: client.metadata!.issuer,
+              exp: Math.floor(Date.now() / 1000) + 60,
+            }),
+          ).toString('base64url'),
+          '',
+        ].join('.');
+
+        await expect(
+          client.finishAuthorization(pending, callback, unsigned),
+        ).rejects.toThrow(/401/);
+
+        const response = await fetch(route(client.metadata!.token_endpoint), {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: client.clientId!,
+            code: callback.searchParams.get('code')!,
+            redirect_uri: REDIRECT_URI,
+            code_verifier: pending.codeVerifier,
+            client_assertion_type: 'urn:example:something-else',
+            client_assertion: await client.signAssertion(),
+          }).toString(),
+        });
+        expect(response.status).toBe(401);
+        expect((await response.json()).detail).toMatch(/client_assertion_type/);
+      });
+
+      it('refuses a client whose key set cannot be fetched', async () => {
+        const { client, pending, callback, keysPath } =
+          await authorizedClient();
+        metadataHost.respond(keysPath, { status: 500, body: '' });
+
+        await expect(
+          client.finishAuthorization(pending, callback),
+        ).rejects.toThrow(/401.*keys could not be fetched.*HTTP 500/);
+      });
+    });
+
+    it('does not let a client register dynamically with private_key_jwt', async () => {
+      await request(httpServer)
+        .post('/api/v1/auth/clients/register/mcp/tasks/0.0.0')
+        .send({
+          client_name: 'Registers with a key it cannot publish',
+          redirect_uris: [REDIRECT_URI],
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'private_key_jwt',
+        })
+        .expect(400);
+    });
+
+    it('still lets a public metadata document client connect without an assertion', async () => {
+      const client = newClient(publishDocument());
+
+      await client.connect(tasksMcpUrl);
+
+      expect((await client.callMcp()).status).toBe(200);
+    });
+  });
+
   describe('metadata documents that are refused', () => {
     // The redirect URI of a request cannot be trusted before the client is
     // verified, so these are answered with an error page, never a redirect.
@@ -365,7 +657,7 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
     it('refuses a document that asks for a client secret', async () => {
       await expectRefused(
         publishDocument({ token_endpoint_auth_method: 'client_secret_basic' }),
-        /token_endpoint_auth_method must be "none"/,
+        /token_endpoint_auth_method must be "none" or "private_key_jwt"/,
       );
       await expectRefused(
         publishDocument({ client_secret: 'hunter2' }),
@@ -373,10 +665,32 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
       );
     });
 
-    it('refuses a document that asks for client authentication we do not perform', async () => {
+    it('refuses a private_key_jwt document that does not say where its keys are', async () => {
       await expectRefused(
         publishDocument({ token_endpoint_auth_method: 'private_key_jwt' }),
-        /token_endpoint_auth_method must be "none"/,
+        /needs exactly one of jwks_uri and jwks/,
+      );
+    });
+
+    it('refuses a document that publishes a private key', async () => {
+      const key = await generateClientSigningKey();
+      await expectRefused(
+        publishDocument({
+          token_endpoint_auth_method: 'private_key_jwt',
+          jwks: { keys: [{ ...key.publicJwk, d: 'the-private-exponent' }] },
+        }),
+        /public keys only/,
+      );
+    });
+
+    it('refuses a signing algorithm that uses a shared secret', async () => {
+      await expectRefused(
+        publishDocument({
+          token_endpoint_auth_method: 'private_key_jwt',
+          token_endpoint_auth_signing_alg: 'HS256',
+          jwks_uri: `${metadataHost.origin}/keys/any.json`,
+        }),
+        /token_endpoint_auth_signing_alg "HS256" is not supported/,
       );
     });
 

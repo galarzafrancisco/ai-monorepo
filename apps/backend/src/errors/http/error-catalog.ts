@@ -171,6 +171,12 @@ export const ErrorCatalog: Record<
     type: '/errors/authz/invalid-client-metadata',
     retryable: false,
   },
+  [ErrorCodes.INVALID_CLIENT_ASSERTION]: {
+    status: 401,
+    title: 'Client authentication failed',
+    type: '/errors/token/invalid-client-assertion',
+    retryable: false,
+  },
   [ErrorCodes.SERVER_NOT_FOUND]: {
     status: 404,
     title: 'MCP server not found',

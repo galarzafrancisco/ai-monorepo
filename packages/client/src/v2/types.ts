@@ -44,7 +44,7 @@ export interface PatchProjectDto {
 
 export interface RegisterClientDto {
   redirect_uris: string[];
-  token_endpoint_auth_method: 'none' | 'client_secret_basic';
+  token_endpoint_auth_method: 'none' | 'client_secret_basic' | 'private_key_jwt';
   grant_types: ('authorization_code' | 'refresh_token')[];
   response_types: 'code'[];
   client_name: string;
@@ -65,7 +65,7 @@ export interface ClientRegistrationResponseDto {
   client_name: string;
   redirect_uris: string[];
   grant_types: ('authorization_code' | 'refresh_token')[];
-  token_endpoint_auth_method: 'none' | 'client_secret_basic';
+  token_endpoint_auth_method: 'none' | 'client_secret_basic' | 'private_key_jwt';
   scope?: string | null;
   contacts?: string[] | null;
   client_id_issued_at: number;
@@ -101,7 +101,9 @@ export interface GetConsentMetadataResponseDto {
 
 export interface TokenRequestDto {
   grant_type: 'authorization_code' | 'refresh_token';
-  client_id: string;
+  client_id?: string;
+  client_assertion_type?: string;
+  client_assertion?: string;
   code?: string;
   redirect_uri?: string;
   code_verifier?: string;
@@ -1190,6 +1192,7 @@ export interface AuthorizationServerMetadataDto {
   response_types_supported: string[];
   grant_types_supported: ('authorization_code' | 'refresh_token')[];
   token_endpoint_auth_methods_supported: string[];
+  token_endpoint_auth_signing_alg_values_supported: string[];
   code_challenge_methods_supported: string[];
   client_id_metadata_document_supported: boolean;
 }

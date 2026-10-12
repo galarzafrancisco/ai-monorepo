@@ -22,6 +22,7 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
 import { AuthCryptoModule } from '../auth/crypto/auth-crypto.module';
 import { WebAuthService } from './web-auth.service';
 import { ClientIdMetadataService } from './client-id-metadata.service';
+import { ClientAssertionService } from './client-assertion.service';
 import {
   CLIENT_METADATA_FETCH_OPTIONS,
   ClientMetadataDocumentFetcher,
@@ -53,6 +54,7 @@ import {
     },
     ClientMetadataDocumentFetcher,
     ClientIdMetadataService,
+    ClientAssertionService,
     AuthorizationService,
     TokenService,
     TokenExchangeService,

@@ -525,9 +525,10 @@ Phase 2 continues as for a registered client
 - its `client_id` is exactly the URL it was fetched from
 - `client_name` and `redirect_uris` are present
 - redirect URIs are https, http on localhost, or an app's own scheme
-- `token_endpoint_auth_method` is `none` or absent. Only public clients are
-  supported: shared secrets are forbidden by the CIMD draft, and
-  `private_key_jwt` is refused because client assertions are not verified.
+- `token_endpoint_auth_method` is `none` (or absent) or `private_key_jwt`.
+  Shared secrets are forbidden by the CIMD draft.
+- a `private_key_jwt` client says where its public keys are, with exactly one
+  of `jwks_uri` and `jwks`, and the keys are public keys only
 
 **Fetching is treated as hostile input** (the URL comes from whoever sent the
 request): https only, public IP addresses only (checked on the address the
@@ -538,6 +539,40 @@ most a day.
 The client name is self-declared. The consent screen therefore also shows the
 host the document is published on and the host the user is redirected to, and
 warns when the redirect goes to the user's own computer.
+
+### Client authentication with a private key (`private_key_jwt`)
+
+A metadata document client can ask to authenticate at the token endpoint.
+ChatGPT does. The client holds a private key and publishes the public half.
+With every token request (code exchange and refresh) it sends a JWT it just
+signed (RFC 7523):
+
+```
+client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer
+client_assertion=<JWT signed by the client>
+```
+
+`ClientAssertionService` accepts the request only when the JWT:
+- is signed by one of the client's published keys, with an asymmetric
+  algorithm (and the one the document declares, if it declares one)
+- has `iss` and `sub` equal to the `client_id`
+- has `aud` equal to this authorization server's issuer
+  (`{ISSUER_URL}/mcp/{server}/{version}`) or its token endpoint
+- has an `exp` in the future
+
+For such a client an authorization code or refresh token is not enough on its
+own: without the private key the token endpoint answers 401, and the code or
+refresh token stays valid for the real client.
+
+A key set at `jwks_uri` is fetched under the same rules as the document
+(64 kB limit) and cached in memory. When an assertion names a key that is not
+in the cached copy, the key set is fetched again, at most once a minute per
+client, so key rotation needs no action on our side.
+
+Not done: assertions are not tracked by `jti`, so one could be replayed until
+it expires by someone who can already read the client's TLS traffic to us.
+Clients that register dynamically cannot use `private_key_jwt`; they have
+nowhere to publish keys.
 
 ### One flow per authorization request
 

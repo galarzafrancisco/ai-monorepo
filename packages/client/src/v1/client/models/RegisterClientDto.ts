@@ -71,6 +71,7 @@ export namespace RegisterClientDto {
     export enum token_endpoint_auth_method {
         NONE = 'none',
         CLIENT_SECRET_BASIC = 'client_secret_basic',
+        PRIVATE_KEY_JWT = 'private_key_jwt',
     }
 }
 

@@ -19,6 +19,14 @@ export type ClientMetadataFetchOptions = {
   timeoutMs: number;
   /** The CIMD draft recommends refusing documents larger than 5 kB */
   maxBytes: number;
+  /** Key sets hold a few public keys each, which need more room than a document */
+  maxKeySetBytes: number;
+  /**
+   * How soon a client's key set may be fetched again when an assertion names
+   * a key that is not in the cached copy. Stops a stream of bad assertions
+   * from becoming a stream of outbound requests.
+   */
+  minKeySetRefetchIntervalMs: number;
 };
 
 export const DEFAULT_CLIENT_METADATA_FETCH_OPTIONS: ClientMetadataFetchOptions =
@@ -26,6 +34,8 @@ export const DEFAULT_CLIENT_METADATA_FETCH_OPTIONS: ClientMetadataFetchOptions =
     allowInsecureLoopback: false,
     timeoutMs: 5000,
     maxBytes: 5 * 1024,
+    maxKeySetBytes: 64 * 1024,
+    minKeySetRefetchIntervalMs: 60 * 1000,
   };
 
 export type FetchedClientMetadataDocument = {
@@ -53,8 +63,20 @@ export class ClientMetadataDocumentFetcher {
     return this.options.allowInsecureLoopback;
   }
 
-  async fetch(url: URL): Promise<FetchedClientMetadataDocument> {
-    const { allowInsecureLoopback, timeoutMs, maxBytes } = this.options;
+  get minKeySetRefetchIntervalMs(): number {
+    return this.options.minKeySetRefetchIntervalMs;
+  }
+
+  /** Fetches a client's JWK Set, under the same rules as its metadata document */
+  fetchKeySet(url: URL): Promise<FetchedClientMetadataDocument> {
+    return this.fetch(url, this.options.maxKeySetBytes);
+  }
+
+  async fetch(
+    url: URL,
+    maxBytes = this.options.maxBytes,
+  ): Promise<FetchedClientMetadataDocument> {
+    const { allowInsecureLoopback, timeoutMs } = this.options;
 
     if (
       url.protocol !== 'https:' &&

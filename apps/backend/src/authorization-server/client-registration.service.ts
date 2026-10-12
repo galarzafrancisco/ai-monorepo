@@ -9,6 +9,7 @@ import {
   InvalidRedirectUriError,
   MissingRequiredFieldError,
   ClientNotFoundError,
+  InvalidTokenEndpointAuthMethodError,
 } from './errors/client-registration.errors';
 import { randomBytes } from 'crypto';
 import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
@@ -47,6 +48,15 @@ export class ClientRegistrationService {
 
     // Validate redirect URIs
     this.validateRedirectUris(dto.redirect_uris);
+
+    // A registered client has nowhere to publish keys, so it cannot sign assertions
+    if (
+      dto.token_endpoint_auth_method === TokenEndpointAuthMethod.PRIVATE_KEY_JWT
+    ) {
+      throw new InvalidTokenEndpointAuthMethodError(
+        dto.token_endpoint_auth_method,
+      );
+    }
 
     // Generate secure client credentials
     const clientId = this.generateClientId();
@@ -195,10 +205,7 @@ export class ClientRegistrationService {
    * @param hash - The hashed secret to compare against
    * @returns True if the secret matches, false otherwise
    */
-  async verifyClientSecret(
-    plaintext: string,
-    hash: string,
-  ): Promise<boolean> {
+  async verifyClientSecret(plaintext: string, hash: string): Promise<boolean> {
     return bcrypt.compare(plaintext, hash);
   }
 

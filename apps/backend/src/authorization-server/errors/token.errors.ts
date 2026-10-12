@@ -16,6 +16,7 @@ export const TokenErrorCodes = {
   REFRESH_TOKEN_REVOKED: ErrorCodes.REFRESH_TOKEN_REVOKED,
   SERVER_IDENTIFIER_MISMATCH: ErrorCodes.SERVER_IDENTIFIER_MISMATCH,
   RESOURCE_MISMATCH: ErrorCodes.RESOURCE_MISMATCH,
+  INVALID_CLIENT_ASSERTION: ErrorCodes.INVALID_CLIENT_ASSERTION,
 } as const;
 
 type TokenErrorCode = (typeof TokenErrorCodes)[keyof typeof TokenErrorCodes];
@@ -144,6 +145,20 @@ export class TokenResourceMismatchError extends TokenDomainError {
       'Resource does not match the MCP server the grant was issued for.',
       TokenErrorCodes.RESOURCE_MISMATCH,
       { expected, actual },
+    );
+  }
+}
+
+/**
+ * Thrown when a client that authenticates with a signed JWT (private_key_jwt)
+ * did not send one, or sent one that does not prove it holds its private key.
+ */
+export class InvalidClientAssertionError extends TokenDomainError {
+  constructor(reason: string) {
+    super(
+      `Client authentication failed: ${reason}`,
+      TokenErrorCodes.INVALID_CLIENT_ASSERTION,
+      { reason },
     );
   }
 }
