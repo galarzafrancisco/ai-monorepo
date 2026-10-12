@@ -4,6 +4,7 @@ import "./IosShell.css";
 import { Row, Text } from "../../ui/primitives";
 import { NavegationItem } from "../../shared/types/NavegationItem";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 
 export interface NavItem {
@@ -200,8 +201,7 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
         </div>
         <nav className="ios-shell__drawer-nav">
           {MAIN_NAVEGATION_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path ||
-              location.pathname.startsWith(item.path + '/');
+            const isActive = item.path === getActiveNavigationPath(location.pathname, MAIN_NAVEGATION_ITEMS);
             return (
               <Link
                 key={item.path}

@@ -29,6 +29,7 @@ import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import { actorHandle, isDeactivated } from "../actors";
 
@@ -676,7 +677,7 @@ function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         </div>
         <nav className="thread-detail-page__mobile-drawer-nav">
           {MAIN_NAVEGATION_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            const isActive = item.path === getActiveNavigationPath(location.pathname, MAIN_NAVEGATION_ITEMS);
             return (
               <Link
                 key={item.path}
