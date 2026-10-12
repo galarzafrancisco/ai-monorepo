@@ -4,6 +4,9 @@ import type { Agent } from './types';
 import type { TaskStatus } from '../../shared/const/taskStatus';
 import type { AgentResponseDto, CreateAgentDto, PatchAgentDto } from "@taico/client/v2";
 
+// Page size used when loading the full agent list
+const AGENTS_PAGE_SIZE = 100;
+
 export const useAgents = () => {
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +34,23 @@ export const useAgents = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await AgentsService.AgentsController_listAgents({});
-      setAgents(sortAgents(response.items || []));
+      // The endpoint is paginated (default 20 per page), so walk every page.
+      const byActorId = new Map<string, Agent>();
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const response = await AgentsService.AgentsController_listAgents({
+          page,
+          limit: AGENTS_PAGE_SIZE,
+        });
+        // Keyed by actorId so an agent that shifts pages mid-load is not duplicated
+        for (const agent of response.items || []) {
+          byActorId.set(agent.actorId, agent);
+        }
+        totalPages = response.totalPages ?? 1;
+        page += 1;
+      } while (page <= totalPages);
+      setAgents(sortAgents([...byActorId.values()]));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agents');
     } finally {
