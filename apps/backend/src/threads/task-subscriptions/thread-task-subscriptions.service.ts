@@ -22,6 +22,8 @@ export type SubscribedTask = {
  * Postgres, so any backend process can record a status change and any other
  * can deliver it.
  */
+// Writes that report what they changed select from a CTE, so the result is
+// always plain rows whatever the driver returns for UPDATE and DELETE.
 @Injectable()
 export class ThreadTaskSubscriptionsService {
   constructor(
@@ -66,11 +68,16 @@ export class ThreadTaskSubscriptionsService {
       return false;
     }
 
-    const [, removed]: [unknown, number] = await this.dataSource.query(
-      `DELETE FROM thread_task_subscriptions WHERE thread_id = $1 AND task_id = $2`,
+    const removed: unknown[] = await this.dataSource.query(
+      `WITH removed AS (
+         DELETE FROM thread_task_subscriptions
+          WHERE thread_id = $1 AND task_id = $2
+          RETURNING thread_id
+       )
+       SELECT thread_id FROM removed`,
       [input.threadId, input.taskId],
     );
-    if (removed === 0) {
+    if (removed.length === 0) {
       return false;
     }
 
@@ -87,12 +94,15 @@ export class ThreadTaskSubscriptionsService {
       return [];
     }
 
-    const [rows]: [Array<{ thread_id: string }>, number] = await this.dataSource.query(
-      `UPDATE thread_task_subscriptions s
-          SET triggered_status = $2, triggered_task_name = $3, triggered_at = now()
-         FROM threads t
-        WHERE s.task_id = $1 AND t.id = s.thread_id AND t.deleted_at IS NULL
-        RETURNING s.thread_id`,
+    const rows: Array<{ thread_id: string }> = await this.dataSource.query(
+      `WITH triggered AS (
+         UPDATE thread_task_subscriptions s
+            SET triggered_status = $2, triggered_task_name = $3, triggered_at = now()
+           FROM threads t
+          WHERE s.task_id = $1 AND t.id = s.thread_id AND t.deleted_at IS NULL
+          RETURNING s.thread_id
+       )
+       SELECT thread_id FROM triggered`,
       [task.id, task.status, task.name],
     );
 
@@ -104,10 +114,13 @@ export class ThreadTaskSubscriptionsService {
    * notification already waiting is kept: it is still true.
    */
   async removeForDeletedTask(taskId: string, actorId: string): Promise<void> {
-    const [rows]: [Array<{ thread_id: string }>, number] = await this.dataSource.query(
-      `DELETE FROM thread_task_subscriptions
-        WHERE task_id = $1 AND triggered_at IS NULL
-        RETURNING thread_id`,
+    const rows: Array<{ thread_id: string }> = await this.dataSource.query(
+      `WITH removed AS (
+         DELETE FROM thread_task_subscriptions
+          WHERE task_id = $1 AND triggered_at IS NULL
+          RETURNING thread_id
+       )
+       SELECT thread_id FROM removed`,
       [taskId],
     );
 

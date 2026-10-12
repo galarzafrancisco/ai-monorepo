@@ -260,7 +260,8 @@ describe('Thread task subscriptions E2E', () => {
     const second = await createTask('Second task');
     const threadId = await threadSubscribedTo([first, second]);
 
-    expect(await subscribedTaskIds(threadId)).toEqual([first, second]);
+    // Both were subscribed in the same model step, so their order is not fixed.
+    expect((await subscribedTaskIds(threadId)).sort()).toEqual([first, second].sort());
 
     await setStatus(first, 'IN_PROGRESS');
     await setStatus(first, 'DONE');
