@@ -21,10 +21,7 @@ import {
   ConnectionRecord,
   ConnectionWithMappingsRecord,
   MappingRecord,
-  SearchServersInput,
-  ServerSearchResult,
 } from './dto/service/mcp-registry.service.types';
-import { SearchService } from '../search/search.service';
 import {
   ServerNotFoundError,
   ServerAlreadyExistsError,
@@ -66,7 +63,6 @@ export class McpRegistryService {
     private readonly connectionRepository: Repository<McpConnectionEntity>,
     @InjectRepository(McpScopeMappingEntity)
     private readonly mappingRepository: Repository<McpScopeMappingEntity>,
-    private readonly searchService: SearchService,
   ) {}
 
   // Server CRUD operations
@@ -119,55 +115,6 @@ export class McpRegistryService {
       page,
       limit,
     };
-  }
-
-  async searchServers(input: SearchServersInput): Promise<ServerSearchResult[]> {
-    this.logger.log({
-      message: 'Searching MCP servers',
-      query: input.query,
-      limit: input.limit,
-      threshold: input.threshold,
-    });
-
-    // Get all servers - we need to search across all of them
-    const allServers = await this.serverRepository.find();
-
-    // Filter out the internal worker server
-    const servers = allServers.filter(
-      (s) => s.providedId !== INTERNAL_WORKER_AUTH_TARGET_ID,
-    );
-
-    // Map servers to searchable format
-    const searchableItems = servers.map((server) => ({
-      id: server.id,
-      name: server.name,
-      description: server.description,
-      providedId: server.providedId,
-    }));
-
-    // Use the generic search service
-    // Primary field is 'name', secondary is 'description', additional is 'providedId'
-    const searchResults = this.searchService.search({
-      items: searchableItems,
-      primaryField: 'name',
-      secondaryField: 'description',
-      additionalFields: ['providedId'],
-      query: input.query,
-      limit: input.limit,
-      threshold: input.threshold,
-    });
-
-    this.logger.log({
-      message: 'Server search completed',
-      resultCount: searchResults.length,
-    });
-
-    // Map to ServerSearchResult format
-    return searchResults.map((result) => ({
-      id: result.id,
-      name: result.primaryField,
-      score: result.score,
-    }));
   }
 
   async getServerById(id: string): Promise<ServerWithRelationsRecord> {

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommandPalette } from './CommandPaletteProvider';
 import type { Command } from './CommandPaletteProvider';
-import type { TaskSearchResultDto } from '@taico/client';
+import type { TaskSearchResultDto } from '@taico/client/v2';
 import './CommandPalette.css';
 
 // Result types that can be selected in the palette

@@ -119,15 +119,3 @@ export type ListServersResult = {
   page: number;
   limit: number;
 };
-
-export type SearchServersInput = {
-  query: string;
-  limit?: number;
-  threshold?: number;
-};
-
-export type ServerSearchResult = {
-  id: string;
-  name: string;
-  score: number;
-};

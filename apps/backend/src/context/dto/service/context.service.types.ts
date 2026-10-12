@@ -1,3 +1,5 @@
+import { SearchMatchField, SearchStrategy } from '../../../search/enums';
+
 export interface CreateBlockInput {
   title: string;
   content: string;
@@ -83,11 +85,17 @@ export interface BlockTreeResult {
 export type SearchBlocksInput = {
   query: string;
   limit?: number;
-  threshold?: number;
 };
 
 export type BlockSearchResult = {
   id: string;
   title: string;
+  /** Relevance from 0 to 1, comparable only within one response. */
   score: number;
+  matchedBy: SearchStrategy[];
+  matchedOn: SearchMatchField;
+  /** The passage that matched, or the start of the block for a title match. */
+  excerpt: string;
+  /** False when the excerpt is only part of the block's content. */
+  excerptIsComplete: boolean;
 };

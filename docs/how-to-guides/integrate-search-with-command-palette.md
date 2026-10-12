@@ -1,5 +1,7 @@
 # How to Integrate Backend Search with Command Palette
 
+> Task, context block and global search no longer work this way: they use the search index described in [Search](search.md). The in-memory fuzzy `SearchService` shown here remains for short lists such as actors and projects.
+
 This guide explains how to integrate backend search functionality with the frontend command palette (Alfred). This pattern allows users to search for resources (tasks, context blocks, etc.) directly from the command palette.
 
 ## Overview

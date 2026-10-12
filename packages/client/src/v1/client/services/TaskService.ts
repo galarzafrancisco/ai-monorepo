@@ -189,16 +189,14 @@ export class TaskService {
     }
     /**
      * Search tasks by query string
-     * @param query Search query string
-     * @param limit Maximum number of results to return
-     * @param threshold Minimum score threshold (0-1, higher is stricter)
+     * @param query What to look for. Keywords, a partial title or a question in plain language all work.
+     * @param limit Maximum number of results. Defaults to the configured default limit.
      * @returns TaskSearchResultDto Search results sorted by relevance
      * @throws ApiError
      */
     public static tasksControllerSearchTasks(
         query: string,
-        limit: number = 10,
-        threshold: number = 0.3,
+        limit?: number,
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<TaskSearchResultDto>> {
         return __request(config, {
@@ -207,7 +205,6 @@ export class TaskService {
             query: {
                 'query': query,
                 'limit': limit,
-                'threshold': threshold,
             },
         });
     }

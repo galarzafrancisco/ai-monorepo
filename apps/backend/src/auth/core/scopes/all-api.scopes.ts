@@ -10,6 +10,7 @@ import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
 import { ALL_SECRETS_SCOPES } from 'src/secrets/secrets.scopes';
 import { ALL_AI_PROVIDERS_SCOPES } from 'src/ai-providers/ai-providers.scopes';
 import { ALL_WORKERS_SCOPES } from 'src/executions/workers.scopes';
+import { ALL_SEARCH_SCOPES } from 'src/search/search.scopes';
 
 export const ALL_API_SCOPES: Scope[] = [
   // Metadata
@@ -34,4 +35,6 @@ export const ALL_API_SCOPES: Scope[] = [
   ...ALL_AI_PROVIDERS_SCOPES,
   // Workers
   ...ALL_WORKERS_SCOPES,
+  // Search
+  ...ALL_SEARCH_SCOPES,
 ];

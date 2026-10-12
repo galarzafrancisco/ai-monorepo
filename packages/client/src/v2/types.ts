@@ -412,6 +412,88 @@ export interface JwksResponseDto {
   keys: JwkResponseDto[];
 }
 
+export interface CreateAiProviderDto {
+  name: string;
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
+  secretId?: string;
+  baseUrl?: string | null;
+  project?: string | null;
+  location?: string | null;
+}
+
+export interface AiProviderResponseDto {
+  id: string;
+  name: string;
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
+  secretId?: string | null;
+  baseUrl?: string | null;
+  project?: string | null;
+  location?: string | null;
+  isConfigured: boolean;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateAiProviderDto {
+  name?: string;
+  secretId?: string;
+  apiKey?: string;
+  baseUrl?: string | null;
+  project?: string | null;
+  location?: string | null;
+}
+
+export interface AiProviderModelResponseDto {
+  id: string;
+  displayName?: string | null;
+  kind: 'language' | 'embedding';
+}
+
+export interface AiModelSelectionResponseDto {
+  job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings';
+  aiProviderId?: string | null;
+  modelId?: string | null;
+  followsConversation: boolean;
+  effectiveAiProviderId?: string | null;
+  effectiveModelId?: string | null;
+  isReady: boolean;
+}
+
+export interface SetAiModelSelectionDto {
+  aiProviderId: string;
+  modelId: string;
+}
+
+export interface CreateSecretDto {
+  name: string;
+  description?: string;
+  value: string;
+}
+
+export interface SecretResponseDto {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdByActorId: string;
+  createdBy?: string | null;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SecretValueResponseDto {
+  id: string;
+  name: string;
+  value: string;
+}
+
+export interface UpdateSecretDto {
+  name?: string;
+  description?: string | null;
+  value?: string;
+}
+
 export interface CreateTaskDto {
   name: string;
   description: string;
@@ -496,10 +578,21 @@ export interface TaskListResponseDto {
   totalPages: number;
 }
 
+export type SearchStrategy = 'keyword' | 'fuzzy_title' | 'semantic';
+
+export type SearchMatchField = 'title' | 'content' | 'comment';
+
 export interface TaskSearchResultDto {
   id: string;
   name: string;
+  status?: string | null;
   score: number;
+  matchedBy: SearchStrategy[];
+  matchedOn: SearchMatchField;
+  excerpt: string;
+  excerptIsComplete: boolean;
+  commentId?: string | null;
+  commentAuthor?: string | null;
 }
 
 export interface CreateCommentDto {
@@ -895,6 +988,10 @@ export interface BlockSearchResultDto {
   id: string;
   title: string;
   score: number;
+  matchedBy: SearchStrategy[];
+  matchedOn: SearchMatchField;
+  excerpt: string;
+  excerptIsComplete: boolean;
 }
 
 export interface BlockTreeResponseDto {
@@ -931,88 +1028,6 @@ export interface ReorderBlockDto {
 
 export interface MoveBlockDto {
   newParentId: Record<string, any> | null;
-}
-
-export interface CreateAiProviderDto {
-  name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
-  secretId?: string;
-  baseUrl?: string | null;
-  project?: string | null;
-  location?: string | null;
-}
-
-export interface AiProviderResponseDto {
-  id: string;
-  name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
-  secretId?: string | null;
-  baseUrl?: string | null;
-  project?: string | null;
-  location?: string | null;
-  isConfigured: boolean;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UpdateAiProviderDto {
-  name?: string;
-  secretId?: string;
-  apiKey?: string;
-  baseUrl?: string | null;
-  project?: string | null;
-  location?: string | null;
-}
-
-export interface AiProviderModelResponseDto {
-  id: string;
-  displayName?: string | null;
-  kind: 'language' | 'embedding';
-}
-
-export interface AiModelSelectionResponseDto {
-  job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings';
-  aiProviderId?: string | null;
-  modelId?: string | null;
-  followsConversation: boolean;
-  effectiveAiProviderId?: string | null;
-  effectiveModelId?: string | null;
-  isReady: boolean;
-}
-
-export interface SetAiModelSelectionDto {
-  aiProviderId: string;
-  modelId: string;
-}
-
-export interface CreateSecretDto {
-  name: string;
-  description?: string;
-  value: string;
-}
-
-export interface SecretResponseDto {
-  id: string;
-  name: string;
-  description?: string | null;
-  createdByActorId: string;
-  createdBy?: string | null;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SecretValueResponseDto {
-  id: string;
-  name: string;
-  value: string;
-}
-
-export interface UpdateSecretDto {
-  name?: string;
-  description?: string | null;
-  value?: string;
 }
 
 export interface TaskExecutionQueueEntryResponseDto {
@@ -1214,12 +1229,80 @@ export interface ProtectedResourceMetadataResponseDto {
   resource_name: string;
 }
 
+export type SearchResultType = 'task' | 'context_block' | 'tool' | 'agent' | 'project';
+
 export interface GlobalSearchResultDto {
   id: string;
-  type: 'task' | 'context_block' | 'agent' | 'project' | 'tag' | 'tool';
+  type: SearchResultType;
   title: string;
   score: number;
   url: string;
+  matchedBy: SearchStrategy[];
+  matchedOn: SearchMatchField;
+  excerpt: string;
+  excerptIsComplete: boolean;
+  commentId?: string | null;
+  commentAuthor?: string | null;
+}
+
+export interface SearchSettingsDto {
+  semanticEnabled: boolean;
+  chunkSizeChars: number;
+  chunkOverlapChars: number;
+  queryInstruction: string;
+  queryEmbeddingTimeoutMs: number;
+  candidatesPerStrategy: number;
+  semanticMinSimilarity: number;
+  semanticMaxGap: number;
+  keywordMinDensity: number;
+  fuzzyMinSimilarity: number;
+  rrfK: number;
+  keywordWeight: number;
+  fuzzyTitleWeight: number;
+  semanticWeight: number;
+  exactTitleBoost: number;
+  doneTaskMultiplier: number;
+  excerptMaxChars: number;
+  defaultLimit: number;
+}
+
+export interface UpdateSearchSettingsDto {
+  semanticEnabled?: boolean;
+  chunkSizeChars?: number;
+  chunkOverlapChars?: number;
+  queryInstruction?: string;
+  queryEmbeddingTimeoutMs?: number;
+  candidatesPerStrategy?: number;
+  semanticMinSimilarity?: number;
+  semanticMaxGap?: number;
+  keywordMinDensity?: number;
+  fuzzyMinSimilarity?: number;
+  rrfK?: number;
+  keywordWeight?: number;
+  fuzzyTitleWeight?: number;
+  semanticWeight?: number;
+  exactTitleBoost?: number;
+  doneTaskMultiplier?: number;
+  excerptMaxChars?: number;
+  defaultLimit?: number;
+}
+
+export interface SearchIndexTypeStatusDto {
+  type: string;
+  documents: number;
+  embedded: number;
+}
+
+export interface SearchIndexStatusDto {
+  semanticActive: boolean;
+  semanticInactiveReason?: string | null;
+  embeddingModelId?: string | null;
+  documents: number;
+  embedded: number;
+  pending: number;
+  failed: number;
+  lastError?: string | null;
+  byType: SearchIndexTypeStatusDto[];
 }
 
 export interface UserWalkthroughStatusResponseDto {

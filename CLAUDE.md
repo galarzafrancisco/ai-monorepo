@@ -68,6 +68,7 @@ Key modules in `apps/backend/src/`:
 - `agent-runs/` - Agent execution tracking
 - `context/` - Context blocks (prompt content with tags)
 - `mcp-registry/` - Model Context Protocol server registry
+- `search/` - Search index, embeddings, and hybrid search (see `docs/how-to-guides/search.md`)
 - `authorization-server/` - OAuth2/OIDC implementation
 - `identity-provider/` - Identity provider integration
 - `auth/` + `auth-journeys/` - Authentication flows
@@ -132,6 +133,7 @@ Extensive documentation in `/docs/`:
 - `review-guides/` - Checklists for entities, DTOs, controllers, MCPs, errors
 - `how-to-guides/` - Implementation guides
 - `how-to-guides/realtime-events.md` - Real-time domain events, gateway wiring, room topology, and UI sync principles
+- `how-to-guides/search.md` - Hybrid search (keyword, fuzzy title, semantic), the search index, pgvector requirements, and search settings
 - `DEPLOYMENT.md` - Production deployment with Kubernetes and GitOps workflow
 
 ## Licensing

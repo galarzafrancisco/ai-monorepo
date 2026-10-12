@@ -52,7 +52,8 @@ import { MetaService } from '../meta/meta.service';
 import { isSystemTagName } from '../meta/system-tags';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
-import { SearchService } from '../search/search.service';
+import { IndexSearchService } from '../search/index/index-search.service';
+import { SearchResultType } from '../search/enums';
 import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
@@ -76,7 +77,7 @@ export class TasksService {
     private readonly actorService: ActorService,
     private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly searchService: SearchService,
+    private readonly indexSearchService: IndexSearchService,
     private readonly agentRunsService: AgentRunsService,
     private readonly threadsService: ThreadsService,
     private readonly executionContextResolver: ActiveExecutionContextResolverService,
@@ -1247,48 +1248,23 @@ export class TasksService {
   }
 
   async searchTasks(input: SearchTasksInput): Promise<TaskSearchResult[]> {
-    this.logger.log({
-      message: 'Searching tasks',
+    const results = await this.indexSearchService.search({
       query: input.query,
       limit: input.limit,
-      threshold: input.threshold,
+      types: [SearchResultType.TASK],
     });
 
-    // Get all tasks - we need to search across all of them
-    const tasks = await this.taskRepository.find({
-      relations: ['comments'],
-    });
-
-    // Map tasks to searchable format with combined comment text
-    const searchableItems = tasks.map((task) => ({
-      id: task.id,
-      name: task.name,
-      description: task.description,
-      // Combine all comments into a searchable text field
-      commentsText: task.comments?.map((c) => c.content).join(' ') || '',
-    }));
-
-    // Use the generic search service
-    // Primary field is 'name', secondary is a combination of description and comments
-    const searchResults = this.searchService.search({
-      items: searchableItems,
-      primaryField: 'name',
-      secondaryField: 'description',
-      query: input.query,
-      limit: input.limit,
-      threshold: input.threshold,
-    });
-
-    this.logger.log({
-      message: 'Search completed',
-      resultCount: searchResults.length,
-    });
-
-    // Map to TaskSearchResult
-    return searchResults.map((result) => ({
+    return results.map((result) => ({
       id: result.id,
-      name: result.primaryField,
+      name: result.title,
+      status: typeof result.meta.status === 'string' ? result.meta.status : null,
       score: result.score,
+      matchedBy: result.matchedBy,
+      matchedOn: result.matchedOn,
+      excerpt: result.excerpt,
+      excerptIsComplete: result.excerptIsComplete,
+      commentId: result.commentId,
+      commentAuthor: result.commentAuthor,
     }));
   }
 }
