@@ -5,13 +5,17 @@ import { randomUUID } from 'node:crypto';
 import { ModelMessage } from 'ai';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadNotFoundError } from '../errors/threads.errors';
-import { formatMessage } from './thread-agent.prompts';
+import { formatMessage, formatTaskNotification } from './thread-agent.prompts';
+import { TaskStatus } from '../../tasks/enums';
 import { AgentContextRow } from './agent-context.utils';
 import { ThreadAgentMessageEntity } from './thread-agent-message.entity';
 import {
   ThreadAgentMessageKind,
   ThreadAgentMessageRole,
 } from './thread-agent.enums';
+
+/** `source` of the agent-log rows that carry a task notification. */
+export const TASK_NOTIFICATION_SOURCE = 'subscription:task';
 
 export type AgentMessageDraft = {
   role: ThreadAgentMessageRole;
@@ -37,6 +41,23 @@ export type IngestPendingResult = {
   triggerActor: TriggerActor | null;
   /** Text of the unanswered messages, oldest first. */
   newUserMessages: string[];
+};
+
+export type IngestTaskNotificationsResult = {
+  /** Who the agent was answering when it subscribed, or null when nothing was waiting. */
+  triggerActor: TriggerActor | null;
+  /** Tasks the agent has just been told about, oldest change first. */
+  notifiedTaskIds: string[];
+};
+
+type PendingTaskNotificationRow = {
+  task_id: string;
+  triggered_status: TaskStatus;
+  triggered_task_name: string;
+  actor_id: string;
+  actor_slug: string;
+  actor_type: ActorType;
+  actor_display_name: string;
 };
 
 type PendingDisplayRow = {
@@ -163,6 +184,99 @@ export class ThreadAgentLogService {
         WHERE thread_id = $1 AND agent_message_id IS NULL AND created_by_actor_id <> $2
         LIMIT 1`,
       [threadId, agentActorId],
+    );
+    return rows.length > 0;
+  }
+
+  /**
+   * Tells the agent about subscribed tasks that went to review or were done,
+   * as messages the user never sees. A done task ends the subscription; a task
+   * in review keeps it, so the agent still hears when it is done.
+   *
+   * One transaction: a notification is delivered exactly once.
+   */
+  async ingestTaskNotifications(input: {
+    threadId: string;
+    turnId: string;
+  }): Promise<IngestTaskNotificationsResult> {
+    return this.dataSource.transaction(async (manager) => {
+      // Same lock order as every other writer to the log: the thread first.
+      await this.lockHead(manager, input.threadId);
+
+      const pending: PendingTaskNotificationRow[] = await manager.query(
+        `SELECT s.task_id, s.triggered_status, s.triggered_task_name, a.id AS actor_id,
+                a.slug AS actor_slug, a.type AS actor_type, a.display_name AS actor_display_name
+           FROM thread_task_subscriptions s
+           JOIN actors a ON a.id = s.subscribed_for_actor_id
+          WHERE s.thread_id = $1 AND s.triggered_at IS NOT NULL
+          ORDER BY s.triggered_at ASC, s.task_id ASC
+            FOR UPDATE OF s`,
+        [input.threadId],
+      );
+
+      if (pending.length === 0) {
+        return { triggerActor: null, notifiedTaskIds: [] };
+      }
+
+      await this.appendWithManager(
+        manager,
+        input.threadId,
+        pending.map((row): AgentMessageDraft => ({
+          role: ThreadAgentMessageRole.USER,
+          kind: ThreadAgentMessageKind.INJECTION,
+          source: TASK_NOTIFICATION_SOURCE,
+          turnId: input.turnId,
+          message: {
+            role: 'user',
+            content: formatTaskNotification({
+              id: row.task_id,
+              name: row.triggered_task_name,
+              status: row.triggered_status,
+            }),
+          },
+        })),
+      );
+
+      // Only the rows read above: one triggered since then waits for the next turn.
+      const done = pending
+        .filter((row) => row.triggered_status === TaskStatus.DONE)
+        .map((row) => row.task_id);
+      const stillSubscribed = pending
+        .filter((row) => row.triggered_status !== TaskStatus.DONE)
+        .map((row) => row.task_id);
+
+      await manager.query(
+        `DELETE FROM thread_task_subscriptions
+          WHERE thread_id = $1 AND task_id = ANY($2::uuid[])`,
+        [input.threadId, done],
+      );
+      await manager.query(
+        `UPDATE thread_task_subscriptions
+            SET triggered_status = NULL, triggered_task_name = NULL, triggered_at = NULL
+          WHERE thread_id = $1 AND task_id = ANY($2::uuid[])`,
+        [input.threadId, stillSubscribed],
+      );
+
+      const last = pending[pending.length - 1];
+      return {
+        triggerActor: {
+          id: last.actor_id,
+          slug: last.actor_slug,
+          type: last.actor_type,
+          displayName: last.actor_display_name,
+        },
+        notifiedTaskIds: pending.map((row) => row.task_id),
+      };
+    });
+  }
+
+  /** True when a subscribed task changed and the agent has not been told yet. */
+  async hasPendingTaskNotifications(threadId: string): Promise<boolean> {
+    const rows: unknown[] = await this.dataSource.query(
+      `SELECT 1 FROM thread_task_subscriptions
+        WHERE thread_id = $1 AND triggered_at IS NOT NULL
+        LIMIT 1`,
+      [threadId],
     );
     return rows.length > 0;
   }

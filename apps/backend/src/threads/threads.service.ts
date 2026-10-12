@@ -5,6 +5,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
+import { ThreadTaskSubscriptionEntity } from './task-subscriptions/thread-task-subscription.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -22,6 +23,7 @@ import {
   ActorResult,
   TagResult,
   TaskSummaryResult,
+  TaskSubscriptionResult,
   ContextBlockSummaryResult,
   CreateThreadMessageInput,
   ThreadMessageResult,
@@ -68,6 +70,8 @@ export class ThreadsService {
     private readonly threadRepository: Repository<ThreadEntity>,
     @InjectRepository(ThreadMessageEntity)
     private readonly threadMessageRepository: Repository<ThreadMessageEntity>,
+    @InjectRepository(ThreadTaskSubscriptionEntity)
+    private readonly taskSubscriptionRepository: Repository<ThreadTaskSubscriptionEntity>,
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(ContextBlockEntity)
@@ -599,7 +603,7 @@ export class ThreadsService {
       ],
     });
 
-    return threads.map((thread) => this.mapThreadToResult(thread));
+    return Promise.all(threads.map((thread) => this.buildThreadResult(thread)));
   }
 
   async findThreadByParentTaskId(
@@ -630,7 +634,7 @@ export class ThreadsService {
       return null;
     }
 
-    return this.mapThreadToResult(thread);
+    return this.buildThreadResult(thread);
   }
 
   async findThreadsByStateBlockId(stateBlockId: string): Promise<ThreadResult[]> {
@@ -656,7 +660,7 @@ export class ThreadsService {
       withDeleted: true, // Include soft-deleted threads because FK constraint still applies
     });
 
-    return threads.map((thread) => this.mapThreadToResult(thread));
+    return Promise.all(threads.map((thread) => this.buildThreadResult(thread)));
   }
 
   async getThreadState(threadId: string): Promise<string> {
@@ -824,10 +828,13 @@ export class ThreadsService {
   }
 
   private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {
-    return this.mapThreadToResult(thread);
+    return this.mapThreadToResult(thread, await this.loadTaskSubscriptions(thread.id));
   }
 
-  private mapThreadToResult(thread: ThreadEntity): ThreadResult {
+  private mapThreadToResult(
+    thread: ThreadEntity,
+    taskSubscriptions: TaskSubscriptionResult[],
+  ): ThreadResult {
     if (!thread.createdByActor) {
       throw new Error(`Thread ${thread.id} is missing createdByActor relation`);
     }
@@ -846,11 +853,34 @@ export class ThreadsService {
       participants: (thread.participants || []).map((actor) =>
         this.mapActorToResult(actor),
       ),
+      taskSubscriptions,
       rowVersion: thread.rowVersion,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
       deletedAt: thread.deletedAt,
     };
+  }
+
+  /**
+   * Oldest first. Loaded on its own rather than as a thread relation, so saving
+   * a thread never touches subscriptions made while it was loaded.
+   */
+  private async loadTaskSubscriptions(threadId: string): Promise<TaskSubscriptionResult[]> {
+    const subscriptions = await this.taskSubscriptionRepository.find({
+      where: { threadId },
+      relations: ['task'],
+      order: { createdAt: 'ASC' },
+    });
+
+    // A subscription whose task was deleted is not shown.
+    return subscriptions
+      .filter((subscription) => subscription.task)
+      .map((subscription) => ({
+        taskId: subscription.taskId,
+        name: subscription.task!.name,
+        status: subscription.task!.status,
+        createdAt: subscription.createdAt,
+      }));
   }
 
   private isParentTaskThreadUniqueViolation(

@@ -37,6 +37,13 @@ export type TaskSummaryResult = {
   updatedAt: Date;
 };
 
+export type TaskSubscriptionResult = {
+  taskId: string;
+  name: string;
+  status: TaskStatus;
+  createdAt: Date;
+};
+
 export type ContextBlockSummaryResult = {
   id: string;
   title: string;
@@ -77,6 +84,7 @@ export type ThreadResult = {
   referencedContextBlocks: ContextBlockSummaryResult[];
   tags: TagResult[];
   participants: ActorResult[];
+  taskSubscriptions: TaskSubscriptionResult[];
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;

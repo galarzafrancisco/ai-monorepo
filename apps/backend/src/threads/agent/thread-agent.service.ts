@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
-import { isStepCount, ModelMessage, streamText } from 'ai';
+import { hasToolCall, isStepCount, ModelMessage, streamText, ToolSet } from 'ai';
 import { AgentsService } from 'src/agents/agents.service';
 import { THREAD_AGENT_SLUG } from 'src/agents/protected-agents';
 import { AiModelJob } from 'src/ai-providers/enums';
@@ -16,13 +16,15 @@ import {
   ThreadAgentActivityEvent,
   ThreadAgentActivityKind,
   ThreadAgentResponseDeltaEvent,
+  ThreadUpdatedEvent,
 } from '../events/threads.events';
 import { buildModelMessages } from './agent-context.utils';
 import { ChatModelFactory, ResolvedChatModel } from './chat-model.factory';
 import { TaicoMcpToolsFactory } from './taico-mcp-tools.factory';
 import { AgentMessageDraft, ThreadAgentLogService } from './thread-agent-log.service';
 import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
-import { buildThreadScopedInstructions } from './thread-agent.prompts';
+import { buildThreadScopedInstructions, STAY_SILENT_TOOL } from './thread-agent.prompts';
+import { ThreadAgentToolsFactory } from './thread-agent-tools.factory';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
 
@@ -59,11 +61,15 @@ export class ThreadAgentService {
     private readonly turns: ThreadTurnsService,
     private readonly chatModelFactory: ChatModelFactory,
     private readonly mcpToolsFactory: TaicoMcpToolsFactory,
+    private readonly threadToolsFactory: ThreadAgentToolsFactory,
     private readonly hooks: ThreadAgentHooksRunner,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  /** Call after a user-facing message is saved. Returns immediately. */
+  /**
+   * Call after something the agent should react to is saved: a user-facing
+   * message or a task notification. Returns immediately.
+   */
   requestTurn(threadId: string): void {
     void this.drain(threadId).catch((error) => {
       this.logger.error({
@@ -117,7 +123,10 @@ export class ThreadAgentService {
 
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.
-      if (!(await this.agentLog.hasPending(threadId, self.actorId))) {
+      if (
+        !(await this.agentLog.hasPending(threadId, self.actorId)) &&
+        !(await this.agentLog.hasPendingTaskNotifications(threadId))
+      ) {
         return;
       }
     }
@@ -127,16 +136,29 @@ export class ThreadAgentService {
   private async runTurn(turn: ClaimedTurn, self: AgentResult): Promise<TurnOutcome | null> {
     const { threadId } = turn;
 
-    const { triggerActor, newUserMessages } = await this.agentLog.ingestPending({
+    const { triggerActor: author, newUserMessages } = await this.agentLog.ingestPending({
       threadId,
       agentActorId: self.actorId,
       turnId: turn.id,
     });
+    const notifications = await this.agentLog.ingestTaskNotifications({
+      threadId,
+      turnId: turn.id,
+    });
+    // A turn started by a task notification acts for whoever the agent subscribed for.
+    const triggerActor = author ?? notifications.triggerActor;
     if (!triggerActor) {
       return null;
     }
 
     const thread = await this.threadRepository.findOne({ where: { id: threadId } });
+    if (thread && notifications.notifiedTaskIds.length > 0) {
+      // A done task ended its subscription; viewers of the thread see the list change.
+      this.eventEmitter.emit(
+        ThreadUpdatedEvent.INTERNAL,
+        new ThreadUpdatedEvent({ id: self.actorId }, thread),
+      );
+    }
     const resolved = await this.chatModelFactory.resolve({
       job: AiModelJob.CONVERSATION,
       aiProviderId: thread?.aiProviderId,
@@ -177,7 +199,14 @@ export class ThreadAgentService {
         self,
         resolved,
         messages,
-        tools: mcp.tools,
+        tools: {
+          ...mcp.tools,
+          ...this.threadToolsFactory.build({
+            threadId,
+            agentActorId: self.actorId,
+            forActorId: triggerActor.id,
+          }),
+        },
       });
       return { model: resolved, lastInputTokens };
     } finally {
@@ -190,7 +219,7 @@ export class ThreadAgentService {
     self: AgentResult;
     resolved: ResolvedChatModel;
     messages: ModelMessage[];
-    tools: Awaited<ReturnType<TaicoMcpToolsFactory['open']>>['tools'];
+    tools: ToolSet;
   }): Promise<number | null> {
     const { turn, self, resolved } = input;
     const { threadId } = turn;
@@ -205,7 +234,7 @@ export class ThreadAgentService {
       messages: input.messages,
       tools: input.tools,
       providerOptions: resolved.providerOptions,
-      stopWhen: isStepCount(THREAD_AGENT_MAX_STEPS),
+      stopWhen: [isStepCount(THREAD_AGENT_MAX_STEPS), hasToolCall(STAY_SILENT_TOOL)],
       // Errors arrive as stream parts and are handled below.
       onError: () => undefined,
       onStepEnd: (step) => {

@@ -27,6 +27,7 @@ import { DropAdkSessionTables1760600000000 } from './migrations/1760600000000-Dr
 import { McpClientIdMetadataDocuments1760700000000 } from './migrations/1760700000000-McpClientIdMetadataDocuments';
 import { McpClientPrivateKeyJwt1760800000000 } from './migrations/1760800000000-McpClientPrivateKeyJwt';
 import { ActorSoftDelete1760900000000 } from './migrations/1760900000000-ActorSoftDelete';
+import { ThreadTaskSubscriptions1761000000000 } from './migrations/1761000000000-ThreadTaskSubscriptions';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -55,6 +56,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         McpClientIdMetadataDocuments1760700000000,
         McpClientPrivateKeyJwt1760800000000,
         ActorSoftDelete1760900000000,
+        ThreadTaskSubscriptions1761000000000,
       ],
     }),
     EventEmitterModule.forRoot(),

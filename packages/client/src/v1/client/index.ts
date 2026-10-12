@@ -131,6 +131,7 @@ export type { TaskInfoDto } from './models/TaskInfoDto.js';
 export type { TaskListResponseDto } from './models/TaskListResponseDto.js';
 export { TaskResponseDto } from './models/TaskResponseDto.js';
 export type { TaskSearchResultDto } from './models/TaskSearchResultDto.js';
+export { TaskSubscriptionResponseDto } from './models/TaskSubscriptionResponseDto.js';
 export { TaskSummaryResponseDto } from './models/TaskSummaryResponseDto.js';
 export type { ThreadListItemResponseDto } from './models/ThreadListItemResponseDto.js';
 export type { ThreadListResponseDto } from './models/ThreadListResponseDto.js';

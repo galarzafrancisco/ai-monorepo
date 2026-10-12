@@ -589,6 +589,13 @@ export interface ContextBlockSummaryResponseDto {
   title: string;
 }
 
+export interface TaskSubscriptionResponseDto {
+  taskId: string;
+  name: string;
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  createdAt: string;
+}
+
 export interface ThreadResponseDto {
   id: string;
   title: string;
@@ -599,6 +606,7 @@ export interface ThreadResponseDto {
   referencedContextBlocks: ContextBlockSummaryResponseDto[];
   tags: MetaTagResponseDto[];
   participants: ActorResponseDto[];
+  taskSubscriptions: TaskSubscriptionResponseDto[];
   rowVersion: number;
   createdAt: string;
   updatedAt: string;

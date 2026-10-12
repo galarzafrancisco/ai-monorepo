@@ -3,6 +3,7 @@ import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto
 import { MetaTagResponseDto } from '../../meta/dto/tag-response.dto';
 import { TaskSummaryResponseDto } from './task-summary-response.dto';
 import { ContextBlockSummaryResponseDto } from './context-block-summary-response.dto';
+import { TaskSubscriptionResponseDto } from './task-subscription-response.dto';
 import { ThreadResult } from './service/threads.service.types';
 
 export class ThreadResponseDto {
@@ -63,6 +64,12 @@ export class ThreadResponseDto {
   participants!: ActorResponseDto[];
 
   @ApiProperty({
+    description: 'Tasks the threads agent will be notified about when they go to review or are done',
+    type: [TaskSubscriptionResponseDto],
+  })
+  taskSubscriptions!: TaskSubscriptionResponseDto[];
+
+  @ApiProperty({
     description: 'Row version for optimistic locking',
     example: 1,
   })
@@ -98,6 +105,9 @@ export class ThreadResponseDto {
       tags: result.tags.map((t) => MetaTagResponseDto.fromResult(t)),
       participants: result.participants.map((p) =>
         ActorResponseDto.fromResult(p),
+      ),
+      taskSubscriptions: result.taskSubscriptions.map((s) =>
+        TaskSubscriptionResponseDto.fromResult(s),
       ),
       rowVersion: result.rowVersion,
       createdAt: result.createdAt.toISOString(),
