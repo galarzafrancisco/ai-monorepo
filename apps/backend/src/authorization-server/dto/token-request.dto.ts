@@ -7,6 +7,7 @@ import {
   IsUrl,
   Length,
   Matches,
+  MaxLength,
   ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -26,13 +27,35 @@ export class TokenRequestDto {
   @IsEnum(GrantType)
   grant_type!: GrantType;
 
-  @ApiProperty({
-    description: 'Client identifier issued during dynamic registration',
+  @ApiPropertyOptional({
+    description:
+      'Client identifier: issued during dynamic registration, or the URL of the client metadata document. Required unless a client_assertion is sent',
     example: '0bab273987a2e163c3abb40c631ec0a4',
   })
+  // A client that authenticates with a client_assertion is identified by it
+  // and may leave client_id out (RFC 7521 section 4.2)
+  @ValidateIf((dto) => !dto.client_assertion || dto.client_id !== undefined)
   @IsString()
   @IsNotEmpty()
-  client_id!: string;
+  client_id?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Type of the client assertion. Sent by clients that authenticate with private_key_jwt',
+    example: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+  })
+  @IsOptional()
+  @IsString()
+  client_assertion_type?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'JWT signed with the client private key (RFC 7523). Sent by clients that authenticate with private_key_jwt',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(8192)
+  client_assertion?: string;
 
   @ApiPropertyOptional({
     description:

@@ -8,9 +8,17 @@ export type TokenRequestDto = {
      */
     grant_type: TokenRequestDto.grant_type;
     /**
-     * Client identifier issued during dynamic registration
+     * Client identifier: issued during dynamic registration, or the URL of the client metadata document. Required unless a client_assertion is sent
      */
-    client_id: string;
+    client_id?: string;
+    /**
+     * Type of the client assertion. Sent by clients that authenticate with private_key_jwt
+     */
+    client_assertion_type?: string;
+    /**
+     * JWT signed with the client private key (RFC 7523). Sent by clients that authenticate with private_key_jwt
+     */
+    client_assertion?: string;
     /**
      * Authorization code that was issued by the /authorize endpoint
      */

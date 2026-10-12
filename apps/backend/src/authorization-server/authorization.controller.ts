@@ -225,7 +225,11 @@ export class AuthorizationController {
     @Param('serverIdentifier') serverIdentifier: string,
     @Param('version') version: string,
   ): Promise<TokenResponseDto> {
-    return this.tokenService.handleTokenRequest(tokenRequest, serverIdentifier);
+    return this.tokenService.handleTokenRequest(
+      tokenRequest,
+      serverIdentifier,
+      version,
+    );
   }
 
   @Post('introspect/mcp/:serverIdentifier/:version')

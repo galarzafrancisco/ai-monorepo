@@ -7708,7 +7708,8 @@
             "example": "none",
             "enum": [
               "none",
-              "client_secret_basic"
+              "client_secret_basic",
+              "private_key_jwt"
             ]
           },
           "grant_types": {
@@ -7853,7 +7854,8 @@
             "example": "none",
             "enum": [
               "none",
-              "client_secret_basic"
+              "client_secret_basic",
+              "private_key_jwt"
             ]
           },
           "scope": {
@@ -8050,8 +8052,17 @@
           },
           "client_id": {
             "type": "string",
-            "description": "Client identifier issued during dynamic registration",
+            "description": "Client identifier: issued during dynamic registration, or the URL of the client metadata document. Required unless a client_assertion is sent",
             "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "client_assertion_type": {
+            "type": "string",
+            "description": "Type of the client assertion. Sent by clients that authenticate with private_key_jwt",
+            "example": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+          },
+          "client_assertion": {
+            "type": "string",
+            "description": "JWT signed with the client private key (RFC 7523). Sent by clients that authenticate with private_key_jwt"
           },
           "code": {
             "type": "string",
@@ -8085,8 +8096,7 @@
           }
         },
         "required": [
-          "grant_type",
-          "client_id"
+          "grant_type"
         ]
       },
       "TokenResponseDto": {
@@ -13577,8 +13587,19 @@
           "token_endpoint_auth_methods_supported": {
             "description": "Client authentication methods supported by the token endpoint",
             "example": [
-              "client_secret_basic",
+              "none",
               "private_key_jwt"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_endpoint_auth_signing_alg_values_supported": {
+            "description": "Signature algorithms accepted on the JWT of a client that authenticates with private_key_jwt",
+            "example": [
+              "RS256",
+              "ES256"
             ],
             "type": "array",
             "items": {
@@ -13610,6 +13631,7 @@
           "response_types_supported",
           "grant_types_supported",
           "token_endpoint_auth_methods_supported",
+          "token_endpoint_auth_signing_alg_values_supported",
           "code_challenge_methods_supported",
           "client_id_metadata_document_supported"
         ]

@@ -13,6 +13,10 @@ import {
   ClientMetadataFetchError,
 } from './client-metadata-document.fetcher';
 import { cacheSeconds } from './utils/cache-control';
+import {
+  CLIENT_ASSERTION_SIGNING_ALGORITHMS,
+  parsePublicJwks,
+} from './utils/client-assertion';
 import { isAcceptableRedirectUri } from './utils/redirect-uri';
 
 const MAX_CLIENT_NAME_LENGTH = 200;
@@ -23,6 +27,13 @@ type ClientMetadata = {
   clientName: string;
   redirectUris: string[];
   grantTypes: GrantType[];
+} & ClientAuthentication;
+
+type ClientAuthentication = {
+  tokenEndpointAuthMethod: TokenEndpointAuthMethod;
+  jwksUri: string | null;
+  jwks: { keys: Record<string, unknown>[] } | null;
+  tokenEndpointAuthSigningAlg: string | null;
 };
 
 /**
@@ -81,7 +92,6 @@ export class ClientIdMetadataService {
       this.clientRepository.create({
         clientId,
         clientSecret: null,
-        tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
         registrationMethod: ClientRegistrationMethod.METADATA_DOCUMENT,
         scopes: [],
         contacts: null,
@@ -168,18 +178,7 @@ export class ClientIdMetadataService {
       reject('it must not contain a client secret');
     }
 
-    // Only public clients are supported. Shared secrets are forbidden for
-    // metadata documents, and client assertions (private_key_jwt) are not
-    // verified here, so accepting them would promise authentication we do not do.
-    const authMethod = document.token_endpoint_auth_method;
-    if (
-      authMethod !== undefined &&
-      authMethod !== TokenEndpointAuthMethod.NONE
-    ) {
-      reject(
-        `token_endpoint_auth_method must be "none", got ${JSON.stringify(authMethod)}`,
-      );
-    }
+    const authentication = this.parseAuthentication(clientId, document);
 
     const clientName =
       typeof document.client_name === 'string'
@@ -237,7 +236,90 @@ export class ClientIdMetadataService {
       grantTypes: Object.values(GrantType).filter((grantType) =>
         grantTypes.includes(grantType),
       ),
+      ...authentication,
     };
+  }
+
+  /**
+   * How the client authenticates at the token endpoint. A metadata document
+   * client is either public ("none") or signs a JWT with a private key whose
+   * public half it publishes ("private_key_jwt"). Shared secrets are forbidden
+   * by the draft: there is no registration in which one could be agreed.
+   */
+  private parseAuthentication(
+    clientId: string,
+    document: Record<string, unknown>,
+  ): ClientAuthentication {
+    const reject = (reason: string): never => {
+      throw new InvalidClientMetadataError(clientId, reason);
+    };
+    const authMethod =
+      document.token_endpoint_auth_method ?? TokenEndpointAuthMethod.NONE;
+
+    if (authMethod === TokenEndpointAuthMethod.NONE) {
+      return {
+        tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
+        jwksUri: null,
+        jwks: null,
+        tokenEndpointAuthSigningAlg: null,
+      };
+    }
+    if (authMethod !== TokenEndpointAuthMethod.PRIVATE_KEY_JWT) {
+      return reject(
+        `token_endpoint_auth_method must be "none" or "private_key_jwt", got ${JSON.stringify(authMethod)}`,
+      );
+    }
+
+    const signingAlg = document.token_endpoint_auth_signing_alg;
+    if (
+      signingAlg !== undefined &&
+      (typeof signingAlg !== 'string' ||
+        !CLIENT_ASSERTION_SIGNING_ALGORITHMS.includes(signingAlg))
+    ) {
+      reject(
+        `token_endpoint_auth_signing_alg ${JSON.stringify(signingAlg)} is not supported`,
+      );
+    }
+
+    const hasJwksUri = document.jwks_uri !== undefined;
+    const hasJwks = document.jwks !== undefined;
+    if (hasJwksUri === hasJwks) {
+      reject('private_key_jwt needs exactly one of jwks_uri and jwks');
+    }
+
+    return {
+      tokenEndpointAuthMethod: TokenEndpointAuthMethod.PRIVATE_KEY_JWT,
+      jwksUri: hasJwksUri
+        ? this.parseJwksUri(clientId, document.jwks_uri)
+        : null,
+      jwks: hasJwks ? parsePublicJwks(document.jwks, reject) : null,
+      tokenEndpointAuthSigningAlg: (signingAlg as string | undefined) ?? null,
+    };
+  }
+
+  private parseJwksUri(clientId: string, jwksUri: unknown): string {
+    const reject = (reason: string): never => {
+      throw new InvalidClientMetadataError(clientId, reason);
+    };
+    if (typeof jwksUri !== 'string' || jwksUri.length > MAX_CLIENT_ID_LENGTH) {
+      return reject('jwks_uri must be a URL');
+    }
+    let url: URL;
+    try {
+      url = new URL(jwksUri);
+    } catch {
+      return reject('jwks_uri must be a URL');
+    }
+    if (
+      url.protocol !== 'https:' &&
+      !(this.fetcher.allowsInsecureLoopback && url.protocol === 'http:')
+    ) {
+      reject('jwks_uri must use https');
+    }
+    if (url.username || url.password) {
+      reject('jwks_uri must not contain credentials');
+    }
+    return jwksUri;
   }
 
   private parseStringArray(

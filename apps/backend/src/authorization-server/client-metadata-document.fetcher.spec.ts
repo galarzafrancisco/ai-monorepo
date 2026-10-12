@@ -76,6 +76,7 @@ describe('ClientMetadataDocumentFetcher', () => {
       undefined;
 
     const fetcher = new ClientMetadataDocumentFetcher({
+      ...DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
       allowInsecureLoopback: true,
       timeoutMs: 300,
       maxBytes: 1024,

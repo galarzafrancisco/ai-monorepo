@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { GrantType } from '../authorization-server/enums';
+import {
+  GrantType,
+  TokenEndpointAuthMethod,
+} from '../authorization-server/enums';
+import { CLIENT_ASSERTION_SIGNING_ALGORITHMS } from '../authorization-server/utils/client-assertion';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import {
   AuthorizationServerMetadataResult,
@@ -103,7 +107,14 @@ export class DiscoveryService {
         GrantType.AUTHORIZATION_CODE,
         GrantType.REFRESH_TOKEN,
       ],
-      token_endpoint_auth_methods_supported: ['none'],
+      // Public clients, and metadata document clients that sign a JWT with
+      // a key they publish. Neither involves a shared secret.
+      token_endpoint_auth_methods_supported: [
+        TokenEndpointAuthMethod.NONE,
+        TokenEndpointAuthMethod.PRIVATE_KEY_JWT,
+      ],
+      token_endpoint_auth_signing_alg_values_supported:
+        CLIENT_ASSERTION_SIGNING_ALGORITHMS,
       code_challenge_methods_supported: ['S256'],
       // Clients may identify themselves with a URL to a metadata document
       // they host instead of registering first.

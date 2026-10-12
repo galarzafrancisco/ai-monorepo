@@ -36,6 +36,10 @@ export type AuthorizationServerMetadataDto = {
      */
     token_endpoint_auth_methods_supported: Array<string>;
     /**
+     * Signature algorithms accepted on the JWT of a client that authenticates with private_key_jwt
+     */
+    token_endpoint_auth_signing_alg_values_supported: Array<string>;
+    /**
      * PKCE code challenge methods supported by this authorization server
      */
     code_challenge_methods_supported: Array<string>;

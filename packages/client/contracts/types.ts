@@ -2395,7 +2395,7 @@ export interface components {
              * @example none
              * @enum {string}
              */
-            token_endpoint_auth_method: "none" | "client_secret_basic";
+            token_endpoint_auth_method: "none" | "client_secret_basic" | "private_key_jwt";
             /**
              * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
              * @example [
@@ -2501,7 +2501,7 @@ export interface components {
              * @example none
              * @enum {string}
              */
-            token_endpoint_auth_method: "none" | "client_secret_basic";
+            token_endpoint_auth_method: "none" | "client_secret_basic" | "private_key_jwt";
             /**
              * @description Scopes granted to the client
              * @example openid profile email
@@ -2615,10 +2615,17 @@ export interface components {
              */
             grant_type: "authorization_code" | "refresh_token";
             /**
-             * @description Client identifier issued during dynamic registration
+             * @description Client identifier: issued during dynamic registration, or the URL of the client metadata document. Required unless a client_assertion is sent
              * @example 0bab273987a2e163c3abb40c631ec0a4
              */
-            client_id: string;
+            client_id?: string;
+            /**
+             * @description Type of the client assertion. Sent by clients that authenticate with private_key_jwt
+             * @example urn:ietf:params:oauth:client-assertion-type:jwt-bearer
+             */
+            client_assertion_type?: string;
+            /** @description JWT signed with the client private key (RFC 7523). Sent by clients that authenticate with private_key_jwt */
+            client_assertion?: string;
             /**
              * @description Authorization code that was issued by the /authorize endpoint
              * @example SplxlOBeZQQYbYS6WxSbIA
@@ -6237,11 +6244,19 @@ export interface components {
             /**
              * @description Client authentication methods supported by the token endpoint
              * @example [
-             *       "client_secret_basic",
+             *       "none",
              *       "private_key_jwt"
              *     ]
              */
             token_endpoint_auth_methods_supported: string[];
+            /**
+             * @description Signature algorithms accepted on the JWT of a client that authenticates with private_key_jwt
+             * @example [
+             *       "RS256",
+             *       "ES256"
+             *     ]
+             */
+            token_endpoint_auth_signing_alg_values_supported: string[];
             /**
              * @description PKCE code challenge methods supported by this authorization server
              * @example [

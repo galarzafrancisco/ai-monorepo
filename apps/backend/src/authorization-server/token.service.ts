@@ -12,6 +12,8 @@ import {
 } from './dto/service/token.service.types';
 import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
+import { TokenEndpointAuthMethod } from './enums/token-endpoint-auth-method.enum';
+import { ClientAssertionService } from './client-assertion.service';
 import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { getConfig } from '../config/env.config';
 import {
@@ -49,6 +51,7 @@ export class TokenService {
     private readonly authJourneysService: AuthJourneysService,
     private readonly tokenVerifierService: TokenVerifierService,
     private readonly tokenSignerService: TokenSignerService,
+    private readonly clientAssertionService: ClientAssertionService,
     @InjectRepository(McpRefreshTokenEntity)
     private readonly mcpRefreshTokenRepository: Repository<McpRefreshTokenEntity>,
   ) {}
@@ -60,6 +63,7 @@ export class TokenService {
   async handleTokenRequest(
     tokenRequest: TokenRequestDto,
     serverIdentifier: string,
+    version: string = MCP_AUTH_SERVER_VERSION,
   ): Promise<TokenResponseDto> {
     this.logger.debug(
       `Processing token request for client: ${tokenRequest.client_id}, grant_type: ${tokenRequest.grant_type}`,
@@ -70,9 +74,14 @@ export class TokenService {
         return this.handleAuthorizationCodeGrant(
           tokenRequest,
           serverIdentifier,
+          version,
         );
       case GrantType.REFRESH_TOKEN:
-        return this.handleRefreshTokenGrant(tokenRequest, serverIdentifier);
+        return this.handleRefreshTokenGrant(
+          tokenRequest,
+          serverIdentifier,
+          version,
+        );
       default:
         throw new InvalidGrantTypeError(tokenRequest.grant_type);
     }
@@ -84,6 +93,7 @@ export class TokenService {
   private async handleAuthorizationCodeGrant(
     tokenRequest: TokenRequestDto,
     serverIdentifier: string,
+    version: string,
   ): Promise<TokenResponseDto> {
     // Validate required parameters
     if (
@@ -112,13 +122,14 @@ export class TokenService {
       throw new InvalidAuthorizationCodeError(tokenRequest.code);
     }
 
-    // Validate client_id matches
-    if (mcpAuthFlow.client.clientId !== tokenRequest.client_id) {
-      this.logger.warn(`Client ID mismatch for authorization code`);
-      throw new ClientIdMismatchError();
-    }
-
     this.assertGrantBoundToServer(mcpAuthFlow, tokenRequest, serverIdentifier);
+
+    // Validate the request comes from the client the code was issued to
+    const clientId = await this.authenticateClient(
+      mcpAuthFlow,
+      tokenRequest,
+      version,
+    );
 
     // Validate authorization code hasn't been used (single-use protection)
     if (mcpAuthFlow.authorizationCodeUsed) {
@@ -173,7 +184,7 @@ export class TokenService {
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
     const refreshToken = await this.generateAndStoreRefreshToken(
       mcpAuthFlow,
-      tokenRequest.client_id,
+      clientId,
     );
 
     // Build token response
@@ -187,9 +198,7 @@ export class TokenService {
         : undefined,
     };
 
-    this.logger.log(
-      `Issued access token for client: ${tokenRequest.client_id}`,
-    );
+    this.logger.log(`Issued access token for client: ${clientId}`);
 
     return tokenResponse;
   }
@@ -201,6 +210,7 @@ export class TokenService {
   private async handleRefreshTokenGrant(
     tokenRequest: TokenRequestDto,
     serverIdentifier: string,
+    version: string,
   ): Promise<TokenResponseDto> {
     this.logger.debug('refresh token request');
     // Validate required parameters
@@ -231,12 +241,6 @@ export class TokenService {
       throw new InvalidRefreshTokenError();
     }
 
-    // Validate client_id matches the refresh token
-    if (storedToken.clientId !== tokenRequest.client_id) {
-      this.logger.warn('Client ID mismatch for refresh token');
-      throw new ClientIdMismatchError();
-    }
-
     // Check if token is revoked
     if (storedToken.revokedAt) {
       this.logger.warn('Refresh token has been revoked');
@@ -253,6 +257,17 @@ export class TokenService {
 
     this.assertGrantBoundToServer(mcpAuthFlow, tokenRequest, serverIdentifier);
 
+    // Validate the request comes from the client the refresh token was issued to
+    const clientId = await this.authenticateClient(
+      mcpAuthFlow,
+      tokenRequest,
+      version,
+    );
+    if (storedToken.clientId !== clientId) {
+      this.logger.warn('Client ID mismatch for refresh token');
+      throw new ClientIdMismatchError();
+    }
+
     // Revoke the old refresh token (rotation)
     storedToken.revokedAt = new Date();
     await this.mcpRefreshTokenRepository.save(storedToken);
@@ -262,7 +277,7 @@ export class TokenService {
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
     const newRefreshToken = await this.generateAndStoreRefreshToken(
       mcpAuthFlow,
-      tokenRequest.client_id,
+      clientId,
     );
 
     // Build token response
@@ -276,11 +291,56 @@ export class TokenService {
         : undefined,
     };
 
-    this.logger.log(
-      `Refreshed access token for client: ${tokenRequest.client_id}`,
-    );
+    this.logger.log(`Refreshed access token for client: ${clientId}`);
 
     return tokenResponse;
+  }
+
+  /**
+   * Checks that a token request comes from the client its grant belongs to,
+   * and returns that client's client_id.
+   *
+   * A public client only names itself; PKCE is what ties the request to the
+   * authorization. A client registered with private_key_jwt must also prove
+   * it holds its private key, on every request.
+   */
+  private async authenticateClient(
+    mcpAuthFlow: McpAuthorizationFlowEntity,
+    tokenRequest: TokenRequestDto,
+    version: string,
+  ): Promise<string> {
+    const { client, server } = mcpAuthFlow;
+
+    if (
+      tokenRequest.client_id !== undefined &&
+      tokenRequest.client_id !== client.clientId
+    ) {
+      this.logger.warn('Client ID mismatch for token request');
+      throw new ClientIdMismatchError();
+    }
+
+    if (
+      client.tokenEndpointAuthMethod === TokenEndpointAuthMethod.PRIVATE_KEY_JWT
+    ) {
+      const { issuerUrl } = getConfig();
+      // The audience of an assertion is the authorization server: its issuer
+      // identifier, or the token endpoint as older clients send it. Each can
+      // be spelled with either identifier of the MCP server.
+      const audiences = [server.providedId, server.id].flatMap((identifier) => [
+        `${issuerUrl}/mcp/${identifier}/${version}`,
+        `${issuerUrl}/api/v1/auth/token/mcp/${identifier}/${version}`,
+      ]);
+      await this.clientAssertionService.authenticate(
+        client,
+        tokenRequest,
+        audiences,
+      );
+    } else if (tokenRequest.client_id === undefined) {
+      // Without an assertion there is nothing else that identifies the client
+      throw new MissingRequiredParametersError(tokenRequest.grant_type);
+    }
+
+    return client.clientId;
   }
 
   /**

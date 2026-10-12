@@ -53,10 +53,18 @@ export class AuthorizationServerMetadataDto {
   @ApiProperty({
     description:
       'Client authentication methods supported by the token endpoint',
-    example: ['client_secret_basic', 'private_key_jwt'],
+    example: ['none', 'private_key_jwt'],
     type: [String],
   })
   token_endpoint_auth_methods_supported!: string[];
+
+  @ApiProperty({
+    description:
+      'Signature algorithms accepted on the JWT of a client that authenticates with private_key_jwt',
+    example: ['RS256', 'ES256'],
+    type: [String],
+  })
+  token_endpoint_auth_signing_alg_values_supported!: string[];
 
   @ApiProperty({
     description:
