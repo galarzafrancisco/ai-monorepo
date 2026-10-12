@@ -52,8 +52,8 @@ Two tables, both derived data that can be rebuilt at any time:
 
 ### Keeping it up to date
 
-- **On write**: task and context block events re-index the affected item immediately, so it is searchable by keyword at once. Embedding follows in the background within seconds.
-- **Sweep**: every minute, each source table is compared with the index by timestamp. This catches anything an event missed, covers tools, agents and projects (which have no events wired), and is how an empty index is first filled. Existing data is indexed on the first start after the upgrade with no manual step.
+- **On write**: task, context block and agent events re-index the affected item immediately, so it is searchable by keyword at once. Embedding follows in the background within seconds.
+- **Sweep**: every minute, each source table is compared with the index. This catches anything an event missed, covers tools and projects (which emit no events, so they can lag by up to a minute), and is how an empty index is first filled. Existing data is indexed on the first start after the upgrade with no manual step; that first pass runs in the background, so results can be incomplete for a moment right after the upgrade.
 - **Embedding worker**: claims out-of-date rows with a lease (`FOR UPDATE SKIP LOCKED`), so several backend processes share the work. A passage whose text is unchanged keeps its embedding, so appending to a long block embeds only the new part. Failures are retried with a growing delay.
 
 A row's embeddings are out of date when its text, the embedding model, or the chunk settings changed. Changing the model selected for the Embeddings job therefore re-embeds everything by itself.

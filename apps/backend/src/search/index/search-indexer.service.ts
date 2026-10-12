@@ -81,8 +81,11 @@ export class SearchIndexerService implements OnApplicationBootstrap {
     return changed;
   }
 
-  /** Re-indexes one result and everything found through it (a task and its comments). */
-  async syncResult(resultType: `${SearchResultType}`, resultId: string): Promise<void> {
+  /**
+   * Re-indexes one result and everything found through it (a task and its
+   * comments). Without an id, every result of that kind.
+   */
+  async syncResult(resultType: `${SearchResultType}`, resultId: string | null): Promise<void> {
     try {
       for (const projection of SEARCH_PROJECTIONS) {
         if (projection.resultType === resultType) {
@@ -200,6 +203,14 @@ export class SearchIndexerService implements OnApplicationBootstrap {
   @OnEvent(BlockUpdatedEvent.INTERNAL)
   async onBlockChanged(event: BlockCreatedEvent | BlockUpdatedEvent): Promise<void> {
     await this.syncResult('context_block', event.block.id);
+  }
+
+  // Agent events do not all carry the agent's id, and there are few agents: re-check them all.
+  @OnEvent('agent.created')
+  @OnEvent('agent.updated')
+  @OnEvent('agent.deleted')
+  async onAgentChanged(): Promise<void> {
+    await this.syncResult('agent', null);
   }
 
   @OnEvent(BlockDeletedEvent.INTERNAL)
