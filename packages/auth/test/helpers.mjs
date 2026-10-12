@@ -89,56 +89,72 @@ export function tokenRequest(flow, extra = {}) {
 }
 
 /**
- * Wraps a refresh-token store so that `find` only returns once `parties`
- * callers are waiting on it. Racing requests are then guaranteed to all read
- * the token as live before any of them consumes it, which is the interleaving
- * a real race needs and a plain `Promise.all` only produces by luck.
+ * Wraps a store so a test decides how two requests racing on one single-use
+ * credential interleave, instead of leaving it to scheduling.
+ *
+ * - `read` (the lookup) only returns once both requests are waiting on it, so
+ *   both see the credential as unused.
+ * - `write` (the atomic single use: `consume`, `redeemCode`) holds one of the
+ *   two after it has run: the winner or the loser, as armed.
  */
-export function racingRefreshTokens(inner, parties = 2) {
-  let armed = false;
-  let waiting = [];
+export function raceControl(inner, { read, write }) {
+  let race = null;
   const store = Object.create(inner);
-  store.find = async (tokenHash) => {
-    const found = await inner.find(tokenHash);
-    if (!armed) return found;
-    await new Promise((resolve) => {
-      waiting.push(resolve);
-      if (waiting.length === parties) {
-        armed = false;
-        waiting.forEach((release) => release());
-        waiting = [];
-      }
-    });
+  store[read] = async (...args) => {
+    const found = await inner[read](...args);
+    const current = race;
+    if (!current || current.readers === 2) return found;
+    current.readers += 1;
+    if (current.readers === 2) current.bothRead();
+    await current.whenBothRead;
     return found;
+  };
+  store[write] = async (...args) => {
+    const won = await inner[write](...args);
+    const current = race;
+    if (current && !current.held && won === current.holdWinner) {
+      current.held = true;
+      await current.whenReleased;
+    }
+    return won;
   };
   return {
     store,
-    /** The next `parties` lookups are held until all of them have arrived */
-    arm() {
-      armed = true;
+    /** Arms the next race. Returns the function that lets the held request go. */
+    arm(hold) {
+      let bothRead;
+      let release;
+      race = {
+        readers: 0,
+        held: false,
+        holdWinner: hold === 'winner',
+        whenBothRead: new Promise((resolve) => (bothRead = resolve)),
+        whenReleased: new Promise((resolve) => (release = resolve)),
+      };
+      race.bothRead = bothRead;
+      return () => {
+        race = null;
+        release();
+      };
     },
   };
 }
 
 /**
- * The reviewer's scenario for both refresh flows: a thief and the legitimate
- * client present the same refresh token at the same moment. One of them wins
- * the rotation; what it received must not stay usable.
+ * Presents one credential twice at the same moment and returns what the
+ * requests that succeeded were given.
+ *
+ * `first` is what happens first: `'revocation'` holds the winner until the
+ * loser has detected the reuse and revoked everything; `'response'` holds the
+ * loser until the winner has its tokens in hand.
  */
-export async function assertConcurrentReuseRevokes({ arm, present, stillWorks }) {
-  arm();
-  const results = await Promise.allSettled([present(), present()]);
-  const winners = results.filter((result) => result.status === 'fulfilled');
-  if (winners.length !== 1) {
-    throw new Error(`expected exactly one winner, got ${winners.length}`);
-  }
-  let usable = true;
-  try {
-    await stillWorks(winners[0].value);
-  } catch {
-    usable = false;
-  }
-  if (usable) {
-    throw new Error('the rotated credentials survived a concurrent reuse of the old token');
-  }
+export async function race({ control, first, present }) {
+  const release = control.arm(first === 'revocation' ? 'winner' : 'loser');
+  const requests = [present(), present()];
+  await Promise.race(requests.map((request) => request.catch(() => {})));
+  release();
+  const results = await Promise.allSettled(requests);
+  return results
+    .filter((result) => result.status === 'fulfilled')
+    .map((result) => result.value);
 }

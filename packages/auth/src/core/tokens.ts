@@ -21,9 +21,15 @@ export type TokenVerifierOptions = {
   jwks: JwksSource;
   algorithms?: string[];
   clockToleranceSeconds?: number;
-  /** When set, a token whose `jti` was revoked fails verification */
+  /**
+   * When set, a token fails verification when its `jti` was revoked, or when
+   * the grant or session named by its `sid` claim was.
+   */
   revocation?: RevocationChecker;
 };
+
+/** The key a grant or session is revoked under in a `RevocationChecker` */
+export const sessionRevocationKey = (sid: string) => `sid:${sid}`;
 
 /**
  * Verifies access tokens: signature, issuer, expiry and revocation.
@@ -60,12 +66,16 @@ export class TokenVerifier {
       );
     }
 
-    if (
-      this.options.revocation &&
-      typeof claims.jti === 'string' &&
-      (await this.options.revocation.isRevoked(claims.jti))
-    ) {
-      throw new TokenRevokedError();
+    const { revocation } = this.options;
+    if (revocation) {
+      const keys = [
+        ...(typeof claims.jti === 'string' ? [claims.jti] : []),
+        ...(typeof claims.sid === 'string' ? [sessionRevocationKey(claims.sid)] : []),
+      ];
+      const revoked = await Promise.all(keys.map((key) => revocation.isRevoked(key)));
+      if (revoked.includes(true)) {
+        throw new TokenRevokedError();
+      }
     }
     return claims;
   }

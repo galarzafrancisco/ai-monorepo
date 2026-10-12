@@ -117,6 +117,11 @@ export type NewRefreshToken = {
   subjectId: string;
   /** Set for `grant` tokens */
   grantId: string | null;
+  /**
+   * Set for `session` tokens: the login this token descends from. Rotation
+   * keeps it, and access tokens of the session carry it as their `sid` claim.
+   */
+  sessionId: string | null;
   clientId: string | null;
   expiresAt: Date;
 };
@@ -137,12 +142,17 @@ export interface RefreshTokenStore {
   consume(tokenHash: string, now: Date): Promise<boolean>;
   /** Revokes every live token of a grant (reuse detected, or grant revoked) */
   revokeByGrant(grantId: string, now: Date): Promise<void>;
-  /** Revokes every live session token of a subject (logout everywhere) */
+  /**
+   * Revokes every live token of that kind of a subject (logout everywhere).
+   * Returns the distinct `sessionId`s of the subject's tokens of that kind
+   * that have not expired at `now`, revoked or not, so the server can also
+   * revoke the access tokens of those sessions.
+   */
   revokeBySubject(
     subjectId: string,
     kind: RefreshTokenKind,
     now: Date,
-  ): Promise<void>;
+  ): Promise<string[]>;
 }
 
 // ---------------------------------------------------------------- issued tokens
@@ -162,18 +172,27 @@ export type StoredIssuedToken = IssuedToken & {
   createdAt: Date;
 };
 
-/** Answers whether an access token was revoked. Checked on every request. */
+/**
+ * Answers whether an access token was revoked. Checked on every request.
+ *
+ * It is asked about two kinds of key: a token's `jti`, and, for a token that
+ * carries a `sid` claim, `sessionRevocationKey(sid)`. The second is how a
+ * whole grant or browser session is revoked at once, including access tokens
+ * that were being minted while the revocation happened.
+ */
 export interface RevocationChecker {
-  isRevoked(jti: string): Promise<boolean>;
+  isRevoked(key: string): Promise<boolean>;
 }
 
 export interface IssuedTokenStore extends RevocationChecker {
   record(token: IssuedToken): Promise<void>;
   /**
-   * Revokes a token by its `jti`. Must take effect even when the token was
-   * never recorded (short-lived tokens are not), by storing a revoked entry.
+   * Revokes a key: a token's `jti`, or a `sessionRevocationKey`. Must take
+   * effect even when nothing was recorded under that key (short-lived tokens
+   * and sessions are not), by storing a revoked entry. Must not fail when the
+   * key is already revoked, including by a concurrent call.
    */
-  revoke(jti: string, expiresAt?: Date): Promise<void>;
+  revoke(key: string, expiresAt?: Date): Promise<void>;
   listBySubject(subjectId: string): Promise<StoredIssuedToken[]>;
 }
 

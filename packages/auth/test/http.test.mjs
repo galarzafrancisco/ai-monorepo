@@ -160,9 +160,13 @@ test('end to end: a client gets a token and calls a separate resource server', a
 
   const refreshed = await client.refresh(tokens);
   assert.notEqual(refreshed.accessToken, tokens.accessToken);
-  await assert.rejects(client.refresh(tokens), (error) => error instanceof OAuthClientError && error.error === 'invalid_grant');
-
   assert.equal((await client.introspect(tokens.accessToken)).active, true);
+  assert.equal((await client.introspect(refreshed.accessToken)).active, true);
+
+  // Reusing the rotated refresh token revokes the grant, access tokens included
+  await assert.rejects(client.refresh(tokens), (error) => error instanceof OAuthClientError && error.error === 'invalid_grant');
+  assert.equal((await client.introspect(tokens.accessToken)).active, false);
+  assert.equal((await client.introspect(refreshed.accessToken)).active, false);
 });
 
 test('requests without a usable token get a challenge pointing at the metadata', async () => {

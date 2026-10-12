@@ -82,7 +82,7 @@ The guards throw `AuthError`s. `AuthExceptionFilter` answers them with a status 
 
 - Signature, against the issuer's keys. Keys are cached; a token naming an unknown key triggers one rate-limited refresh.
 - `iss`, `exp`.
-- **Revocation**, when a `revocation` checker is configured: a revoked `jti` fails on the next request, not when the token expires.
+- **Revocation**, when a `revocation` checker is configured: a token fails on the next request, not when it expires, if its `jti` was revoked or if the grant or browser session it was issued under (its `sid` claim) was. `server.resourceServer()` is always configured this way. A resource server in another process that only fetches the issuer's keys is not: give it a `revocation` checker that reads the issuer's store, or have it call the introspection endpoint, or rely on the access token lifetime (10 minutes by default).
 - **Audience**, through an `AudiencePolicy`:
   - `exactResource(url)`: tokens minted for this resource URL.
   - `requestUrlAudience()`: a token is only good on the URL it names. For a host serving several resources.
@@ -144,7 +144,9 @@ Every method on `OAuthServer` takes and returns plain data, so you can build you
 
 - PKCE with S256 is required. There are no client secrets: clients are public, or sign assertions with `private_key_jwt`.
 - Authorization codes and refresh tokens are stored as SHA-256 hashes, are single-use, and the single use is enforced atomically in the store (`redeemCode`, `consume`), so two racing requests cannot both win.
-- Refresh tokens rotate. Presenting a rotated-out token revokes the whole grant (for a session token: every session of that user). This holds when two requests present the same token at once: one is served, and what it was given is revoked with the rest. The same applies to two requests racing on one authorization code.
+- Refresh tokens rotate. Presenting a rotated-out token revokes the whole grant (for a session token: every session of that user): its refresh tokens and its access tokens.
+- That holds when two requests present the same token at once, and for two requests racing on one authorization code. Either neither is served, or one is and what it was given is refused from then on. A client that sends the same token twice in parallel therefore loses its grant and has to authorize again.
+- Access tokens are revoked through their `sid` claim, which names the grant or session. The revocation is an entry for that `sid` in the `IssuedTokenStore`, so it also applies to an access token that a racing request signs after the entry was written. Logout and `POST /oauth/revoke` with a refresh token end access tokens the same way.
 - A token's audience is the resource the grant was made for, never a value the client sent at the token endpoint.
 - `resolveSession` only accepts tokens minted for a browser session, so a client's or agent's token cannot approve a consent.
 - Session cookies are `HttpOnly`, `SameSite=Lax`, and `Secure` when the issuer is https.
@@ -188,7 +190,7 @@ The package owns no database and no user model. The host supplies them through t
 | `ClientStore` | OAuth clients | memory, typeorm |
 | `GrantStore` | Authorizations in progress and granted | memory, typeorm |
 | `RefreshTokenStore` | Hashed refresh tokens (grants and sessions) | memory, typeorm |
-| `IssuedTokenStore` | Recorded and revoked access tokens | memory, typeorm |
+| `IssuedTokenStore` | Recorded access tokens, and revocations: of one token (`jti`) or of a grant or session (`sid`) | memory, typeorm |
 | `ResourceRegistry` | What tokens can be minted for | `staticResources([...])`, or your own |
 | `IdentityProvider` | Authenticates users, looks up subjects | `localIdp(userStore)`, or your own |
 | `ClaimsProvider` | Extra claims per subject | your own |

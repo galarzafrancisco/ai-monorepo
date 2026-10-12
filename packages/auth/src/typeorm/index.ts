@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   EntitySchema,
+  MoreThan,
   Table,
   type DataSource,
   type EntityManager,
@@ -117,6 +118,7 @@ export const AuthRefreshTokenEntity = new EntitySchema<StoredRefreshToken>({
     kind: text,
     subjectId: { ...text, name: 'subject_id' },
     grantId: { ...nullableText, name: 'grant_id' },
+    sessionId: { ...nullableText, name: 'session_id' },
     clientId: { ...nullableText, name: 'client_id' },
     expiresAt: { ...time, name: 'expires_at' },
     revokedAt: { ...nullableTime, name: 'revoked_at' },
@@ -284,8 +286,13 @@ export class TypeOrmRefreshTokenStore implements RefreshTokenStore {
     subjectId: string,
     kind: StoredRefreshToken['kind'],
     now: Date,
-  ): Promise<void> {
+  ): Promise<string[]> {
     await this.revokeWhere('subject_id = :subjectId AND kind = :kind', { subjectId, kind }, now);
+    const tokens = await this.tokens.find({
+      select: { sessionId: true },
+      where: { subjectId, kind, expiresAt: MoreThan(now) },
+    });
+    return [...new Set(tokens.flatMap((token) => token.sessionId ?? []))];
   }
 }
 
@@ -300,27 +307,35 @@ export class TypeOrmIssuedTokenStore implements IssuedTokenStore {
     await this.tokens.insert({ ...token, revokedAt: null, createdAt: new Date() });
   }
 
-  async isRevoked(jti: string): Promise<boolean> {
-    const token = await this.tokens.findOneBy({ jti });
+  async isRevoked(key: string): Promise<boolean> {
+    const token = await this.tokens.findOneBy({ jti: key });
     return !!token?.revokedAt;
   }
 
-  async revoke(jti: string, expiresAt?: Date): Promise<void> {
-    const existing = await this.tokens.findOneBy({ jti });
+  async revoke(key: string, expiresAt?: Date): Promise<void> {
+    const existing = await this.tokens.findOneBy({ jti: key });
     if (existing?.revokedAt) {
       return;
     }
-    await this.tokens.save({
-      jti,
-      subjectId: '',
-      issuedBy: null,
-      name: null,
-      scopes: [],
-      expiresAt: expiresAt ?? new Date(8.64e15),
-      createdAt: new Date(),
-      ...existing,
-      revokedAt: new Date(),
-    });
+    try {
+      await this.tokens.save({
+        jti: key,
+        subjectId: '',
+        issuedBy: null,
+        name: null,
+        scopes: [],
+        expiresAt: expiresAt ?? new Date(8.64e15),
+        createdAt: new Date(),
+        ...existing,
+        revokedAt: new Date(),
+      });
+    } catch (error) {
+      // Two calls revoking the same unrecorded key both try to insert it.
+      // The one that loses has nothing left to do.
+      if (!(await this.isRevoked(key))) {
+        throw error;
+      }
+    }
   }
 
   listBySubject(subjectId: string): Promise<StoredIssuedToken[]> {

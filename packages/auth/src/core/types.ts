@@ -18,6 +18,11 @@ export interface StandardClaims {
   jti: string;
   client_id: string;
   scope: string;
+  /**
+   * The grant or browser session the token was issued under. Revoking that
+   * grant or session revokes the token. Directly issued tokens have none.
+   */
+  sid?: string;
 }
 
 /** Standard claims plus whatever the host's ClaimsProvider adds */

@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import {
   isSameResource,
   literalAudience,
@@ -39,7 +39,12 @@ import {
   type ProtectedResourceMetadata,
 } from './resource-server.js';
 import { formatScope, parseScope, ScopeRegistry } from './scopes.js';
-import { TokenSigner, TokenVerifier, type SignedToken } from './tokens.js';
+import {
+  sessionRevocationKey,
+  TokenSigner,
+  TokenVerifier,
+  type SignedToken,
+} from './tokens.js';
 import {
   silentLogger,
   systemClock,
@@ -80,8 +85,11 @@ export type OAuthServerOptions = {
     clients: ClientStore;
     grants: GrantStore;
     refreshTokens: RefreshTokenStore;
-    /** Needed to issue long-lived tokens and to revoke access tokens */
-    issuedTokens?: IssuedTokenStore;
+    /**
+     * Recorded long-lived tokens, and everything revoked: single access
+     * tokens by `jti`, whole grants and sessions by `sid`.
+     */
+    issuedTokens: IssuedTokenStore;
   };
   resources: ResourceRegistry;
   /** Needed for login and to put the user's details in tokens */
@@ -186,6 +194,8 @@ export type AuthorizationServerMetadata = {
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 const randomToken = () => randomBytes(32).toString('base64url');
 const DAY_SECONDS = 24 * 60 * 60;
+/** How long a revocation entry outlives the last token it can apply to */
+const REVOCATION_SLACK_SECONDS = 60;
 
 /**
  * The authorization server: OAuth 2.1 authorization code flow with PKCE,
@@ -605,13 +615,45 @@ export class OAuthServer {
   }
 
   /**
-   * Ends a grant: its refresh tokens are revoked and it can mint no more.
-   * Marking the grant itself matters as much as revoking the tokens, because
-   * it also stops a refresh token that a racing request stores afterwards.
+   * Ends a grant: it can mint no more, and its access and refresh tokens are
+   * revoked. Marking the grant itself matters as much as revoking the tokens,
+   * because it also stops a refresh token that a racing request stores
+   * afterwards.
    */
   private async revokeGrant(grant: Grant): Promise<void> {
     await this.stores.grants.save({ ...grant, status: 'revoked' });
+    await this.revokeAccessTokensOf(grant.id, this.config.accessTokenTtlSeconds);
     await this.stores.refreshTokens.revokeByGrant(grant.id, this.clock.now());
+  }
+
+  /**
+   * Revokes every access token issued under a grant or session, by its `sid`.
+   *
+   * This is what covers the access token of a request that wins a rotation
+   * race. Revoking by `jti` could not: the loser would have to know a `jti`
+   * the winner may not have minted yet. A `sid` is known beforehand, so the
+   * entry also applies to a token signed after it is written.
+   */
+  private async revokeAccessTokensOf(sid: string, ttlSeconds: number): Promise<void> {
+    await this.stores.issuedTokens.revoke(
+      sessionRevocationKey(sid),
+      // No token of this `sid` is handed out once the entry exists (see
+      // `assertNotRevoked`), so none can outlive it
+      new Date(
+        this.clock.now().getTime() + (ttlSeconds + REVOCATION_SLACK_SECONDS) * 1000,
+      ),
+    );
+  }
+
+  /**
+   * The last step before tokens leave the server: refuses when their grant or
+   * session was revoked while they were being issued. A revocation that lands
+   * after this check is caught by the verifier instead.
+   */
+  private async assertNotRevoked(sid: string, error: Error): Promise<void> {
+    if (await this.stores.issuedTokens.isRevoked(sessionRevocationKey(sid))) {
+      throw error;
+    }
   }
 
   private async clientOf(grant: Grant): Promise<Client> {
@@ -649,6 +691,9 @@ export class OAuthServer {
    * replacement is stored before the old token is consumed. A request that
    * then loses the race on `consume` revokes the grant's tokens, and by that
    * time the winner's replacement is already in the store to be revoked.
+   *
+   * The access token needs no such ordering. It carries the grant as `sid`,
+   * and revoking the grant revokes that `sid`, whenever the token is signed.
    */
   private async tokensFor(
     grant: Grant,
@@ -661,6 +706,7 @@ export class OAuthServer {
           kind: 'grant',
           subjectId: subject.id,
           grantId: grant.id,
+          sessionId: null,
           clientId: client.clientId,
           ttlDays: this.config.refreshTokenTtlDays,
         })
@@ -674,7 +720,12 @@ export class OAuthServer {
       scopes: grant.scopes,
       clientId: client.clientId,
       ttlSeconds: this.config.accessTokenTtlSeconds,
+      sid: grant.id,
     });
+    await this.assertNotRevoked(
+      grant.id,
+      new OAuthError('invalid_grant', 'The grant has been revoked'),
+    );
 
     const response: TokenResponse = {
       access_token: token,
@@ -692,6 +743,7 @@ export class OAuthServer {
     kind: StoredRefreshToken['kind'];
     subjectId: string;
     grantId: string | null;
+    sessionId: string | null;
     clientId: string | null;
     ttlDays: number;
   }): Promise<string> {
@@ -701,6 +753,7 @@ export class OAuthServer {
       kind: input.kind,
       subjectId: input.subjectId,
       grantId: input.grantId,
+      sessionId: input.sessionId,
       clientId: input.clientId,
       expiresAt: new Date(
         this.clock.now().getTime() + input.ttlDays * DAY_SECONDS * 1000,
@@ -727,6 +780,8 @@ export class OAuthServer {
     clientId: string;
     ttlSeconds: number;
     claims?: Record<string, unknown>;
+    /** The grant or session the token is issued under */
+    sid?: string;
   }): Promise<SignedToken> {
     const { subject, audience, scopes, clientId } = input;
     const extra = await this.claims?.claimsFor(subject, {
@@ -745,6 +800,9 @@ export class OAuthServer {
         ...(subject.displayName ? { name: subject.displayName } : {}),
         ...extra,
         ...input.claims,
+        // Last, so no other source of claims can detach a token from the
+        // grant or session it is revoked with
+        sid: input.sid,
       },
     });
   }
@@ -761,9 +819,6 @@ export class OAuthServer {
       typeof request.subject === 'string'
         ? await this.subjectOf(request.subject)
         : request.subject;
-    if (request.record && !this.stores.issuedTokens) {
-      throw new Error('Recording issued tokens needs stores.issuedTokens');
-    }
     const signed = await this.mint({
       subject,
       audience: request.audience ?? this.config.issuer,
@@ -776,7 +831,7 @@ export class OAuthServer {
       },
     });
     if (request.record) {
-      await this.stores.issuedTokens!.record({
+      await this.stores.issuedTokens.record({
         jti: signed.jti,
         subjectId: subject.id,
         issuedBy: request.record.issuedBy ?? null,
@@ -816,8 +871,8 @@ export class OAuthServer {
   }
 
   /**
-   * RFC 7009. Accepts a refresh token (revokes its whole grant) or an access
-   * token (revokes its `jti`, when `stores.issuedTokens` is configured).
+   * RFC 7009. Accepts a refresh token (revokes its whole grant or session,
+   * access tokens included) or an access token (revokes its `jti`).
    * Never reveals whether the token existed.
    */
   async revoke(input: { token?: string }): Promise<void> {
@@ -835,11 +890,8 @@ export class OAuthServer {
           await this.stores.refreshTokens.revokeByGrant(stored.grantId, now);
         }
       } else {
-        await this.stores.refreshTokens.consume(stored.tokenHash, now);
+        await this.endSession(stored);
       }
-      return;
-    }
-    if (!this.stores.issuedTokens) {
       return;
     }
     try {
@@ -852,9 +904,6 @@ export class OAuthServer {
 
   /** Revokes a recorded token by its `jti` */
   async revokeIssuedToken(jti: string): Promise<void> {
-    if (!this.stores.issuedTokens) {
-      throw new Error('Revoking issued tokens needs stores.issuedTokens');
-    }
     await this.stores.issuedTokens.revoke(jti);
   }
 
@@ -868,7 +917,7 @@ export class OAuthServer {
     if (!input.email || !input.password) {
       throw new InvalidCredentialsError();
     }
-    return this.sessionFor(await this.identity.authenticate(input));
+    return this.sessionFor(await this.identity.authenticate(input), randomUUID());
   }
 
   /** Exchanges a session refresh token for a new pair (rotation) */
@@ -880,8 +929,21 @@ export class OAuthServer {
       throw new InvalidAccessTokenError('Invalid refresh token');
     }
     const reused = async () => {
-      // A rotated token coming back means it leaked: end every session
-      await this.stores.refreshTokens.revokeBySubject(stored.subjectId, 'session', now);
+      // A rotated token coming back means it leaked: end every session,
+      // refresh tokens first and then the access tokens issued under them
+      const sessionIds = await this.stores.refreshTokens.revokeBySubject(
+        stored.subjectId,
+        'session',
+        now,
+      );
+      for (const sessionId of new Set([...sessionIds, stored.sessionId])) {
+        if (sessionId) {
+          await this.revokeAccessTokensOf(
+            sessionId,
+            this.config.sessionAccessTokenTtlSeconds,
+          );
+        }
+      }
       this.logger.warn(`Session refresh token reuse detected for ${stored.subjectId}`);
       return new InvalidAccessTokenError('Refresh token revoked');
     };
@@ -893,10 +955,10 @@ export class OAuthServer {
     }
     const subject = await this.identity?.getSubject(stored.subjectId);
     if (!subject) {
-      await this.stores.refreshTokens.consume(tokenHash, now);
+      await this.endSession(stored);
       throw new InvalidAccessTokenError('Invalid refresh token');
     }
-    return this.sessionFor(subject, async () => {
+    return this.sessionFor(subject, stored.sessionId ?? randomUUID(), async () => {
       // Two requests can both have read the token as live. The one that
       // fails to consume it is a reuse, with the same consequence as above.
       if (!(await this.stores.refreshTokens.consume(tokenHash, now))) {
@@ -905,10 +967,25 @@ export class OAuthServer {
     });
   }
 
-  /** Ends the session a refresh token belongs to */
+  /** Ends the session a refresh token belongs to, its access tokens included */
   async logout(refreshToken: string | undefined): Promise<void> {
-    if (refreshToken) {
-      await this.stores.refreshTokens.consume(sha256(refreshToken), this.clock.now());
+    if (!refreshToken) {
+      return;
+    }
+    const stored = await this.stores.refreshTokens.find(sha256(refreshToken));
+    if (stored?.kind === 'session') {
+      await this.endSession(stored);
+    }
+  }
+
+  /** Ends one session: its refresh token and the access tokens issued under it */
+  private async endSession(stored: StoredRefreshToken): Promise<void> {
+    await this.stores.refreshTokens.consume(stored.tokenHash, this.clock.now());
+    if (stored.sessionId) {
+      await this.revokeAccessTokensOf(
+        stored.sessionId,
+        this.config.sessionAccessTokenTtlSeconds,
+      );
     }
   }
 
@@ -931,10 +1008,12 @@ export class OAuthServer {
   /**
    * Issues a session token pair. As in `tokensFor`, the new refresh token is
    * stored before `retireOld` consumes the one it replaces, so a request that
-   * loses that race revokes a set of tokens that already includes it.
+   * loses that race revokes a set of tokens that already includes it. The
+   * access token is covered by its `sid`, the session it was issued under.
    */
   private async sessionFor(
     subject: Subject,
+    sessionId: string,
     retireOld?: () => Promise<void>,
   ): Promise<SessionTokens> {
     const ttlSeconds = this.config.sessionAccessTokenTtlSeconds;
@@ -942,6 +1021,7 @@ export class OAuthServer {
       kind: 'session',
       subjectId: subject.id,
       grantId: null,
+      sessionId,
       clientId: null,
       ttlDays: this.config.sessionRefreshTokenTtlDays,
     });
@@ -952,7 +1032,12 @@ export class OAuthServer {
       scopes: await this.sessionScopes(subject),
       clientId: this.config.sessionClientId,
       ttlSeconds,
+      sid: sessionId,
     });
+    await this.assertNotRevoked(
+      sessionId,
+      new InvalidAccessTokenError('Session has been revoked'),
+    );
     return {
       subject,
       accessToken: token,

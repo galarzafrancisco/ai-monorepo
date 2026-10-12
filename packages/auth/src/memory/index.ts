@@ -118,12 +118,15 @@ export class MemoryRefreshTokenStore implements RefreshTokenStore {
     subjectId: string,
     kind: StoredRefreshToken['kind'],
     now: Date,
-  ): Promise<void> {
+  ): Promise<string[]> {
+    const sessionIds = new Set<string>();
     for (const token of this.tokens.values()) {
       if (token.subjectId === subjectId && token.kind === kind) {
         token.revokedAt ??= now;
+        if (token.sessionId && token.expiresAt > now) sessionIds.add(token.sessionId);
       }
     }
+    return [...sessionIds];
   }
 }
 
