@@ -81,7 +81,7 @@ after(() => {
 async function login() {
   const response = await fetch(`${issuer}/oauth/login`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', origin: issuer },
     body: JSON.stringify({ email: 'ada@example.com', password: 'correct horse' }),
   });
   assert.equal(response.status, 200);
@@ -213,6 +213,93 @@ test('consent needs a logged-in user and a trusted origin', async () => {
   assert.equal(details.status, 'pending');
 });
 
+test('session POSTs without a trusted Origin or Referer are refused', async () => {
+  const client = new OAuthClient({ issuer });
+  const redirectUri = 'http://127.0.0.1:9/callback';
+  await client.register({ clientName: 'c', redirectUris: [redirectUri] });
+  const request = await client.createAuthorizationRequest({ redirectUri, resource: apiUrl });
+  const authorize = await fetch(request.url, { redirect: 'manual' });
+  const grantId = new URL(authorize.headers.get('location')).searchParams.get('grant_id');
+  const cookie = await login();
+
+  const post = (path, headers, body = {}) =>
+    fetch(`${issuer}/oauth/${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    });
+  const approval = { grant_id: grantId, approved: true };
+  const credentials = { email: 'ada@example.com', password: 'correct horse' };
+
+  // Sources that must not be trusted, each with the session cookie attached
+  const untrusted = {
+    'no Origin and no Referer': {},
+    'an opaque Origin': { origin: 'null' },
+    'an opaque Origin with a trusted Referer': { origin: 'null', referer: `${issuer}/consent` },
+    'a foreign Origin with a trusted Referer': { origin: 'https://evil.example.com', referer: `${issuer}/consent` },
+    'a foreign Referer': { referer: 'https://evil.example.com/page' },
+    'a Referer that only starts with the issuer': { referer: `${issuer}.evil.example.com/page` },
+    'a Referer that is not a URL': { referer: 'not a url' },
+  };
+  for (const [name, headers] of Object.entries(untrusted)) {
+    const consent = await post('consent', { cookie, ...headers }, approval);
+    assert.equal(consent.status, 403, `consent with ${name}`);
+    assert.equal((await consent.json()).error, 'invalid_request');
+    assert.equal((await post('session/refresh', { cookie, ...headers })).status, 403, `refresh with ${name}`);
+    const logout = await post('logout', { cookie, ...headers });
+    assert.equal(logout.status, 403, `logout with ${name}`);
+    assert.equal(logout.headers.getSetCookie().length, 0);
+    const loggedIn = await post('login', headers, credentials);
+    assert.equal(loggedIn.status, 403, `login with ${name}`);
+    assert.equal(loggedIn.headers.getSetCookie().length, 0);
+  }
+
+  // None of the refused requests took effect
+  const details = await (await fetch(`${issuer}/oauth/consent/${grantId}`)).json();
+  assert.equal(details.status, 'pending');
+  assert.equal((await fetch(`${issuer}/oauth/session`, { headers: { cookie } })).status, 200);
+
+  // With no Origin, a Referer from the issuer is enough
+  const referer = `${issuer}/consent?grant_id=${grantId}`;
+  const refreshed = await post('session/refresh', { cookie, referer });
+  assert.equal(refreshed.status, 200);
+  const newCookie = refreshed.headers.getSetCookie().map((value) => value.split(';')[0]).join('; ');
+  assert.equal((await post('consent', { cookie: newCookie, referer }, approval)).status, 200);
+  assert.equal((await post('logout', { cookie: newCookie, referer })).status, 200);
+});
+
+test('trustedOrigins extends the allowed origins; a session bearer token needs none', async () => {
+  const app = new Hono();
+  app.use('*', authRoutes(oauth, { trustedOrigins: ['http://ui.localhost:5173'] }));
+  const post = (path, headers, body = {}) =>
+    app.request(`${issuer}/oauth/${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    });
+  const credentials = { email: 'ada@example.com', password: 'correct horse' };
+
+  assert.equal((await post('login', {}, credentials)).status, 403);
+  assert.equal((await post('login', { origin: 'http://other.localhost:5173' }, credentials)).status, 403);
+  assert.equal((await post('login', { origin: 'http://ui.localhost:5173' }, credentials)).status, 200);
+  assert.equal((await post('login', { referer: 'http://ui.localhost:5173/login' }, credentials)).status, 200);
+
+  // A header the browser never adds by itself cannot be forged across sites
+  const client = new OAuthClient({ issuer });
+  const redirectUri = 'http://127.0.0.1:9/callback';
+  await client.register({ clientName: 'c', redirectUris: [redirectUri] });
+  const request = await client.createAuthorizationRequest({ redirectUri, resource: apiUrl });
+  const authorize = await fetch(request.url, { redirect: 'manual' });
+  const grantId = new URL(authorize.headers.get('location')).searchParams.get('grant_id');
+  const sessionToken = (await login()).match(/access_token=([^;]+)/)[1];
+  const consent = await post(
+    'consent',
+    { authorization: `Bearer ${decodeURIComponent(sessionToken)}` },
+    { grant_id: grantId, approved: true },
+  );
+  assert.equal(consent.status, 200);
+});
+
 test('OAuth errors use the RFC 6749 shape; form bodies are accepted', async () => {
   const response = await fetch(`${issuer}/oauth/token`, {
     method: 'POST',
@@ -230,7 +317,7 @@ test('OAuth errors use the RFC 6749 shape; form bodies are accepted', async () =
 test('session endpoints: bad password, refresh, logout', async () => {
   const bad = await fetch(`${issuer}/oauth/login`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', origin: issuer },
     body: JSON.stringify({ email: 'ada@example.com', password: 'nope' }),
   });
   assert.equal(bad.status, 401);
@@ -238,12 +325,12 @@ test('session endpoints: bad password, refresh, logout', async () => {
 
   const cookie = await login();
   assert.equal((await fetch(`${issuer}/oauth/session`, { headers: { cookie } })).status, 200);
-  const refreshed = await fetch(`${issuer}/oauth/session/refresh`, { method: 'POST', headers: { cookie } });
+  const refreshed = await fetch(`${issuer}/oauth/session/refresh`, { method: 'POST', headers: { cookie, origin: issuer } });
   assert.equal(refreshed.status, 200);
   const newCookie = refreshed.headers.getSetCookie().map((value) => value.split(';')[0]).join('; ');
-  const logout = await fetch(`${issuer}/oauth/logout`, { method: 'POST', headers: { cookie: newCookie } });
+  const logout = await fetch(`${issuer}/oauth/logout`, { method: 'POST', headers: { cookie: newCookie, origin: issuer } });
   assert.match(logout.headers.getSetCookie()[0], /Max-Age=0/);
-  assert.equal((await fetch(`${issuer}/oauth/session/refresh`, { method: 'POST', headers: { cookie: newCookie } })).status, 401);
+  assert.equal((await fetch(`${issuer}/oauth/session/refresh`, { method: 'POST', headers: { cookie: newCookie, origin: issuer } })).status, 401);
 });
 
 test('Hono: the same server and the same checks', async () => {

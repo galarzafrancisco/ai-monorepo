@@ -42,7 +42,8 @@ export type AuthHttpOptions = {
   /**
    * Origins, besides the issuer's, whose pages may post to the session and
    * consent endpoints (for example a UI served from another port in
-   * development).
+   * development). Those POSTs are refused unless their `Origin` header, or
+   * their `Referer` when there is no `Origin`, names one of these origins.
    */
   trustedOrigins?: string[];
 };
@@ -100,10 +101,34 @@ export function createAuthHttpHandler(
   ];
   const clearedCookies = [cookie(accessCookie, '', 0), cookie(refreshCookie, '', 0)];
 
-  /** Cookie-authenticated POSTs must come from a page we trust */
+  /**
+   * Where a request says it came from: its `Origin`, or failing that the
+   * origin of its `Referer`. An `Origin` that is present always decides, so
+   * an opaque one (`null`) is never rescued by a Referer.
+   */
+  const sourceOrigin = (request: HttpRequest): string | undefined => {
+    const origin = request.headers.origin?.trim();
+    if (origin) {
+      return origin;
+    }
+    const referer = request.headers.referer?.trim();
+    if (!referer) {
+      return undefined;
+    }
+    try {
+      return new URL(referer).origin;
+    } catch {
+      return undefined;
+    }
+  };
+
+  /**
+   * Session POSTs must come from a page we trust. A request that names no
+   * source at all is refused: the absence of `Origin` proves nothing.
+   */
   const assertTrustedOrigin = (request: HttpRequest) => {
-    const origin = request.headers.origin;
-    if (origin && !trustedOrigins.has(origin)) {
+    const origin = sourceOrigin(request);
+    if (!origin || !trustedOrigins.has(origin)) {
       throw new OAuthError('invalid_request', 'Request origin is not allowed', 403);
     }
   };
@@ -160,7 +185,11 @@ export function createAuthHttpHandler(
     json(await server.getConsent(grantId)),
   );
   route('POST', `${basePath}/consent`, async (request) => {
-    assertTrustedOrigin(request);
+    // A bearer header is not sent by the browser on its own, so a request
+    // that authenticates with one cannot be forged; the cookie is then unused.
+    if (!bearerTokenFrom(request.headers.authorization)) {
+      assertTrustedOrigin(request);
+    }
     const body = request.body ?? {};
     const grantId = text(body.grant_id);
     if (!grantId) {

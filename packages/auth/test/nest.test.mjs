@@ -113,11 +113,18 @@ test('AuthModule provides the server and mounts its endpoints', async () => {
 
   const login = await fetch(`${url}/oauth/login`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', origin: url },
     body: JSON.stringify({ email: 'ada@example.com', password: 'correct horse' }),
   });
   assert.equal(login.status, 200);
   assert.equal(login.headers.getSetCookie().length, 2);
+
+  const noOrigin = await fetch(`${url}/oauth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'ada@example.com', password: 'correct horse' }),
+  });
+  assert.equal(noOrigin.status, 403);
 });
 
 test('guards: public routes, missing token, scopes', async () => {

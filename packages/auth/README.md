@@ -147,7 +147,8 @@ Every method on `OAuthServer` takes and returns plain data, so you can build you
 - Refresh tokens rotate. Presenting a rotated-out token revokes the whole grant.
 - A token's audience is the resource the grant was made for, never a value the client sent at the token endpoint.
 - `resolveSession` only accepts tokens minted for a browser session, so a client's or agent's token cannot approve a consent.
-- Session cookies are `HttpOnly`, `SameSite=Lax`, and `Secure` when the issuer is https; cookie-authenticated POSTs also check `Origin`.
+- Session cookies are `HttpOnly`, `SameSite=Lax`, and `Secure` when the issuer is https.
+- The session POSTs (`login`, `session/refresh`, `logout`, and `consent` when it is authenticated by the cookie) are refused with 403 unless the request's `Origin` is the issuer's or one of `trustedOrigins`. When there is no `Origin`, the origin of `Referer` is checked instead; a request with neither is refused. A non-browser caller of these routes must send `Origin` itself. `consent` with a session token in an `Authorization: Bearer` header skips the check, because a browser never attaches that header on its own.
 - Client ID metadata documents are fetched over https from public addresses only, without following redirects, with a size cap and a timeout.
 
 ### Hooks: running your own step after consent
