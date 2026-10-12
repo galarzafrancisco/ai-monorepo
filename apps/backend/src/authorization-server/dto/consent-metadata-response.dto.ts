@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ClientRegistrationMethod } from '../enums';
 import { McpAuthorizationFlowStatus } from '../../auth-journeys/enums/mcp-authorization-flow-status.enum';
 
 /**
@@ -39,6 +40,14 @@ export class FlowClientDto {
     example: 'Claude Desktop',
   })
   clientName!: string;
+
+  @ApiProperty({
+    description:
+      'How the client is known: it registered, or its client_id is a URL to a metadata document it hosts. The client name is self-declared either way.',
+    enum: ClientRegistrationMethod,
+    example: ClientRegistrationMethod.METADATA_DOCUMENT,
+  })
+  registrationMethod!: ClientRegistrationMethod;
 }
 
 /**

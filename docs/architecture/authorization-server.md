@@ -491,6 +491,71 @@ AuthJourneysService.createJourneyForMcpRegistration()
 Response: { client_id, client_secret, expires_at }
 ```
 
+### Phase 1, alternative: Client ID Metadata Document (no registration)
+
+MCP now prefers Client ID Metadata Documents (CIMD) over dynamic registration.
+The client does not register. Its `client_id` is an `https://` URL it hosts,
+and the JSON document at that URL says what the client is called and which
+redirect URIs it uses. The authorization server metadata advertises this with
+`client_id_metadata_document_supported: true`; dynamic registration stays
+available for clients that do not have a document.
+
+```
+MCP Client
+    |
+    | GET /auth/authorize/mcp/tasks/0.0.0
+    |     ?client_id=https://app.example.com/oauth/client.json&...
+    v
+AuthorizationService.processAuthorizationRequest()
+    |
+    | client_id is a URL
+    v
+ClientIdMetadataService.resolveClient()
+    |
+    |-- Use the cached RegisteredClientEntity if its document has not expired
+    |-- Otherwise ClientMetadataDocumentFetcher.fetch(client_id)
+    |-- Validate the document
+    |-- Save it as a RegisteredClientEntity
+    |       (registration_method: metadata_document, no secret)
+    v
+Phase 2 continues as for a registered client
+```
+
+**What is checked on the document**:
+- its `client_id` is exactly the URL it was fetched from
+- `client_name` and `redirect_uris` are present
+- redirect URIs are https, http on localhost, or an app's own scheme
+- `token_endpoint_auth_method` is `none` or absent. Only public clients are
+  supported: shared secrets are forbidden by the CIMD draft, and
+  `private_key_jwt` is refused because client assertions are not verified.
+
+**Fetching is treated as hostile input** (the URL comes from whoever sent the
+request): https only, public IP addresses only (checked on the address the
+socket connects to), no redirects, 5 second timeout, 5 kB limit. The document
+is cached following `Cache-Control: max-age`, for at least a minute and at
+most a day.
+
+The client name is self-declared. The consent screen therefore also shows the
+host the document is published on and the host the user is redirected to, and
+warns when the redirect goes to the user's own computer.
+
+### One flow per authorization request
+
+Each authorization request runs in its own `McpAuthorizationFlowEntity` and
+journey. A client has many flows over time:
+
+- a registered client can authorize again with the same `client_id`, for
+  example after its refresh token expired
+- everyone using the same metadata document client shares one `client_id`, and
+  their authorizations must not share PKCE or state
+
+The flow created at registration is the exception: the client's first
+authorization request picks it up. A registered client can only authorize on
+the MCP server it registered with; a metadata document client can use any.
+
+The hourly cleanup removes authorization attempts that were never finished. A
+client is removed with them only when it has no other flow left.
+
 ### Phase 2: MCP Client Authorization (OAuth 2.0 + PKCE)
 
 ```
@@ -1022,6 +1087,7 @@ WHERE scope_id IN ('read:tasks', 'write:tasks')
 
 ### Client Registration
 - `POST /register/mcp/:serverIdentifier/:version` - Register new client
+- No endpoint for Client ID Metadata Documents: the client's `client_id` URL is fetched by the authorization endpoint
 
 ### Authorization Flow
 - `GET /auth/authorize/mcp/:serverIdentifier/:version` - Start authorization

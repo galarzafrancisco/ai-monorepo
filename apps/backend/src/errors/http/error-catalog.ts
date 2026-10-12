@@ -165,6 +165,12 @@ export const ErrorCatalog: Record<
     type: '/errors/authz/missing-required-field',
     retryable: false,
   },
+  [ErrorCodes.INVALID_CLIENT_METADATA]: {
+    status: 400,
+    title: 'Invalid client metadata',
+    type: '/errors/authz/invalid-client-metadata',
+    retryable: false,
+  },
   [ErrorCodes.SERVER_NOT_FOUND]: {
     status: 404,
     title: 'MCP server not found',

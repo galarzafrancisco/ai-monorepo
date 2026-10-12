@@ -21,6 +21,12 @@ import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mappin
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
 import { AuthCryptoModule } from '../auth/crypto/auth-crypto.module';
 import { WebAuthService } from './web-auth.service';
+import { ClientIdMetadataService } from './client-id-metadata.service';
+import {
+  CLIENT_METADATA_FETCH_OPTIONS,
+  ClientMetadataDocumentFetcher,
+  DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
+} from './client-metadata-document.fetcher';
 
 @Module({
   imports: [
@@ -41,6 +47,12 @@ import { WebAuthService } from './web-auth.service';
   ],
   providers: [
     ClientRegistrationService,
+    {
+      provide: CLIENT_METADATA_FETCH_OPTIONS,
+      useValue: DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
+    },
+    ClientMetadataDocumentFetcher,
+    ClientIdMetadataService,
     AuthorizationService,
     TokenService,
     TokenExchangeService,

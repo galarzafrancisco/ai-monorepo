@@ -8,7 +8,13 @@ import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
-import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities';
+import {
+  ConnectionAuthorizationFlowEntity,
+  McpAuthorizationFlowEntity,
+} from '../auth-journeys/entities';
+import { ClientRegistrationMethod } from './enums';
+import { ClientIdMetadataService } from './client-id-metadata.service';
+import { isRegisteredRedirectUri } from './utils/redirect-uri';
 import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { getConfig } from 'src/config/env.config';
@@ -46,6 +52,7 @@ export class AuthorizationService {
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
     private readonly authJourneysService: AuthJourneysService,
+    private readonly clientIdMetadataService: ClientIdMetadataService,
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
@@ -72,15 +79,12 @@ export class AuthorizationService {
     }
 
     // Validate that the client exists
-    const client = await this.clientRepository.findOne({
-      where: { clientId: authRequest.client_id },
-    });
-    if (!client) {
-      throw new McpClientNotFoundError(authRequest.client_id);
-    }
+    const client = await this.resolveClient(authRequest.client_id);
 
     // Validate that the redirect_uri matches one of the registered URIs
-    if (!client.redirectUris.includes(authRequest.redirect_uri)) {
+    if (
+      !isRegisteredRedirectUri(client.redirectUris, authRequest.redirect_uri)
+    ) {
       throw new InvalidRedirectUriError(
         authRequest.redirect_uri,
         authRequest.client_id,
@@ -108,19 +112,11 @@ export class AuthorizationService {
       scopes = requestedScopes.filter((s) => allowedScopes.includes(s));
     }
 
-    // Find the existing MCP authorization flow for this client and server
-    const mcpAuthFlow =
-      await this.authJourneysService.findMcpAuthFlowByClientAndServer(
-        client.id,
-        mcpServer.id,
-        ['authJourney'],
-      );
-
-    if (!mcpAuthFlow) {
-      throw new AuthFlowNotFoundError(
-        `client: ${authRequest.client_id}, server: ${serverIdentifier}`,
-      );
-    }
+    const mcpAuthFlow = await this.startMcpAuthFlow(
+      client,
+      mcpServer.id,
+      serverIdentifier,
+    );
 
     // Change status
     mcpAuthFlow.status =
@@ -142,6 +138,71 @@ export class AuthorizationService {
 
     // Return the flow ID to be used in the consent screen
     return mcpAuthFlow.id;
+  }
+
+  /**
+   * A client_id that is a URL names a Client ID Metadata Document; anything
+   * else must be a client_id issued by dynamic registration.
+   */
+  private async resolveClient(
+    clientId: string,
+  ): Promise<RegisteredClientEntity> {
+    if (this.clientIdMetadataService.isMetadataDocumentClientId(clientId)) {
+      return this.clientIdMetadataService.resolveClient(clientId);
+    }
+
+    const client = await this.clientRepository.findOne({
+      where: {
+        clientId,
+        registrationMethod: ClientRegistrationMethod.DYNAMIC_REGISTRATION,
+      },
+    });
+    if (!client) {
+      throw new McpClientNotFoundError(clientId);
+    }
+    return client;
+  }
+
+  /**
+   * Every authorization request runs in its own flow, so a client can
+   * authorize again after its tokens expire and the users of one metadata
+   * document client do not share state. The one exception is the flow created
+   * when a client registers, which its first authorization request picks up.
+   */
+  private async startMcpAuthFlow(
+    client: RegisteredClientEntity,
+    mcpServerId: string,
+    serverIdentifier: string,
+  ): Promise<McpAuthorizationFlowEntity> {
+    if (
+      client.registrationMethod ===
+      ClientRegistrationMethod.DYNAMIC_REGISTRATION
+    ) {
+      const flows =
+        await this.authJourneysService.findMcpAuthFlowsByClientAndServer(
+          client.id,
+          mcpServerId,
+        );
+      // A registered client belongs to the MCP server it registered with
+      if (flows.length === 0) {
+        throw new AuthFlowNotFoundError(
+          `client: ${client.clientId}, server: ${serverIdentifier}`,
+        );
+      }
+      const unusedFlow = flows.find(
+        (flow) => flow.status === McpAuthorizationFlowStatus.CLIENT_REGISTERED,
+      );
+      if (unusedFlow) {
+        return unusedFlow;
+      }
+    }
+
+    const { mcpAuthorizationFlow } =
+      await this.authJourneysService.createJourneyForAuthorizationRequest({
+        mcpServerId,
+        mcpClientId: client.id,
+      });
+    return mcpAuthorizationFlow;
   }
 
   /**
@@ -170,6 +231,7 @@ export class AuthorizationService {
       client: {
         clientId: mcpAuthFlow.client.clientId,
         clientName: mcpAuthFlow.client.clientName,
+        registrationMethod: mcpAuthFlow.client.registrationMethod,
       },
       redirectUri: mcpAuthFlow.redirectUri!,
       createdAt: mcpAuthFlow.createdAt,

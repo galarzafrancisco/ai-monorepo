@@ -42,7 +42,10 @@ import { ConsentMetadata } from './dto/service/authorization.service.types';
 import { getFrontendPath } from '../config/frontend.config';
 import { ALL_API_SCOPES } from '../auth/core/scopes/all-api.scopes';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
-import { ResourceMismatchError } from './errors/authorization.errors';
+import {
+  AuthFlowNotFoundError,
+  ResourceMismatchError,
+} from './errors/authorization.errors';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -90,6 +93,17 @@ export class AuthorizationController {
       const consentUrl = getFrontendPath(`/consent?flow=${flowId}`);
       res.redirect(HttpStatus.FOUND, consentUrl);
     } catch (error) {
+      // Only errors raised after the client and its redirect URI were
+      // verified may be reported by redirect. For anything else the redirect
+      // URI cannot be trusted, so the error is answered here instead of
+      // sending the user wherever the request says (RFC 6749 section 4.1.2.1).
+      if (
+        !(error instanceof ResourceMismatchError) &&
+        !(error instanceof AuthFlowNotFoundError)
+      ) {
+        throw error;
+      }
+
       // If there's an error, redirect back with error parameters
       if (authRequest.redirect_uri) {
         const errorUrl = new URL(authRequest.redirect_uri);

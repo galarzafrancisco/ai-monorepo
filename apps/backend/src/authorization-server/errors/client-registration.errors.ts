@@ -9,6 +9,7 @@ export const ClientRegistrationErrorCodes = {
   INVALID_TOKEN_ENDPOINT_AUTH_METHOD:
     ErrorCodes.INVALID_TOKEN_ENDPOINT_AUTH_METHOD,
   MISSING_REQUIRED_FIELD: ErrorCodes.MISSING_REQUIRED_FIELD,
+  INVALID_CLIENT_METADATA: ErrorCodes.INVALID_CLIENT_METADATA,
 } as const;
 
 type ClientRegistrationErrorCode =
@@ -73,6 +74,20 @@ export class MissingRequiredFieldError extends ClientRegistrationDomainError {
       `Missing required field: ${fieldName}`,
       ClientRegistrationErrorCodes.MISSING_REQUIRED_FIELD,
       { fieldName },
+    );
+  }
+}
+
+/**
+ * Thrown when a Client ID Metadata Document cannot be used: the client_id is
+ * not an acceptable URL, the document cannot be fetched, or its content is invalid.
+ */
+export class InvalidClientMetadataError extends ClientRegistrationDomainError {
+  constructor(clientId: string, reason: string) {
+    super(
+      `Invalid client metadata document: ${reason}`,
+      ClientRegistrationErrorCodes.INVALID_CLIENT_METADATA,
+      { clientId, reason },
     );
   }
 }

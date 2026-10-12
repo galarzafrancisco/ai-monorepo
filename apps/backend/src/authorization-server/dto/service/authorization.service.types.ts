@@ -1,3 +1,4 @@
+import { ClientRegistrationMethod } from '../../enums';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
 
 /*
@@ -16,6 +17,7 @@ export type ConsentMetadata = {
   client: {
     clientId: string;
     clientName: string;
+    registrationMethod: ClientRegistrationMethod;
   };
   redirectUri: string;
   createdAt: Date;

@@ -77,7 +77,7 @@ export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto.js';
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto.js';
 export type { ExecutionStatsResponseDto } from './models/ExecutionStatsResponseDto.js';
-export type { FlowClientDto } from './models/FlowClientDto.js';
+export { FlowClientDto } from './models/FlowClientDto.js';
 export type { FlowServerDto } from './models/FlowServerDto.js';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto.js';
 export { GlobalSearchResultDto } from './models/GlobalSearchResultDto.js';

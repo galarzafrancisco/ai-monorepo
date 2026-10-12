@@ -65,4 +65,11 @@ export class AuthorizationServerMetadataDto {
     type: [String],
   })
   code_challenge_methods_supported!: string[];
+
+  @ApiProperty({
+    description:
+      'Whether clients may use a Client ID Metadata Document URL as their client_id instead of registering',
+    example: true,
+  })
+  client_id_metadata_document_supported!: boolean;
 }

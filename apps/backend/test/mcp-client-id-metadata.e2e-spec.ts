@@ -1,0 +1,568 @@
+import { INestApplication, RequestMethod } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import cookieParser from 'cookie-parser';
+import { decodeJwt } from 'jose';
+import { AddressInfo } from 'net';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import { Repository } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { AuthJourneysService } from '../src/auth-journeys/auth-journeys.service';
+import { McpAuthorizationFlowEntity } from '../src/auth-journeys/entities';
+import {
+  CLIENT_METADATA_FETCH_OPTIONS,
+  DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
+} from '../src/authorization-server/client-metadata-document.fetcher';
+import { RegisteredClientEntity } from '../src/authorization-server/entities/registered-client.entity';
+import { getConfig } from '../src/config/env.config';
+import { AppValidationPipe } from '../src/http/app-validation.pipe';
+import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
+import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ClientMetadataHost, FakeMcpClient } from './helpers/fake-mcp-client';
+
+const TASKS_MCP_PATH = '/api/v1/tasks/tasks/mcp';
+const CONTEXT_MCP_PATH = '/api/v1/context/blocks/mcp';
+const REDIRECT_URI = 'http://localhost:6274/oauth/callback';
+
+describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => {
+  let app: INestApplication<App>;
+  let httpServer: App;
+  let baseUrl: string;
+  let issuerUrl: string;
+  let tasksMcpUrl: string;
+  let authCookies: string;
+  let metadataHost: ClientMetadataHost;
+  let clients: Repository<RegisteredClientEntity>;
+  let flows: Repository<McpAuthorizationFlowEntity>;
+  let documentCounter = 0;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      // The fake client serves its metadata document from 127.0.0.1 over http,
+      // which the real fetch policy refuses.
+      .overrideProvider(CLIENT_METADATA_FETCH_OPTIONS)
+      .useValue({
+        ...DEFAULT_CLIENT_METADATA_FETCH_OPTIONS,
+        allowInsecureLocal: true,
+      })
+      .compile();
+
+    app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
+    app.useGlobalPipes(new AppValidationPipe());
+    app.useGlobalFilters(new ProblemDetailsFilter());
+    app.setGlobalPrefix('api/v1', {
+      exclude: [{ path: '/.well-known/*path', method: RequestMethod.ALL }],
+    });
+    await app.listen(0, '127.0.0.1');
+    httpServer = app.getHttpServer();
+    baseUrl = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}`;
+
+    await ensureTestUser(app);
+    authCookies = await getAuthCookies(httpServer);
+
+    issuerUrl = getConfig().issuerUrl;
+    tasksMcpUrl = `${issuerUrl}${TASKS_MCP_PATH}`;
+    clients = app.get(getRepositoryToken(RegisteredClientEntity));
+    flows = app.get(getRepositoryToken(McpAuthorizationFlowEntity));
+
+    metadataHost = new ClientMetadataHost();
+    await metadataHost.start();
+  });
+
+  afterAll(async () => {
+    await metadataHost.stop();
+    await app.close();
+  });
+
+  /** Taico's public URLs, reached at the address the test app listens on */
+  const route = (url: string) =>
+    url.startsWith(issuerUrl) ? baseUrl + url.slice(issuerUrl.length) : url;
+
+  /** The user: follows the authorization URL to the consent screen and approves */
+  async function approve(authorizationUrl: URL): Promise<URL> {
+    const flowId = await openConsentScreen(authorizationUrl);
+    return submitConsent(authorizationUrl, flowId);
+  }
+
+  async function openConsentScreen(authorizationUrl: URL): Promise<string> {
+    const response = await fetch(route(authorizationUrl.toString()), {
+      redirect: 'manual',
+    });
+    if (response.status !== 302) {
+      throw new Error(
+        `authorize -> ${response.status} ${await response.text()}`,
+      );
+    }
+    const consentScreen = new URL(response.headers.get('location')!);
+    const flowId = consentScreen.searchParams.get('flow');
+    if (!flowId) {
+      throw new Error(`not sent to the consent screen: ${consentScreen}`);
+    }
+    return flowId;
+  }
+
+  async function submitConsent(
+    authorizationUrl: URL,
+    flowId: string,
+  ): Promise<URL> {
+    const response = await fetch(
+      route(`${authorizationUrl.origin}${authorizationUrl.pathname}`),
+      {
+        method: 'POST',
+        redirect: 'manual',
+        headers: { 'content-type': 'application/json', cookie: authCookies },
+        body: JSON.stringify({ flow_id: flowId, approved: true }),
+      },
+    );
+    if (response.status !== 302) {
+      throw new Error(`consent -> ${response.status} ${await response.text()}`);
+    }
+    return new URL(response.headers.get('location')!);
+  }
+
+  function publishDocument(
+    document: Record<string, unknown> = {},
+    headers?: Record<string, string>,
+  ): string {
+    return metadataHost.publish(
+      `/clients/${++documentCounter}/metadata.json`,
+      {
+        client_name: 'Fake CIMD client',
+        redirect_uris: [REDIRECT_URI],
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+        token_endpoint_auth_method: 'none',
+        ...document,
+      },
+      headers,
+    );
+  }
+
+  function newClient(
+    clientMetadataUrl?: string,
+    redirectUri = REDIRECT_URI,
+  ): FakeMcpClient {
+    return new FakeMcpClient({
+      redirectUri,
+      clientMetadataUrl,
+      approve,
+      route,
+    });
+  }
+
+  /** Sends an authorization request directly, for requests the server must refuse */
+  function authorizeRequest(
+    clientId: string,
+    overrides: Record<string, string> = {},
+  ) {
+    return request(httpServer)
+      .get('/api/v1/auth/authorize/mcp/tasks/0.0.0')
+      .query({
+        response_type: 'code',
+        client_id: clientId,
+        redirect_uri: REDIRECT_URI,
+        state: 'test-state',
+        code_challenge: 'a'.repeat(43),
+        code_challenge_method: 'S256',
+        resource: tasksMcpUrl,
+        ...overrides,
+      });
+  }
+
+  describe('discovery', () => {
+    it('advertises Client ID Metadata Document support next to dynamic registration', async () => {
+      const client = newClient();
+      const metadata = await client.discover(tasksMcpUrl);
+
+      expect(metadata.client_id_metadata_document_supported).toBe(true);
+      expect(metadata.registration_endpoint).toBeDefined();
+      expect(client.metadataUrl).toBe(
+        `${issuerUrl}/.well-known/oauth-authorization-server/mcp/tasks/0.0.0`,
+      );
+    });
+  });
+
+  describe('a client with a metadata document', () => {
+    it('connects without registering, calls the MCP server and refreshes', async () => {
+      const clientId = publishDocument({ client_name: 'Metadata Doc Client' });
+      const registeredBefore = await clients.count();
+      const client = newClient(clientId);
+
+      const tokens = await client.connect(tasksMcpUrl, 'mcp:use');
+
+      expect(client.registrationMethod).toBe('metadata_document');
+      expect(client.clientId).toBe(clientId);
+      // The only new client is the cached metadata document
+      expect(await clients.count()).toBe(registeredBefore + 1);
+      const stored = await clients.findOneByOrFail({ clientId });
+      expect(stored.clientName).toBe('Metadata Doc Client');
+      expect(stored.registrationMethod).toBe('metadata_document');
+      expect(stored.clientSecret).toBeNull();
+
+      const claims = decodeJwt(tokens.access_token);
+      expect(claims.aud).toBe(tasksMcpUrl);
+      expect(claims.client_id).toBe(clientId);
+      expect((await client.callMcp()).status).toBe(200);
+
+      const refreshed = await client.refresh();
+      expect(refreshed.refresh_token).not.toBe(tokens.refresh_token);
+      expect(decodeJwt(refreshed.access_token).client_id).toBe(clientId);
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('shows on the consent screen who the client says it is and how it is identified', async () => {
+      const clientId = publishDocument({
+        client_name: 'Consent Screen Client',
+      });
+      const client = newClient(clientId);
+      await client.discover(tasksMcpUrl);
+      await client.obtainClientId();
+      const flowId = await openConsentScreen(
+        client.startAuthorization().authorizationUrl,
+      );
+
+      const consent = await request(httpServer)
+        .get(`/api/v1/auth/consent/${flowId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(consent.body.client).toEqual({
+        clientId,
+        clientName: 'Consent Screen Client',
+        registrationMethod: 'metadata_document',
+      });
+      expect(consent.body.redirectUri).toBe(REDIRECT_URI);
+    });
+
+    it('keeps two users of the same client_id apart', async () => {
+      const clientId = publishDocument();
+      const [alice, bob] = [newClient(clientId), newClient(clientId)];
+      for (const client of [alice, bob]) {
+        await client.discover(tasksMcpUrl);
+        await client.obtainClientId();
+      }
+
+      // Both are in the middle of authorizing at the same time
+      const alicePending = alice.startAuthorization('mcp:use');
+      const bobPending = bob.startAuthorization('mcp:use');
+      const aliceFlow = await openConsentScreen(alicePending.authorizationUrl);
+      const bobFlow = await openConsentScreen(bobPending.authorizationUrl);
+      expect(aliceFlow).not.toBe(bobFlow);
+
+      const bobCallback = await submitConsent(
+        bobPending.authorizationUrl,
+        bobFlow,
+      );
+      const aliceCallback = await submitConsent(
+        alicePending.authorizationUrl,
+        aliceFlow,
+      );
+      expect(aliceCallback.searchParams.get('state')).toBe(alicePending.state);
+      expect(bobCallback.searchParams.get('state')).toBe(bobPending.state);
+
+      // A code only works with the PKCE verifier of the request it belongs to
+      await expect(
+        alice.finishAuthorization(
+          { ...alicePending, state: bobPending.state },
+          bobCallback,
+        ),
+      ).rejects.toThrow(/token request failed/);
+
+      await alice.finishAuthorization(alicePending, aliceCallback);
+      expect((await alice.callMcp()).status).toBe(200);
+    });
+
+    it('fetches the document once and reuses it while it is fresh', async () => {
+      const clientId = publishDocument({}, { 'cache-control': 'max-age=600' });
+      const client = newClient(clientId);
+
+      await client.connect(tasksMcpUrl);
+      await client.authorize();
+
+      expect(metadataHost.requestCount(clientId)).toBe(1);
+      const stored = await clients.findOneByOrFail({ clientId });
+      const lifetimeMs = stored.metadataExpiresAt!.getTime() - Date.now();
+      expect(lifetimeMs).toBeGreaterThan(9 * 60 * 1000);
+      expect(lifetimeMs).toBeLessThanOrEqual(10 * 60 * 1000);
+    });
+
+    it('fetches the document again once the cached copy has expired', async () => {
+      const clientId = publishDocument({ client_name: 'Before' });
+      const client = newClient(clientId);
+      await client.connect(tasksMcpUrl);
+
+      metadataHost.publish(new URL(clientId).pathname, {
+        client_name: 'After',
+        redirect_uris: [REDIRECT_URI],
+      });
+      await clients.update({ clientId }, { metadataExpiresAt: new Date(0) });
+      await client.authorize();
+
+      expect(metadataHost.requestCount(clientId)).toBe(2);
+      expect((await clients.findOneByOrFail({ clientId })).clientName).toBe(
+        'After',
+      );
+      expect(await clients.countBy({ clientId })).toBe(1);
+    });
+
+    it('can use the same client_id on another MCP server', async () => {
+      const clientId = publishDocument();
+      const contextMcpUrl = `${issuerUrl}${CONTEXT_MCP_PATH}`;
+
+      const tasksClient = newClient(clientId);
+      await tasksClient.connect(tasksMcpUrl);
+      const contextClient = newClient(clientId);
+      const contextTokens = await contextClient.connect(contextMcpUrl);
+
+      expect(decodeJwt(contextTokens.access_token).aud).toBe(contextMcpUrl);
+      expect((await contextClient.callMcp()).status).toBe(200);
+      // and the token is still bound to the server it was issued for
+      expect(
+        (await tasksClient.callMcp(contextTokens.access_token)).status,
+      ).toBe(401);
+    });
+
+    it('accepts any port on a loopback redirect URI', async () => {
+      // Native apps listen on a port chosen at run time (RFC 8252 section 7.3)
+      const clientId = publishDocument({
+        redirect_uris: ['http://127.0.0.1/callback'],
+      });
+      const client = newClient(clientId, 'http://127.0.0.1:53124/callback');
+
+      await client.connect(tasksMcpUrl);
+
+      expect((await client.callMcp()).status).toBe(200);
+    });
+  });
+
+  describe('metadata documents that are refused', () => {
+    // The redirect URI of a request cannot be trusted before the client is
+    // verified, so these are answered with an error page, never a redirect.
+    async function expectRefused(
+      clientId: string,
+      detail: RegExp,
+      overrides?: Record<string, string>,
+    ) {
+      const response = await authorizeRequest(clientId, overrides).expect(400);
+      expect(response.headers.location).toBeUndefined();
+      expect(response.body.code).toBe('INVALID_CLIENT_METADATA');
+      expect(response.body.detail).toMatch(detail);
+    }
+
+    it('refuses a document whose client_id is not the URL it was fetched from', async () => {
+      await expectRefused(
+        publishDocument({
+          client_id: 'https://someone-else.example/client.json',
+        }),
+        /does not match the URL/,
+      );
+    });
+
+    it('refuses a document that asks for a client secret', async () => {
+      await expectRefused(
+        publishDocument({ token_endpoint_auth_method: 'client_secret_basic' }),
+        /token_endpoint_auth_method must be "none"/,
+      );
+      await expectRefused(
+        publishDocument({ client_secret: 'hunter2' }),
+        /must not contain a client secret/,
+      );
+    });
+
+    it('refuses a document that asks for client authentication we do not perform', async () => {
+      await expectRefused(
+        publishDocument({ token_endpoint_auth_method: 'private_key_jwt' }),
+        /token_endpoint_auth_method must be "none"/,
+      );
+    });
+
+    it.each([
+      ['no client_name', { client_name: undefined }, /client_name is required/],
+      [
+        'no redirect_uris',
+        { redirect_uris: undefined },
+        /redirect_uris must be/,
+      ],
+      [
+        'a plain http redirect URI on a remote host',
+        { redirect_uris: ['http://example.com/callback'] },
+        /must be https/,
+      ],
+      [
+        'a javascript: redirect URI',
+        { redirect_uris: ['javascript:alert(1)'] },
+        /must be https/,
+      ],
+      [
+        'grant types without authorization_code',
+        { grant_types: ['client_credentials'] },
+        /grant_types must include authorization_code/,
+      ],
+    ])('refuses a document with %s', async (_name, document, detail) => {
+      await expectRefused(publishDocument(document), detail);
+    });
+
+    it('refuses a URL that does not serve a small JSON document', async () => {
+      await expectRefused(
+        `${metadataHost.origin}/clients/missing.json`,
+        /HTTP 404/,
+      );
+      await expectRefused(
+        metadataHost.respond('/clients/redirect.json', {
+          status: 302,
+          headers: {
+            location: `${metadataHost.origin}/clients/1/metadata.json`,
+          },
+          body: '',
+        }),
+        /HTTP 302/,
+      );
+      await expectRefused(
+        metadataHost.respond('/clients/page.json', {
+          headers: { 'content-type': 'text/html' },
+          body: '<html></html>',
+        }),
+        /not JSON/,
+      );
+      await expectRefused(
+        metadataHost.respond('/clients/broken.json', { body: '{"client_id":' }),
+        /not valid JSON/,
+      );
+      await expectRefused(
+        metadataHost.respond('/clients/huge.json', {
+          body: JSON.stringify({ padding: 'x'.repeat(6 * 1024) }),
+        }),
+        /larger than/,
+      );
+    });
+
+    it('refuses client_id URLs without a path, with credentials or with dot segments', async () => {
+      await expectRefused(`${metadataHost.origin}/`, /must contain a path/);
+      await expectRefused(
+        metadataHost.origin.replace('http://', 'http://user:pass@') + '/c.json',
+        /must not contain credentials/,
+      );
+      await expectRefused(
+        `${metadataHost.origin}/clients/../clients/1/metadata.json`,
+        /dot segments/,
+      );
+    });
+
+    it('refuses a redirect URI the document does not list, without redirecting to it', async () => {
+      const response = await authorizeRequest(publishDocument(), {
+        redirect_uri: 'https://attacker.example/steal',
+      }).expect(400);
+
+      expect(response.headers.location).toBeUndefined();
+      expect(response.body.code).toBe('INVALID_REDIRECT_URI');
+    });
+
+    it('does not cache a refused document as a client', async () => {
+      const clientId = publishDocument({ client_name: undefined });
+      await authorizeRequest(clientId).expect(400);
+
+      expect(await clients.countBy({ clientId })).toBe(0);
+    });
+  });
+
+  describe('clients that register dynamically', () => {
+    it('still registers and connects when it has no metadata document', async () => {
+      const client = newClient();
+
+      await client.connect(tasksMcpUrl, 'mcp:use');
+
+      expect(client.registrationMethod).toBe('dynamic_registration');
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('can authorize again with the same client_id', async () => {
+      // A client that was idle until its refresh token expired starts a new
+      // authorization with the client_id it already has.
+      const client = newClient();
+      const first = await client.connect(tasksMcpUrl, 'mcp:use');
+
+      const second = await client.authorize('mcp:use');
+
+      expect(second.access_token).not.toBe(first.access_token);
+      expect((await client.callMcp()).status).toBe(200);
+      // and a third time, after an attempt the user abandoned half way
+      await openConsentScreen(client.startAuthorization().authorizationUrl);
+      await client.authorize('mcp:use');
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('does not let an unknown client_id redirect the user anywhere', async () => {
+      const response = await authorizeRequest('no-such-client', {
+        redirect_uri: 'https://attacker.example/steal',
+      }).expect(404);
+
+      expect(response.headers.location).toBeUndefined();
+    });
+
+    it('keeps a registered client on the MCP server it registered with', async () => {
+      const client = newClient();
+      await client.connect(tasksMcpUrl);
+
+      const response = await request(httpServer)
+        .get('/api/v1/auth/authorize/mcp/context/0.0.0')
+        .query({
+          response_type: 'code',
+          client_id: client.clientId,
+          redirect_uri: REDIRECT_URI,
+          state: 'test-state',
+          code_challenge: 'a'.repeat(43),
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+
+      expect(new URL(response.headers.location).searchParams.get('error')).toBe(
+        'server_error',
+      );
+    });
+  });
+
+  describe('cleaning up abandoned authorizations', () => {
+    const pruneEverythingStale = async () => {
+      // Flows untouched for longer than the retention are stale; a negative
+      // retention makes that every unfinished flow.
+      return app.get(AuthJourneysService).pruneStaleMcpClients(-1);
+    };
+
+    it('removes an abandoned attempt but keeps the client and its working tokens', async () => {
+      const client = newClient();
+      await client.connect(tasksMcpUrl, 'mcp:use');
+      const stored = await clients.findOneByOrFail({
+        clientId: client.clientId,
+      });
+      await openConsentScreen(client.startAuthorization().authorizationUrl);
+      expect(await flows.countBy({ clientId: stored.id })).toBe(2);
+
+      await pruneEverythingStale();
+
+      expect(await flows.countBy({ clientId: stored.id })).toBe(1);
+      expect(await clients.countBy({ id: stored.id })).toBe(1);
+      await client.refresh();
+      expect((await client.callMcp()).status).toBe(200);
+    });
+
+    it('removes a client whose only authorization was abandoned', async () => {
+      const clientId = publishDocument();
+      const client = newClient(clientId);
+      await client.discover(tasksMcpUrl);
+      await client.obtainClientId();
+      await openConsentScreen(client.startAuthorization().authorizationUrl);
+      expect(await clients.countBy({ clientId })).toBe(1);
+
+      await pruneEverythingStale();
+
+      expect(await clients.countBy({ clientId })).toBe(0);
+      // the document is simply fetched again the next time the client shows up
+      await client.authorize();
+      expect((await client.callMcp()).status).toBe(200);
+    });
+  });
+});

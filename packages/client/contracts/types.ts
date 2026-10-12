@@ -2560,6 +2560,12 @@ export interface components {
              * @example Claude Desktop
              */
             clientName: string;
+            /**
+             * @description How the client is known: it registered, or its client_id is a URL to a metadata document it hosts. The client name is self-declared either way.
+             * @example metadata_document
+             * @enum {string}
+             */
+            registrationMethod: "dynamic_registration" | "metadata_document";
         };
         GetConsentMetadataResponseDto: {
             /**
@@ -6243,6 +6249,11 @@ export interface components {
              *     ]
              */
             code_challenge_methods_supported: string[];
+            /**
+             * @description Whether clients may use a Client ID Metadata Document URL as their client_id instead of registering
+             * @example true
+             */
+            client_id_metadata_document_supported: boolean;
         };
         ProtectedResourceMetadataResponseDto: {
             /**
