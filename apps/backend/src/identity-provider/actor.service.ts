@@ -1,12 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Like, Not, Repository } from 'typeorm';
 import { ActorEntity } from './actor.entity';
 import { ActorType } from './enums';
 import { CreateActorInput } from './dto/service/actor.service.types';
 import { SearchService } from '../search/search.service';
 import { SearchResult } from '../search/search.types';
 import { isUUID } from 'class-validator';
+
+/**
+ * Separates an actor's original slug from the suffix it gets when deleted.
+ */
+export const DELETED_SLUG_MARKER = '~deleted-';
+
+/**
+ * Slug a deleted actor moves to, so its original slug can be used again.
+ */
+export function buildDeletedActorSlug(actor: { id: string; slug: string }): string {
+  return `${actor.slug}${DELETED_SLUG_MARKER}${actor.id.slice(0, 8)}`;
+}
 
 @Injectable()
 export class ActorService {
@@ -93,6 +105,25 @@ export class ActorService {
   }
 
   /**
+   * Resolve an actor that new work can be given to. Deleted actors stay
+   * readable through getActorByIdOrSlug but are not assignable.
+   */
+  async getActiveActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
+    const actor = await this.getActorByIdOrSlug(idOrSlug);
+    return actor?.deletedAt ? null : actor;
+  }
+
+  /**
+   * Whether an actor that used to own this slug has been deleted.
+   */
+  async hasDeletedActorForSlug(slug: string): Promise<boolean> {
+    return this.actorRepository.existsBy({
+      slug: Like(`${slug}${DELETED_SLUG_MARKER}%`),
+      deletedAt: Not(IsNull()),
+    });
+  }
+
+  /**
    * Update an actor
    */
   async updateActor(
@@ -130,10 +161,14 @@ export class ActorService {
   }
 
   /**
-   * List all actors
+   * List all actors. Deleted actors are included by default so callers can
+   * still attribute past work to them.
    */
-  async listActors(): Promise<ActorEntity[]> {
+  async listActors({
+    includeDeleted = true,
+  }: { includeDeleted?: boolean } = {}): Promise<ActorEntity[]> {
     return this.actorRepository.find({
+      where: includeDeleted ? {} : { deletedAt: IsNull() },
       order: { displayName: 'ASC' },
     });
   }
@@ -152,8 +187,8 @@ export class ActorService {
   }): Promise<SearchResult<ActorEntity>[]> {
     this.logger.log(`Searching actors with query: ${query}`);
 
-    // Get all actors
-    const actors = await this.listActors();
+    // Deleted actors cannot be picked for new work, so they are not searchable
+    const actors = await this.listActors({ includeDeleted: false });
 
     // Use search service for fuzzy search
     const results = this.searchService.search({

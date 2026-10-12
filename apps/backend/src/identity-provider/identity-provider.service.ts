@@ -180,7 +180,16 @@ export class IdentityProviderService {
     }
 
     user.isActive = false;
-    return this.userRepository.save(user);
+    // Mark the actor too, so it stops being assignable and shows as deleted
+    // on the work it touched.
+    const actor = user.actor;
+    return this.userRepository.manager.transaction(async (manager) => {
+      if (actor) {
+        actor.deletedAt = new Date();
+        await manager.save(actor);
+      }
+      return manager.save(user);
+    });
   }
 
   async getUserById(id: string): Promise<User | null> {

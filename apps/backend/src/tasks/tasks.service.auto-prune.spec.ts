@@ -29,6 +29,7 @@ describe('TasksService auto-prune', () => {
     displayName: 'Agent 1',
     avatarUrl: null,
     introduction: null,
+    deletedAt: null,
   } as any;
 
   function createTask(overrides: Record<string, unknown> = {}) {

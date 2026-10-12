@@ -29,6 +29,7 @@ import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
+import { actorHandle, isDeactivated } from "../actors";
 
 type ThreadTask = Thread["tasks"][number];
 type DisplayContextBlock = {
@@ -357,6 +358,7 @@ function ThreadDetailPageDesktop({
                     <div key={participant.id} className="thread-detail-page__participant">
                       <Avatar
                         name={participant.displayName}
+                        inactive={isDeactivated(participant)}
                         size="sm"
                         src={participant.avatarUrl || undefined}
                       />
@@ -365,7 +367,7 @@ function ThreadDetailPageDesktop({
                           {participant.displayName}
                         </Text>
                         <Text size="1" tone="muted">
-                          @{participant.slug}
+                          {actorHandle(participant)}
                         </Text>
                       </div>
                     </div>

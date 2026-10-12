@@ -929,6 +929,7 @@ export class ThreadsService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      deletedAt: actor.deletedAt ?? null,
     };
   }
 

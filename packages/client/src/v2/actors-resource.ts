@@ -6,12 +6,12 @@ export class ActorsResource extends BaseClient {
     super(config);
   }
 
-  /** List all actors (users and agents) */
+  /** List all actors (users and agents), including deleted ones so past work can still be attributed */
   async ActorController_listActors(params?: { signal?: AbortSignal }): Promise<ActorResponseDto[]> {
     return this.request('GET', '/api/v1/actors', { signal: params?.signal });
   }
 
-  /** Search actors by display name or slug */
+  /** Search active actors by display name or slug */
   async ActorController_searchActors(params: { query: string; limit?: number; threshold?: number; signal?: AbortSignal }): Promise<ActorResponseDto[]> {
     return this.request('GET', '/api/v1/actors/search', { params: { query: params.query, limit: params.limit, threshold: params.threshold }, signal: params?.signal });
   }

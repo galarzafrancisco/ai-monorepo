@@ -4,6 +4,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository, QueryFailedError } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
+import { buildDeletedActorSlug } from '../identity-provider/actor.service';
+import { PROTECTED_AGENT_SLUGS } from './protected-agents';
 import { ActorType } from '../identity-provider/enums';
 import { AgentType } from './enums';
 import {
@@ -14,6 +16,7 @@ import {
   ListAgentsResult,
 } from './dto/service/agents.service.types';
 import {
+  AgentDeletionNotAllowedError,
   AgentNotFoundError,
   AgentSlugConflictError,
   InvalidAgentAvatarUrlError,
@@ -286,13 +289,25 @@ export class AgentsService {
 
     const agent = await this.agentRepository.findOne({
       where: { actorId },
+      relations: ['actor'],
     });
 
-    if (!agent) {
+    if (!agent || !agent.actor) {
       throw new AgentNotFoundError(actorId);
     }
+    const actor = agent.actor;
+    if (PROTECTED_AGENT_SLUGS.includes(actor.slug)) {
+      throw new AgentDeletionNotAllowedError(actor.slug);
+    }
 
-    await this.agentRepository.softRemove(agent);
+    // The actor row stays so tasks, comments and context it touched keep
+    // resolving. It is marked deleted and gives its slug back.
+    await this.agentRepository.manager.transaction(async (manager) => {
+      await manager.softRemove(agent);
+      actor.deletedAt = new Date();
+      actor.slug = buildDeletedActorSlug(actor);
+      await manager.save(actor);
+    });
 
     this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(actorId));
   }

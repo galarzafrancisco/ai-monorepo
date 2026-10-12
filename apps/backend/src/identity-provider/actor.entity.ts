@@ -36,6 +36,15 @@ export class ActorEntity {
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
+  /**
+   * Set when the actor's agent or user is deleted. A plain column rather than
+   * a DeleteDateColumn on purpose: TypeORM would otherwise drop deleted actors
+   * from every relation join, and tasks, comments and context blocks must keep
+   * resolving the actor that touched them.
+   */
+  @Column({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt!: Date | null;
+
   @OneToOne(() => User, (user) => user.actor)
   user?: User;
 

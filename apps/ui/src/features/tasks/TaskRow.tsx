@@ -3,6 +3,7 @@ import { Avatar, DataRow, Text, DataRowAnimation, DataRowTag } from "../../ui/pr
 import { Task } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import './TaskRow.css';
+import { actorHandle, isDeactivated } from "../actors";
 
 export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: { task: Task, animation?: DataRowAnimation, onClick?: () => void, pulseKey?: number, additionalTags?: DataRowTag[] }): React.JSX.Element {
   const [pulse, setPulse] = useState(false);
@@ -40,7 +41,7 @@ export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: 
 
   return (
     <DataRow
-      leading={<Avatar name={avatarActor.displayName} size='lg' src={avatarActor.avatarUrl || undefined}/>}
+      leading={<Avatar name={avatarActor.displayName} inactive={isDeactivated(avatarActor)} size='lg' src={avatarActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
       animation={animation}
@@ -64,7 +65,7 @@ export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: 
       <div style={{ fontSize: 12 }} className="text--tone-muted">
         {task.assignee ? `Assigned: @${task.assignee}` : "unassigned"}
         {" · "}
-        {`Created by @${task.createdByActor.slug}`}
+        {`Created by ${actorHandle(task.createdByActor)}`}
       </div>
     </DataRow >
   );

@@ -224,6 +224,7 @@ export class AgentRunsService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      deletedAt: actor.deletedAt ?? null,
     };
   }
 

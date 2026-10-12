@@ -3,6 +3,7 @@ import { PopShell } from '../../app/shells/PopShell';
 import { Avatar, Button, Text } from '../../ui/primitives';
 import type { TaskBlueprint } from './types';
 import './NewSchedulePop.css';
+import { actorHandle } from '../actors';
 
 type NewSchedulePopProps = {
   blueprints: TaskBlueprint[];
@@ -106,7 +107,7 @@ export function NewSchedulePop({
                       <Text size="2" weight="medium">{blueprint.name}</Text>
                       <Text size="1" tone="muted">
                         {blueprint.assigneeActor
-                          ? `@${blueprint.assigneeActor.slug}`
+                          ? actorHandle(blueprint.assigneeActor)
                           : 'Unassigned'}
                       </Text>
                     </div>

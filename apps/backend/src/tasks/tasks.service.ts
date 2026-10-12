@@ -94,11 +94,11 @@ export class TasksService {
     let assigneeActorId: string | null = null;
 
     if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActorByIdOrSlug(
+      const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
         input.assigneeActorId,
       );
       if (!assigneeActor) {
-        throw new Error(`Assignee actor not found: ${input.assigneeActorId}`);
+        throw new ActorNotFoundError(input.assigneeActorId);
       }
       assigneeActorId = assigneeActor.id;
     }
@@ -302,7 +302,7 @@ export class TasksService {
       if (input.assigneeActorId === null) {
         task.assigneeActorId = null; // defined but null means they're removing assignee
       } else {
-        const assigneeActor = await this.actorService.getActorByIdOrSlug(
+        const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
           input.assigneeActorId,
         );
         if (assigneeActor) {
@@ -407,6 +407,16 @@ export class TasksService {
     if (task.assigneeActorId === input.assigneeActorId) {
       // Already assigned, no op
       return this.mapTaskToResult(task);
+    }
+
+    // Deleted actors keep their past work but cannot be given new tasks
+    if (input.assigneeActorId) {
+      const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
+        input.assigneeActorId,
+      );
+      if (!assigneeActor) {
+        throw new ActorNotFoundError(input.assigneeActorId);
+      }
     }
 
     // Update assignee
@@ -1064,6 +1074,7 @@ export class TasksService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      deletedAt: actor.deletedAt ?? null,
     };
   }
 

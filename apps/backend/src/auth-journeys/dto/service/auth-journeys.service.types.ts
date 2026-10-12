@@ -19,6 +19,7 @@ export type AuthJourneyActorResult = {
   displayName: string;
   avatarUrl: string | null;
   introduction: string | null;
+  deletedAt: Date | null;
 };
 
 export type McpAuthorizationFlowResult = {

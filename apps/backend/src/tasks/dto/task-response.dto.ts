@@ -118,14 +118,7 @@ export class TaskResponseDto {
       status: task.status,
       assignee: task.assignee,
       assigneeActor: task.assigneeActor
-        ? {
-            id: task.assigneeActor.id,
-            type: task.assigneeActor.type,
-            slug: task.assigneeActor.slug,
-            displayName: task.assigneeActor.displayName,
-            avatarUrl: task.assigneeActor.avatarUrl,
-            introduction: task.assigneeActor.introduction,
-          }
+        ? ActorResponseDto.fromEntity(task.assigneeActor)
         : null,
       sessionId: task.sessionId ?? '',
       comments: task.comments?.map((c) => CommentResponseDto.fromEntity(c)) ?? [],
@@ -136,14 +129,7 @@ export class TaskResponseDto {
         ) ?? [],
       tags: task.tags?.map((t) => TagResponseDto.fromEntity(t)) ?? [],
       createdByActor: task.createdByActor
-        ? {
-            id: task.createdByActor.id,
-            type: task.createdByActor.type,
-            slug: task.createdByActor.slug,
-            displayName: task.createdByActor.displayName,
-            avatarUrl: task.createdByActor.avatarUrl,
-            introduction: task.createdByActor.introduction,
-          }
+        ? ActorResponseDto.fromEntity(task.createdByActor)
         : {
             id: task.createdByActorId,
             type: ActorType.AGENT,
@@ -151,6 +137,7 @@ export class TaskResponseDto {
             displayName: 'Unknown',
             avatarUrl: null,
             introduction: null,
+            deletedAt: null,
           },
       dependsOnIds: task.dependsOn?.map((t) => t.id) ?? [],
       createdAt: task.createdAt.toISOString(),

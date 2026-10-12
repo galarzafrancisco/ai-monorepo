@@ -18,25 +18,23 @@ export class ActorController {
   constructor(private readonly actorService: ActorService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all actors (users and agents)' })
+  @ApiOperation({
+    summary:
+      'List all actors (users and agents), including deleted ones so past work can still be attributed',
+  })
   @ApiOkResponse({
     type: [ActorResponseDto],
     description: 'List of all actors',
   })
   async listActors(): Promise<ActorResponseDto[]> {
     const actors = await this.actorService.listActors();
-    return actors.map((actor) => ({
-      id: actor.id,
-      type: actor.type,
-      slug: actor.slug,
-      displayName: actor.displayName,
-      avatarUrl: actor.avatarUrl,
-      introduction: actor.introduction,
-    }));
+    return actors.map((actor) => ActorResponseDto.fromEntity(actor));
   }
 
   @Get('search')
-  @ApiOperation({ summary: 'Search actors by display name or slug' })
+  @ApiOperation({
+    summary: 'Search active actors by display name or slug',
+  })
   @ApiOkResponse({
     type: [ActorResponseDto],
     description: 'Search results sorted by relevance',
@@ -50,13 +48,8 @@ export class ActorController {
       threshold: query.threshold,
     });
 
-    return results.map(({ item: actor }) => ({
-      id: actor.id,
-      type: actor.type,
-      slug: actor.slug,
-      displayName: actor.displayName,
-      avatarUrl: actor.avatarUrl,
-      introduction: actor.introduction,
-    }));
+    return results.map(({ item: actor }) =>
+      ActorResponseDto.fromEntity(actor),
+    );
   }
 }

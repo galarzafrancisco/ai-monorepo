@@ -826,7 +826,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all actors (users and agents) */
+        /** List all actors (users and agents), including deleted ones so past work can still be attributed */
         get: operations["ActorController_listActors"];
         put?: never;
         post?: never;
@@ -843,7 +843,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Search actors by display name or slug */
+        /** Search active actors by display name or slug */
         get: operations["ActorController_searchActors"];
         put?: never;
         post?: never;
@@ -3053,6 +3053,12 @@ export interface components {
              * @example Expert in React and TypeScript development. Assign me frontend tasks.
              */
             introduction?: string | null;
+            /**
+             * Format: date-time
+             * @description When the actor was deleted, or null while active. Deleted actors stay attached to the work they touched but cannot be assigned anything new.
+             * @example null
+             */
+            deletedAt: string | null;
         };
         McpFlowResponseDto: {
             /**

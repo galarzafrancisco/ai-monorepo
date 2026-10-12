@@ -45,3 +45,8 @@
 .avatar--a4 { background: #f08c2b; } /* orange */
 .avatar--a5 { background: #e24b8d; } /* pink */
 .avatar--a6 { background: #17a2b8; } /* teal */
+
+.avatar--inactive {
+  filter: grayscale(1);
+  opacity: 0.55;
+}

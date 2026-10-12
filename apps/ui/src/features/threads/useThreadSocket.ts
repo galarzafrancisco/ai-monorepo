@@ -30,10 +30,10 @@ const convertWireActorToDto = (
   if (!wireActor) return undefined;
 
   if (wireActor.type === WireActorType.HUMAN) {
-    return { ...wireActor, type: DtoActorType.HUMAN };
+    return { ...wireActor, type: DtoActorType.HUMAN, deletedAt: wireActor.deletedAt ?? null };
   }
   if (wireActor.type === WireActorType.AGENT) {
-    return { ...wireActor, type: DtoActorType.AGENT };
+    return { ...wireActor, type: DtoActorType.AGENT, deletedAt: wireActor.deletedAt ?? null };
   }
   return undefined;
 };

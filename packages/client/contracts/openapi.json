@@ -2441,7 +2441,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "List all actors (users and agents)",
+        "summary": "List all actors (users and agents), including deleted ones so past work can still be attributed",
         "tags": [
           "Actors"
         ]
@@ -2508,7 +2508,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Search actors by display name or slug",
+        "summary": "Search active actors by display name or slug",
         "tags": [
           "Actors"
         ]
@@ -8715,13 +8715,21 @@
             "description": "Short description of what this actor is good at and when to assign them tasks",
             "example": "Expert in React and TypeScript development. Assign me frontend tasks.",
             "nullable": true
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the actor was deleted, or null while active. Deleted actors stay attached to the work they touched but cannot be assigned anything new.",
+            "example": null,
+            "nullable": true
           }
         },
         "required": [
           "id",
           "type",
           "slug",
-          "displayName"
+          "displayName",
+          "deletedAt"
         ]
       },
       "McpFlowResponseDto": {

@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
-import { useActorsCtx } from "../actors";
+import { actorHandle, useActorsCtx } from "../actors";
+import type { Actor } from "../actors";
 import { useWorkers } from "../workers/useWorkers";
 import { ExecutionsService } from "./api";
 import type {
@@ -27,7 +28,7 @@ type RunFeedEntry =
   | { kind: "active"; entry: ActiveTaskExecutionResponseDto }
   | { kind: "history"; entry: TaskExecutionHistoryResponseDto };
 
-type ActorSummary = { id: string; displayName?: string; slug?: string };
+type ActorSummary = Actor;
 
 export function ExecutionsPage() {
   const navigate = useNavigate();
@@ -233,7 +234,7 @@ export function ExecutionDetailPage() {
         <div className="executions-run-header__copy">
           <Text as="div" size="5" weight="bold" wrap>{title}</Text>
           <Text as="div" size="2" tone="muted">
-            {actor ? `picked by @${actor.slug ?? actor.displayName ?? actor.id}` : "waiting to be picked"}
+            {actor ? `picked by ${actorHandle(actor)}` : "waiting to be picked"}
           </Text>
         </div>
         <Text as="div" size="2" tone="muted" className="executions-run-status-label">{statusLabel}</Text>
@@ -270,7 +271,7 @@ function RunFeedRow({
   const taskName = feedEntry.entry.taskName ?? "Untitled task";
   const statusDetail = getRunStatusDetail(feedEntry);
   const timeDetail = getRunTimeDetail(feedEntry);
-  const agentDetail = actor ? `picked by @${actor.slug ?? actor.displayName ?? actor.id}` : "waiting to be picked";
+  const agentDetail = actor ? `picked by ${actorHandle(actor)}` : "waiting to be picked";
   const isPotentiallyStale = isPotentiallyStaleRun(feedEntry);
 
   return (
@@ -366,7 +367,7 @@ function RunExecutionDetails({ execution, actor }: { execution: ActiveTaskExecut
       <section className="executions-detail-section">
         <Text as="div" size="1" weight="semibold" tone="muted" className="executions-detail-section__title">Work</Text>
         <div className="executions-detail-list">
-          <DetailRow label="Agent" value={actor ? `@${actor.slug ?? actor.displayName ?? actor.id}` : execution.agentActorId} mono={!actor} />
+          <DetailRow label="Agent" value={actor ? actorHandle(actor) : execution.agentActorId} mono={!actor} />
           <DetailRow label="Tool calls" value={execution.toolCallCount.toLocaleString()} />
           <DetailRow label="Harness" value={stats?.harness ?? "Unknown"} />
           <DetailRow label="Provider" value={stats?.providerId ?? "Unknown"} />

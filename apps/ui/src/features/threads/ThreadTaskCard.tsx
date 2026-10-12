@@ -3,6 +3,7 @@ import { TaskSummaryResponseDto } from "@taico/client/v2";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useNavigate } from "react-router-dom";
 import "./ThreadTaskCard.css";
+import { actorHandle, isDeactivated } from "../actors";
 
 export function ThreadTaskCard({
   task,
@@ -39,6 +40,7 @@ export function ThreadTaskCard({
       leading={
         <Avatar
           name={task.createdByActor.displayName}
+          inactive={isDeactivated(task.createdByActor)}
           size="md"
           src={task.createdByActor.avatarUrl || undefined}
         />
@@ -52,7 +54,7 @@ export function ThreadTaskCard({
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
           <span className="row-detail truncate">
             {task.assigneeActor
-              ? `Assigned: @${task.assigneeActor.slug}`
+              ? `Assigned: ${actorHandle(task.assigneeActor)}`
               : "unassigned"}
           </span>
         </>

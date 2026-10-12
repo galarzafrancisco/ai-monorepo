@@ -8,6 +8,8 @@ export interface AvatarProps {
   src?: string;
   alt?: string;
   size?: AvatarSize;
+  /** Greys the avatar out, for actors that have been deleted. */
+  inactive?: boolean;
   className?: string;
 }
 
@@ -63,17 +65,19 @@ export function Avatar({
   src,
   alt,
   size = "md",
+  inactive = false,
   className = "",
 }: AvatarProps) {
   const initials = getInitials(name);
   const color = pickColorToken(name);
   const sizeClass = sizeToClass(size);
   const style = sizeToStyle(size);
+  const inactiveClass = inactive ? "avatar--inactive" : "";
 
   if (src) {
     return (
       <img
-        className={`avatar ${sizeClass ?? ""} ${className}`}
+        className={`avatar ${sizeClass ?? ""} ${inactiveClass} ${className}`}
         style={style}
         src={src}
         alt={alt ?? name}
@@ -84,7 +88,7 @@ export function Avatar({
 
   return (
     <div
-      className={`avatar avatar--fallback avatar--${color} ${sizeClass ?? ""} ${className}`}
+      className={`avatar avatar--fallback avatar--${color} ${sizeClass ?? ""} ${inactiveClass} ${className}`}
       style={style}
       aria-label={alt ?? name}
       role="img"
