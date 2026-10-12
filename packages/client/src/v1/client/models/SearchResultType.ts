@@ -5,6 +5,7 @@
 export enum SearchResultType {
     TASK = 'task',
     CONTEXT_BLOCK = 'context_block',
+    THREAD = 'thread',
     TOOL = 'tool',
     AGENT = 'agent',
     PROJECT = 'project',

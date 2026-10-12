@@ -35,6 +35,7 @@ export function ContextHome(): React.JSX.Element {
       <>
         <div className="context-home__empty">
           <div className="context-home__empty-message">No context blocks found</div>
+          <ThreadStateToggle />
         </div>
         <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
       </>
@@ -58,6 +59,7 @@ export function ContextHome(): React.JSX.Element {
   return (
     <>
       <div className="context-home">
+        <ThreadStateToggle />
         <ContextBlockTree
           blocks={blocks}
           onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
@@ -66,6 +68,26 @@ export function ContextHome(): React.JSX.Element {
       </div>
       <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
     </>
+  );
+}
+
+/** Hides the state blocks that threads generate. Shown only when there are any. */
+function ThreadStateToggle(): React.JSX.Element | null {
+  const { threadStateBlockCount, hideThreadState, setHideThreadState } = useContextCtx();
+  if (threadStateBlockCount === 0) {
+    return null;
+  }
+  return (
+    <label className="context-home__thread-state-toggle">
+      <input
+        type="checkbox"
+        checked={hideThreadState}
+        onChange={(event) => setHideThreadState(event.target.checked)}
+      />
+      <Text as="span" size="2" tone="muted">
+        Hide thread state blocks ({threadStateBlockCount})
+      </Text>
+    </label>
   );
 }
 
@@ -131,6 +153,8 @@ function DesktopContextHome({
           onChange={(event) => onSearchQueryChange(event.target.value)}
         />
       </div>
+
+      <ThreadStateToggle />
 
       <div className="context-home-desktop__results">
         {filteredBlocks.length === 0 ? (

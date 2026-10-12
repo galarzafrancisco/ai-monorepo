@@ -2,6 +2,8 @@
 export enum SearchResultType {
   TASK = 'task',
   CONTEXT_BLOCK = 'context_block',
+  /** Found through its state memory: the block where the thread keeps its goal and progress. */
+  THREAD = 'thread',
   TOOL = 'tool',
   AGENT = 'agent',
   PROJECT = 'project',

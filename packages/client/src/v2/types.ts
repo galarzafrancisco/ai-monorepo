@@ -1229,7 +1229,7 @@ export interface ProtectedResourceMetadataResponseDto {
   resource_name: string;
 }
 
-export type SearchResultType = 'task' | 'context_block' | 'tool' | 'agent' | 'project';
+export type SearchResultType = 'task' | 'context_block' | 'thread' | 'tool' | 'agent' | 'project';
 
 export interface GlobalSearchResultDto {
   id: string;

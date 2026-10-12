@@ -6469,7 +6469,7 @@ export interface components {
             resource_name: string;
         };
         /** @enum {string} */
-        SearchResultType: "task" | "context_block" | "tool" | "agent" | "project";
+        SearchResultType: "task" | "context_block" | "thread" | "tool" | "agent" | "project";
         GlobalSearchResultDto: {
             /**
              * @description Result ID

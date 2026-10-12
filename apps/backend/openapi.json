@@ -13965,6 +13965,7 @@
         "enum": [
           "task",
           "context_block",
+          "thread",
           "tool",
           "agent",
           "project"

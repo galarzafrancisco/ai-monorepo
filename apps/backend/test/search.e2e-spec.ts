@@ -266,6 +266,44 @@ describe('Search E2E', () => {
       expect(blocks.map((entry) => entry.title)).toEqual(['Parking rules']);
     });
 
+    it('returns a thread, not its state block, for a match in the thread state', async () => {
+      const thread = (
+        await api('post', '/threads').send({ title: 'Kitchen renovation' }).expect(201)
+      ).body;
+      const stateBlockId: string = thread.stateContextBlockId;
+      expect(stateBlockId).toEqual(expect.any(String));
+
+      await api('patch', `/context/blocks/${stateBlockId}`)
+        .send({ content: 'Goal: choose the worktop. Granite quote is pending.' })
+        .expect(200);
+
+      const result = await eventually(async () => {
+        const results = await search('granite quote');
+        expect(results).toHaveLength(1);
+        return results[0];
+      });
+      expect(result).toMatchObject({
+        id: thread.id,
+        type: 'thread',
+        title: 'Kitchen renovation',
+        url: `/threads/${thread.id}`,
+        matchedOn: 'content',
+        excerpt: 'Goal: choose the worktop. Granite quote is pending.',
+        excerptIsComplete: true,
+      });
+
+      // Found by the thread's title too, and never as a context block.
+      expect((await search('kitchen renovation'))[0]).toMatchObject({ id: thread.id, type: 'thread' });
+      expect(await search('granite quote', { types: 'context_block' })).toEqual([]);
+      expect(
+        (await api('get', '/context/blocks/search/query').query({ query: 'granite quote' }).expect(200)).body,
+      ).toEqual([]);
+      expect(await search('granite quote', { types: 'thread' })).toHaveLength(1);
+
+      await api('delete', `/threads/${thread.id}`).expect(204);
+      await eventually(async () => expect(await search('granite quote')).toEqual([]));
+    });
+
     it('follows edits and deletions', async () => {
       const id = await createBlock('Travel policy', 'Book trains through the portal.');
       await eventually(async () => expect((await search('trains portal'))[0]?.id).toBe(id));

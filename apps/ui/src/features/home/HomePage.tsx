@@ -7,8 +7,30 @@ import { SearchService } from "./search-api";
 import { useAuth } from "../../auth/AuthContext";
 import { useWalkthrough } from "../walkthrough/useWalkthrough";
 import { WebAuthenticationService } from "../../auth/api";
-import type { GlobalSearchResultDto } from "@taico/client/v2";
+import type { GlobalSearchResultDto, SearchResultType } from "@taico/client/v2";
 import "./HomePage.css";
+
+/** Every kind of result, in the order the filter shows them. */
+const RESULT_TYPES: { type: SearchResultType; label: string }[] = [
+  { type: "task", label: "Tasks" },
+  { type: "context_block", label: "Context" },
+  { type: "thread", label: "Threads" },
+  { type: "agent", label: "Agents" },
+  { type: "tool", label: "Tools" },
+  { type: "project", label: "Projects" },
+];
+const EXCLUDED_TYPES_KEY = "home.search.excludedTypes";
+
+/** The kinds of result the person switched off, remembered between visits. */
+function readExcludedTypes(): SearchResultType[] {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(EXCLUDED_TYPES_KEY) ?? "[]");
+    const known = RESULT_TYPES.map((entry) => entry.type);
+    return Array.isArray(stored) ? known.filter((type) => stored.includes(type)) : [];
+  } catch {
+    return [];
+  }
+}
 
 function WalkthroughBanner() {
   const { user, refreshAuth } = useAuth();
@@ -96,6 +118,25 @@ export function HomePage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
   const latestRequestRef = useRef(0);
+  const [excludedTypes, setExcludedTypes] = useState<SearchResultType[]>(readExcludedTypes);
+
+  const toggleType = (type: SearchResultType) => {
+    setExcludedTypes((current) => {
+      const next = current.includes(type)
+        ? current.filter((entry) => entry !== type)
+        : [...current, type];
+      // At least one kind stays on; a search of nothing is never what was meant.
+      if (next.length === RESULT_TYPES.length) {
+        return current;
+      }
+      try {
+        localStorage.setItem(EXCLUDED_TYPES_KEY, JSON.stringify(next));
+      } catch {
+        // The choice still applies for this visit.
+      }
+      return next;
+    });
+  };
 
   useDocumentTitle();
 
@@ -119,6 +160,11 @@ export function HomePage() {
       const searchResults = await SearchService.GlobalSearchController_search({
         query: searchQuery,
         limit: 20,
+        // Omitted when nothing is switched off, so new kinds of result show up by default.
+        types:
+          excludedTypes.length > 0
+            ? RESULT_TYPES.map((entry) => entry.type).filter((type) => !excludedTypes.includes(type))
+            : undefined,
       });
       if (requestId !== latestRequestRef.current) {
         return;
@@ -137,7 +183,7 @@ export function HomePage() {
         setIsSearching(false);
       }
     }
-  }, []);
+  }, [excludedTypes]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -190,6 +236,8 @@ export function HomePage() {
         return "blue";
       case "context_block":
         return "purple";
+      case "thread":
+        return "yellow";
       case "agent":
         return "green";
       case "project":
@@ -207,6 +255,8 @@ export function HomePage() {
         return "Task";
       case "context_block":
         return "Context";
+      case "thread":
+        return "Thread";
       case "agent":
         return "Agent";
       case "project":
@@ -244,6 +294,23 @@ export function HomePage() {
               onKeyDown={handleKeyDown}
               autoFocus
             />
+          </div>
+
+          <div className="home-search-filters" role="group" aria-label="Kinds of result to search">
+            {RESULT_TYPES.map(({ type, label }) => {
+              const isOn = !excludedTypes.includes(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  className={`home-search-filter ${isOn ? "home-search-filter--on" : ""}`}
+                  aria-pressed={isOn}
+                  onClick={() => toggleType(type)}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {query && (

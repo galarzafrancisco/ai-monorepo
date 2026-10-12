@@ -35,6 +35,8 @@ function urlFor(result: IndexSearchResult): string {
       return `/tasks/task/${result.id}`;
     case SearchResultType.CONTEXT_BLOCK:
       return `/context/block/${result.id}`;
+    case SearchResultType.THREAD:
+      return `/threads/${result.id}`;
     case SearchResultType.TOOL:
       return `/tools/tool/${result.id}`;
     case SearchResultType.AGENT:

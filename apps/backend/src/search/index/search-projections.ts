@@ -36,6 +36,12 @@ const BLOCK_TAGS = `(
   WHERE bt."block_id" = b."id" AND g."deleted_at" IS NULL
 )`;
 
+const THREAD_TAGS = `(
+  SELECT string_agg(g."name", ' ' ORDER BY g."name")
+  FROM "thread_tags" tt JOIN "tags" g ON g."id" = tt."tag_id"
+  WHERE tt."thread_id" = t."id" AND g."deleted_at" IS NULL
+)`;
+
 export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
   {
     entityType: 'task',
@@ -84,7 +90,28 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
              '{}'::jsonb AS meta,
              b."updated_at" AS source_updated_at
       FROM "context_blocks" b
-      WHERE b."deleted_at" IS NULL {{SCOPE}}`,
+      -- A thread's state memory is indexed as the thread, below. The check includes
+      -- deleted threads on purpose: their state stops being searchable altogether.
+      WHERE b."deleted_at" IS NULL
+        AND NOT EXISTS (SELECT 1 FROM "threads" t WHERE t."state_context_block_id" = b."id") {{SCOPE}}`,
+  },
+  {
+    // A thread is found through its title and its state memory, the generated
+    // block that holds its goal and progress, and opens the thread itself.
+    entityType: 'thread',
+    resultType: 'thread',
+    resultIdExpression: `t."id"`,
+    select: `
+      SELECT t."id" AS entity_id, t."id" AS result_id,
+             t."title" AS title, t."title" AS search_title,
+             coalesce(b."content", '') AS body,
+             coalesce(${THREAD_TAGS}, '') AS keywords,
+             'B'::"char" AS body_weight,
+             '{}'::jsonb AS meta,
+             greatest(t."updated_at", b."updated_at") AS source_updated_at
+      FROM "threads" t
+      JOIN "context_blocks" b ON b."id" = t."state_context_block_id" AND b."deleted_at" IS NULL
+      WHERE t."deleted_at" IS NULL {{SCOPE}}`,
   },
   {
     entityType: 'tool',
