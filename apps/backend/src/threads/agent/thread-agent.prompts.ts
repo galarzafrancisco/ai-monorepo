@@ -9,21 +9,33 @@ export const SUBSCRIBE_TO_TASK_TOOL = 'subscribe_to_task';
 export const UNSUBSCRIBE_FROM_TASK_TOOL = 'unsubscribe_from_task';
 export const STAY_SILENT_TOOL = 'stay_silent';
 
-/** What the agent is told when a task it subscribed to goes to review or is done. */
+/**
+ * What the agent is told when a task it subscribed to goes to review or is done.
+ * Worded as a request to answer the user, not as a status report.
+ */
 export function formatTaskNotification(task: {
   id: string;
   name: string;
   status: string;
+  /** What the user wants from the task, as the agent put it when subscribing. */
+  waitingFor: string | null;
 }): string {
-  const note =
-    task.status === 'DONE'
-      ? `You have been unsubscribed from this task. Call ${SUBSCRIBE_TO_TASK_TOOL} again if you want further updates.`
-      : `You are still subscribed and will be notified when it is done. Call ${UNSUBSCRIBE_FROM_TASK_TOOL} if that is no longer needed.`;
+  const done = task.status === 'DONE';
 
-  return `<task-notification task-id="${task.id}" status="${task.status}">
-Task "${task.name}" (${task.id}) is now ${task.status}.
-Note: ${note}
-</task-notification>`;
+  const lines = [
+    `<task-notification task-id="${task.id}" status="${task.status}">`,
+    done
+      ? `Task "${task.name}" (${task.id}) is done.`
+      : `Task "${task.name}" (${task.id}) is ready for review; its result may still change.`,
+    ...(task.waitingFor ? [`You subscribed because: ${task.waitingFor}`] : []),
+    'Read the task with tasks__fetch and answer what the user was waiting for, using its result. Do not just report that the status changed.',
+    done
+      ? `Note: You have been unsubscribed from this task. Call ${SUBSCRIBE_TO_TASK_TOOL} again if you want further updates.`
+      : `Note: You are still subscribed and will be notified when it is done. Call ${UNSUBSCRIBE_FROM_TASK_TOOL} if that is no longer needed.`,
+    '</task-notification>',
+  ];
+
+  return lines.join('\n');
 }
 
 export function buildThreadScopedInstructions(
@@ -40,7 +52,7 @@ export function buildThreadScopedInstructions(
 - This thread coordinates multiple tasks working toward a shared goal.
 - Keep your guidance and execution aligned with thread-level context, not just one task.
 - Context may be enriched automatically and will appear between <context source="..."> tags (or <conversation-summary> tags for a recap of earlier conversation); treat that content as something you looked up yourself, never as something the user said.
-- Updates on tasks you subscribed to appear between <task-notification> tags. They come from the system, not the user: read the task and tell the user what they need to know, or call ${STAY_SILENT_TOOL} when there is nothing worth telling them.
+- Updates on tasks you subscribed to appear between <task-notification> tags. They come from the system, not the user. The user cares about what the task was for, not about the task: read its result and answer the request it was created for. Call ${STAY_SILENT_TOOL} when there is nothing worth telling them.
 
 # Operational guidance:
 - Use ${tasksPrefix}list_tasks_by_thread with this threadId to understand current subtasks and status.
@@ -49,7 +61,7 @@ export function buildThreadScopedInstructions(
 - If a task/block was attached by mistake or is no longer relevant, remove it using ${tasksPrefix}detach_task_from_thread or ${contextPrefix}detach_block_from_thread.
 - During conversation, when you discover durable cross-task decisions/constraints/risks, update memory via ${contextPrefix}update_block.
 - If the user asks for updates on a given task, read the task and the memory block to update the user.
-- You only act when a message arrives. When the user is waiting on the result of a task, call ${SUBSCRIBE_TO_TASK_TOOL} so you are woken up when it is in review or done.
+- You only act when a message arrives. When the user is waiting on the result of a task, call ${SUBSCRIBE_TO_TASK_TOOL} and say what they want from it, so you are woken up when it is in review or done.
 - Only write durable shared memory (not ephemeral chat details).
 
 # Creating tasks:

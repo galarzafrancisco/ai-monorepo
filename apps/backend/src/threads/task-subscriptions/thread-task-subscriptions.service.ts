@@ -39,6 +39,8 @@ export class ThreadTaskSubscriptionsService {
     threadId: string;
     taskId: string;
     forActorId: string;
+    /** What the user wants from the task. */
+    waitingFor: string;
   }): Promise<SubscribedTask | null> {
     const task = await this.findTask(input.taskId);
     if (!task) {
@@ -46,11 +48,12 @@ export class ThreadTaskSubscriptionsService {
     }
 
     await this.dataSource.query(
-      `INSERT INTO thread_task_subscriptions (thread_id, task_id, subscribed_for_actor_id)
-       VALUES ($1, $2, $3)
+      `INSERT INTO thread_task_subscriptions (thread_id, task_id, subscribed_for_actor_id, waiting_for)
+       VALUES ($1, $2, $3, $4)
        ON CONFLICT (thread_id, task_id)
-       DO UPDATE SET subscribed_for_actor_id = EXCLUDED.subscribed_for_actor_id`,
-      [input.threadId, task.id, input.forActorId],
+       DO UPDATE SET subscribed_for_actor_id = EXCLUDED.subscribed_for_actor_id,
+                     waiting_for = EXCLUDED.waiting_for`,
+      [input.threadId, task.id, input.forActorId, input.waitingFor.trim() || null],
     );
     await this.emitThreadUpdated(input.threadId, input.forActorId);
 

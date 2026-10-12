@@ -28,9 +28,19 @@ export class ThreadAgentToolsFactory {
       [SUBSCRIBE_TO_TASK_TOOL]: tool({
         description:
           'Get notified in this thread when a task is in review or done. Use it when the user is waiting on the result of a task or the result matters to the conversation.',
-        inputSchema: z.object({ taskId: z.string() }),
-        execute: async ({ taskId }) => {
-          const task = await this.subscriptions.subscribe({ threadId, taskId, forActorId });
+        inputSchema: z.object({
+          taskId: z.string(),
+          waitingFor: z
+            .string()
+            .describe('What the user wants from this task, in one sentence. You get it back with the notification.'),
+        }),
+        execute: async ({ taskId, waitingFor }) => {
+          const task = await this.subscriptions.subscribe({
+            threadId,
+            taskId,
+            forActorId,
+            waitingFor,
+          });
           return task
             ? `Subscribed. Task "${task.name}" is currently ${task.status}.`
             : `Task ${taskId} not found.`;

@@ -45,6 +45,10 @@ export class ThreadTaskSubscriptionEntity {
   @JoinColumn({ name: 'subscribed_for_actor_id' })
   subscribedForActor?: ActorEntity;
 
+  /** What the user wants from the task, in the agent's words. Repeated back in the notification. */
+  @Column({ type: 'text', nullable: true, name: 'waiting_for' })
+  waitingFor!: string | null;
+
   @Column({ type: 'text', nullable: true, name: 'triggered_status' })
   triggeredStatus!: TaskStatus | null;
 

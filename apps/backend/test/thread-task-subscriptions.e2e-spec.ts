@@ -154,7 +154,7 @@ describe('Thread task subscriptions E2E', () => {
       {
         toolCalls: taskIds.map((taskId) => ({
           toolName: 'subscribe_to_task',
-          input: { taskId },
+          input: { taskId, waitingFor: 'The user wants the public holidays for the offsite.' },
         })),
       },
       { text: 'I will let you know when it is ready.' },
@@ -214,7 +214,11 @@ describe('Thread task subscriptions E2E', () => {
 
     const [notification] = await notifications(threadId);
     expect(notification).toContain(`<task-notification task-id="${taskId}" status="DONE">`);
-    expect(notification).toContain(`Task "Find public holidays" (${taskId}) is now DONE.`);
+    expect(notification).toContain(`Task "Find public holidays" (${taskId}) is done.`);
+    expect(notification).toContain(
+      'You subscribed because: The user wants the public holidays for the offsite.',
+    );
+    expect(notification).toContain('answer what the user was waiting for');
     expect(notification).toContain('You have been unsubscribed from this task.');
 
     // The model was called with the notification as the newest message.

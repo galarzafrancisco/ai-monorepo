@@ -54,6 +54,7 @@ type PendingTaskNotificationRow = {
   task_id: string;
   triggered_status: TaskStatus;
   triggered_task_name: string;
+  waiting_for: string | null;
   actor_id: string;
   actor_slug: string;
   actor_type: ActorType;
@@ -204,7 +205,7 @@ export class ThreadAgentLogService {
       await this.lockHead(manager, input.threadId);
 
       const pending: PendingTaskNotificationRow[] = await manager.query(
-        `SELECT s.task_id, s.triggered_status, s.triggered_task_name, a.id AS actor_id,
+        `SELECT s.task_id, s.triggered_status, s.triggered_task_name, s.waiting_for, a.id AS actor_id,
                 a.slug AS actor_slug, a.type AS actor_type, a.display_name AS actor_display_name
            FROM thread_task_subscriptions s
            JOIN actors a ON a.id = s.subscribed_for_actor_id
@@ -232,6 +233,7 @@ export class ThreadAgentLogService {
               id: row.task_id,
               name: row.triggered_task_name,
               status: row.triggered_status,
+              waitingFor: row.waiting_for,
             }),
           },
         })),
