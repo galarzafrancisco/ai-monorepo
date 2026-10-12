@@ -19,6 +19,7 @@ import { getConfig } from '../src/config/env.config';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import chatGptClientMetadata from './fixtures/chatgpt-client-metadata.json';
 import {
   ClientMetadataHost,
   ClientSigningKey,
@@ -662,6 +663,72 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
       await client.connect(tasksMcpUrl);
 
       expect((await client.callMcp()).status).toBe(200);
+    });
+  });
+
+  describe('documents captured from real clients', () => {
+    // See test/fixtures/README.md. These guard against building to the spec
+    // and to our own fake client, and missing what a real client sends.
+    it('lets a client set up exactly like ChatGPT connect, call the MCP server and refresh', async () => {
+      // ChatGPT signs with an RSA key it publishes at its jwks_uri. Only it
+      // has the private key, so the test publishes one of its own, same shape.
+      const key = await generateClientSigningKey('RS256');
+      const id = ++documentCounter;
+      const jwksUri = metadataHost.respond(`/oauth/chatgpt-${id}/jwks.json`, {
+        body: JSON.stringify({ keys: [key.publicJwk] }),
+      });
+      // The document as ChatGPT serves it. Only the two URLs that have to be
+      // reachable from the test point somewhere else: the document's own
+      // location (its client_id) and the key set.
+      const { client_id: _servedFrom, ...document } = chatGptClientMetadata;
+      const clientId = metadataHost.publish(
+        `/oauth/chatgpt-${id}/client.json`,
+        { ...document, jwks_uri: jwksUri },
+        { 'cache-control': 'public, max-age=300' },
+      );
+      const client = newClient(
+        clientId,
+        chatGptClientMetadata.redirect_uris[0],
+        key,
+      );
+
+      const tokens = await client.connect(tasksMcpUrl);
+
+      expect(client.registrationMethod).toBe('metadata_document');
+      const stored = await clients.findOneByOrFail({ clientId });
+      expect(stored).toMatchObject({
+        clientName: 'ChatGPT',
+        redirectUris: chatGptClientMetadata.redirect_uris,
+        grantTypes: ['authorization_code', 'refresh_token'],
+        tokenEndpointAuthMethod: 'private_key_jwt',
+        tokenEndpointAuthSigningAlg: 'RS256',
+        jwksUri,
+        jwks: null,
+      });
+      expect(decodeJwt(tokens.access_token).client_id).toBe(clientId);
+      expect((await client.callMcp()).status).toBe(200);
+
+      await client.refresh();
+      expect((await client.callMcp()).status).toBe(200);
+
+      // and it cannot skip the signature its document promises
+      await expect(client.refresh(null)).rejects.toThrow(
+        /401 INVALID_CLIENT_ASSERTION/,
+      );
+    });
+
+    it('is the document ChatGPT serves, apart from the connector id', () => {
+      // A reminder not to "fix" the fixture: its odd parts are the point.
+      expect(chatGptClientMetadata).toMatchObject({
+        token_endpoint_auth_method: 'private_key_jwt',
+        // not a client metadata field in any spec, but ChatGPT sends it
+        token_endpoint_auth_methods_supported: ['none', 'private_key_jwt'],
+        token_endpoint_auth_signing_alg: 'RS256',
+        jwks_uri: 'https://chatgpt.com/oauth/jwks.json',
+      });
+      expect(chatGptClientMetadata.redirect_uris[0]).toMatch(
+        /^https:\/\/chatgpt\.com\/connector\/oauth\//,
+      );
     });
   });
 
