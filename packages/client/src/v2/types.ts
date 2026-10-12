@@ -85,6 +85,7 @@ export interface FlowServerDto {
 export interface FlowClientDto {
   clientId: string;
   clientName: string;
+  registrationMethod: 'dynamic_registration' | 'metadata_document';
 }
 
 export interface GetConsentMetadataResponseDto {
@@ -1190,6 +1191,7 @@ export interface AuthorizationServerMetadataDto {
   grant_types_supported: ('authorization_code' | 'refresh_token')[];
   token_endpoint_auth_methods_supported: string[];
   code_challenge_methods_supported: string[];
+  client_id_metadata_document_supported: boolean;
 }
 
 export interface ProtectedResourceMetadataResponseDto {

@@ -51,6 +51,39 @@ export class AuthJourneysService {
     mcpAuthorizationFlow: McpAuthorizationFlowEntity;
     connectionAuthorizationFlows: ConnectionAuthorizationFlowEntity[];
   }> {
+    return this.createJourney(
+      input,
+      McpAuthorizationFlowStatus.CLIENT_REGISTERED,
+    );
+  }
+
+  /*
+  Internal. Same assumptions as above.
+  Starts a journey for an authorization request that has no unused flow to
+  pick up: the client is authorizing again, or it never registered because its
+  client_id is a metadata document URL.
+  */
+  async createJourneyForAuthorizationRequest(
+    input: CreateAuthJourneyInput,
+  ): Promise<{
+    authorizationJourney: AuthJourneyEntity;
+    mcpAuthorizationFlow: McpAuthorizationFlowEntity;
+    connectionAuthorizationFlows: ConnectionAuthorizationFlowEntity[];
+  }> {
+    return this.createJourney(
+      input,
+      McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED,
+    );
+  }
+
+  private async createJourney(
+    input: CreateAuthJourneyInput,
+    flowStatus: McpAuthorizationFlowStatus,
+  ): Promise<{
+    authorizationJourney: AuthJourneyEntity;
+    mcpAuthorizationFlow: McpAuthorizationFlowEntity;
+    connectionAuthorizationFlows: ConnectionAuthorizationFlowEntity[];
+  }> {
     // Get the MCP Server
     const mcpServer = await this.mcpRegistryService.getServerById(
       input.mcpServerId,
@@ -67,7 +100,7 @@ export class AuthJourneysService {
       authorizationJourneyId: savedJourney.id,
       serverId: mcpServer.id,
       clientId: input.mcpClientId,
-      status: McpAuthorizationFlowStatus.CLIENT_REGISTERED,
+      status: flowStatus,
     });
     const savedFlow = await this.mcpAuthorizationFlowRepository.save(mcpFlow);
 
@@ -117,20 +150,19 @@ export class AuthJourneysService {
   }
 
   /*
-  Public API: Find MCP authorization flow by client ID and server ID
+  Public API: Find the MCP authorization flows of a client on a server, oldest first
   Used by AuthorizationService to locate existing flows
   */
-  async findMcpAuthFlowByClientAndServer(
+  async findMcpAuthFlowsByClientAndServer(
     clientId: string,
     serverId: string,
-    relations?: string[],
-  ): Promise<McpAuthorizationFlowEntity | null> {
-    return this.mcpAuthorizationFlowRepository.findOne({
+  ): Promise<McpAuthorizationFlowEntity[]> {
+    return this.mcpAuthorizationFlowRepository.find({
       where: {
         clientId,
         serverId,
       },
-      relations,
+      order: { createdAt: 'ASC' },
     });
   }
 
@@ -341,9 +373,18 @@ export class AuthJourneysService {
       const journeyDelete = await manager.delete(AuthJourneyEntity, {
         id: In(journeyIds),
       });
-      const clientDelete = await manager.delete(RegisteredClientEntity, {
-        id: In(clientIds),
-      });
+      // A client can have other flows: an earlier authorization that is still
+      // in use, or other users of the same metadata document client_id.
+      // Only clients left without any flow are removed.
+      const clientDelete = await manager
+        .createQueryBuilder()
+        .delete()
+        .from(RegisteredClientEntity)
+        .where('id IN (:...clientIds)', { clientIds })
+        .andWhere(
+          `NOT EXISTS (SELECT 1 FROM "mcp_authorization_flows" f WHERE f."client_id" = "registered_clients"."id")`,
+        )
+        .execute();
 
       return {
         deletedClients: clientDelete.affected || 0,

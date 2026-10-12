@@ -1,3 +1,4 @@
+export * from './client-registration-method.enum';
 export * from './grant-type.enum';
 export * from './response-type.enum';
 export * from './token-endpoint-auth-method.enum';

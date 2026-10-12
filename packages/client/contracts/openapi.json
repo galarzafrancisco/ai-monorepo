@@ -7944,11 +7944,21 @@
             "type": "string",
             "description": "Human-readable name of the client application",
             "example": "Claude Desktop"
+          },
+          "registrationMethod": {
+            "type": "string",
+            "description": "How the client is known: it registered, or its client_id is a URL to a metadata document it hosts. The client name is self-declared either way.",
+            "enum": [
+              "dynamic_registration",
+              "metadata_document"
+            ],
+            "example": "metadata_document"
           }
         },
         "required": [
           "clientId",
-          "clientName"
+          "clientName",
+          "registrationMethod"
         ]
       },
       "GetConsentMetadataResponseDto": {
@@ -13584,6 +13594,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "client_id_metadata_document_supported": {
+            "type": "boolean",
+            "description": "Whether clients may use a Client ID Metadata Document URL as their client_id instead of registering",
+            "example": true
           }
         },
         "required": [
@@ -13595,7 +13610,8 @@
           "response_types_supported",
           "grant_types_supported",
           "token_endpoint_auth_methods_supported",
-          "code_challenge_methods_supported"
+          "code_challenge_methods_supported",
+          "client_id_metadata_document_supported"
         ]
       },
       "ProtectedResourceMetadataResponseDto": {

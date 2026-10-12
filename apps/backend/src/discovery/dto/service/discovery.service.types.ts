@@ -19,6 +19,7 @@ export type AuthorizationServerMetadataResult = {
   grant_types_supported: GrantType[];
   token_endpoint_auth_methods_supported: string[];
   code_challenge_methods_supported: string[];
+  client_id_metadata_document_supported: boolean;
 };
 
 export type ProtectedResourceMetadataResult = {

@@ -105,6 +105,9 @@ export class DiscoveryService {
       ],
       token_endpoint_auth_methods_supported: ['none'],
       code_challenge_methods_supported: ['S256'],
+      // Clients may identify themselves with a URL to a metadata document
+      // they host instead of registering first.
+      client_id_metadata_document_supported: true,
     };
   }
 

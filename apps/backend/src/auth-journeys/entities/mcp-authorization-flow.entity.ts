@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
   OneToOne,
@@ -14,6 +15,7 @@ import { AuthJourneyEntity } from './auth-journey.entity';
 import { McpAuthorizationFlowStatus } from '../enums/mcp-authorization-flow-status.enum';
 
 @Entity('mcp_authorization_flows')
+@Index('idx_mcp_authorization_flows_client_server', ['clientId', 'serverId'])
 export class McpAuthorizationFlowEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -89,8 +91,9 @@ export class McpAuthorizationFlowEntity {
   @JoinColumn({ name: 'server_id' })
   server!: McpServerEntity;
 
-  // An MCP Authorization Flow refers to only one MCP Client
-  @OneToOne(() => RegisteredClientEntity, {
+  // A client has one flow per authorization request: it can authorize again
+  // later, and a metadata document client_id is shared by all of its users.
+  @ManyToOne(() => RegisteredClientEntity, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'client_id' })

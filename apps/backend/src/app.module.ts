@@ -24,6 +24,7 @@ import { ChatProviderModelConfig1760300000000 } from './migrations/1760300000000
 import { ReplaceAdkChatProvider1760400000000 } from './migrations/1760400000000-ReplaceAdkChatProvider';
 import { AiProviderModelSelections1760500000000 } from './migrations/1760500000000-AiProviderModelSelections';
 import { DropAdkSessionTables1760600000000 } from './migrations/1760600000000-DropAdkSessionTables';
+import { McpClientIdMetadataDocuments1760700000000 } from './migrations/1760700000000-McpClientIdMetadataDocuments';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -49,6 +50,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ReplaceAdkChatProvider1760400000000,
         AiProviderModelSelections1760500000000,
         DropAdkSessionTables1760600000000,
+        McpClientIdMetadataDocuments1760700000000,
       ],
     }),
     EventEmitterModule.forRoot(),

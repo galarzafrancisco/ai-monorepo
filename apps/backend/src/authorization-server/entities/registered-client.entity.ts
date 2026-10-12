@@ -7,7 +7,11 @@ import {
   DeleteDateColumn,
   VersionColumn,
 } from 'typeorm';
-import { GrantType, TokenEndpointAuthMethod } from '../enums';
+import {
+  ClientRegistrationMethod,
+  GrantType,
+  TokenEndpointAuthMethod,
+} from '../enums';
 
 @Entity({ name: 'registered_clients' })
 export class RegisteredClientEntity {
@@ -41,6 +45,17 @@ export class RegisteredClientEntity {
 
   @Column('simple-array', { nullable: true })
   contacts!: string[] | null;
+
+  @Column({
+    type: 'text',
+    name: 'registration_method',
+    default: ClientRegistrationMethod.DYNAMIC_REGISTRATION,
+  })
+  registrationMethod!: ClientRegistrationMethod;
+
+  // Metadata document clients only: when the cached document must be fetched again
+  @Column({ type: 'timestamptz', name: 'metadata_expires_at', nullable: true })
+  metadataExpiresAt!: Date | null;
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

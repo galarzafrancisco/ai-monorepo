@@ -39,5 +39,9 @@ export type AuthorizationServerMetadataDto = {
      * PKCE code challenge methods supported by this authorization server
      */
     code_challenge_methods_supported: Array<string>;
+    /**
+     * Whether clients may use a Client ID Metadata Document URL as their client_id instead of registering
+     */
+    client_id_metadata_document_supported: boolean;
 };
 

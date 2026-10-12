@@ -70,6 +70,12 @@ export function ConsentPage() {
 
   const { client, scopes, redirectUri, server, resource, createdAt } = consentMetadata;
 
+  // The client name is whatever the client says it is. What can be checked is
+  // where its metadata document is published and where the user is sent next.
+  const clientDocumentHost = client.registrationMethod === 'metadata_document' ? hostOf(client.clientId) : null;
+  const redirectHost = hostOf(redirectUri);
+  const redirectsToThisComputer = isLoopbackHost(redirectUri);
+
   return (
     <div className="consent-page">
       <div className="consent-container">
@@ -95,6 +101,12 @@ export function ConsentPage() {
                 <span className="label">Client ID:</span>
                 <span className="value"><code>{client.clientId}</code></span>
               </div>
+              {clientDocumentHost ? (
+                <div className="info-row">
+                  <span className="label">Published by:</span>
+                  <span className="value"><code>{clientDocumentHost}</code></span>
+                </div>
+              ) : null}
               <div className="info-row">
                 <span className="label">Registered:</span>
                 <span className="value"><code>{new Date(createdAt).toLocaleString()}</code></span>
@@ -138,6 +150,10 @@ export function ConsentPage() {
             <h2>Redirect Information</h2>
             <div className="client-info">
               <div className="info-row">
+                <span className="label">Sends you to:</span>
+                <span className="value"><code>{redirectHost}</code></span>
+              </div>
+              <div className="info-row">
                 <span className="label">Redirect URI:</span>
                 <span className="value"><code>{redirectUri}</code></span>
               </div>
@@ -145,6 +161,12 @@ export function ConsentPage() {
             <p style={{ marginTop: '12px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
               After authorization, you will be redirected to this URL.
             </p>
+            {redirectsToThisComputer ? (
+              <p className="consent-warning">
+                This address is on your own computer, so any app running on it could receive this authorization.
+                Approve only if you started this from an app you trust.
+              </p>
+            ) : null}
           </Card>
         </div>
 
@@ -173,6 +195,24 @@ export function ConsentPage() {
   )
 }
 
+
+function hostOf(uri: string): string {
+  try {
+    const url = new URL(uri);
+    // App links such as cursor://callback have no host worth showing on its own
+    return url.host || uri;
+  } catch {
+    return uri;
+  }
+}
+
+function isLoopbackHost(uri: string): boolean {
+  try {
+    return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(uri).hostname);
+  } catch {
+    return false;
+  }
+}
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (

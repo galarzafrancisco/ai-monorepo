@@ -138,6 +138,16 @@
   word-break: break-all;
 }
 
+.consent-warning {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--r-1);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-2);
+}
+
 .consent-actions {
   display: flex;
   gap: var(--space-3);

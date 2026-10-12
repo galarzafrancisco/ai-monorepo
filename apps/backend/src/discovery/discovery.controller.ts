@@ -132,6 +132,8 @@ export class DiscoveryController {
       token_endpoint_auth_methods_supported:
         metadata.token_endpoint_auth_methods_supported,
       code_challenge_methods_supported: metadata.code_challenge_methods_supported,
+      client_id_metadata_document_supported:
+        metadata.client_id_metadata_document_supported,
     };
   }
 
