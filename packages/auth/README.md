@@ -144,7 +144,7 @@ Every method on `OAuthServer` takes and returns plain data, so you can build you
 
 - PKCE with S256 is required. There are no client secrets: clients are public, or sign assertions with `private_key_jwt`.
 - Authorization codes and refresh tokens are stored as SHA-256 hashes, are single-use, and the single use is enforced atomically in the store (`redeemCode`, `consume`), so two racing requests cannot both win.
-- Refresh tokens rotate. Presenting a rotated-out token revokes the whole grant.
+- Refresh tokens rotate. Presenting a rotated-out token revokes the whole grant (for a session token: every session of that user). This holds when two requests present the same token at once: one is served, and what it was given is revoked with the rest. The same applies to two requests racing on one authorization code.
 - A token's audience is the resource the grant was made for, never a value the client sent at the token endpoint.
 - `resolveSession` only accepts tokens minted for a browser session, so a client's or agent's token cannot approve a consent.
 - Session cookies are `HttpOnly`, `SameSite=Lax`, and `Secure` when the issuer is https.

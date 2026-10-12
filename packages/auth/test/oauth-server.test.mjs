@@ -2,7 +2,17 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { exactResource, InvalidCredentialsError, OAuthError, parseScope } from '@taico/auth';
 import { createPkcePair } from '@taico/auth/client';
-import { authorizeClient, createTestServer, ISSUER, NOTES, testClock, tokenRequest } from './helpers.mjs';
+import { memoryStores } from '@taico/auth/memory';
+import {
+  assertConcurrentReuseRevokes,
+  authorizeClient,
+  createTestServer,
+  ISSUER,
+  NOTES,
+  racingRefreshTokens,
+  testClock,
+  tokenRequest,
+} from './helpers.mjs';
 
 const oauthError = (error) => (thrown) => {
   assert.ok(thrown instanceof OAuthError, `expected OAuthError, got ${thrown}`);
@@ -133,6 +143,43 @@ test('refresh tokens rotate, and reuse of an old one revokes the grant', async (
   await assert.rejects(refresh(second.refresh_token), oauthError('invalid_grant'));
 });
 
+test('two requests racing on one refresh token revoke the grant', async () => {
+  const stores = memoryStores();
+  const race = racingRefreshTokens(stores.refreshTokens);
+  const { server, user } = await createTestServer({ stores: { ...stores, refreshTokens: race.store } });
+  const flow = await authorizeClient(server, user);
+  const first = await server.token(tokenRequest(flow));
+  const refresh = (refresh_token) =>
+    server.token({ grant_type: 'refresh_token', client_id: flow.client.clientId, refresh_token });
+
+  await assertConcurrentReuseRevokes({
+    arm: race.arm,
+    present: () => refresh(first.refresh_token),
+    stillWorks: (winner) => refresh(winner.refresh_token),
+  });
+  assert.equal((await stores.grants.findById(flow.grantId)).status, 'revoked');
+});
+
+test('two requests racing on one authorization code revoke the grant', async () => {
+  const { server, stores, user } = await createTestServer();
+  const flow = await authorizeClient(server, user);
+  const results = await Promise.allSettled([
+    server.token(tokenRequest(flow)),
+    server.token(tokenRequest(flow)),
+  ]);
+  const winners = results.filter((result) => result.status === 'fulfilled');
+  assert.equal(winners.length, 1);
+  assert.equal((await stores.grants.findById(flow.grantId)).status, 'revoked');
+  await assert.rejects(
+    server.token({
+      grant_type: 'refresh_token',
+      client_id: flow.client.clientId,
+      refresh_token: winners[0].value.refresh_token,
+    }),
+    oauthError('invalid_grant'),
+  );
+});
+
 test('a refresh token is bound to its client', async () => {
   const { server, user } = await createTestServer();
   const flow = await authorizeClient(server, user);
@@ -256,6 +303,22 @@ test('sessions: login, refresh rotation with reuse detection, logout', async () 
   const again = await server.login({ email: 'ada@example.com', password: 'correct horse' });
   await server.logout(again.refreshToken);
   await assert.rejects(server.refreshSession(again.refreshToken), /revoked/);
+});
+
+test('two requests racing on one session refresh token end every session', async () => {
+  const stores = memoryStores();
+  const race = racingRefreshTokens(stores.refreshTokens);
+  const { server } = await createTestServer({ stores: { ...stores, refreshTokens: race.store } });
+  const login = () => server.login({ email: 'ada@example.com', password: 'correct horse' });
+  const session = await login();
+  const otherDevice = await login();
+
+  await assertConcurrentReuseRevokes({
+    arm: race.arm,
+    present: () => server.refreshSession(session.refreshToken),
+    stillWorks: (winner) => server.refreshSession(winner.refreshToken),
+  });
+  await assert.rejects(server.refreshSession(otherDevice.refreshToken), /revoked/);
 });
 
 test('a client or agent token cannot be replayed as a browser session', async () => {

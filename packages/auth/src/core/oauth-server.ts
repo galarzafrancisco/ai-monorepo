@@ -536,8 +536,7 @@ export class OAuthServer {
 
     if (grant.status === 'exchanged') {
       // A code presented twice was probably stolen: drop what it produced
-      await this.stores.refreshTokens.revokeByGrant(grant.id, this.clock.now());
-      await this.stores.grants.save({ ...grant, status: 'revoked' });
+      await this.revokeGrant(grant);
       throw invalid('Authorization code has already been used');
     }
     if (grant.status !== 'code_issued') {
@@ -553,6 +552,9 @@ export class OAuthServer {
       throw invalid('Invalid code_verifier');
     }
     if (!(await this.stores.grants.redeemCode(grant.id))) {
+      // Lost a race against another request holding the same code. That is
+      // the same theft signal as a replay, only caught a moment earlier.
+      await this.revokeGrant(grant);
       throw invalid('Authorization code has already been used');
     }
 
@@ -580,19 +582,36 @@ export class OAuthServer {
     this.assertResourceMatches(grant, request);
     await this.authenticateClient(client, request);
 
-    if (stored.revokedAt) {
+    const reused = async () => {
       // Rotation means a revoked token is only ever seen again when it leaked
-      await this.stores.refreshTokens.revokeByGrant(grant.id, now);
+      await this.revokeGrant(grant);
       this.logger.warn(`Refresh token reuse detected for grant ${grant.id}`);
-      throw invalid('Refresh token has been revoked');
+      return invalid('Refresh token has been revoked');
+    };
+    if (stored.revokedAt) {
+      throw await reused();
     }
     if (now > stored.expiresAt) {
       throw invalid('Refresh token has expired');
     }
-    if (!(await this.stores.refreshTokens.consume(tokenHash, now))) {
-      throw invalid('Refresh token has been revoked');
-    }
-    return this.tokensFor(grant, client);
+    return this.tokensFor(grant, client, async () => {
+      // `revokedAt` above was read before this point, so two requests can
+      // both get here with the same token. Only one consumes it; the other
+      // is a reuse and has to be treated as one.
+      if (!(await this.stores.refreshTokens.consume(tokenHash, now))) {
+        throw await reused();
+      }
+    });
+  }
+
+  /**
+   * Ends a grant: its refresh tokens are revoked and it can mint no more.
+   * Marking the grant itself matters as much as revoking the tokens, because
+   * it also stops a refresh token that a racing request stores afterwards.
+   */
+  private async revokeGrant(grant: Grant): Promise<void> {
+    await this.stores.grants.save({ ...grant, status: 'revoked' });
+    await this.stores.refreshTokens.revokeByGrant(grant.id, this.clock.now());
   }
 
   private async clientOf(grant: Grant): Promise<Client> {
@@ -622,8 +641,32 @@ export class OAuthServer {
     }
   }
 
-  private async tokensFor(grant: Grant, client: Client): Promise<TokenResponse> {
+  /**
+   * Issues the tokens of a grant. `retireOld` consumes the refresh token being
+   * rotated, and throws when it was already consumed.
+   *
+   * The order is what makes reuse detection hold under concurrency: the
+   * replacement is stored before the old token is consumed. A request that
+   * then loses the race on `consume` revokes the grant's tokens, and by that
+   * time the winner's replacement is already in the store to be revoked.
+   */
+  private async tokensFor(
+    grant: Grant,
+    client: Client,
+    retireOld?: () => Promise<void>,
+  ): Promise<TokenResponse> {
     const subject = await this.subjectOf(grant.subjectId!);
+    const refreshToken = client.grantTypes.includes('refresh_token')
+      ? await this.storeRefreshToken({
+          kind: 'grant',
+          subjectId: subject.id,
+          grantId: grant.id,
+          clientId: client.clientId,
+          ttlDays: this.config.refreshTokenTtlDays,
+        })
+      : undefined;
+    await retireOld?.();
+
     const { token } = await this.mint({
       subject,
       // The audience is the resource the grant is bound to, never client input
@@ -639,14 +682,8 @@ export class OAuthServer {
       expires_in: this.config.accessTokenTtlSeconds,
       scope: formatScope(grant.scopes),
     };
-    if (client.grantTypes.includes('refresh_token')) {
-      response.refresh_token = await this.storeRefreshToken({
-        kind: 'grant',
-        subjectId: subject.id,
-        grantId: grant.id,
-        clientId: client.clientId,
-        ttlDays: this.config.refreshTokenTtlDays,
-      });
+    if (refreshToken) {
+      response.refresh_token = refreshToken;
     }
     return response;
   }
@@ -791,10 +828,11 @@ export class OAuthServer {
     const stored = await this.stores.refreshTokens.find(sha256(input.token));
     if (stored) {
       if (stored.grantId) {
-        await this.stores.refreshTokens.revokeByGrant(stored.grantId, now);
         const grant = await this.stores.grants.findById(stored.grantId);
         if (grant) {
-          await this.stores.grants.save({ ...grant, status: 'revoked' });
+          await this.revokeGrant(grant);
+        } else {
+          await this.stores.refreshTokens.revokeByGrant(stored.grantId, now);
         }
       } else {
         await this.stores.refreshTokens.consume(stored.tokenHash, now);
@@ -841,10 +879,14 @@ export class OAuthServer {
     if (!stored || stored.kind !== 'session') {
       throw new InvalidAccessTokenError('Invalid refresh token');
     }
-    if (stored.revokedAt) {
+    const reused = async () => {
       // A rotated token coming back means it leaked: end every session
       await this.stores.refreshTokens.revokeBySubject(stored.subjectId, 'session', now);
-      throw new InvalidAccessTokenError('Refresh token revoked');
+      this.logger.warn(`Session refresh token reuse detected for ${stored.subjectId}`);
+      return new InvalidAccessTokenError('Refresh token revoked');
+    };
+    if (stored.revokedAt) {
+      throw await reused();
     }
     if (now > stored.expiresAt) {
       throw new InvalidAccessTokenError('Refresh token expired');
@@ -854,10 +896,13 @@ export class OAuthServer {
       await this.stores.refreshTokens.consume(tokenHash, now);
       throw new InvalidAccessTokenError('Invalid refresh token');
     }
-    if (!(await this.stores.refreshTokens.consume(tokenHash, now))) {
-      throw new InvalidAccessTokenError('Refresh token revoked');
-    }
-    return this.sessionFor(subject);
+    return this.sessionFor(subject, async () => {
+      // Two requests can both have read the token as live. The one that
+      // fails to consume it is a reuse, with the same consequence as above.
+      if (!(await this.stores.refreshTokens.consume(tokenHash, now))) {
+        throw await reused();
+      }
+    });
   }
 
   /** Ends the session a refresh token belongs to */
@@ -883,8 +928,24 @@ export class OAuthServer {
     return claims.sub;
   }
 
-  private async sessionFor(subject: Subject): Promise<SessionTokens> {
+  /**
+   * Issues a session token pair. As in `tokensFor`, the new refresh token is
+   * stored before `retireOld` consumes the one it replaces, so a request that
+   * loses that race revokes a set of tokens that already includes it.
+   */
+  private async sessionFor(
+    subject: Subject,
+    retireOld?: () => Promise<void>,
+  ): Promise<SessionTokens> {
     const ttlSeconds = this.config.sessionAccessTokenTtlSeconds;
+    const refreshToken = await this.storeRefreshToken({
+      kind: 'session',
+      subjectId: subject.id,
+      grantId: null,
+      clientId: null,
+      ttlDays: this.config.sessionRefreshTokenTtlDays,
+    });
+    await retireOld?.();
     const { token } = await this.mint({
       subject,
       audience: this.config.sessionAudience,
@@ -895,13 +956,7 @@ export class OAuthServer {
     return {
       subject,
       accessToken: token,
-      refreshToken: await this.storeRefreshToken({
-        kind: 'session',
-        subjectId: subject.id,
-        grantId: null,
-        clientId: null,
-        ttlDays: this.config.sessionRefreshTokenTtlDays,
-      }),
+      refreshToken,
       expiresInSeconds: ttlSeconds,
       refreshExpiresInSeconds: this.config.sessionRefreshTokenTtlDays * DAY_SECONDS,
     };

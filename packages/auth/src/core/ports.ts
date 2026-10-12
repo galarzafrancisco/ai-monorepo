@@ -130,7 +130,9 @@ export interface RefreshTokenStore {
   find(tokenHash: string): Promise<StoredRefreshToken | null>;
   /**
    * Revokes the token, atomically. Returns false when it was already revoked,
-   * so a token cannot be rotated twice by two racing requests.
+   * so a token cannot be rotated twice by two racing requests. The server
+   * treats a false here as reuse and revokes the grant or the sessions, so
+   * this must be a single conditional write, never a read followed by a write.
    */
   consume(tokenHash: string, now: Date): Promise<boolean>;
   /** Revokes every live token of a grant (reuse detected, or grant revoked) */
