@@ -15,6 +15,12 @@ import {
   TaskStatusChangedEvent,
   TaskUpdatedEvent,
 } from 'src/tasks/events/tasks.events';
+import {
+  ThreadCreatedEvent,
+  ThreadDeletedEvent,
+  ThreadTitleUpdatedEvent,
+  ThreadUpdatedEvent,
+} from 'src/threads/events/threads.events';
 import { isTypeormSchemaSyncEnabled } from 'src/config/env.config';
 import { SearchResultType } from '../enums';
 import { SearchEmbedderService } from './search-embedder.service';
@@ -203,6 +209,46 @@ export class SearchIndexerService implements OnApplicationBootstrap {
   @OnEvent(BlockUpdatedEvent.INTERNAL)
   async onBlockChanged(event: BlockCreatedEvent | BlockUpdatedEvent): Promise<void> {
     await this.syncResult('context_block', event.block.id);
+    await this.syncThreadOfStateBlock(event.block.id);
+  }
+
+  @OnEvent(ThreadCreatedEvent.INTERNAL)
+  @OnEvent(ThreadUpdatedEvent.INTERNAL)
+  async onThreadChanged(event: ThreadCreatedEvent | ThreadUpdatedEvent): Promise<void> {
+    await this.syncResult('thread', event.payload.id);
+    // Its state block was indexed as an ordinary block before the thread pointed at it.
+    await this.syncResult('context_block', event.payload.stateContextBlockId);
+  }
+
+  @OnEvent(ThreadTitleUpdatedEvent.INTERNAL)
+  async onThreadTitleUpdated(event: ThreadTitleUpdatedEvent): Promise<void> {
+    await this.syncResult('thread', event.payload.threadId);
+  }
+
+  @OnEvent(ThreadDeletedEvent.INTERNAL)
+  async onThreadDeleted(event: ThreadDeletedEvent): Promise<void> {
+    await this.syncResult('thread', event.threadId);
+  }
+
+  /** A thread's state memory is a context block; when it changes, the thread's index row does. */
+  private async syncThreadOfStateBlock(blockId: string): Promise<void> {
+    let threads: Array<{ id: string }>;
+    try {
+      threads = await this.dataSource.query(
+        `SELECT "id" FROM "threads" WHERE "state_context_block_id" = $1`,
+        [blockId],
+      );
+    } catch (error) {
+      this.logger.error({
+        message: 'Failed to look up the thread of a state block',
+        blockId,
+        error: errorMessage(error),
+      });
+      return;
+    }
+    for (const thread of threads) {
+      await this.syncResult('thread', thread.id);
+    }
   }
 
   // Agent events do not all carry the agent's id, and there are few agents: re-check them all.

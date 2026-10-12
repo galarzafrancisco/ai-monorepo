@@ -2,7 +2,7 @@
 
 How search finds things, how the index is kept up to date, what PostgreSQL needs, and which settings change its behavior.
 
-Search covers tasks (including their comments), context blocks, tools, agents and projects. It is used by the home page (`GET /api/v1/search/query`), by the task and context block search endpoints, and by the `search` and `search_blocks` MCP tools.
+Search covers tasks (including their comments), context blocks, threads, tools, agents and projects. It is used by the home page (`GET /api/v1/search/query`), by the task and context block search endpoints, and by the `search` and `search_blocks` MCP tools.
 
 The code lives in `apps/backend/src/search/index/`.
 
@@ -28,6 +28,7 @@ Other rules:
 
 - A keyword query must match all its terms. If nothing does and the query has two to six terms, it is retried with any one term left out. Longer queries are questions, and the semantic strategy answers those.
 - A task found through several of its comments is one result, placed by its best hit in each list.
+- A thread is found through its title and its state memory (the generated "Thread State" block that holds its goal and progress) and opens the thread. Those blocks are not returned as context blocks, so context block search stays free of them.
 - An exact title match gets a small boost, and finished tasks are slightly demoted so open work wins ties.
 - Equal scores are ordered by semantic position.
 - If the embedding model is slow or down, the search answers without semantic matches rather than failing.
@@ -47,12 +48,12 @@ Besides id, type, title and score, each result has:
 
 Two tables, both derived data that can be rebuilt at any time:
 
-- `search_documents`: one row per task, comment, context block, tool, agent and project, with its full-text vector. A comment's row points at its task as the result to open.
+- `search_documents`: one row per task, comment, context block, thread, tool, agent and project, with its full-text vector. A comment's row points at its task as the result to open.
 - `search_chunks`: the embedded passages of each row. The title is one passage; the text is split at markdown headings and then into passages of about `chunkSizeChars`. Each passage is embedded together with its title and heading path, because a passage alone often does not say what it is about.
 
 ### Keeping it up to date
 
-- **On write**: task, context block and agent events re-index the affected item immediately, so it is searchable by keyword at once. Embedding follows in the background within seconds.
+- **On write**: task, context block, thread and agent events re-index the affected item immediately, so it is searchable by keyword at once. Embedding follows in the background within seconds.
 - **Sweep**: every minute, each source table is compared with the index. This catches anything an event missed, covers tools and projects (which emit no events, so they can lag by up to a minute), and is how an empty index is first filled. Existing data is indexed on the first start after the upgrade with no manual step; that first pass runs in the background, so results can be incomplete for a moment right after the upgrade.
 - **Embedding worker**: claims out-of-date rows with a lease (`FOR UPDATE SKIP LOCKED`), so several backend processes share the work. A passage whose text is unchanged keeps its embedding, so appending to a long block embeds only the new part. Failures are retried with a growing delay.
 

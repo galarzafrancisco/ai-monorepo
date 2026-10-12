@@ -40,6 +40,8 @@ import {
 import {
   MessageCreatedEvent,
   ThreadTitleUpdatedEvent,
+  ThreadCreatedEvent,
+  ThreadDeletedEvent,
   ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ThreadAgentService } from './agent/thread-agent.service';
@@ -208,6 +210,11 @@ export class ThreadsService {
       await this.threadRepository.save(savedThread);
     }
 
+    this.eventEmitter.emit(
+      ThreadCreatedEvent.INTERNAL,
+      new ThreadCreatedEvent({ id: input.createdByActorId }, savedThread),
+    );
+
     // Reload with relations
     const threadWithRelations = await this.getThreadWithRelations(
       savedThread.id,
@@ -266,6 +273,11 @@ export class ThreadsService {
     }
 
     await this.threadRepository.softRemove(thread);
+
+    this.eventEmitter.emit(
+      ThreadDeletedEvent.INTERNAL,
+      new ThreadDeletedEvent({ id: actorId }, threadId),
+    );
 
     this.logger.log({
       message: 'Thread deleted',
