@@ -15,6 +15,9 @@ import {
 
 const CLOCK_TOLERANCE_SECONDS = 30;
 const MAX_CACHED_KEY_SETS = 500;
+// A key the client withdrew stops working within this time, whatever cache
+// lifetime the client's own server asked for.
+const MAX_KEY_SET_CACHE_SECONDS = 60 * 60;
 
 type CachedKeySet = {
   keys: JSONWebKeySet;
@@ -155,7 +158,13 @@ export class ClientAssertionService {
     this.keySets.set(client.jwksUri, {
       keys,
       fetchedAt: Date.now(),
-      expiresAt: Date.now() + cacheSeconds(fetched.cacheControl) * 1000,
+      expiresAt:
+        Date.now() +
+        Math.min(
+          cacheSeconds(fetched.cacheControl),
+          MAX_KEY_SET_CACHE_SECONDS,
+        ) *
+          1000,
     });
     return keys;
   }

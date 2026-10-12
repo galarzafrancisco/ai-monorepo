@@ -2,7 +2,7 @@ import { INestApplication, RequestMethod } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
-import { decodeJwt } from 'jose';
+import { decodeJwt, SignJWT } from 'jose';
 import { AddressInfo } from 'net';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -596,6 +596,40 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
         });
         expect(response.status).toBe(401);
         expect((await response.json()).detail).toMatch(/client_assertion_type/);
+      });
+
+      it('refuses an assertion signed with the public key used as a shared secret', async () => {
+        // The classic algorithm confusion attack: everyone knows the public
+        // key, so it must never be usable as an HMAC secret.
+        const { client, key, pending, callback } = await authorizedClient();
+        const now = Math.floor(Date.now() / 1000);
+        const forged = await new SignJWT({
+          iss: client.clientId,
+          sub: client.clientId,
+          aud: client.metadata!.issuer,
+          iat: now,
+          exp: now + 60,
+        })
+          .setProtectedHeader({ alg: 'HS256', kid: key.kid })
+          .sign(Buffer.from(JSON.stringify(key.publicJwk)));
+
+        await expect(
+          client.finishAuthorization(pending, callback, forged),
+        ).rejects.toThrow(/401 INVALID_CLIENT_ASSERTION/);
+      });
+
+      it('refuses a key set that holds a shared secret', async () => {
+        const { client, pending, callback, keysPath } =
+          await authorizedClient();
+        metadataHost.respond(keysPath, {
+          body: JSON.stringify({
+            keys: [{ kty: 'oct', kid: 'shared', k: 'c2VjcmV0' }],
+          }),
+        });
+
+        await expect(
+          client.finishAuthorization(pending, callback),
+        ).rejects.toThrow(/key set is invalid.*public keys only/);
       });
 
       it('refuses a client whose key set cannot be fetched', async () => {

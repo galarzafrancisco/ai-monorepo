@@ -21,6 +21,10 @@ export const CLIENT_ASSERTION_SIGNING_ALGORITHMS = [
 
 const MAX_KEYS = 10;
 
+// Key types that have a public half: RSA, elliptic curve and EdDSA.
+// Symmetric keys ("oct") are a shared secret and never belong here.
+const PUBLIC_KEY_TYPES = ['RSA', 'EC', 'OKP'];
+
 // Members of a JWK that are only present on a private or symmetric key
 const SECRET_KEY_MEMBERS = ['d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'k'];
 
@@ -50,7 +54,8 @@ export function parsePublicJwks(
   }
   for (const key of keys) {
     if (
-      key.kty === 'oct' ||
+      typeof key.kty !== 'string' ||
+      !PUBLIC_KEY_TYPES.includes(key.kty) ||
       SECRET_KEY_MEMBERS.some((member) => member in key)
     ) {
       reject('the key set must contain public keys only');
