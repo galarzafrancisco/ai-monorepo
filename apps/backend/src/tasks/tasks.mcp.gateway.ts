@@ -245,19 +245,20 @@ export class TasksMcpGateway {
       {
         title: 'Search tasks',
         description:
-          'Fuzzy search for tasks by name and description. Returns matching tasks sorted by relevance.',
+          'Find tasks by keywords or by a question in plain language. Searches task names, descriptions and comments, by exact words, by similar spelling of the name, and by meaning. Returns tasks sorted by relevance.\n\n' +
+          'Each result has an `excerpt`: the comment or the part of the description that matched (`matchedOn` says which; `commentAuthor` is set for a comment). When only the name matched, the excerpt is the start of the description. ' +
+          'The excerpt is not the whole task. `excerptIsComplete: false` means it is only part of the description or comment, and a task always has more (other comments, status history, artefacts): call `fetch` with the task id to read all of it.\n\n' +
+          '`score` (0-1) only orders the results of one search; do not compare it between searches.',
         annotations: readOnlyAnnotations,
         inputSchema: {
-          query: z.string(),
-          limit: z.number().optional(),
-          threshold: z.number().optional(),
+          query: z.string().describe('Keywords, part of a task name, or a question'),
+          limit: z.number().optional().describe('Maximum number of tasks to return (default 10)'),
         },
       },
-      async ({ query, limit, threshold }) => {
+      async ({ query, limit }) => {
         const results = await this.tasksService.searchTasks({
           query,
           limit,
-          threshold,
         });
         return {
           content: [

@@ -95,6 +95,7 @@ export function HomePage() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const latestRequestRef = useRef(0);
 
   useDocumentTitle();
 
@@ -105,6 +106,8 @@ export function HomePage() {
   }, [setSectionTitle]);
 
   const performSearch = useCallback(async (searchQuery: string) => {
+    // Answers can arrive out of order; only the latest search may set the results.
+    const requestId = ++latestRequestRef.current;
     if (!searchQuery.trim()) {
       setResults([]);
       setSelectedIndex(-1);
@@ -117,15 +120,22 @@ export function HomePage() {
         query: searchQuery,
         limit: 20,
       });
+      if (requestId !== latestRequestRef.current) {
+        return;
+      }
       setResults(searchResults);
       setSelectedIndex(-1);
       // Reset result refs array when results change
       resultRefs.current = [];
     } catch (err) {
       console.error("Search failed:", err);
-      setResults([]);
+      if (requestId === latestRequestRef.current) {
+        setResults([]);
+      }
     } finally {
-      setIsSearching(false);
+      if (requestId === latestRequestRef.current) {
+        setIsSearching(false);
+      }
     }
   }, []);
 
@@ -184,8 +194,6 @@ export function HomePage() {
         return "green";
       case "project":
         return "orange";
-      case "tag":
-        return "yellow";
       case "tool":
         return "red";
       default:
@@ -203,8 +211,6 @@ export function HomePage() {
         return "Agent";
       case "project":
         return "Project";
-      case "tag":
-        return "Tag";
       case "tool":
         return "Tool";
       default:
@@ -279,14 +285,19 @@ export function HomePage() {
                               <Text weight="medium" size="3">
                                 {result.title}
                               </Text>
+                              {result.excerpt ? (
+                                <Text size="1" tone="muted" className="home-search-result-excerpt">
+                                  {result.matchedOn === "comment"
+                                    ? `${result.commentAuthor ?? "Comment"}: `
+                                    : ""}
+                                  {result.excerpt}
+                                </Text>
+                              ) : null}
                             </div>
                             <div className="home-search-result-meta">
                               <Chip color={getTypeColor(result.type)}>
                                 {getTypeLabel(result.type)}
                               </Chip>
-                              <Text size="1" tone="muted">
-                                {Math.round(result.score * 100)}% match
-                              </Text>
                             </div>
                           </ListRow>
                         </div>

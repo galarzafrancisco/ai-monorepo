@@ -7,7 +7,8 @@ import { ContextBlockEntity } from './block.entity';
 import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
 import { ThreadsService } from '../threads/threads.service';
-import { SearchService } from '../search/search.service';
+import { IndexSearchService } from '../search/index/index-search.service';
+import { SearchResultType } from '../search/enums';
 
 import {
   AddTagInput,
@@ -55,7 +56,7 @@ export class ContextService {
     private readonly metaService: MetaService,
     @Inject(forwardRef(() => ThreadsService))
     private readonly threadsService: ThreadsService,
-    private readonly searchService: SearchService,
+    private readonly indexSearchService: IndexSearchService,
   ) {}
 
   async createBlock(input: CreateBlockInput): Promise<BlockResult> {
@@ -598,44 +599,20 @@ export class ContextService {
   }
 
   async searchBlocks(input: SearchBlocksInput): Promise<BlockSearchResult[]> {
-    this.logger.log({
-      message: 'Searching context blocks',
+    const results = await this.indexSearchService.search({
       query: input.query,
       limit: input.limit,
-      threshold: input.threshold,
+      types: [SearchResultType.CONTEXT_BLOCK],
     });
 
-    // Get all blocks - we need to search across all of them
-    const blocks = await this.blockRepository.find();
-
-    // Map blocks to searchable format
-    const searchableItems = blocks.map((block) => ({
-      id: block.id,
-      title: block.title,
-      content: block.content,
-    }));
-
-    // Use the generic search service
-    // Primary field is 'title', secondary is 'content'
-    const searchResults = this.searchService.search({
-      items: searchableItems,
-      primaryField: 'title',
-      secondaryField: 'content',
-      query: input.query,
-      limit: input.limit,
-      threshold: input.threshold,
-    });
-
-    this.logger.log({
-      message: 'Search completed',
-      resultCount: searchResults.length,
-    });
-
-    // Map search results to our output format
-    return searchResults.map((result) => ({
+    return results.map((result) => ({
       id: result.id,
-      title: result.primaryField,
+      title: result.title,
       score: result.score,
+      matchedBy: result.matchedBy,
+      matchedOn: result.matchedOn,
+      excerpt: result.excerpt,
+      excerptIsComplete: result.excerptIsComplete,
     }));
   }
 

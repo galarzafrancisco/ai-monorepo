@@ -853,6 +853,149 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all AI providers */
+        get: operations["AiProvidersController_listAiProviders"];
+        put?: never;
+        /** Create an AI provider */
+        post: operations["AiProvidersController_createAiProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get AI provider by ID */
+        get: operations["AiProvidersController_getAiProvider"];
+        put?: never;
+        post?: never;
+        /** Delete an AI provider */
+        delete: operations["AiProvidersController_deleteAiProvider"];
+        options?: never;
+        head?: never;
+        /** Update an AI provider */
+        patch: operations["AiProvidersController_updateAiProvider"];
+        trace?: never;
+    };
+    "/api/v1/ai-providers/{id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the models the provider offers, fetched live from the provider */
+        get: operations["AiProvidersController_listAiProviderModels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-model-selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List which model each job uses */
+        get: operations["AiModelSelectionsController_listAiModelSelections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-model-selections/{job}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Select the provider and model a job uses */
+        put: operations["AiModelSelectionsController_setAiModelSelection"];
+        post?: never;
+        /** Clear a job's selection */
+        delete: operations["AiModelSelectionsController_clearAiModelSelection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all secrets - values not included */
+        get: operations["SecretsController_listSecrets"];
+        put?: never;
+        /** Create a new secret */
+        post: operations["SecretsController_createSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/secrets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get secret metadata by ID - value not included */
+        get: operations["SecretsController_getSecret"];
+        put?: never;
+        post?: never;
+        /** Delete a secret */
+        delete: operations["SecretsController_deleteSecret"];
+        options?: never;
+        head?: never;
+        /** Update a secret */
+        patch: operations["SecretsController_updateSecret"];
+        trace?: never;
+    };
+    "/api/v1/secrets/{id}/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get decrypted secret value */
+        get: operations["SecretsController_getSecretValue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/tasks": {
         parameters: {
             query?: never;
@@ -1692,149 +1835,6 @@ export interface paths {
         patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
-    "/api/v1/ai-providers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all AI providers */
-        get: operations["AiProvidersController_listAiProviders"];
-        put?: never;
-        /** Create an AI provider */
-        post: operations["AiProvidersController_createAiProvider"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai-providers/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get AI provider by ID */
-        get: operations["AiProvidersController_getAiProvider"];
-        put?: never;
-        post?: never;
-        /** Delete an AI provider */
-        delete: operations["AiProvidersController_deleteAiProvider"];
-        options?: never;
-        head?: never;
-        /** Update an AI provider */
-        patch: operations["AiProvidersController_updateAiProvider"];
-        trace?: never;
-    };
-    "/api/v1/ai-providers/{id}/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List the models the provider offers, fetched live from the provider */
-        get: operations["AiProvidersController_listAiProviderModels"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai-model-selections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List which model each job uses */
-        get: operations["AiModelSelectionsController_listAiModelSelections"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai-model-selections/{job}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Select the provider and model a job uses */
-        put: operations["AiModelSelectionsController_setAiModelSelection"];
-        post?: never;
-        /** Clear a job's selection */
-        delete: operations["AiModelSelectionsController_clearAiModelSelection"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/secrets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all secrets - values not included */
-        get: operations["SecretsController_listSecrets"];
-        put?: never;
-        /** Create a new secret */
-        post: operations["SecretsController_createSecret"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/secrets/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get secret metadata by ID - value not included */
-        get: operations["SecretsController_getSecret"];
-        put?: never;
-        post?: never;
-        /** Delete a secret */
-        delete: operations["SecretsController_deleteSecret"];
-        options?: never;
-        head?: never;
-        /** Update a secret */
-        patch: operations["SecretsController_updateSecret"];
-        trace?: never;
-    };
-    "/api/v1/secrets/{id}/value": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get decrypted secret value */
-        get: operations["SecretsController_getSecretValue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/executions/queue": {
         parameters: {
             query?: never;
@@ -2206,10 +2206,72 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Global search across all resources */
+        /**
+         * Global search across all resources
+         * @description Searches tasks (including their comments), context blocks, tools, agents and projects by keyword, fuzzy title and meaning, and returns one list ranked by relevance.
+         */
         get: operations["GlobalSearchController_search"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the search settings */
+        get: operations["SearchAdminController_getSearchSettings"];
+        put?: never;
+        post?: never;
+        /** Reset the search settings to their defaults */
+        delete: operations["SearchAdminController_resetSearchSettings"];
+        options?: never;
+        head?: never;
+        /**
+         * Change search settings
+         * @description Changes the settings sent and leaves the others as they are.
+         */
+        patch: operations["SearchAdminController_updateSearchSettings"];
+        trace?: never;
+    };
+    "/api/v1/search/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the state of the search index */
+        get: operations["SearchAdminController_getSearchIndexStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search/index/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rebuild the search index
+         * @description Discards the index and builds it again. Keyword search is complete when this returns; embeddings are rebuilt in the background.
+         */
+        post: operations["SearchAdminController_rebuildSearchIndex"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3622,6 +3684,290 @@ export interface components {
             /** @description Collection of JSON Web Keys currently valid for signature verification. */
             keys: components["schemas"]["JwkResponseDto"][];
         };
+        CreateAiProviderDto: {
+            /**
+             * @description Display name for the AI provider
+             * @example OpenAI Production
+             */
+            name: string;
+            /**
+             * @description Type of AI provider
+             * @example openai
+             * @enum {string}
+             */
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
+            /**
+             * @description ID of the secret containing the API key
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            secretId?: string;
+            /**
+             * @description API base URL. Required for OpenAI-compatible providers.
+             * @example http://localhost:11434/v1
+             */
+            baseUrl?: string | null;
+            /**
+             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
+             * @example my-gcp-project
+             */
+            project?: string | null;
+            /**
+             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
+             * @example us-central1
+             */
+            location?: string | null;
+        };
+        AiProviderResponseDto: {
+            /**
+             * @description AI provider identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Display name of the AI provider
+             * @example OpenAI Production
+             */
+            name: string;
+            /**
+             * @description Type of AI provider
+             * @example openai
+             * @enum {string}
+             */
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
+            /**
+             * @description ID of the secret containing the API key
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            secretId?: string | null;
+            /**
+             * @description API base URL
+             * @example http://localhost:11434/v1
+             */
+            baseUrl?: string | null;
+            /**
+             * @description Google Cloud project for Vertex AI
+             * @example my-gcp-project
+             */
+            project?: string | null;
+            /**
+             * @description Google Cloud location for Vertex AI
+             * @example us-central1
+             */
+            location?: string | null;
+            /**
+             * @description Whether this provider has all required configuration
+             * @example true
+             */
+            isConfigured: boolean;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description ISO timestamp when the provider was created
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO timestamp when the provider was last updated
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateAiProviderDto: {
+            /**
+             * @description Display name for the AI provider
+             * @example OpenAI Production
+             */
+            name?: string;
+            /**
+             * @description ID of the secret containing the API key
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            secretId?: string;
+            /**
+             * @description API key for the AI provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.
+             * @example sk-...
+             */
+            apiKey?: string;
+            /**
+             * @description API base URL. Required for OpenAI-compatible providers.
+             * @example http://localhost:11434/v1
+             */
+            baseUrl?: string | null;
+            /**
+             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
+             * @example my-gcp-project
+             */
+            project?: string | null;
+            /**
+             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
+             * @example us-central1
+             */
+            location?: string | null;
+        };
+        AiProviderModelResponseDto: {
+            /**
+             * @description Model id as the provider names it
+             * @example claude-haiku-5-5
+             */
+            id: string;
+            /**
+             * @description Human-readable name, when the provider gives one
+             * @example Claude Haiku 5.5
+             */
+            displayName?: string | null;
+            /**
+             * @description What the model is for
+             * @example language
+             * @enum {string}
+             */
+            kind: "language" | "embedding";
+        };
+        AiModelSelectionResponseDto: {
+            /**
+             * @description The job the model is selected for
+             * @example conversation
+             * @enum {string}
+             */
+            job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            /**
+             * @description Provider of the job's own selection. Null when nothing is selected for it.
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            aiProviderId?: string | null;
+            /**
+             * @description Model of the job's own selection. Null when nothing is selected for it.
+             * @example claude-opus-5-5
+             */
+            modelId?: string | null;
+            /**
+             * @description True when the job has no selection of its own and uses the conversation model
+             * @example false
+             */
+            followsConversation: boolean;
+            /**
+             * @description Provider the job runs on after applying the fallback
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            effectiveAiProviderId?: string | null;
+            /**
+             * @description Model the job runs on after applying the fallback
+             * @example claude-opus-5-5
+             */
+            effectiveModelId?: string | null;
+            /**
+             * @description Whether the job can make a call: a model is selected and its provider is configured
+             * @example true
+             */
+            isReady: boolean;
+        };
+        SetAiModelSelectionDto: {
+            /**
+             * @description ID of the AI provider to call
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            aiProviderId: string;
+            /**
+             * @description Model id as the provider names it
+             * @example claude-haiku-5-5
+             */
+            modelId: string;
+        };
+        CreateSecretDto: {
+            /**
+             * @description Unique name for the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description Human-readable description of the secret
+             * @example OpenAI API key for agent completions
+             */
+            description?: string;
+            /**
+             * @description The secret value (will be encrypted at rest)
+             * @example sk-...
+             */
+            value: string;
+        };
+        SecretResponseDto: {
+            /**
+             * @description Secret identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description Human-readable description
+             * @example OpenAI API key for agent completions
+             */
+            description?: string | null;
+            /**
+             * @description ID of the actor who created this secret
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            createdByActorId: string;
+            /**
+             * @description Slug of the actor who created this secret
+             * @example fran
+             */
+            createdBy?: string | null;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description ISO timestamp when the secret was created
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO timestamp when the secret was last updated
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        SecretValueResponseDto: {
+            /**
+             * @description Secret identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description The decrypted secret value
+             * @example sk-...
+             */
+            value: string;
+        };
+        UpdateSecretDto: {
+            /**
+             * @description New name for the secret
+             * @example OPENAI_API_KEY_V2
+             */
+            name?: string;
+            /**
+             * @description New description for the secret
+             * @example Updated OpenAI API key
+             */
+            description?: string | null;
+            /**
+             * @description New secret value (will be encrypted at rest)
+             * @example sk-...
+             */
+            value?: string;
+        };
         CreateTaskDto: {
             /**
              * @description Name of the task
@@ -3917,6 +4263,16 @@ export interface components {
              */
             totalPages: number;
         };
+        /**
+         * @description The search strategies that found this result
+         * @enum {string}
+         */
+        SearchStrategy: "keyword" | "fuzzy_title" | "semantic";
+        /**
+         * @description Which part of the task matched best: its name, its description, or one of its comments
+         * @enum {string}
+         */
+        SearchMatchField: "title" | "content" | "comment";
         TaskSearchResultDto: {
             /**
              * @description Task ID
@@ -3929,10 +4285,48 @@ export interface components {
              */
             name: string;
             /**
-             * @description Match confidence score (0-1, higher is better)
+             * @description Task status
+             * @example IN_PROGRESS
+             */
+            status?: string | null;
+            /**
+             * @description Relevance from 0 to 1, for ordering results within this response. Not comparable between searches.
              * @example 0.85
              */
             score: number;
+            /**
+             * @description The search strategies that found this result
+             * @example [
+             *       "keyword",
+             *       "semantic"
+             *     ]
+             */
+            matchedBy: components["schemas"]["SearchStrategy"][];
+            /**
+             * @description Which part of the task matched best: its name, its description, or one of its comments
+             * @example comment
+             */
+            matchedOn: components["schemas"]["SearchMatchField"];
+            /**
+             * @description Text from the task: the comment or part of the description that matched, or the start of the description when only the name matched. Empty when the task has no description.
+             * @example Switched the token store to Redis; refresh tokens now rotate on every use.
+             */
+            excerpt: string;
+            /**
+             * @description True when the excerpt is the whole description (or the whole comment). False when it is only a part.
+             * @example true
+             */
+            excerptIsComplete: boolean;
+            /**
+             * @description ID of the comment the excerpt comes from. Null unless a comment matched.
+             * @example null
+             */
+            commentId?: string | null;
+            /**
+             * @description Who wrote the matching comment. Null unless a comment matched.
+             * @example null
+             */
+            commentAuthor?: string | null;
         };
         CreateCommentDto: {
             /**
@@ -5248,10 +5642,33 @@ export interface components {
              */
             title: string;
             /**
-             * @description Match confidence score (0-1, higher is better)
+             * @description Relevance from 0 to 1, for ordering results within this response. Not comparable between searches.
              * @example 0.85
              */
             score: number;
+            /**
+             * @description The search strategies that found this result
+             * @example [
+             *       "keyword",
+             *       "semantic"
+             *     ]
+             */
+            matchedBy: components["schemas"]["SearchStrategy"][];
+            /**
+             * @description Which part of the block matched best: its title or a passage of its content
+             * @example content
+             */
+            matchedOn: components["schemas"]["SearchMatchField"];
+            /**
+             * @description Text from the block: the passage that matched, or the start of the content when only the title matched. Empty when the block has no content.
+             * @example Access tokens last 15 minutes. Refresh tokens rotate on every use ...
+             */
+            excerpt: string;
+            /**
+             * @description True when the excerpt is the block's whole content. False when it is only a part.
+             * @example false
+             */
+            excerptIsComplete: boolean;
         };
         BlockTreeResponseDto: {
             /**
@@ -5357,290 +5774,6 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             newParentId: Record<string, never> | null;
-        };
-        CreateAiProviderDto: {
-            /**
-             * @description Display name for the AI provider
-             * @example OpenAI Production
-             */
-            name: string;
-            /**
-             * @description Type of AI provider
-             * @example openai
-             * @enum {string}
-             */
-            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
-            /**
-             * @description ID of the secret containing the API key
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            secretId?: string;
-            /**
-             * @description API base URL. Required for OpenAI-compatible providers.
-             * @example http://localhost:11434/v1
-             */
-            baseUrl?: string | null;
-            /**
-             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
-             * @example my-gcp-project
-             */
-            project?: string | null;
-            /**
-             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
-             * @example us-central1
-             */
-            location?: string | null;
-        };
-        AiProviderResponseDto: {
-            /**
-             * @description AI provider identifier
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Display name of the AI provider
-             * @example OpenAI Production
-             */
-            name: string;
-            /**
-             * @description Type of AI provider
-             * @example openai
-             * @enum {string}
-             */
-            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
-            /**
-             * @description ID of the secret containing the API key
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            secretId?: string | null;
-            /**
-             * @description API base URL
-             * @example http://localhost:11434/v1
-             */
-            baseUrl?: string | null;
-            /**
-             * @description Google Cloud project for Vertex AI
-             * @example my-gcp-project
-             */
-            project?: string | null;
-            /**
-             * @description Google Cloud location for Vertex AI
-             * @example us-central1
-             */
-            location?: string | null;
-            /**
-             * @description Whether this provider has all required configuration
-             * @example true
-             */
-            isConfigured: boolean;
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description ISO timestamp when the provider was created
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description ISO timestamp when the provider was last updated
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        UpdateAiProviderDto: {
-            /**
-             * @description Display name for the AI provider
-             * @example OpenAI Production
-             */
-            name?: string;
-            /**
-             * @description ID of the secret containing the API key
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            secretId?: string;
-            /**
-             * @description API key for the AI provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.
-             * @example sk-...
-             */
-            apiKey?: string;
-            /**
-             * @description API base URL. Required for OpenAI-compatible providers.
-             * @example http://localhost:11434/v1
-             */
-            baseUrl?: string | null;
-            /**
-             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
-             * @example my-gcp-project
-             */
-            project?: string | null;
-            /**
-             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
-             * @example us-central1
-             */
-            location?: string | null;
-        };
-        AiProviderModelResponseDto: {
-            /**
-             * @description Model id as the provider names it
-             * @example claude-haiku-5-5
-             */
-            id: string;
-            /**
-             * @description Human-readable name, when the provider gives one
-             * @example Claude Haiku 5.5
-             */
-            displayName?: string | null;
-            /**
-             * @description What the model is for
-             * @example language
-             * @enum {string}
-             */
-            kind: "language" | "embedding";
-        };
-        AiModelSelectionResponseDto: {
-            /**
-             * @description The job the model is selected for
-             * @example conversation
-             * @enum {string}
-             */
-            job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
-            /**
-             * @description Provider of the job's own selection. Null when nothing is selected for it.
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            aiProviderId?: string | null;
-            /**
-             * @description Model of the job's own selection. Null when nothing is selected for it.
-             * @example claude-opus-5-5
-             */
-            modelId?: string | null;
-            /**
-             * @description True when the job has no selection of its own and uses the conversation model
-             * @example false
-             */
-            followsConversation: boolean;
-            /**
-             * @description Provider the job runs on after applying the fallback
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            effectiveAiProviderId?: string | null;
-            /**
-             * @description Model the job runs on after applying the fallback
-             * @example claude-opus-5-5
-             */
-            effectiveModelId?: string | null;
-            /**
-             * @description Whether the job can make a call: a model is selected and its provider is configured
-             * @example true
-             */
-            isReady: boolean;
-        };
-        SetAiModelSelectionDto: {
-            /**
-             * @description ID of the AI provider to call
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            aiProviderId: string;
-            /**
-             * @description Model id as the provider names it
-             * @example claude-haiku-5-5
-             */
-            modelId: string;
-        };
-        CreateSecretDto: {
-            /**
-             * @description Unique name for the secret
-             * @example OPENAI_API_KEY
-             */
-            name: string;
-            /**
-             * @description Human-readable description of the secret
-             * @example OpenAI API key for agent completions
-             */
-            description?: string;
-            /**
-             * @description The secret value (will be encrypted at rest)
-             * @example sk-...
-             */
-            value: string;
-        };
-        SecretResponseDto: {
-            /**
-             * @description Secret identifier
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Name of the secret
-             * @example OPENAI_API_KEY
-             */
-            name: string;
-            /**
-             * @description Human-readable description
-             * @example OpenAI API key for agent completions
-             */
-            description?: string | null;
-            /**
-             * @description ID of the actor who created this secret
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            createdByActorId: string;
-            /**
-             * @description Slug of the actor who created this secret
-             * @example fran
-             */
-            createdBy?: string | null;
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description ISO timestamp when the secret was created
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description ISO timestamp when the secret was last updated
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        SecretValueResponseDto: {
-            /**
-             * @description Secret identifier
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Name of the secret
-             * @example OPENAI_API_KEY
-             */
-            name: string;
-            /**
-             * @description The decrypted secret value
-             * @example sk-...
-             */
-            value: string;
-        };
-        UpdateSecretDto: {
-            /**
-             * @description New name for the secret
-             * @example OPENAI_API_KEY_V2
-             */
-            name?: string;
-            /**
-             * @description New description for the secret
-             * @example Updated OpenAI API key
-             */
-            description?: string | null;
-            /**
-             * @description New secret value (will be encrypted at rest)
-             * @example sk-...
-             */
-            value?: string;
         };
         TaskExecutionQueueEntryResponseDto: {
             /**
@@ -6335,6 +6468,8 @@ export interface components {
              */
             resource_name: string;
         };
+        /** @enum {string} */
+        SearchResultType: "task" | "context_block" | "tool" | "agent" | "project";
         GlobalSearchResultDto: {
             /**
              * @description Result ID
@@ -6344,16 +6479,15 @@ export interface components {
             /**
              * @description Result type
              * @example task
-             * @enum {string}
              */
-            type: "task" | "context_block" | "agent" | "project" | "tag" | "tool";
+            type: components["schemas"]["SearchResultType"];
             /**
              * @description Result title/name
              * @example Implement authentication
              */
             title: string;
             /**
-             * @description Match confidence score (0-1, higher is better)
+             * @description Relevance from 0 to 1, for ordering results within this response. Not comparable between searches.
              * @example 0.85
              */
             score: number;
@@ -6362,6 +6496,230 @@ export interface components {
              * @example /tasks/task/ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
              */
             url: string;
+            /**
+             * @description The search strategies that found this result
+             * @example [
+             *       "keyword",
+             *       "semantic"
+             *     ]
+             */
+            matchedBy: components["schemas"]["SearchStrategy"][];
+            /**
+             * @description Which part of the item matched best: its title, a passage of its text, or a comment on it
+             * @example content
+             */
+            matchedOn: components["schemas"]["SearchMatchField"];
+            /**
+             * @description Text from the item: the passage or comment that matched, or the start of the item when only its title matched. Empty when the item has no text.
+             * @example Deploys go through the GitOps repository. Merge to main and ...
+             */
+            excerpt: string;
+            /**
+             * @description True when the excerpt is the item's whole text (or the whole comment). False when it is only a part.
+             * @example false
+             */
+            excerptIsComplete: boolean;
+            /**
+             * @description ID of the comment the excerpt comes from. Null unless a comment matched.
+             * @example null
+             */
+            commentId?: string | null;
+            /**
+             * @description Who wrote the matching comment. Null unless a comment matched.
+             * @example null
+             */
+            commentAuthor?: string | null;
+        };
+        SearchSettingsDto: {
+            /**
+             * @description Use embeddings. When off, search uses keywords and fuzzy title matching only.
+             * @example true
+             */
+            semanticEnabled: boolean;
+            /**
+             * @description Target size of an embedded passage, in characters. Changing it re-embeds every item.
+             * @example 1600
+             */
+            chunkSizeChars: number;
+            /**
+             * @description Characters repeated between consecutive pieces of one over-long paragraph. Changing it re-embeds every item.
+             * @example 200
+             */
+            chunkOverlapChars: number;
+            /**
+             * @description Instruction sent with each query to instruction-aware embedding models. Leave empty for models that take none.
+             * @example Given a search query, retrieve relevant passages that answer the query
+             */
+            queryInstruction: string;
+            /**
+             * @description How long a search waits for the query embedding before answering without semantic matches, in milliseconds.
+             * @example 2000
+             */
+            queryEmbeddingTimeoutMs: number;
+            /**
+             * @description How many candidates each strategy contributes before the lists are merged.
+             * @example 50
+             */
+            candidatesPerStrategy: number;
+            /**
+             * @description Lowest cosine similarity (0-1) at which a passage counts as a semantic match. Raise it to cut loosely related results.
+             * @example 0.45
+             */
+            semanticMinSimilarity: number;
+            /**
+             * @description How far below the best semantic match a passage may be and still count. Trims the tail when something matches well. 1 turns it off.
+             * @example 0.15
+             */
+            semanticMaxGap: number;
+            /**
+             * @description Lowest cover density at which a text counts as a keyword match. Filters out long texts that contain every term but far apart. 0 turns it off.
+             * @example 0.005
+             */
+            keywordMinDensity: number;
+            /**
+             * @description Lowest trigram similarity (0-1) at which a title counts as a fuzzy match. Lower it to forgive more typos.
+             * @example 0.5
+             */
+            fuzzyMinSimilarity: number;
+            /**
+             * @description Reciprocal rank fusion constant. Higher values flatten the difference between ranks.
+             * @example 60
+             */
+            rrfK: number;
+            /**
+             * @description Weight of keyword matches in the merged ranking. 0 turns the strategy off.
+             * @example 1
+             */
+            keywordWeight: number;
+            /**
+             * @description Weight of fuzzy title matches in the merged ranking. 0 turns the strategy off.
+             * @example 1
+             */
+            fuzzyTitleWeight: number;
+            /**
+             * @description Weight of semantic matches in the merged ranking. 0 turns the strategy off.
+             * @example 1
+             */
+            semanticWeight: number;
+            /**
+             * @description Added to the score when the query is the title; half of it when the title starts with the query.
+             * @example 0.02
+             */
+            exactTitleBoost: number;
+            /**
+             * @description Score multiplier for finished tasks, so open work wins ties. 1 turns it off.
+             * @example 0.9
+             */
+            doneTaskMultiplier: number;
+            /**
+             * @description Longest excerpt returned with a result, in characters. Shorter items are returned whole.
+             * @example 1200
+             */
+            excerptMaxChars: number;
+            /**
+             * @description Results returned when a search does not ask for a number.
+             * @example 10
+             */
+            defaultLimit: number;
+        };
+        UpdateSearchSettingsDto: {
+            /** @description Use embeddings. When off, search uses keywords and fuzzy title matching only. */
+            semanticEnabled?: boolean;
+            /** @description Target size of an embedded passage, in characters. Changing it re-embeds every item. */
+            chunkSizeChars?: number;
+            /** @description Characters repeated between consecutive pieces of one over-long paragraph. Changing it re-embeds every item. */
+            chunkOverlapChars?: number;
+            /** @description Instruction sent with each query to instruction-aware embedding models. Leave empty for models that take none. */
+            queryInstruction?: string;
+            /** @description How long a search waits for the query embedding before answering without semantic matches, in milliseconds. */
+            queryEmbeddingTimeoutMs?: number;
+            /** @description How many candidates each strategy contributes before the lists are merged. */
+            candidatesPerStrategy?: number;
+            /** @description Lowest cosine similarity (0-1) at which a passage counts as a semantic match. Raise it to cut loosely related results. */
+            semanticMinSimilarity?: number;
+            /** @description How far below the best semantic match a passage may be and still count. Trims the tail when something matches well. 1 turns it off. */
+            semanticMaxGap?: number;
+            /** @description Lowest cover density at which a text counts as a keyword match. Filters out long texts that contain every term but far apart. 0 turns it off. */
+            keywordMinDensity?: number;
+            /** @description Lowest trigram similarity (0-1) at which a title counts as a fuzzy match. Lower it to forgive more typos. */
+            fuzzyMinSimilarity?: number;
+            /** @description Reciprocal rank fusion constant. Higher values flatten the difference between ranks. */
+            rrfK?: number;
+            /** @description Weight of keyword matches in the merged ranking. 0 turns the strategy off. */
+            keywordWeight?: number;
+            /** @description Weight of fuzzy title matches in the merged ranking. 0 turns the strategy off. */
+            fuzzyTitleWeight?: number;
+            /** @description Weight of semantic matches in the merged ranking. 0 turns the strategy off. */
+            semanticWeight?: number;
+            /** @description Added to the score when the query is the title; half of it when the title starts with the query. */
+            exactTitleBoost?: number;
+            /** @description Score multiplier for finished tasks, so open work wins ties. 1 turns it off. */
+            doneTaskMultiplier?: number;
+            /** @description Longest excerpt returned with a result, in characters. Shorter items are returned whole. */
+            excerptMaxChars?: number;
+            /** @description Results returned when a search does not ask for a number. */
+            defaultLimit?: number;
+        };
+        SearchIndexTypeStatusDto: {
+            /**
+             * @description Kind of indexed item
+             * @example comment
+             */
+            type: string;
+            /**
+             * @description Indexed items of this kind
+             * @example 120
+             */
+            documents: number;
+            /**
+             * @description Of those, how many have up-to-date embeddings
+             * @example 118
+             */
+            embedded: number;
+        };
+        SearchIndexStatusDto: {
+            /**
+             * @description Whether searches currently use embeddings
+             * @example true
+             */
+            semanticActive: boolean;
+            /**
+             * @description Why semantic search is not active. Null when it is.
+             * @example null
+             */
+            semanticInactiveReason?: string | null;
+            /**
+             * @description The embedding model in use. Null when there is no usable one.
+             * @example Qwen3-Embedding-0.6B
+             */
+            embeddingModelId?: string | null;
+            /**
+             * @description Indexed items: tasks, comments, context blocks, tools, agents and projects
+             * @example 340
+             */
+            documents: number;
+            /**
+             * @description Items with up-to-date embeddings
+             * @example 338
+             */
+            embedded: number;
+            /**
+             * @description Items waiting to be embedded
+             * @example 2
+             */
+            pending: number;
+            /**
+             * @description Items whose last embedding attempt failed
+             * @example 0
+             */
+            failed: number;
+            /**
+             * @description The most recent embedding error. Null when nothing is failing.
+             * @example null
+             */
+            lastError?: string | null;
+            /** @description The same counts per kind of item */
+            byType: components["schemas"]["SearchIndexTypeStatusDto"][];
         };
         UserWalkthroughStatusResponseDto: {
             /** @example true */
@@ -8242,6 +8600,413 @@ export interface operations {
             };
         };
     };
+    AiProvidersController_listAiProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of AI providers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderResponseDto"][];
+                };
+            };
+        };
+    };
+    AiProvidersController_createAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAiProviderDto"];
+            };
+        };
+        responses: {
+            /** @description AI provider created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderResponseDto"];
+                };
+            };
+        };
+    };
+    AiProvidersController_getAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description AI provider details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderResponseDto"];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiProvidersController_deleteAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description AI provider deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiProvidersController_updateAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAiProviderDto"];
+            };
+        };
+        responses: {
+            /** @description AI provider updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderResponseDto"];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiProvidersController_listAiProviderModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Models offered by the provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderModelResponseDto"][];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiModelSelectionsController_listAiModelSelections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One entry per job, selected or not */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelSelectionResponseDto"][];
+                };
+            };
+        };
+    };
+    AiModelSelectionsController_setAiModelSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The job the model is selected for */
+                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAiModelSelectionDto"];
+            };
+        };
+        responses: {
+            /** @description Selection saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelSelectionResponseDto"];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiModelSelectionsController_clearAiModelSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The job the model is selected for */
+                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Selection cleared */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_listSecrets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of secrets (no values) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"][];
+                };
+            };
+        };
+    };
+    SecretsController_createSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSecretDto"];
+            };
+        };
+        responses: {
+            /** @description Secret created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+        };
+    };
+    SecretsController_getSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_deleteSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_updateSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSecretDto"];
+            };
+        };
+        responses: {
+            /** @description Secret updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_getSecretValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Decrypted secret value */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretValueResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TasksController_listTasks: {
         parameters: {
             query?: {
@@ -8477,12 +9242,10 @@ export interface operations {
     TasksController_searchTasks: {
         parameters: {
             query: {
-                /** @description Search query string */
+                /** @description What to look for. Keywords, a partial title or a question in plain language all work. */
                 query: string;
-                /** @description Maximum number of results to return */
+                /** @description Maximum number of results. Defaults to the configured default limit. */
                 limit?: number;
-                /** @description Minimum score threshold (0-1, higher is stricter) */
-                threshold?: number;
             };
             header?: never;
             path?: never;
@@ -9967,12 +10730,10 @@ export interface operations {
     ContextController_searchBlocks: {
         parameters: {
             query: {
-                /** @description Search query string */
+                /** @description What to look for. Keywords, a partial title or a question in plain language all work. */
                 query: string;
-                /** @description Maximum number of results to return */
+                /** @description Maximum number of results. Defaults to the configured default limit. */
                 limit?: number;
-                /** @description Minimum score threshold (0-1, higher is stricter) */
-                threshold?: number;
             };
             header?: never;
             path?: never;
@@ -10403,413 +11164,6 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AiProvidersController_listAiProviders: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of AI providers */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiProviderResponseDto"][];
-                };
-            };
-        };
-    };
-    AiProvidersController_createAiProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAiProviderDto"];
-            };
-        };
-        responses: {
-            /** @description AI provider created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiProviderResponseDto"];
-                };
-            };
-        };
-    };
-    AiProvidersController_getAiProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description AI provider identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description AI provider details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiProviderResponseDto"];
-                };
-            };
-            /** @description AI provider not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AiProvidersController_deleteAiProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description AI provider identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description AI provider deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description AI provider not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AiProvidersController_updateAiProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description AI provider identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAiProviderDto"];
-            };
-        };
-        responses: {
-            /** @description AI provider updated successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiProviderResponseDto"];
-                };
-            };
-            /** @description AI provider not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AiProvidersController_listAiProviderModels: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description AI provider identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Models offered by the provider */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiProviderModelResponseDto"][];
-                };
-            };
-            /** @description AI provider not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AiModelSelectionsController_listAiModelSelections: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description One entry per job, selected or not */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiModelSelectionResponseDto"][];
-                };
-            };
-        };
-    };
-    AiModelSelectionsController_setAiModelSelection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The job the model is selected for */
-                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetAiModelSelectionDto"];
-            };
-        };
-        responses: {
-            /** @description Selection saved */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiModelSelectionResponseDto"];
-                };
-            };
-            /** @description AI provider not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AiModelSelectionsController_clearAiModelSelection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The job the model is selected for */
-                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Selection cleared */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_listSecrets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of secrets (no values) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"][];
-                };
-            };
-        };
-    };
-    SecretsController_createSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSecretDto"];
-            };
-        };
-        responses: {
-            /** @description Secret created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"];
-                };
-            };
-        };
-    };
-    SecretsController_getSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Secret metadata */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"];
-                };
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_deleteSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Secret deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_updateSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateSecretDto"];
-            };
-        };
-        responses: {
-            /** @description Secret updated successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"];
-                };
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_getSecretValue: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Decrypted secret value */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretValueResponseDto"];
-                };
-            };
-            /** @description Secret not found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11491,12 +11845,12 @@ export interface operations {
     GlobalSearchController_search: {
         parameters: {
             query: {
-                /** @description Search query string */
+                /** @description What to look for. Keywords, a partial title or a question in plain language all work. */
                 query: string;
-                /** @description Maximum number of results to return per category */
+                /** @description Maximum number of results. Defaults to the configured default limit. */
                 limit?: number;
-                /** @description Minimum score threshold (0-1, higher is stricter) */
-                threshold?: number;
+                /** @description Only return these kinds of result. All kinds when omitted. */
+                types?: components["schemas"]["SearchResultType"][];
             };
             header?: never;
             path?: never;
@@ -11511,6 +11865,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GlobalSearchResultDto"][];
+                };
+            };
+        };
+    };
+    SearchAdminController_getSearchSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every setting with its current value */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSettingsDto"];
+                };
+            };
+        };
+    };
+    SearchAdminController_resetSearchSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The default settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSettingsDto"];
+                };
+            };
+        };
+    };
+    SearchAdminController_updateSearchSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSearchSettingsDto"];
+            };
+        };
+        responses: {
+            /** @description The settings after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSettingsDto"];
+                };
+            };
+        };
+    };
+    SearchAdminController_getSearchIndexStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What is indexed and embedded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchIndexStatusDto"];
+                };
+            };
+        };
+    };
+    SearchAdminController_rebuildSearchIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The index right after the rebuild started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchIndexStatusDto"];
                 };
             };
         };

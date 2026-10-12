@@ -17,8 +17,8 @@ export class ContextResource extends BaseClient {
   }
 
   /** Search blocks by query string */
-  async ContextController_searchBlocks(params: { query: string; limit?: number; threshold?: number; signal?: AbortSignal }): Promise<BlockSearchResultDto[]> {
-    return this.request('GET', '/api/v1/context/blocks/search/query', { params: { query: params.query, limit: params.limit, threshold: params.threshold }, signal: params?.signal });
+  async ContextController_searchBlocks(params: { query: string; limit?: number; signal?: AbortSignal }): Promise<BlockSearchResultDto[]> {
+    return this.request('GET', '/api/v1/context/blocks/search/query', { params: { query: params.query, limit: params.limit }, signal: params?.signal });
   }
 
   /** Get page hierarchy tree */

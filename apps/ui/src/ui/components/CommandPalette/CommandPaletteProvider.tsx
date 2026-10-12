@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CommandPalette } from './CommandPalette';
-import type { TaskSearchResultDto } from '@taico/client';
+import type { TaskSearchResultDto } from '@taico/client/v2';
 
 export interface Command {
   id: string;

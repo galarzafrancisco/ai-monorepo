@@ -102,19 +102,20 @@ export class ContextMcpGateway {
       {
         title: 'Search context blocks',
         description:
-          'Fuzzy search for context blocks by title and content. Returns matching blocks sorted by relevance.',
+          'Find context blocks by keywords or by a question in plain language. Searches titles, tags and content, by exact words, by similar spelling of the title, and by meaning. Returns blocks sorted by relevance.\n\n' +
+          'Each result has an `excerpt`: the passage of the block that matched (`matchedOn: "content"`), or the start of the block when only its title matched (`matchedOn: "title"`). ' +
+          '`excerptIsComplete: true` means the excerpt is the whole block. When it is false you have only a part of the block: call `get_block` with the block id before relying on anything the excerpt does not show.\n\n' +
+          '`score` (0-1) only orders the results of one search; do not compare it between searches.',
         annotations: readOnlyAnnotations,
         inputSchema: {
-          query: z.string(),
-          limit: z.number().optional(),
-          threshold: z.number().optional(),
+          query: z.string().describe('Keywords, part of a title, or a question'),
+          limit: z.number().optional().describe('Maximum number of blocks to return (default 10)'),
         },
       },
-      async ({ query, limit, threshold }) => {
+      async ({ query, limit }) => {
         const results = await this.contextService.searchBlocks({
           query,
           limit,
-          threshold,
         });
         return {
           content: [

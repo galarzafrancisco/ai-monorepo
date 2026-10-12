@@ -1,26 +1,19 @@
-import {
-  IsString,
-  IsOptional,
-  IsInt,
-  Min,
-  Max,
-  IsNumber,
-} from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class SearchBlocksQueryDto {
   @ApiProperty({
-    description: 'Search query string',
+    description:
+      'What to look for. Keywords, a partial title or a question in plain language all work.',
     example: 'authentication',
   })
   @IsString()
   query!: string;
 
   @ApiPropertyOptional({
-    description: 'Maximum number of results to return',
+    description: 'Maximum number of results. Defaults to the configured default limit.',
     example: 10,
-    default: 10,
     minimum: 1,
     maximum: 100,
   })
@@ -30,18 +23,4 @@ export class SearchBlocksQueryDto {
   @Min(1)
   @Max(100)
   limit?: number;
-
-  @ApiPropertyOptional({
-    description: 'Minimum score threshold (0-1, higher is stricter)',
-    example: 0.3,
-    default: 0.3,
-    minimum: 0,
-    maximum: 1,
-  })
-  @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsNumber()
-  @Min(0)
-  @Max(1)
-  threshold?: number;
 }

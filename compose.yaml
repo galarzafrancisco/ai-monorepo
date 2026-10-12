@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # postgres:16-alpine with pgvector added; see dev/postgres/Dockerfile.
+    build: ./dev/postgres
+    image: taico-postgres:16-pgvector
     restart: unless-stopped
     environment:
       POSTGRES_DB: taico

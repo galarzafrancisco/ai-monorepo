@@ -126,13 +126,16 @@ export class ContextController {
     const results = await this.contextService.searchBlocks({
       query: query.query,
       limit: query.limit,
-      threshold: query.threshold,
     });
 
     return results.map((result) => ({
       id: result.id,
       title: result.title,
       score: result.score,
+      matchedBy: result.matchedBy,
+      matchedOn: result.matchedOn,
+      excerpt: result.excerpt,
+      excerptIsComplete: result.excerptIsComplete,
     }));
   }
 

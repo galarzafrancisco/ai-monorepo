@@ -1,3 +1,4 @@
+import { SearchMatchField, SearchStrategy } from '../../../search/enums';
 import { TaskStatus } from '../../enums';
 import { ActorType } from '../../../identity-provider/enums';
 
@@ -155,11 +156,20 @@ export type ListTasksResult = {
 export type SearchTasksInput = {
   query: string;
   limit?: number;
-  threshold?: number;
 };
 
 export type TaskSearchResult = {
   id: string;
   name: string;
+  status: string | null;
+  /** Relevance from 0 to 1, comparable only within one response. */
   score: number;
+  matchedBy: SearchStrategy[];
+  matchedOn: SearchMatchField;
+  /** The passage or comment that matched, or the start of the description for a title match. */
+  excerpt: string;
+  /** False when the excerpt is only part of the description (or of the comment). */
+  excerptIsComplete: boolean;
+  commentId: string | null;
+  commentAuthor: string | null;
 };

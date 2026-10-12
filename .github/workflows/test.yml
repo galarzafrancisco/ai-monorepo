@@ -19,7 +19,8 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        # PostgreSQL 16 with the pgvector extension, which semantic search needs.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: taico_ci
           POSTGRES_USER: taico

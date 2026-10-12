@@ -239,13 +239,19 @@ export class TasksController {
     const results = await this.TasksService.searchTasks({
       query: query.query,
       limit: query.limit,
-      threshold: query.threshold,
     });
 
     return results.map((result) => ({
       id: result.id,
       name: result.name,
+      status: result.status,
       score: result.score,
+      matchedBy: result.matchedBy,
+      matchedOn: result.matchedOn,
+      excerpt: result.excerpt,
+      excerptIsComplete: result.excerptIsComplete,
+      commentId: result.commentId,
+      commentAuthor: result.commentAuthor,
     }));
   }
 

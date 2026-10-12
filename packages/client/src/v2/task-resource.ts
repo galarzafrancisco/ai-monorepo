@@ -42,8 +42,8 @@ export class TaskResource extends BaseClient {
   }
 
   /** Search tasks by query string */
-  async TasksController_searchTasks(params: { query: string; limit?: number; threshold?: number; signal?: AbortSignal }): Promise<TaskSearchResultDto[]> {
-    return this.request('GET', '/api/v1/tasks/tasks/search/query', { params: { query: params.query, limit: params.limit, threshold: params.threshold }, signal: params?.signal });
+  async TasksController_searchTasks(params: { query: string; limit?: number; signal?: AbortSignal }): Promise<TaskSearchResultDto[]> {
+    return this.request('GET', '/api/v1/tasks/tasks/search/query', { params: { query: params.query, limit: params.limit }, signal: params?.signal });
   }
 
   /** Add a comment to a task */

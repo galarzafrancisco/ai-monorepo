@@ -19,7 +19,11 @@ export class GlobalSearchController {
   constructor(private readonly globalSearchService: GlobalSearchService) {}
 
   @Get('query')
-  @ApiOperation({ summary: 'Global search across all resources' })
+  @ApiOperation({
+    summary: 'Global search across all resources',
+    description:
+      'Searches tasks (including their comments), context blocks, tools, agents and projects by keyword, fuzzy title and meaning, and returns one list ranked by relevance.',
+  })
   @ApiOkResponse({
     type: [GlobalSearchResultDto],
     description: 'Search results sorted by relevance',
@@ -30,7 +34,7 @@ export class GlobalSearchController {
     const results = await this.globalSearchService.search({
       query: query.query,
       limit: query.limit,
-      threshold: query.threshold,
+      types: query.types,
     });
 
     return results.map((result) => ({
@@ -39,6 +43,12 @@ export class GlobalSearchController {
       title: result.title,
       score: result.score,
       url: result.url,
+      matchedBy: result.matchedBy,
+      matchedOn: result.matchedOn,
+      excerpt: result.excerpt,
+      excerptIsComplete: result.excerptIsComplete,
+      commentId: result.commentId,
+      commentAuthor: result.commentAuthor,
     }));
   }
 }

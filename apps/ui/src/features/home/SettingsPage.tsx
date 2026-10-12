@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   Palette,
+  Search,
   Server,
   Sparkles,
   Users,
@@ -116,6 +117,13 @@ export function SettingsPage() {
         onSelect: () => navigate('/settings/models'),
       },
       {
+        id: 'settings-search',
+        label: 'Search Settings',
+        description: 'Tune search and see what is indexed',
+        aliases: ['search', 'index', 'embeddings', 'semantic', 'reindex'],
+        onSelect: () => navigate('/settings/search'),
+      },
+      {
         id: 'settings-workers',
         label: 'Workers Settings',
         description: 'Configure and manage background workers',
@@ -191,6 +199,15 @@ export function SettingsPage() {
         value: metrics.conversationModel ?? 'Not selected',
         tone: metrics.conversationModel ? 'default' : 'muted',
       },
+    },
+    {
+      title: 'Search',
+      description: 'What is indexed and how results are matched and ranked.',
+      icon: Search,
+      iconTone: 'accent',
+      path: '/settings/search',
+      action: 'Configure',
+      detail: { label: 'Strategies', value: 'Keyword, fuzzy title, semantic', tone: 'default' },
     },
     {
       title: 'Workers',

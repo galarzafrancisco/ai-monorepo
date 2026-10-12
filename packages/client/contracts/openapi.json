@@ -2514,6 +2514,587 @@
         ]
       }
     },
+    "/api/v1/ai-providers": {
+      "post": {
+        "operationId": "AiProvidersController_createAiProvider",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAiProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "AI provider created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create an AI provider",
+        "tags": [
+          "AI Providers"
+        ]
+      },
+      "get": {
+        "operationId": "AiProvidersController_listAiProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of AI providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProviderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all AI providers",
+        "tags": [
+          "AI Providers"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}": {
+      "get": {
+        "operationId": "AiProvidersController_getAiProvider",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AI provider details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get AI provider by ID",
+        "tags": [
+          "AI Providers"
+        ]
+      },
+      "patch": {
+        "operationId": "AiProvidersController_updateAiProvider",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAiProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI provider updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update an AI provider",
+        "tags": [
+          "AI Providers"
+        ]
+      },
+      "delete": {
+        "operationId": "AiProvidersController_deleteAiProvider",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "AI provider deleted successfully"
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete an AI provider",
+        "tags": [
+          "AI Providers"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}/models": {
+      "get": {
+        "operationId": "AiProvidersController_listAiProviderModels",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Models offered by the provider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProviderModelResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List the models the provider offers, fetched live from the provider",
+        "tags": [
+          "AI Providers"
+        ]
+      }
+    },
+    "/api/v1/ai-model-selections": {
+      "get": {
+        "operationId": "AiModelSelectionsController_listAiModelSelections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "One entry per job, selected or not",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiModelSelectionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List which model each job uses",
+        "tags": [
+          "AI Model Selections"
+        ]
+      }
+    },
+    "/api/v1/ai-model-selections/{job}": {
+      "put": {
+        "operationId": "AiModelSelectionsController_setAiModelSelection",
+        "parameters": [
+          {
+            "name": "job",
+            "required": true,
+            "in": "path",
+            "description": "The job the model is selected for",
+            "schema": {
+              "example": "conversation",
+              "type": "string",
+              "enum": [
+                "conversation",
+                "quick_tasks",
+                "middle_manager",
+                "embeddings"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAiModelSelectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Selection saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiModelSelectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Select the provider and model a job uses",
+        "tags": [
+          "AI Model Selections"
+        ]
+      },
+      "delete": {
+        "operationId": "AiModelSelectionsController_clearAiModelSelection",
+        "parameters": [
+          {
+            "name": "job",
+            "required": true,
+            "in": "path",
+            "description": "The job the model is selected for",
+            "schema": {
+              "example": "conversation",
+              "type": "string",
+              "enum": [
+                "conversation",
+                "quick_tasks",
+                "middle_manager",
+                "embeddings"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Selection cleared"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Clear a job's selection",
+        "tags": [
+          "AI Model Selections"
+        ]
+      }
+    },
+    "/api/v1/secrets": {
+      "post": {
+        "operationId": "SecretsController_createSecret",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Secret created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new secret",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "get": {
+        "operationId": "SecretsController_listSecrets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of secrets (no values)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all secrets - values not included",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
+    "/api/v1/secrets/{id}": {
+      "get": {
+        "operationId": "SecretsController_getSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Secret metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get secret metadata by ID - value not included",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "patch": {
+        "operationId": "SecretsController_updateSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Secret updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a secret",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "delete": {
+        "operationId": "SecretsController_deleteSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Secret deleted successfully"
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a secret",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
+    "/api/v1/secrets/{id}/value": {
+      "get": {
+        "operationId": "SecretsController_getSecretValue",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decrypted secret value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretValueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get decrypted secret value",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks": {
       "post": {
         "operationId": "TasksController_createTask",
@@ -2860,7 +3441,7 @@
             "name": "query",
             "required": true,
             "in": "query",
-            "description": "Search query string",
+            "description": "What to look for. Keywords, a partial title or a question in plain language all work.",
             "schema": {
               "example": "authentication",
               "type": "string"
@@ -2870,25 +3451,11 @@
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "Maximum number of results to return",
+            "description": "Maximum number of results. Defaults to the configured default limit.",
             "schema": {
               "minimum": 1,
               "maximum": 100,
-              "default": 10,
               "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "threshold",
-            "required": false,
-            "in": "query",
-            "description": "Minimum score threshold (0-1, higher is stricter)",
-            "schema": {
-              "minimum": 0,
-              "maximum": 1,
-              "default": 0.3,
-              "example": 0.3,
               "type": "number"
             }
           }
@@ -5090,7 +5657,7 @@
             "name": "query",
             "required": true,
             "in": "query",
-            "description": "Search query string",
+            "description": "What to look for. Keywords, a partial title or a question in plain language all work.",
             "schema": {
               "example": "authentication",
               "type": "string"
@@ -5100,25 +5667,11 @@
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "Maximum number of results to return",
+            "description": "Maximum number of results. Defaults to the configured default limit.",
             "schema": {
               "minimum": 1,
               "maximum": 100,
-              "default": 10,
               "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "threshold",
-            "required": false,
-            "in": "query",
-            "description": "Minimum score threshold (0-1, higher is stricter)",
-            "schema": {
-              "minimum": 0,
-              "maximum": 1,
-              "default": 0.3,
-              "example": 0.3,
               "type": "number"
             }
           }
@@ -5750,587 +6303,6 @@
         ],
         "tags": [
           "Context"
-        ]
-      }
-    },
-    "/api/v1/ai-providers": {
-      "post": {
-        "operationId": "AiProvidersController_createAiProvider",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAiProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "AI provider created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiProviderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create an AI provider",
-        "tags": [
-          "AI Providers"
-        ]
-      },
-      "get": {
-        "operationId": "AiProvidersController_listAiProviders",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of AI providers",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AiProviderResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List all AI providers",
-        "tags": [
-          "AI Providers"
-        ]
-      }
-    },
-    "/api/v1/ai-providers/{id}": {
-      "get": {
-        "operationId": "AiProvidersController_getAiProvider",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "AI provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "AI provider details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiProviderResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "AI provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get AI provider by ID",
-        "tags": [
-          "AI Providers"
-        ]
-      },
-      "patch": {
-        "operationId": "AiProvidersController_updateAiProvider",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "AI provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAiProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "AI provider updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiProviderResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "AI provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update an AI provider",
-        "tags": [
-          "AI Providers"
-        ]
-      },
-      "delete": {
-        "operationId": "AiProvidersController_deleteAiProvider",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "AI provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "AI provider deleted successfully"
-          },
-          "404": {
-            "description": "AI provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete an AI provider",
-        "tags": [
-          "AI Providers"
-        ]
-      }
-    },
-    "/api/v1/ai-providers/{id}/models": {
-      "get": {
-        "operationId": "AiProvidersController_listAiProviderModels",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "AI provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Models offered by the provider",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AiProviderModelResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "AI provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List the models the provider offers, fetched live from the provider",
-        "tags": [
-          "AI Providers"
-        ]
-      }
-    },
-    "/api/v1/ai-model-selections": {
-      "get": {
-        "operationId": "AiModelSelectionsController_listAiModelSelections",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "One entry per job, selected or not",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AiModelSelectionResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List which model each job uses",
-        "tags": [
-          "AI Model Selections"
-        ]
-      }
-    },
-    "/api/v1/ai-model-selections/{job}": {
-      "put": {
-        "operationId": "AiModelSelectionsController_setAiModelSelection",
-        "parameters": [
-          {
-            "name": "job",
-            "required": true,
-            "in": "path",
-            "description": "The job the model is selected for",
-            "schema": {
-              "example": "conversation",
-              "type": "string",
-              "enum": [
-                "conversation",
-                "quick_tasks",
-                "middle_manager",
-                "embeddings"
-              ]
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetAiModelSelectionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Selection saved",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AiModelSelectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "AI provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Select the provider and model a job uses",
-        "tags": [
-          "AI Model Selections"
-        ]
-      },
-      "delete": {
-        "operationId": "AiModelSelectionsController_clearAiModelSelection",
-        "parameters": [
-          {
-            "name": "job",
-            "required": true,
-            "in": "path",
-            "description": "The job the model is selected for",
-            "schema": {
-              "example": "conversation",
-              "type": "string",
-              "enum": [
-                "conversation",
-                "quick_tasks",
-                "middle_manager",
-                "embeddings"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Selection cleared"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Clear a job's selection",
-        "tags": [
-          "AI Model Selections"
-        ]
-      }
-    },
-    "/api/v1/secrets": {
-      "post": {
-        "operationId": "SecretsController_createSecret",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSecretDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Secret created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new secret",
-        "tags": [
-          "Secrets"
-        ]
-      },
-      "get": {
-        "operationId": "SecretsController_listSecrets",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of secrets (no values)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SecretResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List all secrets - values not included",
-        "tags": [
-          "Secrets"
-        ]
-      }
-    },
-    "/api/v1/secrets/{id}": {
-      "get": {
-        "operationId": "SecretsController_getSecret",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Secret metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get secret metadata by ID - value not included",
-        "tags": [
-          "Secrets"
-        ]
-      },
-      "patch": {
-        "operationId": "SecretsController_updateSecret",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSecretDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Secret updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update a secret",
-        "tags": [
-          "Secrets"
-        ]
-      },
-      "delete": {
-        "operationId": "SecretsController_deleteSecret",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Secret deleted successfully"
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a secret",
-        "tags": [
-          "Secrets"
-        ]
-      }
-    },
-    "/api/v1/secrets/{id}/value": {
-      "get": {
-        "operationId": "SecretsController_getSecretValue",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Decrypted secret value",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretValueResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get decrypted secret value",
-        "tags": [
-          "Secrets"
         ]
       }
     },
@@ -7381,15 +7353,16 @@
     },
     "/api/v1/search/query": {
       "get": {
+        "description": "Searches tasks (including their comments), context blocks, tools, agents and projects by keyword, fuzzy title and meaning, and returns one list ranked by relevance.",
         "operationId": "GlobalSearchController_search",
         "parameters": [
           {
             "name": "query",
             "required": true,
             "in": "query",
-            "description": "Search query string",
+            "description": "What to look for. Keywords, a partial title or a question in plain language all work.",
             "schema": {
-              "example": "authentication",
+              "example": "how do we deploy to production",
               "type": "string"
             }
           },
@@ -7397,26 +7370,24 @@
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "Maximum number of results to return per category",
+            "description": "Maximum number of results. Defaults to the configured default limit.",
             "schema": {
               "minimum": 1,
               "maximum": 100,
-              "default": 10,
               "example": 10,
               "type": "number"
             }
           },
           {
-            "name": "threshold",
+            "name": "types",
             "required": false,
             "in": "query",
-            "description": "Minimum score threshold (0-1, higher is stricter)",
+            "description": "Only return these kinds of result. All kinds when omitted.",
             "schema": {
-              "minimum": 0,
-              "maximum": 1,
-              "default": 0.3,
-              "example": 0.3,
-              "type": "number"
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SearchResultType"
+              }
             }
           }
         ],
@@ -7441,6 +7412,149 @@
           }
         ],
         "summary": "Global search across all resources",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/v1/search/settings": {
+      "get": {
+        "operationId": "SearchAdminController_getSearchSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Every setting with its current value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get the search settings",
+        "tags": [
+          "Search"
+        ]
+      },
+      "patch": {
+        "description": "Changes the settings sent and leaves the others as they are.",
+        "operationId": "SearchAdminController_updateSearchSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSearchSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The settings after the change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Change search settings",
+        "tags": [
+          "Search"
+        ]
+      },
+      "delete": {
+        "operationId": "SearchAdminController_resetSearchSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The default settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Reset the search settings to their defaults",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/v1/search/index": {
+      "get": {
+        "operationId": "SearchAdminController_getSearchIndexStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "What is indexed and embedded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchIndexStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get the state of the search index",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/v1/search/index/rebuild": {
+      "post": {
+        "description": "Discards the index and builds it again. Keyword search is complete when this returns; embeddings are rebuilt in the background.",
+        "operationId": "SearchAdminController_rebuildSearchIndex",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The index right after the rebuild started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchIndexStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Rebuild the search index",
         "tags": [
           "Search"
         ]
@@ -9540,6 +9654,403 @@
           "keys"
         ]
       },
+      "CreateAiProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name for the AI provider",
+            "example": "OpenAI Production"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of AI provider",
+            "enum": [
+              "openai",
+              "anthropic",
+              "google",
+              "google_vertex",
+              "xai",
+              "openai_compatible"
+            ],
+            "example": "openai"
+          },
+          "secretId": {
+            "type": "string",
+            "description": "ID of the secret containing the API key",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "API base URL. Required for OpenAI-compatible providers.",
+            "example": "http://localhost:11434/v1",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
+            "example": "my-gcp-project",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
+            "example": "us-central1",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "AiProviderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "AI provider identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the AI provider",
+            "example": "OpenAI Production"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of AI provider",
+            "enum": [
+              "openai",
+              "anthropic",
+              "google",
+              "google_vertex",
+              "xai",
+              "openai_compatible"
+            ],
+            "example": "openai"
+          },
+          "secretId": {
+            "type": "string",
+            "description": "ID of the secret containing the API key",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "API base URL",
+            "example": "http://localhost:11434/v1",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "description": "Google Cloud project for Vertex AI",
+            "example": "my-gcp-project",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "description": "Google Cloud location for Vertex AI",
+            "example": "us-central1",
+            "nullable": true
+          },
+          "isConfigured": {
+            "type": "boolean",
+            "description": "Whether this provider has all required configuration",
+            "example": true
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO timestamp when the provider was created",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the provider was last updated",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "isConfigured",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateAiProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name for the AI provider",
+            "example": "OpenAI Production"
+          },
+          "secretId": {
+            "type": "string",
+            "description": "ID of the secret containing the API key",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for the AI provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.",
+            "example": "sk-..."
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "API base URL. Required for OpenAI-compatible providers.",
+            "example": "http://localhost:11434/v1",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
+            "example": "my-gcp-project",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
+            "example": "us-central1",
+            "nullable": true
+          }
+        }
+      },
+      "AiProviderModelResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Model id as the provider names it",
+            "example": "claude-haiku-5-5"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human-readable name, when the provider gives one",
+            "example": "Claude Haiku 5.5",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "description": "What the model is for",
+            "enum": [
+              "language",
+              "embedding"
+            ],
+            "example": "language"
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ]
+      },
+      "AiModelSelectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "type": "string",
+            "description": "The job the model is selected for",
+            "enum": [
+              "conversation",
+              "quick_tasks",
+              "middle_manager",
+              "embeddings"
+            ],
+            "example": "conversation"
+          },
+          "aiProviderId": {
+            "type": "string",
+            "description": "Provider of the job's own selection. Null when nothing is selected for it.",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model of the job's own selection. Null when nothing is selected for it.",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "followsConversation": {
+            "type": "boolean",
+            "description": "True when the job has no selection of its own and uses the conversation model",
+            "example": false
+          },
+          "effectiveAiProviderId": {
+            "type": "string",
+            "description": "Provider the job runs on after applying the fallback",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "effectiveModelId": {
+            "type": "string",
+            "description": "Model the job runs on after applying the fallback",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "isReady": {
+            "type": "boolean",
+            "description": "Whether the job can make a call: a model is selected and its provider is configured",
+            "example": true
+          }
+        },
+        "required": [
+          "job",
+          "followsConversation",
+          "isReady"
+        ]
+      },
+      "SetAiModelSelectionDto": {
+        "type": "object",
+        "properties": {
+          "aiProviderId": {
+            "type": "string",
+            "description": "ID of the AI provider to call",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model id as the provider names it",
+            "example": "claude-haiku-5-5"
+          }
+        },
+        "required": [
+          "aiProviderId",
+          "modelId"
+        ]
+      },
+      "CreateSecretDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique name for the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the secret",
+            "example": "OpenAI API key for agent completions"
+          },
+          "value": {
+            "type": "string",
+            "description": "The secret value (will be encrypted at rest)",
+            "example": "sk-..."
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "SecretResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Secret identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description",
+            "example": "OpenAI API key for agent completions",
+            "nullable": true
+          },
+          "createdByActorId": {
+            "type": "string",
+            "description": "ID of the actor who created this secret",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Slug of the actor who created this secret",
+            "example": "fran",
+            "nullable": true
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO timestamp when the secret was created",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the secret was last updated",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdByActorId",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SecretValueResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Secret identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "value": {
+            "type": "string",
+            "description": "The decrypted secret value",
+            "example": "sk-..."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "value"
+        ]
+      },
+      "UpdateSecretDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "New name for the secret",
+            "example": "OPENAI_API_KEY_V2"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description for the secret",
+            "example": "Updated OpenAI API key",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "description": "New secret value (will be encrypted at rest)",
+            "example": "sk-..."
+          }
+        }
+      },
       "CreateTaskDto": {
         "type": "object",
         "properties": {
@@ -9985,6 +10496,24 @@
           "totalPages"
         ]
       },
+      "SearchStrategy": {
+        "type": "string",
+        "enum": [
+          "keyword",
+          "fuzzy_title",
+          "semantic"
+        ],
+        "description": "The search strategies that found this result"
+      },
+      "SearchMatchField": {
+        "type": "string",
+        "enum": [
+          "title",
+          "content",
+          "comment"
+        ],
+        "description": "Which part of the task matched best: its name, its description, or one of its comments"
+      },
       "TaskSearchResultDto": {
         "type": "object",
         "properties": {
@@ -9998,18 +10527,70 @@
             "description": "Task name/title",
             "example": "Implement authentication system"
           },
+          "status": {
+            "type": "string",
+            "description": "Task status",
+            "example": "IN_PROGRESS",
+            "nullable": true
+          },
           "score": {
             "type": "number",
-            "description": "Match confidence score (0-1, higher is better)",
+            "description": "Relevance from 0 to 1, for ordering results within this response. Not comparable between searches.",
             "example": 0.85,
             "minimum": 0,
             "maximum": 1
+          },
+          "matchedBy": {
+            "type": "array",
+            "description": "The search strategies that found this result",
+            "example": [
+              "keyword",
+              "semantic"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SearchStrategy"
+            }
+          },
+          "matchedOn": {
+            "description": "Which part of the task matched best: its name, its description, or one of its comments",
+            "example": "comment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMatchField"
+              }
+            ]
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "Text from the task: the comment or part of the description that matched, or the start of the description when only the name matched. Empty when the task has no description.",
+            "example": "Switched the token store to Redis; refresh tokens now rotate on every use."
+          },
+          "excerptIsComplete": {
+            "type": "boolean",
+            "description": "True when the excerpt is the whole description (or the whole comment). False when it is only a part.",
+            "example": true
+          },
+          "commentId": {
+            "type": "string",
+            "description": "ID of the comment the excerpt comes from. Null unless a comment matched.",
+            "example": null,
+            "nullable": true
+          },
+          "commentAuthor": {
+            "type": "string",
+            "description": "Who wrote the matching comment. Null unless a comment matched.",
+            "example": null,
+            "nullable": true
           }
         },
         "required": [
           "id",
           "name",
-          "score"
+          "score",
+          "matchedBy",
+          "matchedOn",
+          "excerpt",
+          "excerptIsComplete"
         ]
       },
       "CreateCommentDto": {
@@ -12050,16 +12631,50 @@
           },
           "score": {
             "type": "number",
-            "description": "Match confidence score (0-1, higher is better)",
+            "description": "Relevance from 0 to 1, for ordering results within this response. Not comparable between searches.",
             "example": 0.85,
             "minimum": 0,
             "maximum": 1
+          },
+          "matchedBy": {
+            "type": "array",
+            "description": "The search strategies that found this result",
+            "example": [
+              "keyword",
+              "semantic"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SearchStrategy"
+            }
+          },
+          "matchedOn": {
+            "description": "Which part of the block matched best: its title or a passage of its content",
+            "example": "content",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMatchField"
+              }
+            ]
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "Text from the block: the passage that matched, or the start of the content when only the title matched. Empty when the block has no content.",
+            "example": "Access tokens last 15 minutes. Refresh tokens rotate on every use ..."
+          },
+          "excerptIsComplete": {
+            "type": "boolean",
+            "description": "True when the excerpt is the block's whole content. False when it is only a part.",
+            "example": false
           }
         },
         "required": [
           "id",
           "title",
-          "score"
+          "score",
+          "matchedBy",
+          "matchedOn",
+          "excerpt",
+          "excerptIsComplete"
         ]
       },
       "BlockTreeResponseDto": {
@@ -12217,403 +12832,6 @@
         "required": [
           "newParentId"
         ]
-      },
-      "CreateAiProviderDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name for the AI provider",
-            "example": "OpenAI Production"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of AI provider",
-            "enum": [
-              "openai",
-              "anthropic",
-              "google",
-              "google_vertex",
-              "xai",
-              "openai_compatible"
-            ],
-            "example": "openai"
-          },
-          "secretId": {
-            "type": "string",
-            "description": "ID of the secret containing the API key",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "baseUrl": {
-            "type": "string",
-            "description": "API base URL. Required for OpenAI-compatible providers.",
-            "example": "http://localhost:11434/v1",
-            "nullable": true
-          },
-          "project": {
-            "type": "string",
-            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
-            "example": "my-gcp-project",
-            "nullable": true
-          },
-          "location": {
-            "type": "string",
-            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
-            "example": "us-central1",
-            "nullable": true
-          }
-        },
-        "required": [
-          "name",
-          "type"
-        ]
-      },
-      "AiProviderResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "AI provider identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name of the AI provider",
-            "example": "OpenAI Production"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of AI provider",
-            "enum": [
-              "openai",
-              "anthropic",
-              "google",
-              "google_vertex",
-              "xai",
-              "openai_compatible"
-            ],
-            "example": "openai"
-          },
-          "secretId": {
-            "type": "string",
-            "description": "ID of the secret containing the API key",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "baseUrl": {
-            "type": "string",
-            "description": "API base URL",
-            "example": "http://localhost:11434/v1",
-            "nullable": true
-          },
-          "project": {
-            "type": "string",
-            "description": "Google Cloud project for Vertex AI",
-            "example": "my-gcp-project",
-            "nullable": true
-          },
-          "location": {
-            "type": "string",
-            "description": "Google Cloud location for Vertex AI",
-            "example": "us-central1",
-            "nullable": true
-          },
-          "isConfigured": {
-            "type": "boolean",
-            "description": "Whether this provider has all required configuration",
-            "example": true
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO timestamp when the provider was created",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO timestamp when the provider was last updated",
-            "example": "2024-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "type",
-          "isConfigured",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateAiProviderDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name for the AI provider",
-            "example": "OpenAI Production"
-          },
-          "secretId": {
-            "type": "string",
-            "description": "ID of the secret containing the API key",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "apiKey": {
-            "type": "string",
-            "description": "API key for the AI provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.",
-            "example": "sk-..."
-          },
-          "baseUrl": {
-            "type": "string",
-            "description": "API base URL. Required for OpenAI-compatible providers.",
-            "example": "http://localhost:11434/v1",
-            "nullable": true
-          },
-          "project": {
-            "type": "string",
-            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
-            "example": "my-gcp-project",
-            "nullable": true
-          },
-          "location": {
-            "type": "string",
-            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
-            "example": "us-central1",
-            "nullable": true
-          }
-        }
-      },
-      "AiProviderModelResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Model id as the provider names it",
-            "example": "claude-haiku-5-5"
-          },
-          "displayName": {
-            "type": "string",
-            "description": "Human-readable name, when the provider gives one",
-            "example": "Claude Haiku 5.5",
-            "nullable": true
-          },
-          "kind": {
-            "type": "string",
-            "description": "What the model is for",
-            "enum": [
-              "language",
-              "embedding"
-            ],
-            "example": "language"
-          }
-        },
-        "required": [
-          "id",
-          "kind"
-        ]
-      },
-      "AiModelSelectionResponseDto": {
-        "type": "object",
-        "properties": {
-          "job": {
-            "type": "string",
-            "description": "The job the model is selected for",
-            "enum": [
-              "conversation",
-              "quick_tasks",
-              "middle_manager",
-              "embeddings"
-            ],
-            "example": "conversation"
-          },
-          "aiProviderId": {
-            "type": "string",
-            "description": "Provider of the job's own selection. Null when nothing is selected for it.",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model of the job's own selection. Null when nothing is selected for it.",
-            "example": "claude-opus-5-5",
-            "nullable": true
-          },
-          "followsConversation": {
-            "type": "boolean",
-            "description": "True when the job has no selection of its own and uses the conversation model",
-            "example": false
-          },
-          "effectiveAiProviderId": {
-            "type": "string",
-            "description": "Provider the job runs on after applying the fallback",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "effectiveModelId": {
-            "type": "string",
-            "description": "Model the job runs on after applying the fallback",
-            "example": "claude-opus-5-5",
-            "nullable": true
-          },
-          "isReady": {
-            "type": "boolean",
-            "description": "Whether the job can make a call: a model is selected and its provider is configured",
-            "example": true
-          }
-        },
-        "required": [
-          "job",
-          "followsConversation",
-          "isReady"
-        ]
-      },
-      "SetAiModelSelectionDto": {
-        "type": "object",
-        "properties": {
-          "aiProviderId": {
-            "type": "string",
-            "description": "ID of the AI provider to call",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model id as the provider names it",
-            "example": "claude-haiku-5-5"
-          }
-        },
-        "required": [
-          "aiProviderId",
-          "modelId"
-        ]
-      },
-      "CreateSecretDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Unique name for the secret",
-            "example": "OPENAI_API_KEY"
-          },
-          "description": {
-            "type": "string",
-            "description": "Human-readable description of the secret",
-            "example": "OpenAI API key for agent completions"
-          },
-          "value": {
-            "type": "string",
-            "description": "The secret value (will be encrypted at rest)",
-            "example": "sk-..."
-          }
-        },
-        "required": [
-          "name",
-          "value"
-        ]
-      },
-      "SecretResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Secret identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the secret",
-            "example": "OPENAI_API_KEY"
-          },
-          "description": {
-            "type": "string",
-            "description": "Human-readable description",
-            "example": "OpenAI API key for agent completions",
-            "nullable": true
-          },
-          "createdByActorId": {
-            "type": "string",
-            "description": "ID of the actor who created this secret",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "createdBy": {
-            "type": "string",
-            "description": "Slug of the actor who created this secret",
-            "example": "fran",
-            "nullable": true
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO timestamp when the secret was created",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO timestamp when the secret was last updated",
-            "example": "2024-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "createdByActorId",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "SecretValueResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Secret identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the secret",
-            "example": "OPENAI_API_KEY"
-          },
-          "value": {
-            "type": "string",
-            "description": "The decrypted secret value",
-            "example": "sk-..."
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "value"
-        ]
-      },
-      "UpdateSecretDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "New name for the secret",
-            "example": "OPENAI_API_KEY_V2"
-          },
-          "description": {
-            "type": "string",
-            "description": "New description for the secret",
-            "example": "Updated OpenAI API key",
-            "nullable": true
-          },
-          "value": {
-            "type": "string",
-            "description": "New secret value (will be encrypted at rest)",
-            "example": "sk-..."
-          }
-        }
       },
       "TaskExecutionQueueEntryResponseDto": {
         "type": "object",
@@ -13742,6 +13960,16 @@
           "resource_name"
         ]
       },
+      "SearchResultType": {
+        "type": "string",
+        "enum": [
+          "task",
+          "context_block",
+          "tool",
+          "agent",
+          "project"
+        ]
+      },
       "GlobalSearchResultDto": {
         "type": "object",
         "properties": {
@@ -13751,17 +13979,13 @@
             "example": "ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
           },
           "type": {
-            "type": "string",
             "description": "Result type",
-            "enum": [
-              "task",
-              "context_block",
-              "agent",
-              "project",
-              "tag",
-              "tool"
-            ],
-            "example": "task"
+            "example": "task",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchResultType"
+              }
+            ]
           },
           "title": {
             "type": "string",
@@ -13770,7 +13994,7 @@
           },
           "score": {
             "type": "number",
-            "description": "Match confidence score (0-1, higher is better)",
+            "description": "Relevance from 0 to 1, for ordering results within this response. Not comparable between searches.",
             "example": 0.85,
             "minimum": 0,
             "maximum": 1
@@ -13779,6 +14003,48 @@
             "type": "string",
             "description": "Frontend URL path to navigate to this resource",
             "example": "/tasks/task/ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
+          },
+          "matchedBy": {
+            "type": "array",
+            "description": "The search strategies that found this result",
+            "example": [
+              "keyword",
+              "semantic"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SearchStrategy"
+            }
+          },
+          "matchedOn": {
+            "description": "Which part of the item matched best: its title, a passage of its text, or a comment on it",
+            "example": "content",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchMatchField"
+              }
+            ]
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "Text from the item: the passage or comment that matched, or the start of the item when only its title matched. Empty when the item has no text.",
+            "example": "Deploys go through the GitOps repository. Merge to main and ..."
+          },
+          "excerptIsComplete": {
+            "type": "boolean",
+            "description": "True when the excerpt is the item's whole text (or the whole comment). False when it is only a part.",
+            "example": false
+          },
+          "commentId": {
+            "type": "string",
+            "description": "ID of the comment the excerpt comes from. Null unless a comment matched.",
+            "example": null,
+            "nullable": true
+          },
+          "commentAuthor": {
+            "type": "string",
+            "description": "Who wrote the matching comment. Null unless a comment matched.",
+            "example": null,
+            "nullable": true
           }
         },
         "required": [
@@ -13786,7 +14052,324 @@
           "type",
           "title",
           "score",
-          "url"
+          "url",
+          "matchedBy",
+          "matchedOn",
+          "excerpt",
+          "excerptIsComplete"
+        ]
+      },
+      "SearchSettingsDto": {
+        "type": "object",
+        "properties": {
+          "semanticEnabled": {
+            "type": "boolean",
+            "description": "Use embeddings. When off, search uses keywords and fuzzy title matching only.",
+            "example": true
+          },
+          "chunkSizeChars": {
+            "type": "number",
+            "description": "Target size of an embedded passage, in characters. Changing it re-embeds every item.",
+            "example": 1600
+          },
+          "chunkOverlapChars": {
+            "type": "number",
+            "description": "Characters repeated between consecutive pieces of one over-long paragraph. Changing it re-embeds every item.",
+            "example": 200
+          },
+          "queryInstruction": {
+            "type": "string",
+            "description": "Instruction sent with each query to instruction-aware embedding models. Leave empty for models that take none.",
+            "example": "Given a search query, retrieve relevant passages that answer the query"
+          },
+          "queryEmbeddingTimeoutMs": {
+            "type": "number",
+            "description": "How long a search waits for the query embedding before answering without semantic matches, in milliseconds.",
+            "example": 2000
+          },
+          "candidatesPerStrategy": {
+            "type": "number",
+            "description": "How many candidates each strategy contributes before the lists are merged.",
+            "example": 50
+          },
+          "semanticMinSimilarity": {
+            "type": "number",
+            "description": "Lowest cosine similarity (0-1) at which a passage counts as a semantic match. Raise it to cut loosely related results.",
+            "example": 0.45
+          },
+          "semanticMaxGap": {
+            "type": "number",
+            "description": "How far below the best semantic match a passage may be and still count. Trims the tail when something matches well. 1 turns it off.",
+            "example": 0.15
+          },
+          "keywordMinDensity": {
+            "type": "number",
+            "description": "Lowest cover density at which a text counts as a keyword match. Filters out long texts that contain every term but far apart. 0 turns it off.",
+            "example": 0.005
+          },
+          "fuzzyMinSimilarity": {
+            "type": "number",
+            "description": "Lowest trigram similarity (0-1) at which a title counts as a fuzzy match. Lower it to forgive more typos.",
+            "example": 0.5
+          },
+          "rrfK": {
+            "type": "number",
+            "description": "Reciprocal rank fusion constant. Higher values flatten the difference between ranks.",
+            "example": 60
+          },
+          "keywordWeight": {
+            "type": "number",
+            "description": "Weight of keyword matches in the merged ranking. 0 turns the strategy off.",
+            "example": 1
+          },
+          "fuzzyTitleWeight": {
+            "type": "number",
+            "description": "Weight of fuzzy title matches in the merged ranking. 0 turns the strategy off.",
+            "example": 1
+          },
+          "semanticWeight": {
+            "type": "number",
+            "description": "Weight of semantic matches in the merged ranking. 0 turns the strategy off.",
+            "example": 1
+          },
+          "exactTitleBoost": {
+            "type": "number",
+            "description": "Added to the score when the query is the title; half of it when the title starts with the query.",
+            "example": 0.02
+          },
+          "doneTaskMultiplier": {
+            "type": "number",
+            "description": "Score multiplier for finished tasks, so open work wins ties. 1 turns it off.",
+            "example": 0.9
+          },
+          "excerptMaxChars": {
+            "type": "number",
+            "description": "Longest excerpt returned with a result, in characters. Shorter items are returned whole.",
+            "example": 1200
+          },
+          "defaultLimit": {
+            "type": "number",
+            "description": "Results returned when a search does not ask for a number.",
+            "example": 10
+          }
+        },
+        "required": [
+          "semanticEnabled",
+          "chunkSizeChars",
+          "chunkOverlapChars",
+          "queryInstruction",
+          "queryEmbeddingTimeoutMs",
+          "candidatesPerStrategy",
+          "semanticMinSimilarity",
+          "semanticMaxGap",
+          "keywordMinDensity",
+          "fuzzyMinSimilarity",
+          "rrfK",
+          "keywordWeight",
+          "fuzzyTitleWeight",
+          "semanticWeight",
+          "exactTitleBoost",
+          "doneTaskMultiplier",
+          "excerptMaxChars",
+          "defaultLimit"
+        ]
+      },
+      "UpdateSearchSettingsDto": {
+        "type": "object",
+        "properties": {
+          "semanticEnabled": {
+            "type": "boolean",
+            "description": "Use embeddings. When off, search uses keywords and fuzzy title matching only."
+          },
+          "chunkSizeChars": {
+            "type": "number",
+            "description": "Target size of an embedded passage, in characters. Changing it re-embeds every item.",
+            "minimum": 200,
+            "maximum": 8000
+          },
+          "chunkOverlapChars": {
+            "type": "number",
+            "description": "Characters repeated between consecutive pieces of one over-long paragraph. Changing it re-embeds every item.",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "queryInstruction": {
+            "type": "string",
+            "description": "Instruction sent with each query to instruction-aware embedding models. Leave empty for models that take none.",
+            "maxLength": 500
+          },
+          "queryEmbeddingTimeoutMs": {
+            "type": "number",
+            "description": "How long a search waits for the query embedding before answering without semantic matches, in milliseconds.",
+            "minimum": 100,
+            "maximum": 30000
+          },
+          "candidatesPerStrategy": {
+            "type": "number",
+            "description": "How many candidates each strategy contributes before the lists are merged.",
+            "minimum": 5,
+            "maximum": 500
+          },
+          "semanticMinSimilarity": {
+            "type": "number",
+            "description": "Lowest cosine similarity (0-1) at which a passage counts as a semantic match. Raise it to cut loosely related results.",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "semanticMaxGap": {
+            "type": "number",
+            "description": "How far below the best semantic match a passage may be and still count. Trims the tail when something matches well. 1 turns it off.",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "keywordMinDensity": {
+            "type": "number",
+            "description": "Lowest cover density at which a text counts as a keyword match. Filters out long texts that contain every term but far apart. 0 turns it off.",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "fuzzyMinSimilarity": {
+            "type": "number",
+            "description": "Lowest trigram similarity (0-1) at which a title counts as a fuzzy match. Lower it to forgive more typos.",
+            "minimum": 0.1,
+            "maximum": 1
+          },
+          "rrfK": {
+            "type": "number",
+            "description": "Reciprocal rank fusion constant. Higher values flatten the difference between ranks.",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "keywordWeight": {
+            "type": "number",
+            "description": "Weight of keyword matches in the merged ranking. 0 turns the strategy off.",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "fuzzyTitleWeight": {
+            "type": "number",
+            "description": "Weight of fuzzy title matches in the merged ranking. 0 turns the strategy off.",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "semanticWeight": {
+            "type": "number",
+            "description": "Weight of semantic matches in the merged ranking. 0 turns the strategy off.",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "exactTitleBoost": {
+            "type": "number",
+            "description": "Added to the score when the query is the title; half of it when the title starts with the query.",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "doneTaskMultiplier": {
+            "type": "number",
+            "description": "Score multiplier for finished tasks, so open work wins ties. 1 turns it off.",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "excerptMaxChars": {
+            "type": "number",
+            "description": "Longest excerpt returned with a result, in characters. Shorter items are returned whole.",
+            "minimum": 100,
+            "maximum": 20000
+          },
+          "defaultLimit": {
+            "type": "number",
+            "description": "Results returned when a search does not ask for a number.",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
+      "SearchIndexTypeStatusDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Kind of indexed item",
+            "example": "comment"
+          },
+          "documents": {
+            "type": "number",
+            "description": "Indexed items of this kind",
+            "example": 120
+          },
+          "embedded": {
+            "type": "number",
+            "description": "Of those, how many have up-to-date embeddings",
+            "example": 118
+          }
+        },
+        "required": [
+          "type",
+          "documents",
+          "embedded"
+        ]
+      },
+      "SearchIndexStatusDto": {
+        "type": "object",
+        "properties": {
+          "semanticActive": {
+            "type": "boolean",
+            "description": "Whether searches currently use embeddings",
+            "example": true
+          },
+          "semanticInactiveReason": {
+            "type": "string",
+            "description": "Why semantic search is not active. Null when it is.",
+            "example": null,
+            "nullable": true
+          },
+          "embeddingModelId": {
+            "type": "string",
+            "description": "The embedding model in use. Null when there is no usable one.",
+            "example": "Qwen3-Embedding-0.6B",
+            "nullable": true
+          },
+          "documents": {
+            "type": "number",
+            "description": "Indexed items: tasks, comments, context blocks, tools, agents and projects",
+            "example": 340
+          },
+          "embedded": {
+            "type": "number",
+            "description": "Items with up-to-date embeddings",
+            "example": 338
+          },
+          "pending": {
+            "type": "number",
+            "description": "Items waiting to be embedded",
+            "example": 2
+          },
+          "failed": {
+            "type": "number",
+            "description": "Items whose last embedding attempt failed",
+            "example": 0
+          },
+          "lastError": {
+            "type": "string",
+            "description": "The most recent embedding error. Null when nothing is failing.",
+            "example": null,
+            "nullable": true
+          },
+          "byType": {
+            "description": "The same counts per kind of item",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchIndexTypeStatusDto"
+            }
+          }
+        },
+        "required": [
+          "semanticActive",
+          "documents",
+          "embedded",
+          "pending",
+          "failed",
+          "byType"
         ]
       },
       "UserWalkthroughStatusResponseDto": {

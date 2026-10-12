@@ -12,6 +12,7 @@ import { SettingsDataPage } from './SettingsDataPage';
 import { SettingsWorkersPage } from './SettingsWorkersPage';
 import { SettingsAIUsagePage } from './SettingsAIUsagePage';
 import { SettingsUsersPage } from './SettingsUsersPage';
+import { SettingsSearchPage } from './SettingsSearchPage';
 import { WalkthroughPage } from '../walkthrough/WalkthroughPage';
 
 export function HomeRoutes() {
@@ -33,6 +34,7 @@ export function HomeRoutes() {
           <Route path="/settings/ai-usage" element={<SettingsAIUsagePage />} />
           <Route path="/settings/data" element={<SettingsDataPage />} />
           <Route path="/settings/users" element={<SettingsUsersPage />} />
+          <Route path="/settings/search" element={<SettingsSearchPage />} />
           <Route path="/walkthrough" element={<WalkthroughPage />} />
         </Route>
       </Routes>

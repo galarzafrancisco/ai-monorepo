@@ -195,6 +195,17 @@
   min-width: 0;
 }
 
+/* Two lines of the matching text, so a result shows why it matched. */
+.home-search-result-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: var(--space-1);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .home-search-result-meta {
   display: flex;
   flex-direction: column;

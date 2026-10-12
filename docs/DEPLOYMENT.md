@@ -127,6 +127,10 @@ replacements:
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
 
+### PostgreSQL extensions
+
+The database needs the `pg_trgm` extension (it ships with PostgreSQL; the first migration that needs it enables it). Semantic search also needs `pgvector`: install it on the PostgreSQL server and run `CREATE EXTENSION vector;` as a superuser in the Taico database. Without it Taico still starts and search works on keywords and fuzzy titles. See [Search](how-to-guides/search.md#postgresql-requirements).
+
 ### Optional/Integration URLs
 
 | Variable | Description | Example |
