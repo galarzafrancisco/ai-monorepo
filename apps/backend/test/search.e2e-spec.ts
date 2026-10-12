@@ -254,6 +254,9 @@ describe('Search E2E', () => {
 
       const onlyTasks = await search('parking permit', { types: 'task' });
       expect(onlyTasks.map((entry) => entry.type)).toEqual(['task']);
+      expect(await search('parking permit', { types: 'task,context_block' })).toHaveLength(2);
+      expect(await search('parking permit', { types: ['task', 'context_block'] })).toHaveLength(2);
+      await api('get', '/search/query').query({ query: 'parking', types: 'tag' }).expect(400);
 
       const blocks: Array<{ title: string }> = (
         await api('get', '/context/blocks/search/query').query({ query: 'parking permit' }).expect(200)

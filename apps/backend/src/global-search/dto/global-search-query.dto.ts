@@ -33,7 +33,12 @@ export class GlobalSearchQueryDto {
     example: [SearchResultType.TASK, SearchResultType.CONTEXT_BLOCK],
   })
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : String(value).split(',')))
+  // Accepts ?types=task&types=tool and ?types=task,tool. A missing value stays missing.
+  @Transform(({ value }) =>
+    value === undefined || value === null || Array.isArray(value)
+      ? value
+      : String(value).split(','),
+  )
   @IsArray()
   @IsEnum(SearchResultType, { each: true })
   types?: SearchResultType[];
