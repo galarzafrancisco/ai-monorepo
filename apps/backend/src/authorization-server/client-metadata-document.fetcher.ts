@@ -63,9 +63,12 @@ export class ClientMetadataDocumentFetcher {
       throw new ClientMetadataFetchError('the URL must use https');
     }
 
+    // Plain http is only ever spoken to this machine, never across a network
     const isAllowedAddress = (address: string) =>
-      isPublicAddress(address) ||
-      (allowInsecureLoopback && isLoopbackAddress(address));
+      url.protocol === 'https:'
+        ? isPublicAddress(address) ||
+          (allowInsecureLoopback && isLoopbackAddress(address))
+        : isLoopbackAddress(address);
 
     // net.connect skips the DNS lookup for IP literals, so check those here
     const host = url.hostname.replace(/^\[|\]$/g, '');

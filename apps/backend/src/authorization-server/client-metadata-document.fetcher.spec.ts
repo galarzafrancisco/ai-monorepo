@@ -100,6 +100,7 @@ describe('ClientMetadataDocumentFetcher', () => {
       ['a private address', 'http://10.0.0.5/client.json'],
       ['the cloud metadata address', 'http://169.254.169.254/latest'],
       ['a link-local IPv6 address', 'http://[fe80::1]/client.json'],
+      ['plain http to a public address', 'http://93.184.216.34/client.json'],
     ])(
       'still refuses %s when loopback is allowed for tests',
       async (_name, url) => {
