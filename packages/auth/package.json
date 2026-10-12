@@ -1,0 +1,138 @@
+{
+  "name": "@taico/auth",
+  "version": "0.6.0",
+  "description": "OAuth 2.1 resource server and authorization server building blocks, with adapters for NestJS, Express, Hono and TypeORM.",
+  "type": "module",
+  "private": false,
+  "license": "PolyForm-Small-Business-1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./nest": {
+      "types": "./dist/nest/index.d.ts",
+      "import": "./dist/nest/index.js",
+      "default": "./dist/nest/index.js"
+    },
+    "./nest-ws": {
+      "types": "./dist/nest-ws/index.d.ts",
+      "import": "./dist/nest-ws/index.js",
+      "default": "./dist/nest-ws/index.js"
+    },
+    "./express": {
+      "types": "./dist/express/index.d.ts",
+      "import": "./dist/express/index.js",
+      "default": "./dist/express/index.js"
+    },
+    "./hono": {
+      "types": "./dist/hono/index.d.ts",
+      "import": "./dist/hono/index.js",
+      "default": "./dist/hono/index.js"
+    },
+    "./typeorm": {
+      "types": "./dist/typeorm/index.d.ts",
+      "import": "./dist/typeorm/index.js",
+      "default": "./dist/typeorm/index.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/index.d.ts",
+      "import": "./dist/memory/index.js",
+      "default": "./dist/memory/index.js"
+    },
+    "./idp-local": {
+      "types": "./dist/idp-local/index.d.ts",
+      "import": "./dist/idp-local/index.js",
+      "default": "./dist/idp-local/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js",
+      "default": "./dist/client/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "nest": [
+        "./dist/nest/index.d.ts"
+      ],
+      "nest-ws": [
+        "./dist/nest-ws/index.d.ts"
+      ],
+      "express": [
+        "./dist/express/index.d.ts"
+      ],
+      "hono": [
+        "./dist/hono/index.d.ts"
+      ],
+      "typeorm": [
+        "./dist/typeorm/index.d.ts"
+      ],
+      "memory": [
+        "./dist/memory/index.d.ts"
+      ],
+      "idp-local": [
+        "./dist/idp-local/index.d.ts"
+      ],
+      "client": [
+        "./dist/client/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:prod": "npm run build",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test": "npm run build && node --test \"test/*.test.mjs\"",
+    "pack": "npm run build && npm pack",
+    "release": "npm run build && npm publish --access public"
+  },
+  "dependencies": {
+    "jose": "^6.1.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "hono": "^4.0.0",
+    "typeorm": "^0.3.20"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/core": {
+      "optional": true
+    },
+    "hono": {
+      "optional": true
+    },
+    "typeorm": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.1.17",
+    "@nestjs/core": "^11.1.17",
+    "@nestjs/platform-express": "^11.1.17",
+    "@types/node": "^24.10.1",
+    "express": "^5.2.1",
+    "hono": "^4.12.7",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "sqlite3": "^6.0.1",
+    "typeorm": "^0.3.27",
+    "typescript": "^5.6.3"
+  }
+}

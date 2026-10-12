@@ -92,7 +92,8 @@ npm run build:prod                 # rebuild from scratch
 2. `actions/cache@v4` restore for `.nx/cache` (key by SHA, prefix-restore)
 3. `npm run build:prod` (cache hits replace skipped builds, so artifacts always exist for downstream steps)
 4. `npx nx run @taico/openapi-sdkgen:test`
-5. E2E tests via `npm -w apps/backend run test:e2e` (bypasses nx — see "Known limits")
+5. `npx nx run @taico/auth:test`
+6. E2E tests via `npm -w apps/backend run test:e2e` (bypasses nx — see "Known limits")
 
 For sharing cache across runners (bigger payoff than per-run restore), run `npx nx connect` once to enable Nx Cloud (free tier).
 

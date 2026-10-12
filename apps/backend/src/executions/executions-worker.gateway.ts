@@ -10,6 +10,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
+import { parseScope } from '@taico/auth';
 import { Server, Socket } from 'socket.io';
 import * as cookie from 'cookie';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -298,14 +299,15 @@ export class ExecutionsWorkerGateway
     if (!isFirstPartyAudience(claims.aud)) {
       throw new Error('token was not issued for the Taico API');
     }
-    if (!claims.scope.includes(WorkersScopes.CONNECT.id)) {
+    const scopes = parseScope(claims.scope);
+    if (!scopes.includes(WorkersScopes.CONNECT.id)) {
       throw new Error(`missing required scope ${WorkersScopes.CONNECT.id}`);
     }
 
     const authContext: AuthContext = {
       token,
       claims,
-      scopes: claims.scope,
+      scopes,
       subject: claims.sub,
     };
     client.data.auth = authContext;

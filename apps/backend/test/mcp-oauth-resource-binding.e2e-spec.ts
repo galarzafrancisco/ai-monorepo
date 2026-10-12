@@ -9,10 +9,17 @@ import { AppModule } from '../src/app.module';
 import { INTERNAL_WORKER_AUTH_TARGET_ID } from '../src/auth/core/constants/internal-auth-target.constant';
 import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.type';
 import { TokenSignerService } from '../src/auth/crypto/token-signer.service';
+import { IssuedAccessTokenService } from '../src/authorization-server/issued-access-token.service';
+import { ActorType } from '../src/identity-provider/enums';
 import { getConfig } from '../src/config/env.config';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import {
+  ensureTestUser,
+  getAuthCookies,
+  TEST_USER_DISPLAY_NAME,
+  TEST_USER_SLUG,
+} from './helpers/auth.helper';
 
 const VERSION = '0.0.0';
 const REDIRECT_URI = 'http://localhost:6274/oauth/callback';
@@ -30,6 +37,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
   let app: INestApplication<App>;
   let httpServer: App;
   let authCookies: string;
+  let testActorId: string;
   let issuerUrl: string;
   let tasksResource: string;
   let contextResource: string;
@@ -50,7 +58,7 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
     await app.init();
     httpServer = app.getHttpServer();
 
-    await ensureTestUser(app);
+    testActorId = await ensureTestUser(app);
     authCookies = await getAuthCookies(httpServer);
 
     issuerUrl = getConfig().issuerUrl;
@@ -426,8 +434,8 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
       tasksTokens = await obtainTokens('tasks', tasksResource);
       contextTokens = await obtainTokens('context', contextResource);
       // Both tokens carry the scope the other MCP endpoint requires.
-      expect(tasksTokens.claims.scope).toEqual(['mcp:use']);
-      expect(contextTokens.claims.scope).toEqual(['mcp:use']);
+      expect(tasksTokens.claims.scope).toEqual('mcp:use');
+      expect(contextTokens.claims.scope).toEqual('mcp:use');
     });
 
     it('accepts a token on the MCP server it was issued for', async () => {
@@ -610,6 +618,68 @@ describe('MCP OAuth issuer discovery and resource binding (e2e)', () => {
         `${issuerUrl}/api/v1`,
       );
       await me(`access_token=${workerToken}`).expect(401);
+    });
+  });
+
+  describe('issued tokens', () => {
+    const listTasks = (token: string) =>
+      request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Authorization', `Bearer ${token}`);
+
+    const issue = (scopes: string[]) => {
+      const actor = {
+        id: testActorId,
+        slug: TEST_USER_SLUG,
+        type: ActorType.HUMAN,
+        displayName: TEST_USER_DISPLAY_NAME,
+      };
+      return app.get(IssuedAccessTokenService).issueToken({
+        subjectActor: actor,
+        issuedByActor: actor,
+        name: `e2e token ${randomBytes(4).toString('hex')}`,
+        scopes,
+        expirationDays: 365,
+      });
+    };
+
+    it('writes the scope claim as a space-delimited string (RFC 9068)', async () => {
+      const { token } = await issue(['tasks:read', 'tasks:write']);
+      expect(decodeJwt(token).scope).toBe('tasks:read tasks:write');
+      await listTasks(token).expect(200);
+    });
+
+    it('still reads the array form of the scope claim on older tokens', async () => {
+      const { token } = await issue(['tasks:read']);
+      const legacy = await app.get(TokenSignerService).signToken({
+        ...(decodeJwt(token) as unknown as AccessTokenClaims),
+        jti: randomBytes(16).toString('hex'),
+        scope: ['tasks:read'] as unknown as string,
+      });
+      await listTasks(legacy).expect(200);
+    });
+
+    it('refuses a revoked token on its next request, long before it expires', async () => {
+      const { token, entity } = await issue(['tasks:read']);
+      await listTasks(token).expect(200);
+
+      await app.get(IssuedAccessTokenService).revokeTokenById(entity.id);
+
+      const response = await listTasks(token).expect(401);
+      expect(response.headers['www-authenticate']).toContain(
+        'error="invalid_token"',
+      );
+      // Another token of the same actor is unaffected
+      const other = await issue(['tasks:read']);
+      await listTasks(other.token).expect(200);
+    });
+
+    it('answers a token without the required scope with the scopes it needs', async () => {
+      const { token } = await issue(['meta:read']);
+      const response = await listTasks(token).expect(403);
+      expect(response.headers['www-authenticate']).toBe(
+        `Bearer resource_metadata="${issuerUrl}/.well-known/oauth-protected-resource/api/v1/tasks/tasks", error="insufficient_scope", scope="tasks:read"`,
+      );
     });
   });
 

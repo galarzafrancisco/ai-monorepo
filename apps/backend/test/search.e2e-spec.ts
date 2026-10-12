@@ -421,7 +421,12 @@ describe('Search E2E', () => {
         (_, index) => `## Section ${index}\n\n${`Filler sentence number ${index}. `.repeat(40)}`,
       );
       const id = await createBlock('Long manual', sections.join('\n\n'));
-      await eventually(async () => expect((await indexStatus()).pending).toBe(0), 30_000);
+      // The block is indexed after the request returns, so an index with
+      // nothing pending may simply not have seen it yet. Wait for its passages.
+      await eventually(async () => {
+        expect(embeddingCalls.flat().some((text) => text.startsWith('Long manual'))).toBe(true);
+        expect((await indexStatus()).pending).toBe(0);
+      }, 30_000);
 
       embeddingCalls.length = 0;
       await api('patch', `/context/blocks/${id}`)

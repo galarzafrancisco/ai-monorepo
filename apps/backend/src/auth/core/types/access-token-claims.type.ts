@@ -59,9 +59,11 @@ export interface AccessTokenClaims {
   client_id: string;
 
   /**
-   * Scopes granted to the client, stored as individual scope strings
+   * Scopes granted to the client, as a space-delimited string (RFC 9068).
+   * Tokens minted before this convention carry an array instead, so read it
+   * with `parseScope` from `@taico/auth`, never directly.
    */
-  scope: string[];
+  scope: string;
 
   /**
    * MCP server identifier (providedId) that the token is scoped to

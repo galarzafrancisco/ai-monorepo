@@ -9,6 +9,7 @@ This file describes the current Taico dependency graph for the main product:
 - `packages/shared`
 - `packages/events`
 - `packages/errors`
+- `packages/auth`
 - `packages/adk-session-store`
 - `packages/openapi-sdkgen`
 
@@ -20,6 +21,7 @@ It does not try to document every workspace in the monorepo.
 - `packages/shared`
 - `packages/events`
 - `packages/errors`
+- `packages/auth` (token verification, signing keys, guards)
 
 `apps/ui` depends on:
 - `packages/client`
@@ -43,7 +45,7 @@ Builds are orchestrated by [nx](https://nx.dev). The dependency graph below is w
 Order nx executes:
 
 1. Build leaf packages in parallel:
-- `packages/shared`, `packages/events`, `packages/errors`, `packages/adk-session-store`, `packages/openapi-sdkgen`
+- `packages/shared`, `packages/events`, `packages/errors`, `packages/auth`, `packages/adk-session-store`, `packages/openapi-sdkgen`
 
 2. Build `apps/backend` (`build:prod`)
 - Compiles via `nest build`
@@ -88,6 +90,7 @@ Worker runtime:
 packages/shared ------------> apps/backend
 packages/events ------------> apps/backend
 packages/errors ------------> apps/backend
+packages/auth --------------> apps/backend
 
 apps/backend ---------------> packages/client
 packages/openapi-sdkgen ---> packages/client
@@ -109,6 +112,7 @@ flowchart TD
   shared["packages/shared"]
   events["packages/events"]
   errors["packages/errors"]
+  auth["packages/auth"]
   adk["packages/adk-session-store"]
   sdkgen["packages/openapi-sdkgen"]
 
@@ -126,6 +130,7 @@ flowchart TD
   shared --> backend
   events --> backend
   errors --> backend
+  auth --> backend
 
   backend --> backendSpec
   backendSpec --> client

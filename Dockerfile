@@ -12,6 +12,7 @@ COPY apps/ui/package*.json ./apps/ui/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/client/package*.json ./packages/client/
 COPY packages/errors/package*.json ./packages/errors/
+COPY packages/auth/package*.json ./packages/auth/
 COPY packages/events/package*.json ./packages/events/
 COPY packages/openapi-sdkgen/package*.json ./packages/openapi-sdkgen/
 
@@ -36,6 +37,7 @@ COPY apps/worker/package*.json ./apps/worker/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/client/package*.json ./packages/client/
 COPY packages/errors/package*.json ./packages/errors/
+COPY packages/auth/package*.json ./packages/auth/
 COPY packages/events/package*.json ./packages/events/
 
 # Install only production dependencies
@@ -46,6 +48,7 @@ COPY --from=builder /workdir/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /workdir/apps/worker/dist ./apps/worker/dist
 COPY --from=builder /workdir/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /workdir/packages/errors/dist ./packages/errors/dist
+COPY --from=builder /workdir/packages/auth/dist ./packages/auth/dist
 COPY --from=builder /workdir/packages/events/dist ./packages/events/dist
 
 # Set environment variables

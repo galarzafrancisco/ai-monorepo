@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createHash, randomBytes } from 'crypto';
+import { formatScope, parseScope } from '@taico/auth';
 import { McpAuthorizationFlowEntity } from '../auth-journeys/entities';
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
 import { TokenRequestDto } from './dto/token-request.dto';
@@ -431,7 +432,7 @@ export class TokenService {
       iat: now,
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
-      scope: mcpAuthFlow.scopes || [], // Handle null scopes
+      scope: formatScope(mcpAuthFlow.scopes ?? []),
       mcp_server_identifier: mcpAuthFlow.server.providedId,
       resource: serverResource,
       version: MCP_AUTH_SERVER_VERSION,
@@ -529,7 +530,7 @@ export class TokenService {
       jti: claims.jti,
       exp: claims.exp,
       iat: claims.iat,
-      scope: claims.scope?.join(' '),
+      scope: formatScope(parseScope(claims.scope)),
       mcp_server_identifier: claims.mcp_server_identifier,
       resource: claims.resource,
       version: claims.version,

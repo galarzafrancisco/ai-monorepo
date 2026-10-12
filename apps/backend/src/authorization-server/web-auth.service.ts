@@ -1,13 +1,13 @@
 import { WEB_SESSION_AUDIENCE } from '../auth/core/resource-audience';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { SignJWT, importPKCS8 } from 'jose';
+import { formatScope } from '@taico/auth';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { getConfig } from '../config/env.config';
-import { JwksService } from '../auth/crypto/jwks.service';
+import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { UserScopes } from 'src/auth/core/scopes/user.scopes';
@@ -28,7 +28,7 @@ export class WebAuthService {
   constructor(
     private readonly identityProviderService: IdentityProviderService,
     private readonly actorService: ActorService,
-    private readonly jwksService: JwksService,
+    private readonly tokenSignerService: TokenSignerService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
@@ -86,15 +86,6 @@ export class WebAuthService {
     actor: ActorEntity,
     user: User,
   ): Promise<string> {
-    // Get active signing key
-    const signingKey = await this.jwksService.getActiveSigningKey();
-
-    // Import private key from PEM
-    const privateKey = await importPKCS8(
-      signingKey.privateKeyPem,
-      signingKey.algorithm,
-    );
-
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
@@ -114,7 +105,7 @@ export class WebAuthService {
       actor_type: actor.type,
       displayName: actor.displayName,
       email: user.email,
-      scope: scopes.map((s) => s.id),
+      scope: formatScope(scopes.map((s) => s.id)),
       aud: WEB_SESSION_AUDIENCE,
       client_id: 'web-app',
       // mcp_server_identifier: 'not needed for non-mcp',
@@ -125,16 +116,7 @@ export class WebAuthService {
       jti: randomBytes(16).toString('hex'),
     };
 
-    // Sign and return JWT
-    const jwt = await new SignJWT(payload as any)
-      .setProtectedHeader({
-        alg: signingKey.algorithm,
-        kid: signingKey.kid,
-        typ: 'JWT',
-      })
-      .sign(privateKey);
-
-    return jwt;
+    return this.tokenSignerService.signToken(payload);
   }
 
   /**
@@ -227,7 +209,10 @@ export class WebAuthService {
       );
       throw new RefreshTokenUserMissingError(storedToken.id);
     }
-    if (!user.isActive || this.identityProviderService.isPasswordSetupPending(user)) {
+    if (
+      !user.isActive ||
+      this.identityProviderService.isPasswordSetupPending(user)
+    ) {
       throw new UnauthorizedException('Invalid refresh token');
     }
     const actor = storedToken.user.actor;
