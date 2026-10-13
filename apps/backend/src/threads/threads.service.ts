@@ -47,6 +47,7 @@ import {
 import { ThreadAgentService } from './agent/thread-agent.service';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
+import { ThreadReadStateService } from './read-state/thread-read-state.service';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -87,6 +88,7 @@ export class ThreadsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly threadAgentService: ThreadAgentService,
     private readonly threadTitleService: ThreadTitleService,
+    private readonly threadReadStateService: ThreadReadStateService,
   ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -305,6 +307,13 @@ export class ThreadsService {
       order: { updatedAt: 'DESC' },
     });
 
+    const unreadCounts = input.actorId
+      ? await this.threadReadStateService.getUnreadCounts(
+          threads.map((thread) => thread.id),
+          input.actorId,
+        )
+      : new Map<string, number>();
+
     this.logger.log({
       message: 'Threads listed',
       count: threads.length,
@@ -317,6 +326,7 @@ export class ThreadsService {
         id: thread.id,
         title: thread.title,
         stateContextBlockId: thread.stateContextBlockId,
+        unreadCount: unreadCounts.get(thread.id) ?? 0,
       })),
       total,
       page: input.page,

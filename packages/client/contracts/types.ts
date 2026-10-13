@@ -1472,6 +1472,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every message in the thread as read by the caller */
+        post: operations["ThreadsController_markThreadRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agents": {
         parameters: {
             query?: never;
@@ -4683,6 +4700,11 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             stateContextBlockId: string;
+            /**
+             * @description Messages in this thread written by someone else that the caller has not read yet
+             * @example 2
+             */
+            unreadCount: number;
         };
         ThreadListResponseDto: {
             /** @description Array of thread list items */
@@ -10357,6 +10379,34 @@ export interface operations {
             };
             /** @description Invalid input data */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_markThreadRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread marked as read */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

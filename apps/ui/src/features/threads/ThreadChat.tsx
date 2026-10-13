@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Text, Button, Avatar } from "../../ui/primitives";
 import { useThread } from "./useThread";
+import { useMarkThreadRead } from "./useMarkThreadRead";
 import { useAuth } from "../../auth";
 import { actorHandle, isDeactivated } from "../actors";
 import { useDraftState } from "../../shared/hooks/useDraftState";
@@ -36,6 +37,12 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     chatError,
     chatSendError,
   } = useThread(threadId);
+
+  useMarkThreadRead(
+    threadId,
+    messages.length > 0 ? messages[messages.length - 1].id : null,
+    !chatIsLoading && !chatError,
+  );
 
   // Auto-scroll to bottom when messages/activity update
   useEffect(() => {

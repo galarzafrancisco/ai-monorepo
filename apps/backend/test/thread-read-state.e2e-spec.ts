@@ -1,0 +1,214 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import cookieParser from 'cookie-parser';
+import { DataSource } from 'typeorm';
+import { AddressInfo } from 'node:net';
+import { io, Socket } from 'socket.io-client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ThreadWireEvents } from '@taico/events';
+import { AppModule } from '../src/app.module';
+import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
+import { ThreadMessageEntity } from '../src/threads/thread-message.entity';
+import { MessageCreatedEvent } from '../src/threads/events/threads.events';
+import {
+  ensureAgentActor,
+  ensureTestUser,
+  getAuthCookies,
+} from './helpers/auth.helper';
+
+describe('Thread read state E2E', () => {
+  let app: INestApplication<App>;
+  let httpServer: App;
+  let authCookies: string;
+  let userActorId: string;
+  let agentActorId: string;
+  let dataSource: DataSource;
+  const sockets: Socket[] = [];
+
+  const createThread = async (): Promise<string> => {
+    const response = await request(httpServer)
+      .post('/api/v1/threads')
+      .set('Cookie', authCookies)
+      .send({ title: 'Read state thread' })
+      .expect(201);
+    return response.body.id;
+  };
+
+  /**
+   * Writes a message the way the threads agent does: straight to the table,
+   * then the domain event. Going through the HTTP endpoint would start an
+   * agent turn, which needs a model.
+   */
+  const postMessage = async (threadId: string, actorId: string): Promise<void> => {
+    const repository = dataSource.getRepository(ThreadMessageEntity);
+    const saved = await repository.save(
+      repository.create({ threadId, content: 'hello', createdByActorId: actorId }),
+    );
+    const message = await repository.findOneOrFail({
+      where: { id: saved.id },
+      relations: ['createdByActor'],
+    });
+    app
+      .get(EventEmitter2)
+      .emit(MessageCreatedEvent.INTERNAL, new MessageCreatedEvent({ id: actorId }, message));
+  };
+
+  const unreadCount = async (threadId: string): Promise<number> => {
+    const response = await request(httpServer)
+      .get('/api/v1/threads?limit=200')
+      .set('Cookie', authCookies)
+      .expect(200);
+    const item = response.body.items.find((t: { id: string }) => t.id === threadId);
+    expect(item).toBeDefined();
+    return item.unreadCount;
+  };
+
+  /** A browser tab on the thread list: connected and subscribed. */
+  const openListSocket = async (): Promise<Socket> => {
+    const { port } = (httpServer as unknown as { address(): AddressInfo }).address();
+    const socket = io(`http://127.0.0.1:${port}/threads`, {
+      transports: ['websocket'],
+      extraHeaders: { cookie: authCookies },
+      forceNew: true,
+    });
+    sockets.push(socket);
+    await new Promise<void>((resolve, reject) => {
+      socket.once('connect', () => resolve());
+      socket.once('connect_error', reject);
+    });
+    const ack = await socket.emitWithAck('threads.subscribe', {});
+    expect(ack.ok).toBe(true);
+    return socket;
+  };
+
+  const nextEvent = <T>(socket: Socket, name: string): Promise<T> =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`No ${name} event`)), 5000);
+      socket.once(name, (event: T) => {
+        clearTimeout(timer);
+        resolve(event);
+      });
+    });
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    );
+    app.useGlobalFilters(new ProblemDetailsFilter());
+    app.setGlobalPrefix('api/v1');
+    await app.listen(0, '127.0.0.1');
+
+    httpServer = app.getHttpServer();
+    dataSource = app.get(DataSource);
+    userActorId = await ensureTestUser(app);
+    agentActorId = await ensureAgentActor(app, 'read-state-agent', 'Read State Agent');
+    authCookies = await getAuthCookies(httpServer);
+  }, 30000);
+
+  afterAll(async () => {
+    sockets.forEach((socket) => socket.close());
+    await app.close();
+  });
+
+  it('reports no unread messages for an empty thread', async () => {
+    const threadId = await createThread();
+    expect(await unreadCount(threadId)).toBe(0);
+  });
+
+  it("counts other actors' messages as unread, never the caller's own", async () => {
+    const threadId = await createThread();
+
+    await postMessage(threadId, userActorId);
+    expect(await unreadCount(threadId)).toBe(0);
+
+    await postMessage(threadId, agentActorId);
+    await postMessage(threadId, agentActorId);
+    expect(await unreadCount(threadId)).toBe(2);
+  });
+
+  it('clears the count when the thread is marked read, and counts only later messages', async () => {
+    const threadId = await createThread();
+    await postMessage(threadId, agentActorId);
+    expect(await unreadCount(threadId)).toBe(1);
+
+    await request(httpServer)
+      .post(`/api/v1/threads/${threadId}/read`)
+      .set('Cookie', authCookies)
+      .expect(204);
+    expect(await unreadCount(threadId)).toBe(0);
+
+    // Marking read twice is fine.
+    await request(httpServer)
+      .post(`/api/v1/threads/${threadId}/read`)
+      .set('Cookie', authCookies)
+      .expect(204);
+
+    await postMessage(threadId, agentActorId);
+    expect(await unreadCount(threadId)).toBe(1);
+  });
+
+  it('keeps read positions separate per thread', async () => {
+    const readThreadId = await createThread();
+    const unreadThreadId = await createThread();
+    await postMessage(readThreadId, agentActorId);
+    await postMessage(unreadThreadId, agentActorId);
+
+    await request(httpServer)
+      .post(`/api/v1/threads/${readThreadId}/read`)
+      .set('Cookie', authCookies)
+      .expect(204);
+
+    expect(await unreadCount(readThreadId)).toBe(0);
+    expect(await unreadCount(unreadThreadId)).toBe(1);
+  });
+
+  it('returns 404 when marking a missing thread as read', async () => {
+    await request(httpServer)
+      .post('/api/v1/threads/00000000-0000-4000-8000-000000000000/read')
+      .set('Cookie', authCookies)
+      .expect(404);
+  });
+
+  it('tells the thread list when a message is posted', async () => {
+    const threadId = await createThread();
+    const tab = await openListSocket();
+
+    const activity = nextEvent<{ payload: { threadId: string; createdByActorId: string } }>(
+      tab,
+      ThreadWireEvents.THREAD_ACTIVITY,
+    );
+    await postMessage(threadId, agentActorId);
+
+    expect((await activity).payload).toMatchObject({
+      threadId,
+      createdByActorId: agentActorId,
+    });
+  });
+
+  it("tells the user's other tabs when a thread is marked read", async () => {
+    const threadId = await createThread();
+    await postMessage(threadId, agentActorId);
+    const tabA = await openListSocket();
+    const tabB = await openListSocket();
+
+    const readOnA = nextEvent<{ payload: { threadId: string } }>(tabA, ThreadWireEvents.THREAD_READ);
+    const readOnB = nextEvent<{ payload: { threadId: string } }>(tabB, ThreadWireEvents.THREAD_READ);
+
+    // Marked read from somewhere else: a third tab, or another device.
+    await request(httpServer)
+      .post(`/api/v1/threads/${threadId}/read`)
+      .set('Cookie', authCookies)
+      .expect(204);
+
+    expect((await readOnA).payload.threadId).toBe(threadId);
+    expect((await readOnB).payload.threadId).toBe(threadId);
+  });
+});

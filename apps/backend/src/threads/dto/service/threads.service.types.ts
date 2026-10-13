@@ -71,6 +71,8 @@ export type AddTagInput = {
 export type ListThreadsInput = {
   page: number;
   limit: number;
+  /** Whose unread counts to report. Without it every count is 0. */
+  actorId?: string;
 };
 
 // Result types (from service methods)
@@ -95,6 +97,7 @@ export type ThreadListItemResult = {
   id: string;
   title: string;
   stateContextBlockId: string;
+  unreadCount: number;
 };
 
 export type ListThreadsResult = {

@@ -98,3 +98,17 @@ export class ThreadTitleUpdatedEvent extends ThreadDomainEvent<ThreadTitleUpdate
     super(actor, payload);
   }
 }
+
+export type ThreadReadPayload = {
+  threadId: string;
+  /** Whose read position moved. Only this actor's clients are told. */
+  actorId: string;
+};
+
+export class ThreadReadEvent extends ThreadDomainEvent<ThreadReadPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadReadEvent');
+
+  constructor(actor: EventActor, payload: ThreadReadPayload) {
+    super(actor, payload);
+  }
+}

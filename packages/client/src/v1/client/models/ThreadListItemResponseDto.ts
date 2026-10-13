@@ -15,5 +15,9 @@ export type ThreadListItemResponseDto = {
      * State context block ID that tracks the evolving state of this thread
      */
     stateContextBlockId: string;
+    /**
+     * Messages in this thread written by someone else that the caller has not read yet
+     */
+    unreadCount: number;
 };
 

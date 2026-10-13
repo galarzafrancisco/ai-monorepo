@@ -34,6 +34,8 @@ import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { AiProvidersModule } from '../ai-providers/ai-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
+import { ThreadReadStateEntity } from './read-state/thread-read-state.entity';
+import { ThreadReadStateService } from './read-state/thread-read-state.service';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
       ThreadAgentMessageEntity,
       ThreadTurnEntity,
       ThreadTaskSubscriptionEntity,
+      ThreadReadStateEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
@@ -83,6 +86,7 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ThreadTitleService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
+    ThreadReadStateService,
   ],
   exports: [ThreadsService],
 })

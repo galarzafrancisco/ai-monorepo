@@ -1,0 +1,16 @@
+.unread-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}

@@ -22,6 +22,7 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { ThreadsService } from './threads.service';
+import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 import { AttachTaskDto } from './dto/attach-task.dto';
@@ -52,7 +53,10 @@ import { ListThreadMessagesResponseDto } from './dto/list-thread-messages-respon
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(ThreadsScopes.READ.id)
 export class ThreadsController {
-  constructor(private readonly threadsService: ThreadsService) {}
+  constructor(
+    private readonly threadsService: ThreadsService,
+    private readonly threadReadStateService: ThreadReadStateService,
+  ) {}
 
   @Post()
   @RequireScopes(ThreadsScopes.WRITE.id)
@@ -112,10 +116,12 @@ export class ThreadsController {
   })
   async listThreads(
     @Query() query: ListThreadsQueryDto,
+    @CurrentUser() user: UserContext,
   ): Promise<ThreadListResponseDto> {
     const result = await this.threadsService.listThreads({
       page: query.page ?? 1,
       limit: query.limit ?? 20,
+      actorId: user.actorId,
     });
 
     return {
@@ -353,6 +359,21 @@ export class ThreadsController {
       createdByActorId: user.actorId,
     });
     return ThreadMessageResponseDto.fromResult(result);
+  }
+
+  // Read scope is enough: this only moves the caller's own read position.
+  @Post(':id/read')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Mark every message in the thread as read by the caller',
+  })
+  @ApiNoContentResponse({ description: 'Thread marked as read' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async markThreadRead(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadReadStateService.markRead(params.id, user.actorId);
   }
 
   @Get(':id/messages')

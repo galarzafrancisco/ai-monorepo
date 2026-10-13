@@ -422,4 +422,25 @@ export class ThreadsService {
             },
         });
     }
+    /**
+     * Mark every message in the thread as read by the caller
+     * @param id Thread UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerMarkThreadRead(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/threads/{id}/read',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
 }
