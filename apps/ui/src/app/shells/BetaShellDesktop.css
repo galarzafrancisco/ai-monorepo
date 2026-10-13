@@ -103,6 +103,7 @@
 } */
 
 .beta-shell__desktop__nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -149,6 +150,24 @@
   transform: translateX(-4px);
   width: 0;
   overflow: hidden;
+}
+
+.beta-shell__desktop__nav-badge {
+  margin-left: auto;
+}
+
+/* Collapsed → no room beside the icon, so the badge sits on its corner */
+.beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__nav-badge {
+  position: absolute;
+  top: 0;
+  left: calc(50% + var(--space-1));
+  margin-left: 0;
+}
+
+/* The active item is already accent-coloured; swap so the badge stays visible */
+.beta-shell__desktop__nav-item--active .beta-shell__desktop__nav-badge {
+  background: var(--accent-contrast);
+  color: var(--accent);
 }
 
 .beta-shell__desktop__nav-item:hover {

@@ -13,6 +13,7 @@ import { LogoutPage } from './routes/LogoutPage';
 import { ContextRoutes } from '../features/context/ContextRoutes';
 import { AgentsRoutes } from '../features/agents/AgentsRoutes';
 import { ThreadsRoutes } from '../features/threads/ThreadsRoutes';
+import { ThreadsProvider } from '../features/threads/ThreadsProvider';
 import { ToolsRoutes } from '../features/tools/ToolsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 import { ExecutionsRoutes } from '../features/executions/ExecutionsRoutes';
@@ -92,9 +93,11 @@ export function App() {
                     <ProtectedRoute>
                       <CommandPaletteProvider>
                         <WalkthroughGate>
-                          <BetaShell>
-                            <BetaAppRoutes />
-                          </BetaShell>
+                          <ThreadsProvider>
+                            <BetaShell>
+                              <BetaAppRoutes />
+                            </BetaShell>
+                          </ThreadsProvider>
                         </WalkthroughGate>
                       </CommandPaletteProvider>
                     </ProtectedRoute>

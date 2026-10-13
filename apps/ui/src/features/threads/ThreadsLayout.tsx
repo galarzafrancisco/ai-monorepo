@@ -12,9 +12,15 @@ export function ThreadsLayout(): React.JSX.Element {
   const { id: threadId } = useParams<{ id?: string }>();
   const isThreadDetailRoute = Boolean(threadId);
   const navigate = useNavigate();
-  const { threads, isLoading, error, sectionTitle, navItems, optimisticDraftThread } = useThreadsCtx();
+  const { threads, isLoading, error, sectionTitle, navItems, optimisticDraftThread, refreshThreads } = useThreadsCtx();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const unreadMessageCount = threads.reduce((sum, thread) => sum + thread.unreadCount, 0);
+
+  // The list outlives this section. Threads created or deleted elsewhere send
+  // no event to the list, so catch up each time the user comes back to it.
+  useEffect(() => {
+    void refreshThreads();
+  }, [refreshThreads]);
 
   useEffect(() => {
     if (!isDesktop) return;

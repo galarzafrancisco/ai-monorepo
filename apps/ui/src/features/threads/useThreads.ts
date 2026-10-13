@@ -219,6 +219,7 @@ export const useThreads = () => {
     // Data
     threads,
     loadThreads,
+    refreshThreads,
     getThread,
     createThread,
     deleteThread,
