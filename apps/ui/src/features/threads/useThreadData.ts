@@ -74,7 +74,10 @@ export interface UseThreadDataResult {
 
   // Actions
   loadThread: () => Promise<void>;
-  /** Loads the latest messages, replacing whatever was loaded. */
+  /**
+   * Loads the latest messages, replacing whatever was loaded before the call.
+   * Messages that arrive while it runs are kept.
+   */
   loadMessages: () => Promise<void>;
   /**
    * Fetches the latest messages and adds the missing ones to the loaded ones,
@@ -143,13 +146,22 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
     const load = async () => {
       setChatIsLoading(true);
       setChatError(null);
+      // What this load replaces. Anything added after this point came over the
+      // socket while the request was in flight, and the response may predate it.
+      const replacedIds = new Set(messagesRef.current.map((message) => message.id));
       try {
         const response = await ThreadsService.ThreadsController_listMessages({
           id: threadId,
           page: 1,
           limit: MESSAGES_PAGE_SIZE,
         });
-        setMessages(sortMessages(response.items));
+        const pageIds = new Set(response.items.map((message) => message.id));
+        setMessages((prev) =>
+          sortMessages([
+            ...response.items,
+            ...prev.filter((message) => !replacedIds.has(message.id) && !pageIds.has(message.id)),
+          ]),
+        );
         setHasOlderMessages(response.total > MESSAGES_PAGE_SIZE);
         nextOlderPageRef.current = 2;
       } catch (err) {
