@@ -55,6 +55,22 @@ export class ThreadEntity {
   @Column({ type: 'text', nullable: true, name: 'model_id', update: false })
   modelId!: string | null;
 
+  /**
+   * Secret the threads agent uses to tell Taico-written tags from typed ones.
+   * Read and written only by ThreadAgentLogService, with its own SQL.
+   * `select: false`: it is never loaded with the thread, so it cannot end up in
+   * an API response or an event.
+   */
+  @Column({
+    type: 'text',
+    nullable: true,
+    name: 'agent_context_key',
+    select: false,
+    insert: false,
+    update: false,
+  })
+  agentContextKey?: string | null;
+
   @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
   createdByActorId!: string;
 

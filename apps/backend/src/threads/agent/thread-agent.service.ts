@@ -18,7 +18,7 @@ import {
   ThreadAgentResponseDeltaEvent,
   ThreadUpdatedEvent,
 } from '../events/threads.events';
-import { buildModelMessages } from './agent-context.utils';
+import { buildModelMessages, withContextKey } from './agent-context.utils';
 import { ChatModelFactory, ResolvedChatModel } from './chat-model.factory';
 import { TaicoMcpToolsFactory } from './taico-mcp-tools.factory';
 import { AgentMessageDraft, ThreadAgentLogService } from './thread-agent-log.service';
@@ -175,7 +175,8 @@ export class ThreadAgentService {
     if (injected) {
       rows = await this.agentLog.loadContext(threadId);
     }
-    const messages = buildModelMessages(rows, resolved, (row) => {
+    const contextKey = await this.agentLog.getOrCreateContextKey(threadId);
+    const messages = buildModelMessages(withContextKey(rows, contextKey), resolved, (row) => {
       this.logger.warn({
         message: 'Skipping agent log row that does not match the message schema',
         threadId,
@@ -198,6 +199,7 @@ export class ThreadAgentService {
         turn,
         self,
         resolved,
+        contextKey,
         messages,
         tools: {
           ...mcp.tools,
@@ -218,6 +220,7 @@ export class ThreadAgentService {
     turn: ClaimedTurn;
     self: AgentResult;
     resolved: ResolvedChatModel;
+    contextKey: string;
     messages: ModelMessage[];
     tools: ToolSet;
   }): Promise<number | null> {
@@ -230,7 +233,7 @@ export class ThreadAgentService {
 
     const result = streamText({
       model: resolved.model,
-      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId),
+      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId, input.contextKey),
       messages: input.messages,
       tools: input.tools,
       providerOptions: resolved.providerOptions,

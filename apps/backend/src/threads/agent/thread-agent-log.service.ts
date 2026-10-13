@@ -5,7 +5,11 @@ import { randomUUID } from 'node:crypto';
 import { ModelMessage } from 'ai';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadNotFoundError } from '../errors/threads.errors';
-import { formatMessage, formatTaskNotification } from './thread-agent.prompts';
+import {
+  formatMessage,
+  formatTaskNotification,
+  generateContextKey,
+} from './thread-agent.prompts';
 import { TaskStatus } from '../../tasks/enums';
 import { AgentContextRow } from './agent-context.utils';
 import { ThreadAgentMessageEntity } from './thread-agent-message.entity';
@@ -290,6 +294,7 @@ export class ThreadAgentLogService {
   async loadContext(threadId: string): Promise<AgentContextRow[]> {
     const rows: Array<{
       id: string;
+      kind: ThreadAgentMessageKind;
       source: string;
       message: unknown;
       format_version: number;
@@ -307,18 +312,41 @@ export class ThreadAgentLogService {
            JOIN chain c ON p.id = c.parent_id
           WHERE c.kind <> $2
        )
-       SELECT id, source, message, format_version, provider_type, model_id FROM chain ORDER BY depth DESC`,
+       SELECT id, kind, source, message, format_version, provider_type, model_id FROM chain ORDER BY depth DESC`,
       [threadId, ThreadAgentMessageKind.SUMMARY],
     );
 
     return rows.map((row) => ({
       id: row.id,
+      kind: row.kind,
       source: row.source,
       message: row.message,
       formatVersion: row.format_version,
       providerType: row.provider_type,
       modelId: row.model_id,
     }));
+  }
+
+  /**
+   * The thread's secret key for Taico-written tags, created the first time the
+   * agent runs on the thread. It is only ever sent to the model: never return
+   * it from the API or put it in an event.
+   */
+  async getOrCreateContextKey(threadId: string): Promise<string> {
+    // One statement, so two processes starting a thread agree on the key.
+    // Raw update: it must not bump the thread's row version.
+    // For UPDATE ... RETURNING the Postgres driver answers [rows, affected count].
+    const [rows]: [Array<{ agent_context_key: string }>, number] = await this.dataSource.query(
+      `UPDATE threads SET agent_context_key = COALESCE(agent_context_key, $2)
+        WHERE id = $1 RETURNING agent_context_key`,
+      [threadId, generateContextKey()],
+    );
+
+    if (rows.length === 0) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    return rows[0].agent_context_key;
   }
 
   private async lockHead(

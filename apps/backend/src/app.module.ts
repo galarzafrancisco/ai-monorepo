@@ -30,6 +30,7 @@ import { ActorSoftDelete1760900000000 } from './migrations/1760900000000-ActorSo
 import { ThreadTaskSubscriptions1761000000000 } from './migrations/1761000000000-ThreadTaskSubscriptions';
 import { ThreadTaskSubscriptionWaitingFor1761100000000 } from './migrations/1761100000000-ThreadTaskSubscriptionWaitingFor';
 import { SearchIndex1761200000000 } from './migrations/1761200000000-SearchIndex';
+import { ThreadAgentContextKey1761300000000 } from './migrations/1761300000000-ThreadAgentContextKey';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -61,6 +62,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadTaskSubscriptions1761000000000,
         ThreadTaskSubscriptionWaitingFor1761100000000,
         SearchIndex1761200000000,
+        ThreadAgentContextKey1761300000000,
       ],
     }),
     EventEmitterModule.forRoot(),

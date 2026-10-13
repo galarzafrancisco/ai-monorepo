@@ -1,8 +1,13 @@
 import { ModelMessage, modelMessageSchema } from 'ai';
-import { THREAD_AGENT_MESSAGE_FORMAT_VERSION } from './thread-agent.enums';
+import {
+  THREAD_AGENT_MESSAGE_FORMAT_VERSION,
+  ThreadAgentMessageKind,
+} from './thread-agent.enums';
+import { addContextKey } from './thread-agent.prompts';
 
 export type AgentContextRow = {
   id: string;
+  kind: ThreadAgentMessageKind;
   /** Who produced the row, e.g. 'user', 'model', 'hook:easter-egg'. */
   source: string;
   message: unknown;
@@ -36,6 +41,27 @@ function stripProviderSpecificParts(
     .map(({ providerOptions: _partOptions, ...part }) => part);
 
   return content.length > 0 ? { ...rest, content } : null;
+}
+
+/**
+ * Marks the rows Taico wrote itself (hook context, task notifications,
+ * summaries) with the thread's key, so the model can tell them from a tag
+ * someone typed. Rows are stored without the key: it is added on the way to
+ * the model, which also covers rows written before threads had a key.
+ */
+export function withContextKey(rows: AgentContextRow[], contextKey: string): AgentContextRow[] {
+  return rows.map((row) => {
+    if (row.kind === ThreadAgentMessageKind.MESSAGE) {
+      return row;
+    }
+
+    const message = row.message as { content?: unknown } | null;
+    if (typeof message?.content !== 'string') {
+      return row;
+    }
+
+    return { ...row, message: { ...message, content: addContextKey(message.content, contextKey) } };
+  });
 }
 
 /**

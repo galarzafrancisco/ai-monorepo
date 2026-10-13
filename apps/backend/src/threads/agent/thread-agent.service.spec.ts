@@ -82,9 +82,11 @@ function createHarness(steps: unknown[][]) {
       .fn()
       .mockResolvedValue({ triggerActor: null, notifiedTaskIds: [] }),
     hasPendingTaskNotifications: jest.fn().mockResolvedValue(false),
+    getOrCreateContextKey: jest.fn().mockResolvedValue('a1b2c3'),
     loadContext: jest.fn().mockResolvedValue([
       {
         id: 'm0',
+        kind: 'message',
         source: 'user',
         message: { role: 'user', content: '[Fran @fran] says:\nhello' },
         formatVersion: 1,
