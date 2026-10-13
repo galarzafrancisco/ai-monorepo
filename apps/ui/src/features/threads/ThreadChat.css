@@ -331,3 +331,8 @@
   border-radius: var(--space-1);
   margin: var(--space-2) 0;
 }
+
+.thread-chat__older {
+  display: flex;
+  justify-content: center;
+}

@@ -34,8 +34,11 @@ export const useThread = (threadId: string) => {
     chatError,
     chatIsSending,
     chatSendError,
+    hasOlderMessages,
+    isLoadingOlderMessages,
     loadThread,
     loadMessages,
+    loadOlderMessages,
     sendMessage,
     setMessages,
   } = useThreadData(threadId);
@@ -73,11 +76,14 @@ export const useThread = (threadId: string) => {
     chatError,
     chatIsSending,
     chatSendError,
+    hasOlderMessages,
+    isLoadingOlderMessages,
 
     // Data
     messages,
     agentActivity,
     agentResponseStream,
     sendMessage,
+    loadOlderMessages,
   };
 };

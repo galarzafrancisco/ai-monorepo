@@ -1461,7 +1461,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List messages in a thread */
+        /** List messages in a thread, newest first */
         get: operations["ThreadsController_listMessages"];
         put?: never;
         /** Create a message in the thread */

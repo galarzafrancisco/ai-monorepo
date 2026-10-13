@@ -377,7 +377,7 @@ export class ThreadsController {
   }
 
   @Get(':id/messages')
-  @ApiOperation({ summary: 'List messages in a thread' })
+  @ApiOperation({ summary: 'List messages in a thread, newest first' })
   @ApiOkResponse({
     type: ListThreadMessagesResponseDto,
     description: 'Paginated list of thread messages',

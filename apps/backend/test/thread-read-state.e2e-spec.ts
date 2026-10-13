@@ -119,6 +119,37 @@ describe('Thread read state E2E', () => {
     await app.close();
   });
 
+  it('lists messages newest first, so the first page is always the latest ones', async () => {
+    const threadId = await createThread();
+    const repository = dataSource.getRepository(ThreadMessageEntity);
+    const start = Date.now() - 60_000;
+    for (let i = 1; i <= 5; i++) {
+      await repository.save(
+        repository.create({
+          threadId,
+          content: `message ${i}`,
+          createdByActorId: userActorId,
+          createdAt: new Date(start + i * 1000),
+        }),
+      );
+    }
+
+    const listPage = async (page: number): Promise<{ total: number; contents: string[] }> => {
+      const response = await request(httpServer)
+        .get(`/api/v1/threads/${threadId}/messages?page=${page}&limit=2`)
+        .set('Cookie', authCookies)
+        .expect(200);
+      return {
+        total: response.body.total,
+        contents: response.body.items.map((m: { content: string }) => m.content),
+      };
+    };
+
+    expect(await listPage(1)).toEqual({ total: 5, contents: ['message 5', 'message 4'] });
+    expect(await listPage(2)).toEqual({ total: 5, contents: ['message 3', 'message 2'] });
+    expect(await listPage(3)).toEqual({ total: 5, contents: ['message 1'] });
+  });
+
   it('reports no unread messages for an empty thread', async () => {
     const threadId = await createThread();
     expect(await unreadCount(threadId)).toBe(0);
