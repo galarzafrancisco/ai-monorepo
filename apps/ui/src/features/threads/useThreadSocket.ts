@@ -48,6 +48,11 @@ export interface UseThreadSocketResult {
     content: string;
   } | null;
   onMessageCreated: (handler: (message: Message) => void) => void;
+  /**
+   * Registers a handler called each time the socket joins the thread room:
+   * on the first connect and on every reconnect.
+   */
+  onSubscribed: (handler: () => void) => void;
 }
 
 /**
@@ -69,6 +74,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
   } | null>(null);
   const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageHandlerRef = useRef<((message: Message) => void) | null>(null);
+  const subscribedHandlerRef = useRef<(() => void) | null>(null);
 
   const scheduleActivityReset = useCallback(() => {
     if (activityTimeoutRef.current) {
@@ -84,6 +90,10 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
     messageHandlerRef.current = handler;
   }, []);
 
+  const onSubscribed = useCallback((handler: () => void) => {
+    subscribedHandlerRef.current = handler;
+  }, []);
+
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
@@ -94,6 +104,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
       newSocket.emit('threads.subscribe', { threadId }, (ack: ThreadsSubscribeAck) => {
         if (ack.ok) {
           setIsConnected(true);
+          subscribedHandlerRef.current?.();
         } else {
           console.error('Failed to subscribe to thread room', { threadId, ack });
           setIsConnected(false);
@@ -199,5 +210,6 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
     agentActivity,
     agentResponseStream,
     onMessageCreated,
+    onSubscribed,
   };
 };
