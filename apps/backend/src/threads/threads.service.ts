@@ -48,6 +48,7 @@ import { ThreadAgentService } from './agent/thread-agent.service';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadMessageWriterService } from './thread-message-writer.service';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -89,6 +90,7 @@ export class ThreadsService {
     private readonly threadAgentService: ThreadAgentService,
     private readonly threadTitleService: ThreadTitleService,
     private readonly threadReadStateService: ThreadReadStateService,
+    private readonly threadMessageWriter: ThreadMessageWriterService,
   ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -304,8 +306,9 @@ export class ThreadsService {
     const [threads, total] = await this.threadRepository.findAndCount({
       skip,
       take: input.limit,
-      // The id breaks ties, so a thread never lands on two pages or on none.
-      order: { updatedAt: 'DESC', id: 'DESC' },
+      // Latest visible message first. The id breaks ties, so a thread never
+      // lands on two pages or on none.
+      order: { lastActivityAt: 'DESC', id: 'DESC' },
     });
 
     const unreadCounts = input.actorId
@@ -327,6 +330,7 @@ export class ThreadsService {
         id: thread.id,
         title: thread.title,
         stateContextBlockId: thread.stateContextBlockId,
+        lastActivityAt: thread.lastActivityAt,
         unreadCount: unreadCounts.get(thread.id) ?? 0,
       })),
       total,
@@ -1052,27 +1056,15 @@ export class ThreadsService {
       where: { threadId: input.threadId },
     });
 
-    const message = this.threadMessageRepository.create({
+    const messageWithRelations = await this.threadMessageWriter.write({
       threadId: input.threadId,
       content: input.content,
       createdByActorId: input.createdByActorId,
     });
 
-    const savedMessage = await this.threadMessageRepository.save(message);
-
-    // Reload with relations
-    const messageWithRelations = await this.threadMessageRepository.findOne({
-      where: { id: savedMessage.id },
-      relations: ['createdByActor'],
-    });
-
-    if (!messageWithRelations) {
-      throw new Error('Failed to reload message after creation');
-    }
-
     this.logger.log({
       message: 'Thread message created',
-      messageId: savedMessage.id,
+      messageId: messageWithRelations.id,
       threadId: input.threadId,
     });
 

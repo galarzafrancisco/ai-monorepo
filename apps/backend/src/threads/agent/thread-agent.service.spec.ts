@@ -111,16 +111,12 @@ function createHarness(steps: unknown[][]) {
     }),
   };
 
-  const threadMessageRepository = {
-    create: (input: Record<string, unknown>) => input,
-    save: jest.fn(async (input: { content: string; agentMessageId: string | null }) => {
+  const messageWriter = {
+    write: jest.fn(async (input: { content: string; agentMessageId: string | null }) => {
       const saved = { id: `display-${displayMessages.length + 1}`, ...input };
       displayMessages.push(saved);
       return saved;
     }),
-    findOne: jest.fn(async ({ where }: { where: { id: string } }) =>
-      displayMessages.find((message) => message.id === where.id),
-    ),
   };
 
   const mcpClose = jest.fn().mockResolvedValue(undefined);
@@ -149,7 +145,7 @@ function createHarness(steps: unknown[][]) {
 
   const service = new ThreadAgentService(
     { findOne: jest.fn().mockResolvedValue({ id: THREAD_ID, aiProviderId: null, modelId: null }) } as never,
-    threadMessageRepository as never,
+    messageWriter as never,
     {
       getAgentBySlug: jest.fn().mockResolvedValue({
         actorId: AGENT_ACTOR_ID,

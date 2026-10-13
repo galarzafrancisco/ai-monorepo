@@ -154,14 +154,17 @@ export interface MessageCreatedWireEvent {
 
 /**
  * Thread activity event
- * Emitted to the thread list when a message is posted in any thread, so lists
- * can show it as unread without receiving the message itself.
+ * Emitted to the thread list when a message people can see is posted in any
+ * thread, so lists can move the thread up and show it as unread without
+ * receiving the message itself.
  */
 export interface ThreadActivityWireEvent {
   payload: {
     threadId: string;
     messageId: string;
     createdByActorId: string | null;
+    /** When the message was posted: the thread's new `lastActivityAt`. ISO 8601. */
+    createdAt: string;
   };
   actor: MinimalEventActor;
 }

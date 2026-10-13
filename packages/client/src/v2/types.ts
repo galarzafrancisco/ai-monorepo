@@ -713,6 +713,7 @@ export interface ThreadListItemResponseDto {
   id: string;
   title: string;
   stateContextBlockId: string;
+  lastActivityAt: string;
   unreadCount: number;
 }
 

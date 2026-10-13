@@ -128,7 +128,10 @@ export class ThreadsController {
     });
 
     return {
-      items: result.items,
+      items: result.items.map((item) => ({
+        ...item,
+        lastActivityAt: item.lastActivityAt.toISOString(),
+      })),
       total: result.total,
       page: result.page,
       limit: result.limit,

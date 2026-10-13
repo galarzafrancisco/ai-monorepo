@@ -97,6 +97,7 @@ export type ThreadListItemResult = {
   id: string;
   title: string;
   stateContextBlockId: string;
+  lastActivityAt: Date;
   unreadCount: number;
 };
 

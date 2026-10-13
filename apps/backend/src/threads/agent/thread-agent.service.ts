@@ -10,7 +10,7 @@ import { AiModelJob } from 'src/ai-providers/enums';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadEntity } from '../thread.entity';
-import { ThreadMessageEntity } from '../thread-message.entity';
+import { ThreadMessageWriterService } from '../thread-message-writer.service';
 import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
@@ -54,8 +54,7 @@ export class ThreadAgentService {
   constructor(
     @InjectRepository(ThreadEntity)
     private readonly threadRepository: Repository<ThreadEntity>,
-    @InjectRepository(ThreadMessageEntity)
-    private readonly threadMessageRepository: Repository<ThreadMessageEntity>,
+    private readonly messageWriter: ThreadMessageWriterService,
     private readonly agentsService: AgentsService,
     private readonly agentLog: ThreadAgentLogService,
     private readonly turns: ThreadTurnsService,
@@ -329,22 +328,12 @@ export class ThreadAgentService {
     agentMessageId: string | null;
   }): Promise<void> {
     try {
-      const saved = await this.threadMessageRepository.save(
-        this.threadMessageRepository.create({
-          threadId: input.threadId,
-          content: input.content,
-          createdByActorId: input.actorId,
-          agentMessageId: input.agentMessageId,
-        }),
-      );
-
-      const withRelations = await this.threadMessageRepository.findOne({
-        where: { id: saved.id },
-        relations: ['createdByActor'],
+      const withRelations = await this.messageWriter.write({
+        threadId: input.threadId,
+        content: input.content,
+        createdByActorId: input.actorId,
+        agentMessageId: input.agentMessageId,
       });
-      if (!withRelations) {
-        return;
-      }
 
       this.eventEmitter.emit(
         MessageCreatedEvent.INTERNAL,

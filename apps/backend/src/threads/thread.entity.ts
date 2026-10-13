@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   VersionColumn,
+  Index,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -18,6 +19,8 @@ import { ContextBlockEntity } from '../context/block.entity';
 import { TagEntity } from '../meta/tag.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
 
+// Serves the thread list: newest activity first, id as the tie-break.
+@Index('IDX_threads_last_activity', ['lastActivityAt', 'id'])
 @Entity({ name: 'threads' })
 export class ThreadEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -135,6 +138,22 @@ export class ThreadEntity {
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
+
+  /**
+   * When the latest message people can see was posted; the creation time until
+   * there is one. The thread list is ordered by it.
+   *
+   * Unlike `updatedAt`, renaming or tagging a thread does not move it, and
+   * neither does anything the agent does that people are not shown.
+   * `update: false`: only ThreadMessageWriterService moves it, with its own SQL.
+   */
+  @Column({
+    type: 'timestamptz',
+    name: 'last_activity_at',
+    default: () => 'now()',
+    update: false,
+  })
+  lastActivityAt!: Date;
 
   @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
   deletedAt?: Date | null;

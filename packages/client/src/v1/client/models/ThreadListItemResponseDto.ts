@@ -16,6 +16,10 @@ export type ThreadListItemResponseDto = {
      */
     stateContextBlockId: string;
     /**
+     * When the latest message people can see was posted, or when the thread was created if it has none. The list is ordered by this, newest first
+     */
+    lastActivityAt: string;
+    /**
      * Messages in this thread written by someone else that the caller has not read yet
      */
     unreadCount: number;

@@ -165,6 +165,7 @@ export class ThreadsGateway
         threadId: event.payload.threadId,
         messageId: event.payload.id,
         createdByActorId: event.payload.createdByActorId,
+        createdAt: event.payload.createdAt.toISOString(),
       },
       actor: { id: event.actor.id },
     };

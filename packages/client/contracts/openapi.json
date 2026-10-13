@@ -11256,6 +11256,11 @@
             "description": "State context block ID that tracks the evolving state of this thread",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "lastActivityAt": {
+            "type": "string",
+            "description": "When the latest message people can see was posted, or when the thread was created if it has none. The list is ordered by this, newest first",
+            "example": "2026-01-01T00:00:00.000Z"
+          },
           "unreadCount": {
             "type": "number",
             "description": "Messages in this thread written by someone else that the caller has not read yet",
@@ -11266,6 +11271,7 @@
           "id",
           "title",
           "stateContextBlockId",
+          "lastActivityAt",
           "unreadCount"
         ]
       },
