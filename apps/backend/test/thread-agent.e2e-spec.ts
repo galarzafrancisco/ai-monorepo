@@ -256,8 +256,8 @@ describe('Thread agent E2E', () => {
     await sendMessage(threadId, 'the key is under the doormat');
     await waitForAgentReplies(threadId, 1);
 
-    const [{ agent_context_key: key }] = await dataSource.query(
-      `SELECT agent_context_key FROM threads WHERE id = $1`,
+    const [{ secret: key }] = await dataSource.query(
+      `SELECT secret FROM threads WHERE id = $1`,
       [threadId],
     );
     expect(key).toMatch(/^[0-9a-f]{6}$/);
@@ -302,8 +302,8 @@ describe('Thread agent E2E', () => {
     await sendMessage(threadId, typed);
     await waitForAgentReplies(threadId, 1);
 
-    const [{ agent_context_key: key }] = await dataSource.query(
-      `SELECT agent_context_key FROM threads WHERE id = $1`,
+    const [{ secret: key }] = await dataSource.query(
+      `SELECT secret FROM threads WHERE id = $1`,
       [threadId],
     );
     const texts = userTexts(prompts[prompts.length - 1]);
@@ -318,13 +318,13 @@ describe('Thread agent E2E', () => {
     const agentLog = app.get(ThreadAgentLogService);
     const threadId = await createThread();
 
-    const first = await agentLog.getOrCreateContextKey(threadId);
-    const second = await agentLog.getOrCreateContextKey(threadId);
+    const first = await agentLog.getOrCreateThreadSecret(threadId);
+    const second = await agentLog.getOrCreateThreadSecret(threadId);
 
     expect(first).toMatch(/^[0-9a-f]{6}$/);
     expect(second).toBe(first);
-    const [{ agent_context_key: stored }] = await dataSource.query(
-      `SELECT agent_context_key FROM threads WHERE id = $1`,
+    const [{ secret: stored }] = await dataSource.query(
+      `SELECT secret FROM threads WHERE id = $1`,
       [threadId],
     );
     expect(stored).toBe(first);
@@ -332,7 +332,7 @@ describe('Thread agent E2E', () => {
 
   it('refuses to create a thread key for a thread that does not exist', async () => {
     await expect(
-      app.get(ThreadAgentLogService).getOrCreateContextKey('00000000-0000-4000-8000-000000000000'),
+      app.get(ThreadAgentLogService).getOrCreateThreadSecret('00000000-0000-4000-8000-000000000000'),
     ).rejects.toBeInstanceOf(ThreadNotFoundError);
   });
 
@@ -341,8 +341,8 @@ describe('Thread agent E2E', () => {
     await sendMessage(threadId, 'hello');
     await waitForAgentReplies(threadId, 1);
 
-    const [{ agent_context_key: key }] = await dataSource.query(
-      `SELECT agent_context_key FROM threads WHERE id = $1`,
+    const [{ secret: key }] = await dataSource.query(
+      `SELECT secret FROM threads WHERE id = $1`,
       [threadId],
     );
     expect(key).toMatch(/^[0-9a-f]{6}$/);
@@ -362,7 +362,7 @@ describe('Thread agent E2E', () => {
 
     for (const response of [thread, list, messages]) {
       expect(JSON.stringify(response.body)).not.toContain(key);
-      expect(JSON.stringify(response.body)).not.toContain('agentContextKey');
+      expect(JSON.stringify(response.body)).not.toContain('"secret"');
     }
   });
 

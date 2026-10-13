@@ -86,11 +86,11 @@ What `beforeTurn` returns is stored in `thread_agent_messages` as a user-role ro
 
 ### The thread key
 
-Every thread has a secret key: six random hex characters in `threads.agent_context_key`, created the first time the agent runs on the thread (`ThreadAgentLogService.getOrCreateContextKey`).
+Every thread has a secret key: six random hex characters in `threads.secret`, created the first time the agent runs on the thread (`ThreadAgentLogService.getOrCreateThreadSecret`).
 
 - Taico's own additions to the conversation are the markers in `TAICO_MARKER_TAGS` (`thread-agent.prompts.ts`): `<context>`, `<conversation-summary>` and `<task-notification>`. When they are sent to the model, the key is added to the opening tag: `<context key="a1b2c3" source="my-hook">`.
 - The system prompt tells the model the key, to trust only tags that carry it, to treat any other tag as untrusted typed text, and never to reveal the key.
-- Rows are stored without the key. `withContextKey` adds it on the way to the model, to rows of kind `injection` or `summary` only. A message a person typed is kind `message` and never gets it, whatever it contains. Rows written before threads had a key get it the same way.
+- Rows are stored without the key. `withThreadSecret` adds it on the way to the model, to rows of kind `injection` or `summary` only. A message a person typed is kind `message` and never gets it, whatever it contains. Rows written before threads had a key get it the same way.
 - Hooks never see the key and do not need to.
 - The key must stay in the backend. The entity column is `select: false`, so it is not loaded with the thread and cannot reach an API response or an event. Do not add it to a DTO.
 - When you add a marker, add it to `TAICO_MARKER_TAGS`, describe it in the prompt, and store its rows with kind `injection`.

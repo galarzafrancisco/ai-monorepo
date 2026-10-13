@@ -3,7 +3,7 @@ import {
   THREAD_AGENT_MESSAGE_FORMAT_VERSION,
   ThreadAgentMessageKind,
 } from './thread-agent.enums';
-import { addContextKey } from './thread-agent.prompts';
+import { addThreadSecret } from './thread-agent.prompts';
 
 export type AgentContextRow = {
   id: string;
@@ -49,7 +49,7 @@ function stripProviderSpecificParts(
  * someone typed. Rows are stored without the key: it is added on the way to
  * the model, which also covers rows written before threads had a key.
  */
-export function withContextKey(rows: AgentContextRow[], contextKey: string): AgentContextRow[] {
+export function withThreadSecret(rows: AgentContextRow[], threadSecret: string): AgentContextRow[] {
   return rows.map((row) => {
     if (row.kind === ThreadAgentMessageKind.MESSAGE) {
       return row;
@@ -60,7 +60,7 @@ export function withContextKey(rows: AgentContextRow[], contextKey: string): Age
       return row;
     }
 
-    return { ...row, message: { ...message, content: addContextKey(message.content, contextKey) } };
+    return { ...row, message: { ...message, content: addThreadSecret(message.content, threadSecret) } };
   });
 }
 

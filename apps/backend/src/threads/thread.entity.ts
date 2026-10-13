@@ -64,12 +64,12 @@ export class ThreadEntity {
   @Column({
     type: 'text',
     nullable: true,
-    name: 'agent_context_key',
+    name: 'secret',
     select: false,
     insert: false,
     update: false,
   })
-  agentContextKey?: string | null;
+  secret?: string | null;
 
   @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
   createdByActorId!: string;

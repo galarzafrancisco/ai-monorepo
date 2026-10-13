@@ -8,7 +8,7 @@ import { ThreadNotFoundError } from '../errors/threads.errors';
 import {
   formatMessage,
   formatTaskNotification,
-  generateContextKey,
+  generateThreadSecret,
 } from './thread-agent.prompts';
 import { TaskStatus } from '../../tasks/enums';
 import { AgentContextRow } from './agent-context.utils';
@@ -332,23 +332,23 @@ export class ThreadAgentLogService {
    * agent runs on the thread. It is only ever sent to the model: never return
    * it from the API or put it in an event.
    */
-  async getOrCreateContextKey(threadId: string): Promise<string> {
+  async getOrCreateThreadSecret(threadId: string): Promise<string> {
     // One statement, so two processes starting a thread agree on the key.
     // Raw update: it must not bump the thread's row version.
     // TypeORM's Postgres query runner answers a raw UPDATE with
     // [rows, affected count], unlike SELECT and INSERT which answer rows only.
     // thread-agent.e2e-spec.ts runs this against a real database.
-    const [rows]: [Array<{ agent_context_key: string }>, number] = await this.dataSource.query(
-      `UPDATE threads SET agent_context_key = COALESCE(agent_context_key, $2)
-        WHERE id = $1 RETURNING agent_context_key`,
-      [threadId, generateContextKey()],
+    const [rows]: [Array<{ secret: string }>, number] = await this.dataSource.query(
+      `UPDATE threads SET secret = COALESCE(secret, $2)
+        WHERE id = $1 RETURNING secret`,
+      [threadId, generateThreadSecret()],
     );
 
     if (rows.length === 0) {
       throw new ThreadNotFoundError(threadId);
     }
 
-    return rows[0].agent_context_key;
+    return rows[0].secret;
   }
 
   private async lockHead(
