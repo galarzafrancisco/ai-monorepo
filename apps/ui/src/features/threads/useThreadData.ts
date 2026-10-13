@@ -2,11 +2,13 @@ import { useState, useCallback, useRef } from 'react';
 import { ThreadsService } from './api';
 import type { Thread, Message } from './types';
 
-const sortMessages = (messages: Message[]): Message[] => {
+/** Oldest first, by the same fields the API orders by: creation time, then id. */
+export const sortMessages = (messages: Message[]): Message[] => {
   return [...messages].sort((a, b) => {
-    const dateA = new Date(a.updatedAt).getTime();
-    const dateB = new Date(b.updatedAt).getTime();
-    return dateA - dateB; // Ascending order (oldest first)
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    if (dateA !== dateB) return dateA - dateB;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 };
 

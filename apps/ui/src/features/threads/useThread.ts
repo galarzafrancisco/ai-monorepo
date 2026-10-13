@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
 import type { Message } from './types';
-import { useThreadData } from './useThreadData';
+import { sortMessages, useThreadData } from './useThreadData';
 import { useThreadSocket } from './useThreadSocket';
-
-const sortMessages = (messages: Message[]): Message[] => {
-  return [...messages].sort((a, b) => {
-    const dateA = new Date(a.updatedAt).getTime();
-    const dateB = new Date(b.updatedAt).getTime();
-    return dateA - dateB; // Ascending order (oldest first)
-  });
-};
 
 /**
  * Main hook for thread interactions - orchestrates data fetching and WebSocket transport
