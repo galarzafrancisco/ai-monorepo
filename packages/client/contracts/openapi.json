@@ -5023,6 +5023,40 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/read": {
+      "post": {
+        "operationId": "ThreadsController_markThreadRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread marked as read"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Mark every message in the thread as read by the caller",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/agents": {
       "post": {
         "operationId": "AgentsController_createAgent",
@@ -11180,12 +11214,18 @@
             "type": "string",
             "description": "State context block ID that tracks the evolving state of this thread",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "unreadCount": {
+            "type": "number",
+            "description": "Messages in this thread written by someone else that the caller has not read yet",
+            "example": 2
           }
         },
         "required": [
           "id",
           "title",
-          "stateContextBlockId"
+          "stateContextBlockId",
+          "unreadCount"
         ]
       },
       "ThreadListResponseDto": {

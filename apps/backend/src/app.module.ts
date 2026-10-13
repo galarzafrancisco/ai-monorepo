@@ -31,6 +31,7 @@ import { ThreadTaskSubscriptions1761000000000 } from './migrations/1761000000000
 import { ThreadTaskSubscriptionWaitingFor1761100000000 } from './migrations/1761100000000-ThreadTaskSubscriptionWaitingFor';
 import { SearchIndex1761200000000 } from './migrations/1761200000000-SearchIndex';
 import { ThreadSecret1761300000000 } from './migrations/1761300000000-ThreadSecret';
+import { ThreadReadStates1761400000000 } from './migrations/1761400000000-ThreadReadStates';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -63,6 +64,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadTaskSubscriptionWaitingFor1761100000000,
         SearchIndex1761200000000,
         ThreadSecret1761300000000,
+        ThreadReadStates1761400000000,
       ],
     }),
     EventEmitterModule.forRoot(),

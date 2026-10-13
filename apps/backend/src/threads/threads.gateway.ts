@@ -15,6 +15,7 @@ import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
   ThreadAgentResponseDeltaEvent,
+  ThreadReadEvent,
   ThreadTitleUpdatedEvent,
   ThreadUpdatedEvent,
 } from './events/threads.events';
@@ -23,6 +24,8 @@ import {
   AgentActivityWireEvent,
   AgentResponseDeltaWireEvent,
   MessageCreatedWireEvent,
+  ThreadActivityWireEvent,
+  ThreadReadWireEvent,
   ThreadUpdatedWireEvent,
   ThreadTitleUpdatedWireEvent,
 } from '@taico/events';
@@ -33,6 +36,7 @@ import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { ThreadsScopes } from './threads.scopes';
 import { ThreadsService } from './threads.service';
+import type { AuthContext } from 'src/auth/guards/context/auth-context.types';
 
 const THREADS_ROOM = 'threads';
 
@@ -41,6 +45,12 @@ type ThreadSubscriptionPayload = {
 };
 
 const getThreadRoomName = (threadId: string): string => `${THREADS_ROOM}-${threadId}`;
+
+/** Every list socket of one actor: all their tabs and devices. */
+const getActorRoomName = (actorId: string): string => `${THREADS_ROOM}-actor-${actorId}`;
+
+const getActorId = (client: Socket): string | undefined =>
+  (client.data?.auth as AuthContext | undefined)?.claims.actor_id;
 
 /**
  * WebSocket gateway for Threads domain.
@@ -94,6 +104,10 @@ export class ThreadsGateway
   ) {
     if (!body?.threadId) {
       client.join(THREADS_ROOM);
+      const actorId = getActorId(client);
+      if (actorId) {
+        client.join(getActorRoomName(actorId));
+      }
       return { ok: true, room: THREADS_ROOM };
     }
 
@@ -115,6 +129,10 @@ export class ThreadsGateway
   ) {
     if (!body?.threadId) {
       client.leave(THREADS_ROOM);
+      const actorId = getActorId(client);
+      if (actorId) {
+        client.leave(getActorRoomName(actorId));
+      }
       return { ok: true };
     }
 
@@ -141,12 +159,41 @@ export class ThreadsGateway
       .to(getThreadRoomName(event.payload.threadId))
       .emit(ThreadWireEvents.MESSAGE_CREATED, wireEvent);
 
+    // The list only needs to know that something was posted, not the message.
+    const activityEvent: ThreadActivityWireEvent = {
+      payload: {
+        threadId: event.payload.threadId,
+        messageId: event.payload.id,
+        createdByActorId: event.payload.createdByActorId,
+      },
+      actor: { id: event.actor.id },
+    };
+    this.server
+      .to(THREADS_ROOM)
+      .emit(ThreadWireEvents.THREAD_ACTIVITY, activityEvent);
+
     this.logger.debug({
       message: 'Message created event emitted',
       messageId: event.payload.id,
       threadId: event.payload.threadId,
       actorId: event.actor.id,
     });
+  }
+
+  @OnEvent(ThreadReadEvent.INTERNAL)
+  handleThreadRead(event: ThreadReadEvent) {
+    if (!this.server) {
+      return;
+    }
+
+    const wireEvent: ThreadReadWireEvent = {
+      payload: { threadId: event.payload.threadId },
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(getActorRoomName(event.payload.actorId))
+      .emit(ThreadWireEvents.THREAD_READ, wireEvent);
   }
 
   @OnEvent(ThreadAgentActivityEvent.INTERNAL)

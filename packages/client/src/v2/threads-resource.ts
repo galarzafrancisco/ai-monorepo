@@ -91,4 +91,9 @@ export class ThreadsResource extends BaseClient {
     return this.request('GET', `/api/v1/threads/${params.id}/messages`, { params: { page: params.page, limit: params.limit }, signal: params?.signal });
   }
 
+  /** Mark every message in the thread as read by the caller */
+  async ThreadsController_markThreadRead(params: { id: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('POST', `/api/v1/threads/${params.id}/read`, { responseType: 'void', signal: params?.signal });
+  }
+
 }

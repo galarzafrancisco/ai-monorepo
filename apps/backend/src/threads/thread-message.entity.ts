@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
@@ -10,6 +11,7 @@ import { ThreadEntity } from './thread.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { ThreadAgentMessageEntity } from './agent/thread-agent-message.entity';
 
+@Index('IDX_thread_messages_thread_created', ['threadId', 'createdAt'])
 @Entity({ name: 'thread_messages' })
 export class ThreadMessageEntity {
   @PrimaryGeneratedColumn('uuid')

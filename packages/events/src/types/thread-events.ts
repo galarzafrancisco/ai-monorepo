@@ -21,6 +21,8 @@ export const ThreadWireEvents = {
   THREAD_DELETED: 'thread.deleted',
   THREAD_TITLE_UPDATED: 'thread.title.updated',
   MESSAGE_CREATED: 'thread.message.created',
+  THREAD_ACTIVITY: 'thread.activity',
+  THREAD_READ: 'thread.read',
   AGENT_ACTIVITY: 'thread.agent.activity',
   AGENT_RESPONSE_DELTA: 'thread.agent.response.delta',
 } as const;
@@ -150,6 +152,32 @@ export interface MessageCreatedWireEvent {
   actor: MinimalEventActor;
 }
 
+/**
+ * Thread activity event
+ * Emitted to the thread list when a message is posted in any thread, so lists
+ * can show it as unread without receiving the message itself.
+ */
+export interface ThreadActivityWireEvent {
+  payload: {
+    threadId: string;
+    messageId: string;
+    createdByActorId: string | null;
+  };
+  actor: MinimalEventActor;
+}
+
+/**
+ * Thread read event
+ * Emitted only to the actor who read the thread, on all their connections, so
+ * every tab and device clears its unread indicator.
+ */
+export interface ThreadReadWireEvent {
+  payload: {
+    threadId: string;
+  };
+  actor: MinimalEventActor;
+}
+
 export type ThreadAgentActivityKind = 'thinking' | 'tool_calling';
 
 /**
@@ -186,5 +214,7 @@ export type ThreadWireEvent =
   | ThreadDeletedWireEvent
   | ThreadTitleUpdatedWireEvent
   | MessageCreatedWireEvent
+  | ThreadActivityWireEvent
+  | ThreadReadWireEvent
   | AgentActivityWireEvent
   | AgentResponseDeltaWireEvent;

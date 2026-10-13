@@ -4,6 +4,7 @@ import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { IosShell } from "../../app/shells/IosShell";
 import { Text } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
+import { UnreadBadge } from "./UnreadBadge";
 import "./ThreadsLayout.css";
 
 export function ThreadsLayout(): React.JSX.Element {
@@ -13,6 +14,7 @@ export function ThreadsLayout(): React.JSX.Element {
   const navigate = useNavigate();
   const { threads, isLoading, error, sectionTitle, navItems, optimisticDraftThread } = useThreadsCtx();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const unreadMessageCount = threads.reduce((sum, thread) => sum + thread.unreadCount, 0);
 
   useEffect(() => {
     if (!isDesktop) return;
@@ -52,6 +54,8 @@ export function ThreadsLayout(): React.JSX.Element {
                   </button>
                 </div>
               </>
+            ) : unreadMessageCount > 0 ? (
+              <UnreadBadge count={unreadMessageCount} />
             ) : (
               <Text as="div" size="1" tone="muted">{threads.length}</Text>
             )}
@@ -82,10 +86,11 @@ export function ThreadsLayout(): React.JSX.Element {
                       <button
                         key={thread.id}
                         type="button"
-                        className={`threads-layout__thread-item ${isSelected ? "threads-layout__thread-item--active" : ""}`}
+                        className={`threads-layout__thread-item ${isSelected ? "threads-layout__thread-item--active" : ""} ${thread.unreadCount > 0 ? "threads-layout__thread-item--unread" : ""}`}
                         onClick={() => navigate(`/threads/${thread.id}`)}
                       >
                         <span className="threads-layout__thread-title">{thread.title}</span>
+                        <UnreadBadge count={thread.unreadCount} />
                       </button>
                     );
                   })}

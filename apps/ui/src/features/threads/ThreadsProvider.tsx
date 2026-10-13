@@ -21,6 +21,10 @@ export type ThreadsContextValue = {
   getThread: (id: string) => Promise<Thread>;
   createThread: (title?: string) => Promise<Thread>;
   deleteThread: (id: string) => Promise<void>;
+  /** Marks every message in the thread as read by the current user. */
+  markThreadRead: (id: string) => Promise<void>;
+  /** Tells the list which thread the user is looking at, or null for none. */
+  setViewingThreadId: (id: string | null) => void;
   optimisticDraftThread: OptimisticThreadDraft | null;
   setOptimisticDraftThread: (draft: OptimisticThreadDraft | null) => void;
 };
@@ -28,7 +32,7 @@ export type ThreadsContextValue = {
 const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error, loadThreads, getThread, createThread, deleteThread } = useThreads();
+  const { threads, isLoading, error, loadThreads, getThread, createThread, deleteThread, markThreadRead, setViewingThreadId } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
   const [navItems, setNavItems] = useState<NavegationItem[]>([]);
   const [optimisticDraftThread, setOptimisticDraftThread] = useState<OptimisticThreadDraft | null>(null);
@@ -47,6 +51,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       getThread,
       createThread,
       deleteThread,
+      markThreadRead,
+      setViewingThreadId,
       optimisticDraftThread,
       setOptimisticDraftThread,
     };
@@ -62,6 +68,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     getThread,
     createThread,
     deleteThread,
+    markThreadRead,
+    setViewingThreadId,
     optimisticDraftThread,
     setOptimisticDraftThread,
   ]);

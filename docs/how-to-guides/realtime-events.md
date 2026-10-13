@@ -48,6 +48,16 @@ Threads are the reference implementation:
 - Subscribe without `threadId` -> joins `threads` room.
 - Subscribe with `threadId` -> joins `threads-<threadId>` room.
 - Thread title updates emit to both list and detail rooms.
+- Subscribing to the list also joins `threads-actor-<actorId>`, a room holding every list connection of one actor (all their tabs and devices). Use an actor room for state that belongs to one person.
+
+Unread messages are built on these rooms:
+
+- `thread_read_states` stores how far each actor has read each thread. `GET /threads` returns `unreadCount` per thread: messages written by someone else after that point.
+- `POST /threads/:id/read` moves the caller's read position to now and emits `thread.read` to their actor room, so their other tabs and devices clear the indicator.
+- Every new message emits `thread.activity` (ids only) to the list room. Each client adds one to its own count unless its user wrote the message or is looking at that thread.
+- The open chat marks its thread read while the browser tab is visible (`apps/ui/src/features/threads/useMarkThreadRead.ts`).
+- The list is fetched from REST again each time its subscription to the list room is acknowledged: on page load and on every reconnect. Messages posted before the socket joined the room were never sent to it, so the first fetch alone can be out of date.
+- A REST response can arrive after an event that is newer than it. All list fetches go through `apps/ui/src/features/threads/snapshotSync.ts`, which discards a response if the list changed while it was being fetched and fetches again. Call `noteChange()` wherever the list is changed locally.
 
 Reference:
 - `apps/backend/src/threads/threads.gateway.ts`

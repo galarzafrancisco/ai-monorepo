@@ -18,4 +18,11 @@ export class ThreadListItemResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   stateContextBlockId!: string;
+
+  @ApiProperty({
+    description:
+      'Messages in this thread written by someone else that the caller has not read yet',
+    example: 2,
+  })
+  unreadCount!: number;
 }
