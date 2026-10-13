@@ -14,6 +14,15 @@ export type ThreadsContextValue = {
   isLoading: boolean;
   error: string | null;
   loadThreads: () => Promise<void>;
+  /** How many threads exist, including the ones not loaded yet. */
+  totalThreads: number;
+  /** True while there are older threads the list has not loaded. */
+  hasMoreThreads: boolean;
+  /** True while the next page of older threads is being fetched. */
+  isLoadingMore: boolean;
+  loadMoreError: string | null;
+  /** Loads the next page of older threads. */
+  loadMoreThreads: () => Promise<void>;
   /** Fetches the list again in the background, without the loading state. */
   refreshThreads: () => Promise<void>;
   /** How many threads have at least one unread message. */
@@ -43,7 +52,7 @@ const ThreadsContext = createContext<ThreadsContextValue | null>(null);
  * `thread.activity` whichever page it is on.
  */
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error, loadThreads, refreshThreads, getThread, createThread, deleteThread, markThreadRead, setViewingThreadId } = useThreads();
+  const { threads, totalThreads, hasMoreThreads, isLoadingMore, loadMoreError, loadMoreThreads, isLoading, error, loadThreads, refreshThreads, getThread, createThread, deleteThread, markThreadRead, setViewingThreadId } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
   const [navItems, setNavItems] = useState<NavegationItem[]>([]);
   const [optimisticDraftThread, setOptimisticDraftThread] = useState<OptimisticThreadDraft | null>(null);
@@ -60,6 +69,11 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       error,
       loadThreads,
+      totalThreads,
+      hasMoreThreads,
+      isLoadingMore,
+      loadMoreError,
+      loadMoreThreads,
       refreshThreads,
       unreadThreadCount,
       sectionTitle,
@@ -79,6 +93,11 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     error,
     loadThreads,
+    totalThreads,
+    hasMoreThreads,
+    isLoadingMore,
+    loadMoreError,
+    loadMoreThreads,
     refreshThreads,
     unreadThreadCount,
     sectionTitle,

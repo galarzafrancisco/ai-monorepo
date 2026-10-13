@@ -22,15 +22,64 @@ type ThreadsSubscribeAck = {
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/threads');
 
+/** How many threads each request asks for. The list grows by this much at a time. */
+export const THREADS_PAGE_SIZE = 100;
+
+type ThreadsSnapshot = {
+  items: ThreadListItem[];
+  /** How many threads exist on the server, loaded or not. */
+  total: number;
+};
+
+/**
+ * Fetches the first `pageCount` pages, newest first.
+ *
+ * Every refresh fetches everything the list is showing, not just the last
+ * page, so the list stays one snapshot: see snapshotSync.ts.
+ */
+const fetchThreadPages = async (pageCount: number): Promise<ThreadsSnapshot> => {
+  const items: ThreadListItem[] = [];
+  const seen = new Set<string>();
+  let total = 0;
+
+  for (let page = 1; page <= pageCount; page += 1) {
+    const response = await ThreadsService.ThreadsController_listThreads({
+      page,
+      limit: THREADS_PAGE_SIZE,
+    });
+    const pageItems = response.items || [];
+    total = response.total ?? 0;
+
+    // A thread that moved up between two requests shows up on both pages.
+    for (const item of pageItems) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      items.push(item);
+    }
+
+    if (pageItems.length < THREADS_PAGE_SIZE) break;
+  }
+
+  return { items, total: Math.max(total, items.length) };
+};
+
 export const useThreads = () => {
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
 
   // Data store
   const [threads, setThreads] = useState<ThreadListItem[]>([]);
   const threadIdsRef = useRef<Set<string>>(new Set());
   threadIdsRef.current = new Set(threads.map((thread) => thread.id));
+  /** How many threads exist on the server, loaded or not. */
+  const [totalThreads, setTotalThreads] = useState(0);
+  /** How many pages the list is showing. Grows as the user scrolls down. */
+  const pageCountRef = useRef(1);
+  const isLoadingMoreRef = useRef(false);
+  const hasMoreThreads = threads.length < totalThreads;
 
   // Transport
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -48,8 +97,11 @@ export const useThreads = () => {
   const syncRef = useRef<SnapshotSync | null>(null);
   if (!syncRef.current) {
     syncRef.current = createSnapshotSync(
-      async () => (await ThreadsService.ThreadsController_listThreads({})).items || [],
-      setThreads,
+      () => fetchThreadPages(pageCountRef.current),
+      (snapshot: ThreadsSnapshot) => {
+        setThreads(snapshot.items);
+        setTotalThreads(snapshot.total);
+      },
     );
   }
   const sync = syncRef.current;
@@ -73,6 +125,24 @@ export const useThreads = () => {
       await sync.refresh();
     } catch (err) {
       console.error('Failed to refresh threads', err);
+    }
+  }, [sync]);
+
+  // Shows one more page of older threads.
+  const loadMoreThreads = useCallback(async () => {
+    if (isLoadingMoreRef.current) return;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+    pageCountRef.current += 1;
+    try {
+      await sync.refresh();
+    } catch (err) {
+      pageCountRef.current = Math.max(1, pageCountRef.current - 1);
+      setLoadMoreError(err instanceof Error ? err.message : 'Failed to load more threads');
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
     }
   }, [sync]);
 
@@ -114,12 +184,16 @@ export const useThreads = () => {
     // Add to local state optimistically
     sync.noteChange();
     setThreads((prev) => [{ ...thread, unreadCount: 0 }, ...prev]);
+    setTotalThreads((prev) => prev + 1);
     return thread;
   }, [sync]);
 
   const deleteThread = useCallback(async (id: string) => {
     await ThreadsService.ThreadsController_deleteThread({ id });
     sync.noteChange();
+    if (threadIdsRef.current.has(id)) {
+      setTotalThreads((prev) => Math.max(0, prev - 1));
+    }
     setThreads((prev) => prev.filter((thread) => thread.id !== id));
   }, [sync]);
 
@@ -215,10 +289,15 @@ export const useThreads = () => {
     // UI feedback
     isLoading,
     error,
+    isLoadingMore,
+    loadMoreError,
 
     // Data
     threads,
+    totalThreads,
+    hasMoreThreads,
     loadThreads,
+    loadMoreThreads,
     refreshThreads,
     getThread,
     createThread,

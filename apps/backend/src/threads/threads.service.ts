@@ -304,7 +304,8 @@ export class ThreadsService {
     const [threads, total] = await this.threadRepository.findAndCount({
       skip,
       take: input.limit,
-      order: { updatedAt: 'DESC' },
+      // The id breaks ties, so a thread never lands on two pages or on none.
+      order: { updatedAt: 'DESC', id: 'DESC' },
     });
 
     const unreadCounts = input.actorId
