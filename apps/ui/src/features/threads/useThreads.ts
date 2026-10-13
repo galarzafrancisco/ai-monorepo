@@ -10,6 +10,7 @@ import {
   ThreadWireEvents,
 } from '@taico/events';
 import { useAuth } from '../../auth';
+import { createSnapshotSync, SnapshotSync } from './snapshotSync';
 
 type ThreadsSubscribeAck = {
   ok: boolean;
@@ -42,31 +43,41 @@ export const useThreads = () => {
   /** The thread the user is looking at right now, if any. */
   const viewingThreadIdRef = useRef<string | null>(null);
 
+  // Every fetch of the list goes through here, so a slow response can never
+  // undo a change that arrived while it was on its way. See snapshotSync.ts.
+  const syncRef = useRef<SnapshotSync | null>(null);
+  if (!syncRef.current) {
+    syncRef.current = createSnapshotSync(
+      async () => (await ThreadsService.ThreadsController_listThreads({})).items || [],
+      setThreads,
+    );
+  }
+  const sync = syncRef.current;
+
   // Load threads
   const loadThreads = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await ThreadsService.ThreadsController_listThreads({});
-      setThreads(response.items || []);
+      await sync.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load threads');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [sync]);
 
   // Same as loadThreads, without the loading state: used to catch up in the background.
   const refreshThreads = useCallback(async () => {
     try {
-      const response = await ThreadsService.ThreadsController_listThreads({});
-      setThreads(response.items || []);
+      await sync.refresh();
     } catch (err) {
       console.error('Failed to refresh threads', err);
     }
-  }, []);
+  }, [sync]);
 
   const setUnreadCount = useCallback((threadId: string, unreadCount: number) => {
+    sync.noteChange();
     setThreads((prev) =>
       prev.some((thread) => thread.id === threadId && thread.unreadCount !== unreadCount)
         ? prev.map((thread) =>
@@ -74,7 +85,7 @@ export const useThreads = () => {
           )
         : prev,
     );
-  }, []);
+  }, [sync]);
 
   const setViewingThreadId = useCallback((threadId: string | null) => {
     viewingThreadIdRef.current = threadId;
@@ -85,10 +96,12 @@ export const useThreads = () => {
     setUnreadCount(threadId, 0);
     try {
       await ThreadsService.ThreadsController_markThreadRead({ id: threadId });
+      // A list fetched before the server recorded this would bring the count back.
+      sync.noteChange();
     } catch (err) {
       console.error('Failed to mark thread as read', err);
     }
-  }, [setUnreadCount]);
+  }, [setUnreadCount, sync]);
 
   // Get single thread with full details
   const getThread = useCallback(async (id: string): Promise<Thread> => {
@@ -99,14 +112,16 @@ export const useThreads = () => {
   const createThread = useCallback(async (title?: string): Promise<Thread> => {
     const thread = await ThreadsService.ThreadsController_createThread({ body: { title } });
     // Add to local state optimistically
+    sync.noteChange();
     setThreads((prev) => [{ ...thread, unreadCount: 0 }, ...prev]);
     return thread;
-  }, []);
+  }, [sync]);
 
   const deleteThread = useCallback(async (id: string) => {
     await ThreadsService.ThreadsController_deleteThread({ id });
+    sync.noteChange();
     setThreads((prev) => prev.filter((thread) => thread.id !== id));
-  }, []);
+  }, [sync]);
 
   // Setup websocket
   const setupWebsocket = useCallback(() => {
@@ -115,20 +130,17 @@ export const useThreads = () => {
       withCredentials: true,
     });
 
-    let hasConnectedBefore = false;
-
     newSocket.on('connect', () => {
       console.log('Connected to websocket');
-      // Events sent while disconnected are lost, so unread counts may be stale.
-      if (hasConnectedBefore) {
-        void refreshThreads();
-      }
-      hasConnectedBefore = true;
       newSocket.emit('threads.subscribe', {}, (ack: ThreadsSubscribeAck) => {
         if (ack.ok) {
           console.log(ack);
           console.log('Subscribed to room:', ack.room);
           setIsConnected(true);
+          // Nothing posted before this point was sent to this socket: not
+          // between the first fetch and now on page load, and not while
+          // disconnected on a reconnect. Fetch again now that events flow.
+          void refreshThreads();
         } else {
           console.error('Failed to subscribe to room');
           setIsConnected(false);
@@ -137,6 +149,7 @@ export const useThreads = () => {
     });
 
     newSocket.on(ThreadWireEvents.THREAD_TITLE_UPDATED, (event: ThreadTitleUpdatedWireEvent) => {
+      sync.noteChange();
       setThreads((prev) =>
         prev.map((thread) =>
           thread.id === event.payload.threadId
@@ -162,6 +175,7 @@ export const useThreads = () => {
         return;
       }
 
+      sync.noteChange();
       setThreads((prev) =>
         prev.map((thread) =>
           thread.id === threadId
@@ -188,7 +202,7 @@ export const useThreads = () => {
       setSocket(null);
       setIsConnected(false);
     };
-  }, [refreshThreads, setUnreadCount]);
+  }, [refreshThreads, setUnreadCount, sync]);
 
   // Boot
   useEffect(() => {

@@ -12,6 +12,7 @@ import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ThreadMessageEntity } from '../src/threads/thread-message.entity';
 import { MessageCreatedEvent } from '../src/threads/events/threads.events';
+import { createSnapshotSync } from '../../ui/src/features/threads/snapshotSync';
 import {
   ensureAgentActor,
   ensureTestUser,
@@ -210,5 +211,115 @@ describe('Thread read state E2E', () => {
 
     expect((await readOnA).payload.threadId).toBe(threadId);
     expect((await readOnB).payload.threadId).toBe(threadId);
+  });
+
+  /**
+   * The thread list in the UI, without React: a list of unread counts kept up
+   * to date by the same sync helper and the same rules as `useThreads`.
+   */
+  describe('thread list kept in sync by the UI', () => {
+    type ListItem = { id: string; unreadCount: number };
+
+    const openList = () => {
+      let items: ListItem[] = [];
+      /** Holds back the response of the next fetch until called. */
+      let holdResponse: Promise<void> | null = null;
+
+      const sync = createSnapshotSync<ListItem[]>(
+        async () => {
+          const held = holdResponse;
+          holdResponse = null;
+          const response = await request(httpServer)
+            .get('/api/v1/threads?limit=200')
+            .set('Cookie', authCookies)
+            .expect(200);
+          await held;
+          return response.body.items;
+        },
+        (snapshot) => {
+          items = snapshot;
+        },
+      );
+
+      const onActivity = (event: { payload: { threadId: string } }) => {
+        sync.noteChange();
+        items = items.map((item) =>
+          item.id === event.payload.threadId
+            ? { ...item, unreadCount: item.unreadCount + 1 }
+            : item,
+        );
+      };
+
+      return {
+        sync,
+        onActivity,
+        unread: (threadId: string) => items.find((item) => item.id === threadId)?.unreadCount,
+        holdNextResponse: (): (() => void) => {
+          let release!: () => void;
+          holdResponse = new Promise<void>((resolve) => {
+            release = resolve;
+          });
+          return release;
+        },
+      };
+    };
+
+    it('catches up on a message posted between the first fetch and the subscription', async () => {
+      const threadId = await createThread();
+      const list = openList();
+
+      await list.sync.refresh();
+      expect(list.unread(threadId)).toBe(0);
+
+      // No socket of this list is in the room yet, so no event reaches it.
+      await postMessage(threadId, agentActorId);
+
+      const tab = await openListSocket();
+      tab.on(ThreadWireEvents.THREAD_ACTIVITY, list.onActivity);
+      // What the UI does when the subscription is acknowledged.
+      await list.sync.refresh();
+
+      expect(list.unread(threadId)).toBe(1);
+    });
+
+    it('does not let a late response undo a newer message', async () => {
+      const threadId = await createThread();
+      const list = openList();
+      const tab = await openListSocket();
+      tab.on(ThreadWireEvents.THREAD_ACTIVITY, list.onActivity);
+      await list.sync.refresh();
+
+      // This response is built before the message exists and arrives after its event.
+      const release = list.holdNextResponse();
+      const refreshed = list.sync.refresh();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const activity = nextEvent(tab, ThreadWireEvents.THREAD_ACTIVITY);
+      await postMessage(threadId, agentActorId);
+      await activity;
+      expect(list.unread(threadId)).toBe(1);
+
+      release();
+      await refreshed;
+
+      expect(list.unread(threadId)).toBe(1);
+    });
+
+    it('fetches once more when a refresh is asked for during a fetch', async () => {
+      const threadId = await createThread();
+      const list = openList();
+
+      // The page-load fetch is still running when the subscription is acknowledged.
+      const release = list.holdNextResponse();
+      const firstLoad = list.sync.refresh();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await postMessage(threadId, agentActorId);
+      const afterSubscribe = list.sync.refresh();
+
+      release();
+      await Promise.all([firstLoad, afterSubscribe]);
+
+      expect(list.unread(threadId)).toBe(1);
+    });
   });
 });
