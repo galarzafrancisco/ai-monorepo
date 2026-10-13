@@ -740,6 +740,13 @@ export interface ThreadStateResponseDto {
   content: string;
 }
 
+export interface ThreadTokenUsageResponseDto {
+  contextTokens: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  steps: number;
+}
+
 export interface UpdateThreadStateDto {
   content: string;
 }

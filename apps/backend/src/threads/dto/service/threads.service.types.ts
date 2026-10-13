@@ -135,3 +135,15 @@ export type ListThreadMessagesResult = {
   page: number;
   limit: number;
 };
+
+/** Token figures the model provider reported for a thread. Null where it reported none. */
+export type ThreadTokenUsageResult = {
+  /** Input tokens of the most recent model step. */
+  contextTokens: number | null;
+  /** Input tokens summed over every model step. */
+  inputTokens: number | null;
+  /** Output tokens summed over every model step. */
+  outputTokens: number | null;
+  /** Model steps that reported usage. */
+  steps: number;
+};

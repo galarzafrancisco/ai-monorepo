@@ -46,6 +46,8 @@ import { CreateThreadMessageDto } from './dto/create-thread-message.dto';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
 import { ListThreadMessagesQueryDto } from './dto/list-thread-messages-query.dto';
 import { ListThreadMessagesResponseDto } from './dto/list-thread-messages-response.dto';
+import { ThreadTokenUsageResponseDto } from './dto/thread-token-usage-response.dto';
+import { ThreadAgentLogService } from './agent/thread-agent-log.service';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
@@ -56,6 +58,7 @@ export class ThreadsController {
   constructor(
     private readonly threadsService: ThreadsService,
     private readonly threadReadStateService: ThreadReadStateService,
+    private readonly threadAgentLogService: ThreadAgentLogService,
   ) {}
 
   @Post()
@@ -297,6 +300,22 @@ export class ThreadsController {
   ): Promise<ThreadStateResponseDto> {
     const content = await this.threadsService.getThreadState(params.id);
     return { content };
+  }
+
+  @Get(':id/token-usage')
+  @ApiOperation({
+    summary: 'Get the token usage the model provider reported for a thread (debug)',
+  })
+  @ApiOkResponse({
+    type: ThreadTokenUsageResponseDto,
+    description: 'Token usage retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async getThreadTokenUsage(
+    @Param() params: ThreadParamsDto,
+  ): Promise<ThreadTokenUsageResponseDto> {
+    const result = await this.threadAgentLogService.getTokenUsage(params.id);
+    return ThreadTokenUsageResponseDto.fromResult(result);
   }
 
   @Patch(':id/state')

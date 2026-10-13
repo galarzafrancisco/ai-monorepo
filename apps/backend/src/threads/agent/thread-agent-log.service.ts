@@ -11,6 +11,7 @@ import {
   generateThreadSecret,
 } from './thread-agent.prompts';
 import { TaskStatus } from '../../tasks/enums';
+import { ThreadTokenUsageResult } from '../dto/service/threads.service.types';
 import { AgentContextRow } from './agent-context.utils';
 import { ThreadAgentMessageEntity } from './thread-agent-message.entity';
 import {
@@ -325,6 +326,51 @@ export class ThreadAgentLogService {
       providerType: row.provider_type,
       modelId: row.model_id,
     }));
+  }
+
+  /**
+   * Token figures for a thread, read from the usage the AI SDK reported for
+   * each model step. Steps on branches a compaction left behind still count:
+   * the totals are what the thread has spent, not what the model reads now.
+   */
+  async getTokenUsage(threadId: string): Promise<ThreadTokenUsageResult> {
+    // A step with no assistant message, or a provider that reports nothing,
+    // leaves no figure: the sums skip those rows.
+    const rows: Array<{
+      context_tokens: string | null;
+      input_tokens: string | null;
+      output_tokens: string | null;
+      steps: string;
+    }> = await this.dataSource.query(
+      `SELECT (SELECT l.usage->>'inputTokens'
+                 FROM thread_agent_messages l
+                WHERE l.thread_id = t.id AND jsonb_typeof(l.usage) = 'object'
+                ORDER BY l.created_at DESC, l.id DESC
+                LIMIT 1) AS context_tokens,
+              SUM((m.usage->>'inputTokens')::numeric) AS input_tokens,
+              SUM((m.usage->>'outputTokens')::numeric) AS output_tokens,
+              COUNT(m.id) AS steps
+         FROM threads t
+         LEFT JOIN thread_agent_messages m
+           ON m.thread_id = t.id AND jsonb_typeof(m.usage) = 'object'
+        WHERE t.id = $1 AND t.deleted_at IS NULL
+        GROUP BY t.id`,
+      [threadId],
+    );
+
+    if (rows.length === 0) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    const toNumber = (value: string | null): number | null =>
+      value === null ? null : Number(value);
+
+    return {
+      contextTokens: toNumber(rows[0].context_tokens),
+      inputTokens: toNumber(rows[0].input_tokens),
+      outputTokens: toNumber(rows[0].output_tokens),
+      steps: Number(rows[0].steps),
+    };
   }
 
   /**

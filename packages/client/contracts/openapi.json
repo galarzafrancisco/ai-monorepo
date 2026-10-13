@@ -4851,6 +4851,47 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/token-usage": {
+      "get": {
+        "operationId": "ThreadsController_getThreadTokenUsage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token usage retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadTokenUsageResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get the token usage the model provider reported for a thread (debug)",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/state/append": {
       "post": {
         "operationId": "ThreadsController_appendThreadState",
@@ -11317,6 +11358,40 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "ThreadTokenUsageResponseDto": {
+        "type": "object",
+        "properties": {
+          "contextTokens": {
+            "type": "number",
+            "description": "Input tokens of the most recent model step: roughly the size of the conversation the model reads now. Null when the provider reported no figure.",
+            "example": 42351,
+            "nullable": true
+          },
+          "inputTokens": {
+            "type": "number",
+            "description": "Input tokens summed over every model step in the thread. Null when no step reported a figure.",
+            "example": 423512,
+            "nullable": true
+          },
+          "outputTokens": {
+            "type": "number",
+            "description": "Output tokens summed over every model step in the thread. Null when no step reported a figure.",
+            "example": 8123,
+            "nullable": true
+          },
+          "steps": {
+            "type": "number",
+            "description": "Number of model steps that reported token usage",
+            "example": 12
+          }
+        },
+        "required": [
+          "contextTokens",
+          "inputTokens",
+          "outputTokens",
+          "steps"
         ]
       },
       "UpdateThreadStateDto": {

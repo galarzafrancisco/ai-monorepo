@@ -1437,6 +1437,23 @@ export interface paths {
         patch: operations["ThreadsController_updateThreadState"];
         trace?: never;
     };
+    "/api/v1/threads/{id}/token-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the token usage the model provider reported for a thread (debug) */
+        get: operations["ThreadsController_getThreadTokenUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/state/append": {
         parameters: {
             query?: never;
@@ -4758,6 +4775,28 @@ export interface components {
              *     Decision: Using JWT for authentication.
              */
             content: string;
+        };
+        ThreadTokenUsageResponseDto: {
+            /**
+             * @description Input tokens of the most recent model step: roughly the size of the conversation the model reads now. Null when the provider reported no figure.
+             * @example 42351
+             */
+            contextTokens: number | null;
+            /**
+             * @description Input tokens summed over every model step in the thread. Null when no step reported a figure.
+             * @example 423512
+             */
+            inputTokens: number | null;
+            /**
+             * @description Output tokens summed over every model step in the thread. Null when no step reported a figure.
+             * @example 8123
+             */
+            outputTokens: number | null;
+            /**
+             * @description Number of model steps that reported token usage
+             * @example 12
+             */
+            steps: number;
         };
         UpdateThreadStateDto: {
             /**
@@ -10266,6 +10305,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_getThreadTokenUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token usage retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadTokenUsageResponseDto"];
+                };
             };
             /** @description Thread not found */
             404: {

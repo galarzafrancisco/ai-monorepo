@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import { Bot } from "lucide-react";
+import type { ThreadTokenUsageResponseDto } from "@taico/client/v2";
 import {
+  MessageCreatedWireEvent,
   TaskAssignedWireEvent,
   TaskDeletedWireEvent,
   TaskStatusChangedWireEvent,
@@ -25,6 +27,8 @@ import { ThreadTaskRow } from "./ThreadTaskRow";
 import { ThreadTaskSubscriptionList } from "./ThreadTaskSubscriptionList";
 import { ThreadChat } from "./ThreadChat";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
+import { useThreadTokenUsage } from "./useThreadTokenUsage";
+import { formatTokenCount } from "../../shared/helpers/tokenCount";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
@@ -138,6 +142,7 @@ export function ThreadDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const threadTaskIdsRef = useRef<Set<string>>(new Set());
+  const { usage: tokenUsage, refresh: refreshTokenUsage } = useThreadTokenUsage(threadId);
 
   const { setNavItems } = useThreadsCtx();
 
@@ -197,6 +202,14 @@ export function ThreadDetailPage() {
       void refreshThread();
     });
 
+    // Each agent reply is saved after its usage, so the figures are current by now.
+    threadSocket.on(ThreadWireEvents.MESSAGE_CREATED, (event: MessageCreatedWireEvent) => {
+      if (event.payload.threadId !== threadId) {
+        return;
+      }
+      void refreshTokenUsage();
+    });
+
     threadSocket.on(ThreadWireEvents.THREAD_TITLE_UPDATED, (event: ThreadTitleUpdatedWireEvent) => {
       if (event.payload.threadId !== threadId) {
         return;
@@ -243,7 +256,7 @@ export function ThreadDetailPage() {
       taskSocket.emit('tasks.unsubscribe', {});
       taskSocket.close();
     };
-  }, [threadId, refreshThread]);
+  }, [threadId, refreshThread, refreshTokenUsage]);
 
   // Set section title
   useEffect(() => {
@@ -287,9 +300,9 @@ export function ThreadDetailPage() {
   };
 
   if (isDesktop) {
-    return <ThreadDetailPageDesktop thread={thread} onDelete={handleDelete} />;
+    return <ThreadDetailPageDesktop thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
   } else {
-    return <ThreadDetailPageMobile thread={thread} onDelete={handleDelete} />;
+    return <ThreadDetailPageMobile thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
   }
 }
 
@@ -305,11 +318,61 @@ function ThreadModelLabel({ label }: { label: string }) {
   );
 }
 
+/**
+ * Debug indicator: how many tokens the thread uses, as the model provider
+ * reported them. Renders nothing until the figures have loaded.
+ */
+function ThreadTokenUsageLabel({ usage }: { usage: ThreadTokenUsageResponseDto | null }) {
+  if (!usage) {
+    return null;
+  }
+
+  const { contextTokens, inputTokens, outputTokens, steps } = usage;
+  if (contextTokens === null && inputTokens === null && outputTokens === null) {
+    return (
+      <span
+        className="thread-detail-page__token-usage"
+        title={
+          steps > 0
+            ? "The model provider reported no token figures for this thread"
+            : "No model step has reported token usage in this thread yet"
+        }
+      >
+        <Text size="1" tone="muted">
+          tokens n/a
+        </Text>
+      </span>
+    );
+  }
+
+  const exact = (count: number | null) => (count === null ? "n/a" : count.toLocaleString("en-US"));
+  const short = (count: number | null) => (count === null ? "n/a" : formatTokenCount(count));
+  const total = inputTokens === null && outputTokens === null ? null : (inputTokens ?? 0) + (outputTokens ?? 0);
+
+  return (
+    <span
+      className="thread-detail-page__token-usage"
+      title={[
+        "Token usage (debug)",
+        `Context, input of the last model step: ${exact(contextTokens)}`,
+        `Input, all ${steps} steps: ${exact(inputTokens)}`,
+        `Output, all ${steps} steps: ${exact(outputTokens)}`,
+      ].join("\n")}
+    >
+      <Text size="1" tone="muted">
+        {short(contextTokens)} ctx · {short(total)} total
+      </Text>
+    </span>
+  );
+}
+
 function ThreadDetailPageDesktop({
   thread,
+  tokenUsage,
   onDelete,
 }: {
   thread: Thread;
+  tokenUsage: ThreadTokenUsageResponseDto | null;
   onDelete: () => Promise<void>;
 }) {
   const { conversationModel } = useChatReadiness();
@@ -338,6 +401,7 @@ function ThreadDetailPageDesktop({
                       label={`${conversationModel.modelId} via ${conversationModel.providerName}`}
                     />
                   )}
+                  <ThreadTokenUsageLabel usage={tokenUsage} />
                 </div>
               </div>
             </div>
@@ -459,9 +523,11 @@ function ThreadDetailPageDesktop({
 
 function ThreadDetailPageMobile({
   thread,
+  tokenUsage,
   onDelete,
 }: {
   thread: Thread;
+  tokenUsage: ThreadTokenUsageResponseDto | null;
   onDelete: () => Promise<void>;
 }) {
   const { conversationModel } = useChatReadiness();
@@ -494,6 +560,7 @@ function ThreadDetailPageMobile({
               #{thread.id.slice(0, 6)} · {thread.participants.length} participants
             </Text>
             {conversationModel && <ThreadModelLabel label={conversationModel.modelId} />}
+            <ThreadTokenUsageLabel usage={tokenUsage} />
           </div>
         </div>
       </header>

@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
+import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, ThreadTokenUsageResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
 
 export class ThreadsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -74,6 +74,11 @@ export class ThreadsResource extends BaseClient {
   /** Update the state of a thread */
   async ThreadsController_updateThreadState(params: { id: string; body: UpdateThreadStateDto; signal?: AbortSignal }): Promise<ThreadStateResponseDto> {
     return this.request('PATCH', `/api/v1/threads/${params.id}/state`, { body: params.body, signal: params?.signal });
+  }
+
+  /** Get the token usage the model provider reported for a thread (debug) */
+  async ThreadsController_getThreadTokenUsage(params: { id: string; signal?: AbortSignal }): Promise<ThreadTokenUsageResponseDto> {
+    return this.request('GET', `/api/v1/threads/${params.id}/token-usage`, { signal: params?.signal });
   }
 
   /** Append content to the state of a thread */
