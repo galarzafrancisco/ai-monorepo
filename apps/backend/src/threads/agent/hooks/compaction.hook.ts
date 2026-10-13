@@ -3,6 +3,7 @@ import { generateText, ModelMessage } from 'ai';
 import { getConfig } from 'src/config/env.config';
 import { buildModelMessages } from '../agent-context.utils';
 import { ThreadAgentLogService } from '../thread-agent-log.service';
+import { formatConversationSummary } from '../thread-agent.prompts';
 import {
   ThreadAgentMessageKind,
   ThreadAgentMessageRole,
@@ -97,7 +98,7 @@ export class CompactionHook implements ThreadAgentHook {
         turnId: context.turnId,
         message: {
           role: 'user',
-          content: `<conversation-summary>\n${summary}\n</conversation-summary>`,
+          content: formatConversationSummary(summary),
         },
       },
     ]);
