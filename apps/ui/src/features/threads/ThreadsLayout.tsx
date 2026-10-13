@@ -5,6 +5,7 @@ import { IosShell } from "../../app/shells/IosShell";
 import { Text } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { UnreadBadge } from "./UnreadBadge";
+import { ThreadListLoadMore } from "./ThreadListLoadMore";
 import "./ThreadsLayout.css";
 
 export function ThreadsLayout(): React.JSX.Element {
@@ -12,7 +13,7 @@ export function ThreadsLayout(): React.JSX.Element {
   const { id: threadId } = useParams<{ id?: string }>();
   const isThreadDetailRoute = Boolean(threadId);
   const navigate = useNavigate();
-  const { threads, isLoading, error, sectionTitle, navItems, optimisticDraftThread, refreshThreads } = useThreadsCtx();
+  const { threads, totalThreads, isLoading, error, sectionTitle, navItems, optimisticDraftThread, refreshThreads } = useThreadsCtx();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const unreadMessageCount = threads.reduce((sum, thread) => sum + thread.unreadCount, 0);
 
@@ -48,7 +49,7 @@ export function ThreadsLayout(): React.JSX.Element {
                   <Text as="span" size="2" weight="semibold">Threads</Text>
                 </button>
                 <div className="threads-layout__sidebar-header-actions">
-                  <Text as="div" size="1" tone="muted">{threads.length}</Text>
+                  <Text as="div" size="1" tone="muted">{totalThreads}</Text>
                   <button
                     type="button"
                     className="threads-layout__sidebar-new"
@@ -63,7 +64,7 @@ export function ThreadsLayout(): React.JSX.Element {
             ) : unreadMessageCount > 0 ? (
               <UnreadBadge count={unreadMessageCount} />
             ) : (
-              <Text as="div" size="1" tone="muted">{threads.length}</Text>
+              <Text as="div" size="1" tone="muted">{totalThreads}</Text>
             )}
           </div>
 
@@ -100,6 +101,7 @@ export function ThreadsLayout(): React.JSX.Element {
                       </button>
                     );
                   })}
+                  <ThreadListLoadMore />
                 </div>
               )
             ) : null}

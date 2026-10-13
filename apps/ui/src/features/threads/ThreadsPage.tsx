@@ -4,6 +4,7 @@ import { Button, DataRowContainer, Text } from "../../ui/primitives";
 import { Avatar, Chip } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { ThreadRow } from "./ThreadRow";
+import { ThreadListLoadMore } from "./ThreadListLoadMore";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useToast } from "../../shared/context/ToastContext";
@@ -99,6 +100,7 @@ export function ThreadsPage() {
             />
           ))}
         </DataRowContainer>
+        <ThreadListLoadMore />
 
         <button
           className={`threads-fab ${isDesktop ? 'threads-fab--desktop' : ''}`}
