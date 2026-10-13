@@ -26,7 +26,6 @@ import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
 import { buildThreadScopedInstructions, STAY_SILENT_TOOL } from './thread-agent.prompts';
 import { ThreadAgentToolsFactory } from './thread-agent-tools.factory';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
-import { TurnContext } from './hooks/thread-agent-hook.interface';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
 
 export { THREAD_AGENT_SLUG };
@@ -166,13 +165,16 @@ export class ThreadAgentService {
       modelId: thread?.modelId,
     });
 
-    const rows = await this.agentLog.loadContext(threadId);
-    const turnContext = await this.hooks.runBeforeTurn({
+    let rows = await this.agentLog.loadContext(threadId);
+    const injected = await this.hooks.runBeforeTurn({
       threadId,
       turnId: turn.id,
       newUserMessages,
       context: rows,
     });
+    if (injected) {
+      rows = await this.agentLog.loadContext(threadId);
+    }
     const messages = buildModelMessages(rows, resolved, (row) => {
       this.logger.warn({
         message: 'Skipping agent log row that does not match the message schema',
@@ -197,7 +199,6 @@ export class ThreadAgentService {
         self,
         resolved,
         messages,
-        turnContext,
         tools: {
           ...mcp.tools,
           ...this.threadToolsFactory.build({
@@ -218,7 +219,6 @@ export class ThreadAgentService {
     self: AgentResult;
     resolved: ResolvedChatModel;
     messages: ModelMessage[];
-    turnContext: TurnContext[];
     tools: ToolSet;
   }): Promise<number | null> {
     const { turn, self, resolved } = input;
@@ -230,7 +230,7 @@ export class ThreadAgentService {
 
     const result = streamText({
       model: resolved.model,
-      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId, input.turnContext),
+      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId),
       messages: input.messages,
       tools: input.tools,
       providerOptions: resolved.providerOptions,

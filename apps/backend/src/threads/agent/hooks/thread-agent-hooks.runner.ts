@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ThreadAgentLogService } from '../thread-agent-log.service';
-import { formatTurnContext } from '../thread-agent.prompts';
+import { formatHookContext } from '../thread-agent.prompts';
 import {
   ThreadAgentMessageKind,
   ThreadAgentMessageRole,
@@ -10,7 +10,6 @@ import {
   BeforeTurnContext,
   THREAD_AGENT_HOOKS,
   ThreadAgentHook,
-  TurnContext,
 } from './thread-agent-hook.interface';
 
 const BEFORE_TURN_TIMEOUT_MS = 5_000;
@@ -37,14 +36,9 @@ export class ThreadAgentHooksRunner {
     private readonly agentLog: ThreadAgentLogService,
   ) {}
 
-  /**
-   * Returns what the hooks want the model to know for this turn. The caller puts
-   * it in the turn's system instructions. Each entry is also stored in the agent
-   * log as a system row, as a record of why the agent answered the way it did;
-   * system rows are never replayed as conversation messages.
-   */
-  async runBeforeTurn(context: BeforeTurnContext): Promise<TurnContext[]> {
-    const added: TurnContext[] = [];
+  /** Returns true when at least one hook added context to the conversation. */
+  async runBeforeTurn(context: BeforeTurnContext): Promise<boolean> {
+    let injected = false;
 
     for (const hook of this.hooks) {
       if (!hook.beforeTurn) {
@@ -60,24 +54,26 @@ export class ThreadAgentHooksRunner {
         if (!text?.trim()) {
           continue;
         }
-        const turnContext: TurnContext = { source: hook.name, text: text.trim() };
 
         await this.agentLog.append(context.threadId, [
           {
-            role: ThreadAgentMessageRole.SYSTEM,
+            role: ThreadAgentMessageRole.USER,
             kind: ThreadAgentMessageKind.INJECTION,
             source: `hook:${hook.name}`,
             turnId: context.turnId,
-            message: { role: 'system', content: formatTurnContext(turnContext) },
+            message: {
+              role: 'user',
+              content: formatHookContext(hook.name, text.trim()),
+            },
           },
         ]);
-        added.push(turnContext);
+        injected = true;
       } catch (error) {
         this.logFailure(hook, 'beforeTurn', context.threadId, error);
       }
     }
 
-    return added;
+    return injected;
   }
 
   async runAfterTurn(context: AfterTurnContext): Promise<void> {

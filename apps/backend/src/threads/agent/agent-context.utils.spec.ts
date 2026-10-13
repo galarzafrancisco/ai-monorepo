@@ -78,23 +78,4 @@ describe('buildModelMessages', () => {
     expect(messages).toEqual([{ role: 'user', content: 'hello' }]);
     expect(invalid).toEqual(['bad-shape', 'bad-version']);
   });
-
-  it('leaves out system rows without reporting them', () => {
-    const invalid: string[] = [];
-    const messages = buildModelMessages(
-      [
-        row({ id: 'question' }),
-        row({
-          id: 'hook-context',
-          source: 'hook:easter-egg',
-          message: { role: 'system', content: '<context source="easter-egg">\nhi\n</context>' },
-        }),
-      ],
-      target,
-      (r) => invalid.push(r.id),
-    );
-
-    expect(messages).toEqual([{ role: 'user', content: 'hello' }]);
-    expect(invalid).toEqual([]);
-  });
 });

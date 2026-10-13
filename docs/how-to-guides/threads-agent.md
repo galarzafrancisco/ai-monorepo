@@ -9,7 +9,7 @@ Code lives in `apps/backend/src/threads/agent/`.
 | Table | What it holds | Who reads it |
 | --- | --- | --- |
 | `thread_messages` | What people see in the thread | UI, API |
-| `thread_agent_messages` | What the model sees: user messages, assistant text, reasoning, tool calls, tool results, a record of hook context, summaries | The agent only |
+| `thread_agent_messages` | What the model sees: user messages, assistant text, reasoning, tool calls, tool results, hook injections, summaries | The agent only |
 
 `thread_agent_messages` is append-only, one row per message, stored as an AI SDK `ModelMessage` in `message` (jsonb) with a `format_version`.
 
@@ -23,8 +23,8 @@ Every user-facing message stores `agent_message_id`, the agent-side row it corre
 
 1. Claims the thread in `thread_turns`. A partial unique index allows one running turn per thread across all backend processes. If the claim fails, the process that holds it picks up the new message when it finishes.
 2. Copies unseen user-facing messages into the agent log and links them.
-3. Loads the context and runs `beforeTurn` hooks.
-4. Calls the model with Taico's MCP tools and whatever the hooks added, and appends each step as it completes.
+3. Runs `beforeTurn` hooks.
+4. Loads the context, calls the model with Taico's MCP tools, and appends each step as it completes.
 5. Runs `afterTurn` hooks, then releases the thread.
 
 Nothing is kept in memory between turns. A turn whose process died stops heartbeating and is failed by the next claim after 60 seconds.
@@ -56,7 +56,7 @@ When a message was produced by a different model than the one being called, its 
 
 ## Hooks
 
-A hook watches the conversation and can tell the model something the user never sees.
+A hook watches the conversation and can add context the user never sees.
 
 ```ts
 @Injectable()
@@ -64,7 +64,7 @@ export class MyHook implements ThreadAgentHook {
   readonly name = 'my-hook';
 
   async beforeTurn(context: BeforeTurnContext): Promise<string | null> {
-    // Return text for the model, or null.
+    // Return text to inject into the agent-side conversation, or null.
   }
 
   async afterTurn(context: AfterTurnContext): Promise<void> {
@@ -75,14 +75,14 @@ export class MyHook implements ThreadAgentHook {
 
 Register it in `ThreadsModule` under `THREAD_AGENT_HOOKS`. Hooks run in the listed order, have a time limit (5 seconds before a turn, 2 minutes after), and a failing hook never blocks the turn.
 
-### Where hook context goes
+### How hook context reaches the model
 
-What `beforeTurn` returns is added to the end of the system instructions of that turn, under "Context for this turn", wrapped in `<context source="my-hook">`. It is not sent as a message.
+What `beforeTurn` returns is stored in `thread_agent_messages` as a user-role row (kind `injection`, source `hook:<name>`) wrapped in `<context source="my-hook">`, and stays in the conversation like any other message.
 
-- It was a user-role message before. Providers merge consecutive user messages into one turn, so the model saw the context glued to what the user typed and treated it as a prompt injection.
-- A system-role message in the middle of the conversation is not an option: Google rejects system messages anywhere but the start.
-- It applies to one turn. Later turns do not see it, so a hook that wants something to persist returns it again. The row stays in `thread_agent_messages` (role `system`, kind `injection`, source `hook:<name>`) as a record, and `buildModelMessages` skips system rows.
-- The model gives it the weight of the agent's own prompt. A hook must not pass text written by users or fetched from outside through unchanged. State facts and what to do about them in plain terms; wording that asks the model to play a role or keep secrets from the user gets ignored, with good reason.
+- It must not go in the system prompt. The system prompt is the start of every request, so changing it per turn invalidates the prompt cache for the whole conversation. The system prompt is static.
+- Providers merge consecutive user messages into one turn, so the model sees the context right after what the user typed. To stop it reading that as a prompt injection, the system prompt has a "Messages added by Taico" section that lists the markers Taico uses: `<context source="...">`, `<conversation-summary>` and `<task-notification>`. The list is `TAICO_MARKER_TAGS` in `thread-agent.prompts.ts`. When you add a marker, add it to that list and describe it in the prompt.
+- People cannot type the markers. `formatMessage` runs `escapeMarkerTags` on every user message before it enters the agent log, turning `<context` into `&lt;context` (same for the other markers and their closing tags). The prompt tells the model this, which is what makes an intact tag trustworthy. A hook that passes on text written by users or fetched from outside must run it through `escapeMarkerTags` too.
+- Word the context as facts and what to do about them. Wording that asks the model to play a role or keep secrets from the user gets ignored, with good reason.
 
 Built-in hooks:
 

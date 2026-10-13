@@ -18,13 +18,6 @@ export type AfterTurnContext = {
   lastInputTokens: number | null;
 };
 
-/** What a hook added for one turn. */
-export type TurnContext = {
-  /** Name of the hook that produced it. */
-  source: string;
-  text: string;
-};
-
 /**
  * Watches the conversation and can enrich or maintain the agent-side context.
  * Register implementations under THREAD_AGENT_HOOKS in ThreadsModule.
@@ -35,12 +28,14 @@ export interface ThreadAgentHook {
 
   /**
    * Runs after the new user messages are stored and before the model is called.
-   * Return text for the model, or null. The user never sees it.
+   * Return text to add to the agent-side conversation; the user never sees it.
    *
-   * The text goes into the system instructions of this turn only, so the model
-   * gives it the same weight as the agent's own prompt. Do not pass text written
-   * by users or fetched from outside through unchanged: state facts and what to
-   * do about them, in plain terms. Later turns do not see it again.
+   * It is sent as a user-role message wrapped in <context source="name">, one of
+   * the markers the system prompt tells the model to trust (it must not go in the
+   * system prompt: that would break prompt caching for the whole conversation).
+   * State facts and what to do about them in plain terms. If the text includes
+   * anything written by users or fetched from outside, pass it through
+   * escapeMarkerTags first.
    */
   beforeTurn?(context: BeforeTurnContext): Promise<string | null>;
 

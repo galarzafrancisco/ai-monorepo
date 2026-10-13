@@ -1,4 +1,4 @@
-import { ThreadAgentMessageKind, ThreadAgentMessageRole } from '../thread-agent.enums';
+import { ThreadAgentMessageKind } from '../thread-agent.enums';
 import { renderTranscript } from './compaction.hook';
 import { EasterEggHook } from './easter-egg.hook';
 import { ThreadAgentHook } from './thread-agent-hook.interface';
@@ -17,22 +17,21 @@ describe('ThreadAgentHooksRunner', () => {
     return { agentLog, runner: new ThreadAgentHooksRunner(hooks, agentLog as never) };
   };
 
-  it('returns what a hook adds and records it as a system row', async () => {
+  it('stores what a hook returns as a hidden injection', async () => {
     const { runner, agentLog } = createRunner([
       { name: 'lookup', beforeTurn: async () => 'Existing tags:\n- bug' },
     ]);
 
-    const added = await runner.runBeforeTurn({ ...turn, newUserMessages: [], context: [] });
+    const injected = await runner.runBeforeTurn({ ...turn, newUserMessages: [], context: [] });
 
-    expect(added).toEqual([{ source: 'lookup', text: 'Existing tags:\n- bug' }]);
+    expect(injected).toBe(true);
     expect(agentLog.append).toHaveBeenCalledWith('thread-1', [
       expect.objectContaining({
-        role: ThreadAgentMessageRole.SYSTEM,
         kind: ThreadAgentMessageKind.INJECTION,
         source: 'hook:lookup',
         turnId: 'turn-1',
         message: {
-          role: 'system',
+          role: 'user',
           content: '<context source="lookup">\nExisting tags:\n- bug\n</context>',
         },
       }),
@@ -46,9 +45,9 @@ describe('ThreadAgentHooksRunner', () => {
       { name: 'useful', beforeTurn: async () => 'context' },
     ]);
 
-    const added = await runner.runBeforeTurn({ ...turn, newUserMessages: [], context: [] });
+    const injected = await runner.runBeforeTurn({ ...turn, newUserMessages: [], context: [] });
 
-    expect(added).toEqual([{ source: 'useful', text: 'context' }]);
+    expect(injected).toBe(true);
     expect(agentLog.append).toHaveBeenCalledTimes(1);
   });
 });
@@ -56,7 +55,7 @@ describe('ThreadAgentHooksRunner', () => {
 describe('EasterEggHook', () => {
   const hook = new EasterEggHook();
 
-  it('asks for the countersign when the user says the recognition phrase', async () => {
+  it('hands over the countersign when the user says the recognition phrase', async () => {
     const text = await hook.beforeTurn({
       ...turn,
       newUserMessages: ['Psst. The key is under the doormat.'],
