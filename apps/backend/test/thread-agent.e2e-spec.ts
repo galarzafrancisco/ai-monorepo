@@ -107,6 +107,12 @@ describe('Thread agent E2E', () => {
         (message.content as Array<{ text: string }>).map((part) => part.text).join(''),
       );
 
+  const systemText = (prompt: PromptMessage[]): string =>
+    prompt
+      .filter((message) => message.role === 'system')
+      .map((message) => message.content as string)
+      .join('\n');
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -248,22 +254,24 @@ describe('Thread agent E2E', () => {
     expect(unseen).toHaveLength(0);
   });
 
-  it('injects hook context into the agent conversation without showing it to the user', async () => {
+  it('puts hook context in the system instructions, not in a message, and never shows it to the user', async () => {
     const threadId = await createThread();
 
     await sendMessage(threadId, 'the key is under the doormat');
     await waitForAgentReplies(threadId, 1);
 
+    const egg = '<context source="easter-egg">';
     const texts = userTexts(prompts[prompts.length - 1]);
-    expect(texts).toHaveLength(2);
-    expect(texts[1]).toContain('<context source="easter-egg">');
-    expect(texts[1]).toContain('The owl only hoots at midnight.');
+    expect(texts).toHaveLength(1);
+    expect(texts[0]).not.toContain(egg);
+    expect(systemText(prompts[prompts.length - 1])).toContain(egg);
+    expect(systemText(prompts[prompts.length - 1])).toContain('The owl only hoots at midnight.');
 
     const [injection] = await dataSource.query(
       `SELECT kind, role FROM thread_agent_messages WHERE thread_id = $1 AND source = 'hook:easter-egg'`,
       [threadId],
     );
-    expect(injection).toEqual({ kind: 'injection', role: 'user' });
+    expect(injection).toEqual({ kind: 'injection', role: 'system' });
 
     const visible: Array<{ content: string }> = await dataSource.query(
       `SELECT content FROM thread_messages WHERE thread_id = $1`,
@@ -271,6 +279,14 @@ describe('Thread agent E2E', () => {
     );
     expect(visible).toHaveLength(2);
     expect(visible.some((message) => message.content.includes('<context'))).toBe(false);
+
+    // The context was for that message only: the next turn does not carry it.
+    await sendMessage(threadId, 'anything else?');
+    await waitForAgentReplies(threadId, 2);
+
+    const next = prompts[prompts.length - 1];
+    expect(userTexts(next)).toHaveLength(3);
+    expect(next.some((message) => JSON.stringify(message.content).includes(egg))).toBe(false);
   });
 
   it('replaces older history with a summary once the conversation is large', async () => {

@@ -41,6 +41,8 @@ function stripProviderSpecificParts(
 /**
  * Turns stored agent-log rows (oldest first) into the messages sent to `target`.
  * Rows that no longer match the message schema are skipped and reported.
+ * System rows are a record of what hooks added to a turn's instructions; they
+ * are left out, because that context applied to its own turn only.
  */
 export function buildModelMessages(
   rows: AgentContextRow[],
@@ -56,6 +58,10 @@ export function buildModelMessages(
       row.message === null
     ) {
       onInvalidRow?.(row);
+      continue;
+    }
+
+    if ((row.message as { role?: unknown }).role === 'system') {
       continue;
     }
 

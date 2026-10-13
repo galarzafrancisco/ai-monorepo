@@ -123,7 +123,7 @@ function createHarness(steps: unknown[][]) {
 
   const mcpClose = jest.fn().mockResolvedValue(undefined);
   const hooks = {
-    runBeforeTurn: jest.fn().mockResolvedValue(false),
+    runBeforeTurn: jest.fn().mockResolvedValue([]),
     runAfterTurn: jest.fn().mockResolvedValue(undefined),
   };
 
@@ -306,5 +306,21 @@ describe('ThreadAgentService', () => {
       ThreadAgentMessageRole.TOOL,
     ]);
     expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+  });
+
+  it('sends what the hooks added as system instructions, not as a message', async () => {
+    const h = createHarness([textStep('Hoot.')]);
+    h.hooks.runBeforeTurn.mockResolvedValue([{ source: 'lookup', text: 'Existing tags:\n- bug' }]);
+
+    await h.service.drain(THREAD_ID);
+
+    const prompt = h.prompts[0] as Array<{ role: string; content: unknown }>;
+    const block = '<context source="lookup">\nExisting tags:\n- bug\n</context>';
+    const system = prompt.filter((message) => message.role === 'system');
+    const rest = prompt.filter((message) => message.role !== 'system');
+
+    expect(system).toHaveLength(1);
+    expect(system[0].content).toContain(block);
+    expect(JSON.stringify(rest)).not.toContain('<context');
   });
 });

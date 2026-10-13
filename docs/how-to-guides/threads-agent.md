@@ -9,7 +9,7 @@ Code lives in `apps/backend/src/threads/agent/`.
 | Table | What it holds | Who reads it |
 | --- | --- | --- |
 | `thread_messages` | What people see in the thread | UI, API |
-| `thread_agent_messages` | What the model sees: user messages, assistant text, reasoning, tool calls, tool results, hook injections, summaries | The agent only |
+| `thread_agent_messages` | What the model sees: user messages, assistant text, reasoning, tool calls, tool results, a record of hook context, summaries | The agent only |
 
 `thread_agent_messages` is append-only, one row per message, stored as an AI SDK `ModelMessage` in `message` (jsonb) with a `format_version`.
 
@@ -23,8 +23,8 @@ Every user-facing message stores `agent_message_id`, the agent-side row it corre
 
 1. Claims the thread in `thread_turns`. A partial unique index allows one running turn per thread across all backend processes. If the claim fails, the process that holds it picks up the new message when it finishes.
 2. Copies unseen user-facing messages into the agent log and links them.
-3. Runs `beforeTurn` hooks.
-4. Loads the context, calls the model with Taico's MCP tools, and appends each step as it completes.
+3. Loads the context and runs `beforeTurn` hooks.
+4. Calls the model with Taico's MCP tools and whatever the hooks added, and appends each step as it completes.
 5. Runs `afterTurn` hooks, then releases the thread.
 
 Nothing is kept in memory between turns. A turn whose process died stops heartbeating and is failed by the next claim after 60 seconds.
@@ -56,7 +56,7 @@ When a message was produced by a different model than the one being called, its 
 
 ## Hooks
 
-A hook watches the conversation and can add context the user never sees.
+A hook watches the conversation and can tell the model something the user never sees.
 
 ```ts
 @Injectable()
@@ -64,7 +64,7 @@ export class MyHook implements ThreadAgentHook {
   readonly name = 'my-hook';
 
   async beforeTurn(context: BeforeTurnContext): Promise<string | null> {
-    // Return text to inject into the agent-side conversation, or null.
+    // Return text for the model, or null.
   }
 
   async afterTurn(context: AfterTurnContext): Promise<void> {
@@ -75,9 +75,18 @@ export class MyHook implements ThreadAgentHook {
 
 Register it in `ThreadsModule` under `THREAD_AGENT_HOOKS`. Hooks run in the listed order, have a time limit (5 seconds before a turn, 2 minutes after), and a failing hook never blocks the turn.
 
+### Where hook context goes
+
+What `beforeTurn` returns is added to the end of the system instructions of that turn, under "Context for this turn", wrapped in `<context source="my-hook">`. It is not sent as a message.
+
+- It was a user-role message before. Providers merge consecutive user messages into one turn, so the model saw the context glued to what the user typed and treated it as a prompt injection.
+- A system-role message in the middle of the conversation is not an option: Google rejects system messages anywhere but the start.
+- It applies to one turn. Later turns do not see it, so a hook that wants something to persist returns it again. The row stays in `thread_agent_messages` (role `system`, kind `injection`, source `hook:<name>`) as a record, and `buildModelMessages` skips system rows.
+- The model gives it the weight of the agent's own prompt. A hook must not pass text written by users or fetched from outside through unchanged. State facts and what to do about them in plain terms; wording that asks the model to play a role or keep secrets from the user gets ignored, with good reason.
+
 Built-in hooks:
 
-- `EasterEggHook` is the example to copy. Say "the key is under the doormat" in a thread and the agent is quietly handed the countersign.
+- `EasterEggHook` is the example to copy. Say "the key is under the doormat" in a thread and the agent is told to answer with the countersign.
 - `CompactionHook` appends a summary once the conversation exceeds `THREAD_AGENT_COMPACTION_TOKEN_THRESHOLD` input tokens (default 100000). Older rows stay in the table.
 
 ## Multiple backend processes
