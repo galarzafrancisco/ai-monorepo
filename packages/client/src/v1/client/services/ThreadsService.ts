@@ -14,6 +14,7 @@ import type { ThreadListResponseDto } from '../models/ThreadListResponseDto.js';
 import type { ThreadMessageResponseDto } from '../models/ThreadMessageResponseDto.js';
 import type { ThreadResponseDto } from '../models/ThreadResponseDto.js';
 import type { ThreadStateResponseDto } from '../models/ThreadStateResponseDto.js';
+import type { ThreadTokenUsageResponseDto } from '../models/ThreadTokenUsageResponseDto.js';
 import type { UpdateThreadDto } from '../models/UpdateThreadDto.js';
 import type { UpdateThreadStateDto } from '../models/UpdateThreadStateDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -337,6 +338,27 @@ export class ThreadsService {
             mediaType: 'application/json',
             errors: {
                 400: `Invalid input data`,
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Get the token usage the model provider reported for a thread (debug)
+     * @param id Thread UUID
+     * @returns ThreadTokenUsageResponseDto Token usage retrieved successfully
+     * @throws ApiError
+     */
+    public static threadsControllerGetThreadTokenUsage(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ThreadTokenUsageResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/threads/{id}/token-usage',
+            path: {
+                'id': id,
+            },
+            errors: {
                 404: `Thread not found`,
             },
         });

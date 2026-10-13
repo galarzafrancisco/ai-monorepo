@@ -178,6 +178,45 @@ describe('Thread agent E2E', () => {
     expect(userDisplay.agent_message_id).toBe(userRow.id);
   });
 
+  it('reports the token usage the model reported for a thread', async () => {
+    const threadId = await createThread();
+
+    const before = await request(httpServer)
+      .get(`/api/v1/threads/${threadId}/token-usage`)
+      .set('Cookie', authCookies)
+      .expect(200);
+    expect(before.body).toEqual({
+      contextTokens: null,
+      inputTokens: null,
+      outputTokens: null,
+      steps: 0,
+    });
+
+    await sendMessage(threadId, 'hello');
+    await waitForAgentReplies(threadId, 1);
+    await sendMessage(threadId, 'again');
+    await waitForAgentReplies(threadId, 2);
+
+    const after = await request(httpServer)
+      .get(`/api/v1/threads/${threadId}/token-usage`)
+      .set('Cookie', authCookies)
+      .expect(200);
+    // The mock model reports one input and one output token per step.
+    expect(after.body).toEqual({
+      contextTokens: 1,
+      inputTokens: 2,
+      outputTokens: 2,
+      steps: 2,
+    });
+  });
+
+  it('answers 404 for the token usage of a thread that does not exist', async () => {
+    await request(httpServer)
+      .get('/api/v1/threads/00000000-0000-4000-8000-000000000000/token-usage')
+      .set('Cookie', authCookies)
+      .expect(404);
+  });
+
   it('keeps the conversation when a thread loaded before the turn is saved afterwards', async () => {
     const threadId = await createThread();
     const threads = dataSource.getRepository(ThreadEntity);

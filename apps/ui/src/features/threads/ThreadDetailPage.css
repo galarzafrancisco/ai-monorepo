@@ -436,6 +436,14 @@
   color: var(--text-muted);
 }
 
+.thread-detail-page__token-usage {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}
+
 .thread-detail-page__mobile-meta {
   display: flex;
   align-items: center;
