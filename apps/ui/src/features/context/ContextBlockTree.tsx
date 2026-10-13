@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Text } from "../../ui/primitives";
 import type { ContextBlockSummary } from "./types";
+import { normalizeParentId } from "./normalizeParentId";
 import "./ContextBlockTree.css";
 
 type TreeNode = {
@@ -18,18 +19,6 @@ type ContextBlockTreeProps = {
   selectedBlockId?: string;
   compact?: boolean;
 };
-
-export function normalizeParentId(parentId: ContextBlockSummary["parentId"]): string | null {
-  if (typeof parentId === "string") {
-    return parentId;
-  }
-
-  if (parentId && typeof parentId === "object" && "id" in parentId && typeof parentId.id === "string") {
-    return parentId.id;
-  }
-
-  return null;
-}
 
 function compareBlocks(a: ContextBlockSummary, b: ContextBlockSummary): number {
   if (a.order !== b.order) {

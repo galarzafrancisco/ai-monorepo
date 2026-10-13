@@ -2,7 +2,8 @@ import { Outlet, useNavigate, useParams, Link, useLocation } from "react-router-
 import { useEffect, useMemo, useState } from "react";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useContextCtx } from "./ContextProvider";
-import { ContextBlockTree, normalizeParentId } from "./ContextBlockTree";
+import { ContextBlockTree } from "./ContextBlockTree";
+import { normalizeParentId } from "./normalizeParentId";
 import { Text, Row } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
