@@ -6,19 +6,23 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Existing threads get the time of their newest message, or their creation
  * time when they have none.
+ *
+ * The column keeps whole milliseconds, cut off rather than rounded: that is
+ * the precision the API and the live events send, so the browser can sort
+ * threads exactly as the database does.
  */
 export class ThreadLastActivity1761500000000 implements MigrationInterface {
   name = 'ThreadLastActivity1761500000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "threads" ADD "last_activity_at" TIMESTAMP WITH TIME ZONE`,
+      `ALTER TABLE "threads" ADD "last_activity_at" TIMESTAMP(3) WITH TIME ZONE`,
     );
     await queryRunner.query(
-      `UPDATE "threads" t SET "last_activity_at" = COALESCE((SELECT MAX(m."created_at") FROM "thread_messages" m WHERE m."thread_id" = t."id"), t."created_at")`,
+      `UPDATE "threads" t SET "last_activity_at" = date_trunc('milliseconds', COALESCE((SELECT MAX(m."created_at") FROM "thread_messages" m WHERE m."thread_id" = t."id"), t."created_at"))`,
     );
     await queryRunner.query(
-      `ALTER TABLE "threads" ALTER COLUMN "last_activity_at" SET DEFAULT now()`,
+      `ALTER TABLE "threads" ALTER COLUMN "last_activity_at" SET DEFAULT date_trunc('milliseconds', now())`,
     );
     await queryRunner.query(
       `ALTER TABLE "threads" ALTER COLUMN "last_activity_at" SET NOT NULL`,

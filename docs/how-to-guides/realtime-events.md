@@ -53,6 +53,7 @@ Threads are the reference implementation:
 The order of the thread list is built on the same event:
 
 - `threads.last_activity_at` is the time of the latest message people can see in the thread, or its creation time when it has none. `GET /threads` orders by it, newest first, with the id as the tie-break, and returns it as `lastActivityAt`.
+- `last_activity_at` keeps whole milliseconds (cut off, not rounded), although message times have microseconds. The API and `thread.activity` send milliseconds, so the stored value has to match for clients to sort exactly as the server does; two messages in the same millisecond tie and the id decides on both sides.
 - Only `ThreadMessageWriterService` writes to `thread_messages`, and it moves `last_activity_at` in the same transaction. Post a visible message through it and nowhere else. The agent log (`thread_agent_messages`: tool calls, reasoning, injected task notifications, summaries) never moves it, and neither does renaming or tagging a thread: that is what `updatedAt` records.
 - On `thread.activity` each client sets the thread's `lastActivityAt` and sorts with the same rule as the server (`apps/ui/src/features/threads/threadListOrder.ts`). This happens for every message, including the user's own and ones in the open thread. Counting a message as unread is a separate decision.
 - A message in a thread the list has not loaded makes the client fetch the list again.

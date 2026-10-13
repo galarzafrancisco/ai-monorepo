@@ -38,9 +38,14 @@ export class ThreadMessageWriterService {
 
       // Raw update: it must not bump the thread's row version or updated_at.
       // GREATEST keeps the newest message when two writers commit out of order.
+      // Cut to milliseconds, as the driver does when it reads `created_at`, so
+      // the stored time is the one the activity event sends to the list.
       await manager.query(
         `UPDATE threads t
-            SET last_activity_at = GREATEST(t.last_activity_at, m.created_at)
+            SET last_activity_at = GREATEST(
+                  t.last_activity_at,
+                  date_trunc('milliseconds', m.created_at)
+                )
            FROM thread_messages m
           WHERE m.id = $1 AND t.id = m.thread_id`,
         [saved.id],

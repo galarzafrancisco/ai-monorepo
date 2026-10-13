@@ -124,7 +124,7 @@ describe('Thread ordering E2E', () => {
   const orderOf = async (threadIds: string[]): Promise<string[]> =>
     (await listThreads()).map((thread) => thread.id).filter((id) => threadIds.includes(id));
 
-  /** Read as text so the comparison keeps Postgres' microseconds. */
+  /** Read as text, so nothing is lost to the driver's Date conversion. */
   const lastActivityAt = async (threadId: string): Promise<string> => {
     const rows: Array<{ at: string }> = await dataSource.query(
       `SELECT last_activity_at::text AS at FROM threads WHERE id = $1`,
@@ -133,9 +133,10 @@ describe('Thread ordering E2E', () => {
     return rows[0].at;
   };
 
+  /** Message times cut to milliseconds, which is what `last_activity_at` keeps. */
   const messageTimes = async (threadId: string, actorId: string): Promise<string[]> => {
     const rows: Array<{ at: string }> = await dataSource.query(
-      `SELECT created_at::text AS at FROM thread_messages
+      `SELECT date_trunc('milliseconds', created_at)::timestamptz(3)::text AS at FROM thread_messages
         WHERE thread_id = $1 AND created_by_actor_id = $2 ORDER BY created_at ASC`,
       [threadId, actorId],
     );
@@ -232,7 +233,7 @@ describe('Thread ordering E2E', () => {
     expect(await orderOf([older, newer])).toEqual([newer, older]);
 
     const rows: Array<{ same: boolean }> = await dataSource.query(
-      `SELECT last_activity_at = created_at AS same FROM threads WHERE id = $1`,
+      `SELECT last_activity_at = date_trunc('milliseconds', created_at) AS same FROM threads WHERE id = $1`,
       [newer],
     );
     expect(rows[0].same).toBe(true);
@@ -536,6 +537,72 @@ describe('Thread ordering E2E', () => {
       expect(local[0].unreadCount).toBe(0);
       expect(server[0].unreadCount).toBe(1);
     });
+
+    it('orders two threads like the server when their messages are less than a millisecond apart', async () => {
+      const created = [await createThread(), await createThread()];
+      const sorted: Array<{ id: string }> = await dataSource.query(
+        `SELECT id FROM threads WHERE id = ANY($1::uuid[]) ORDER BY id ASC`,
+        [created],
+      );
+      const [lowId, highId] = sorted.map((row) => row.id);
+      const ids = [lowId, highId];
+
+      const socket = await openListSocket();
+      let local: ListItem[] = (await listThreads()).filter((item) => ids.includes(item.id));
+      const events: ThreadActivityWireEvent[] = [];
+      socket.on(ThreadWireEvents.THREAD_ACTIVITY, (event: ThreadActivityWireEvent) => {
+        if (!ids.includes(event.payload.threadId)) return;
+        events.push(event);
+        local =
+          applyThreadActivity(local, event.payload, {
+            actorId: userActorId,
+            viewingThreadId: null,
+          }) ?? local;
+      });
+
+      // Pin the time new messages get, so both land in one millisecond: the
+      // thread with the lower id 800 microseconds after the other. By
+      // microseconds the lower id would list first; by milliseconds they tie
+      // and the higher id does.
+      const [{ base }]: Array<{ base: string }> = await dataSource.query(
+        `SELECT date_trunc('milliseconds', now())::text AS base`,
+      );
+      const postAt = async (threadId: string, microseconds: number) => {
+        await dataSource.query(
+          `ALTER TABLE thread_messages ALTER COLUMN created_at
+             SET DEFAULT '${base}'::timestamptz + interval '${microseconds} microseconds'`,
+        );
+        script.push(staySilent);
+        await sendMessage(threadId, 'same millisecond');
+        await waitForTurns(threadId, 1);
+      };
+      try {
+        await postAt(highId, 100);
+        await postAt(lowId, 900);
+      } finally {
+        await dataSource.query(
+          `ALTER TABLE thread_messages ALTER COLUMN created_at SET DEFAULT now()`,
+        );
+      }
+      for (let attempt = 0; attempt < 100 && events.length < 2; attempt++) await tick();
+
+      const raw: Array<{ thread_id: string; at: string }> = await dataSource.query(
+        `SELECT thread_id, created_at::text AS at FROM thread_messages
+          WHERE thread_id = ANY($1::uuid[]) ORDER BY created_at ASC`,
+        [ids],
+      );
+      expect(raw.map((row) => row.thread_id)).toEqual([highId, lowId]);
+      expect(raw[0].at).not.toBe(raw[1].at);
+      expect(await lastActivityAt(highId)).toBe(await lastActivityAt(lowId));
+
+      const server = (await listThreads()).filter((item) => ids.includes(item.id));
+      expect(server.map((item) => item.id)).toEqual([highId, lowId]);
+      expect(events).toHaveLength(2);
+      expect(local.map((item) => item.id)).toEqual(server.map((item) => item.id));
+      expect(local.map((item) => item.lastActivityAt)).toEqual(
+        server.map((item) => item.lastActivityAt),
+      );
+    });
   });
 
   // These two rewrite `last_activity_at` on many threads, so they run last.
@@ -595,7 +662,7 @@ describe('Thread ordering E2E', () => {
     const times = await messageTimes(withMessages, otherActorId);
     expect(await lastActivityAt(withMessages)).toBe(times[1]);
     const rows: Array<{ same: boolean }> = await dataSource.query(
-      `SELECT last_activity_at = created_at AS same FROM threads WHERE id = $1`,
+      `SELECT last_activity_at = date_trunc('milliseconds', created_at) AS same FROM threads WHERE id = $1`,
       [empty],
     );
     expect(rows[0].same).toBe(true);

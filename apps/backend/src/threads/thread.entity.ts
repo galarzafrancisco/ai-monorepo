@@ -146,11 +146,16 @@ export class ThreadEntity {
    * Unlike `updatedAt`, renaming or tagging a thread does not move it, and
    * neither does anything the agent does that people are not shown.
    * `update: false`: only ThreadMessageWriterService moves it, with its own SQL.
+   *
+   * Whole milliseconds, cut off rather than rounded. The API and the live
+   * events send milliseconds, so the browser sorts by the same value as the
+   * database and ties fall to the id on both sides.
    */
   @Column({
     type: 'timestamptz',
+    precision: 3,
     name: 'last_activity_at',
-    default: () => 'now()',
+    default: () => "date_trunc('milliseconds', now())",
     update: false,
   })
   lastActivityAt!: Date;
