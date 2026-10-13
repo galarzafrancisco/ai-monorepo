@@ -18,6 +18,8 @@ function readHideThreadState(): boolean {
 export type ContextContextValue = {
   /** The blocks to show: without thread state blocks when they are hidden. */
   blocks: ContextBlockSummary[];
+  /** Every block, including hidden thread state blocks. */
+  allBlocks: ContextBlockSummary[];
   /** How many thread state blocks exist, hidden or not. */
   threadStateBlockCount: number;
   hideThreadState: boolean;
@@ -63,6 +65,7 @@ export function ContextProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<ContextContextValue>(() => {
     return {
       blocks,
+      allBlocks,
       threadStateBlockCount,
       hideThreadState,
       setHideThreadState,
@@ -76,6 +79,7 @@ export function ContextProvider({ children }: { children: React.ReactNode }) {
     };
   }, [
     blocks,
+    allBlocks,
     threadStateBlockCount,
     hideThreadState,
     setHideThreadState,

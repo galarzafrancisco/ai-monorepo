@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Text } from "../../ui/primitives";
 import type { ContextBlockSummary } from "./types";
+import { normalizeParentId } from "./normalizeParentId";
 import "./ContextBlockTree.css";
 
 type TreeNode = {
@@ -18,18 +19,6 @@ type ContextBlockTreeProps = {
   selectedBlockId?: string;
   compact?: boolean;
 };
-
-function normalizeParentId(parentId: ContextBlockSummary["parentId"]): string | null {
-  if (typeof parentId === "string") {
-    return parentId;
-  }
-
-  if (parentId && typeof parentId === "object" && "id" in parentId && typeof parentId.id === "string") {
-    return parentId.id;
-  }
-
-  return null;
-}
 
 function compareBlocks(a: ContextBlockSummary, b: ContextBlockSummary): number {
   if (a.order !== b.order) {
@@ -236,6 +225,39 @@ function getAllParentIds(tree: TreeNode[]): Set<string> {
   return parentIds;
 }
 
+function findScrollParent(element: HTMLElement): HTMLElement | null {
+  let current = element.parentElement;
+  while (current) {
+    const overflowY = getComputedStyle(current).overflowY;
+    if ((overflowY === "auto" || overflowY === "scroll") && current.scrollHeight > current.clientHeight) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Centers the row in its scroll container, only if it is not already fully
+ * visible. Scrolls just that container, so the page itself never moves.
+ */
+function scrollRowIntoView(row: HTMLElement): void {
+  const scrollParent = findScrollParent(row);
+  if (!scrollParent) {
+    return;
+  }
+
+  const rowRect = row.getBoundingClientRect();
+  const parentRect = scrollParent.getBoundingClientRect();
+  if (rowRect.top >= parentRect.top && rowRect.bottom <= parentRect.bottom) {
+    return;
+  }
+
+  const rowCenter = rowRect.top + rowRect.height / 2;
+  const parentCenter = parentRect.top + scrollParent.clientHeight / 2;
+  scrollParent.scrollTop += rowCenter - parentCenter;
+}
+
 export function ContextBlockTree({
   blocks,
   onOpenBlock,
@@ -257,8 +279,20 @@ export function ContextBlockTree({
     }
   }, [tree]);
 
+  // Reveal the selected block once per selection (and per mount), so that
+  // opening a block from a URL or a search result shows it in the tree:
+  // first expand its ancestors, then scroll its row into view. Doing each
+  // step only once keeps later manual collapsing/scrolling under user control.
+  const treeRef = useRef<HTMLElement>(null);
+  const expandedForIdRef = useRef<string | undefined>(undefined);
+  const scrolledForIdRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
     if (!selectedBlockId) {
+      expandedForIdRef.current = undefined;
+      return;
+    }
+    if (expandedForIdRef.current === selectedBlockId) {
       return;
     }
 
@@ -267,9 +301,15 @@ export function ContextBlockTree({
       parentById.set(block.id, normalizeParentId(block.parentId));
     });
 
+    // The block may not be in the list yet; try again when the list changes.
+    if (!parentById.has(selectedBlockId)) {
+      return;
+    }
+    expandedForIdRef.current = selectedBlockId;
+
     const ancestorIds = new Set<string>();
     let currentParentId = parentById.get(selectedBlockId) ?? null;
-    while (currentParentId) {
+    while (currentParentId && !ancestorIds.has(currentParentId)) {
       ancestorIds.add(currentParentId);
       currentParentId = parentById.get(currentParentId) ?? null;
     }
@@ -285,6 +325,25 @@ export function ContextBlockTree({
     });
   }, [blocks, selectedBlockId]);
 
+  // Runs after every render that could have made the selected row appear
+  // (list loaded, ancestors expanded) until it has scrolled to it once.
+  useLayoutEffect(() => {
+    if (!selectedBlockId) {
+      scrolledForIdRef.current = undefined;
+      return;
+    }
+    if (scrolledForIdRef.current === selectedBlockId) {
+      return;
+    }
+
+    const row = treeRef.current?.querySelector<HTMLElement>(".context-tree__row--selected");
+    if (!row) {
+      return;
+    }
+    scrolledForIdRef.current = selectedBlockId;
+    scrollRowIntoView(row);
+  }, [selectedBlockId, collapsedIds, tree]);
+
   const handleToggleNode = (blockId: string) => {
     setCollapsedIds((previous) => {
       const next = new Set(previous);
@@ -298,7 +357,7 @@ export function ContextBlockTree({
   };
 
   return (
-    <section className={`context-tree ${compact ? "context-tree--compact" : ""}`}>
+    <section ref={treeRef} className={`context-tree ${compact ? "context-tree--compact" : ""}`}>
       <TreeBranch
         nodes={tree}
         depth={0}
