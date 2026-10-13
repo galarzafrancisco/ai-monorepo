@@ -26,6 +26,19 @@ export type ProjectResult = {
   updatedAt: Date;
 };
 
+export type ExportedProject = {
+  slug: string;
+  description?: string;
+  repoUrl?: string;
+  color?: string;
+};
+
+export type ProjectsExportPayload = {
+  version: 1;
+  exportedAt: string;
+  projects: ExportedProject[];
+};
+
 export type SearchProjectsInput = {
   query: string;
   limit?: number;

@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { CreateProjectDto } from '../models/CreateProjectDto.js';
+import type { ImportProjectsResponseDto } from '../models/ImportProjectsResponseDto.js';
 import type { PatchProjectDto } from '../models/PatchProjectDto.js';
 import type { ProjectResponseDto } from '../models/ProjectResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -39,6 +40,42 @@ export class MetaProjectsService {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/projects',
+        });
+    }
+    /**
+     * Export all projects as JSON
+     * @returns binary Projects JSON downloaded successfully
+     * @throws ApiError
+     */
+    public static projectsControllerExportProjects(config: OpenAPIConfig = OpenAPI): CancelablePromise<Blob> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/meta/projects/export',
+        });
+    }
+    /**
+     * Import projects from JSON
+     * @param formData
+     * @returns ImportProjectsResponseDto Projects imported successfully
+     * @throws ApiError
+     */
+    public static projectsControllerImportProjects(
+        formData: {
+            /**
+             * JSON file exported from projects
+             */
+            file: Blob;
+        },
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ImportProjectsResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/meta/projects/import',
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                400: `No JSON file uploaded or invalid file type`,
+            },
         });
     }
     /**
