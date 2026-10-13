@@ -223,7 +223,11 @@ describe('Thread task subscriptions E2E', () => {
 
     // The model was called with the notification as the newest message.
     const lastPrompt = prompts[prompts.length - 1];
-    expect(JSON.stringify(lastPrompt[lastPrompt.length - 1])).toContain('task-notification');
+    // It carries the thread key there, and only there.
+    expect(JSON.stringify(lastPrompt[lastPrompt.length - 1])).toMatch(
+      /<task-notification key=\\"[0-9a-f]{6}\\" task-id=/,
+    );
+    expect(notification).not.toContain('key=');
 
     expect(await agentReplies(threadId)).toEqual([
       'I will let you know when it is ready.',

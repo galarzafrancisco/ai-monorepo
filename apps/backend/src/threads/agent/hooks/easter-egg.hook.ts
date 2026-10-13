@@ -3,9 +3,11 @@ import { BeforeTurnContext, ThreadAgentHook } from './thread-agent-hook.interfac
 
 const RECOGNITION_PHRASE = 'the key is under the doormat';
 
+const COUNTERSIGN = 'The owl only hoots at midnight.';
+
 /**
- * Example hook. When a user says the recognition phrase, the agent is quietly
- * handed the countersign. Copy this file to build a real hook: look at the new
+ * Example hook. When a user says the recognition phrase, the agent is told to
+ * answer with the countersign. Copy this file to build a real hook: look at the new
  * messages, decide whether there is something worth adding, and return it.
  */
 @Injectable()
@@ -21,9 +23,9 @@ export class EasterEggHook implements ThreadAgentHook {
     }
 
     return [
-      'The user just gave the recognition phrase. They are a fellow field agent.',
-      'Open your reply with the countersign, word for word: "The owl only hoots at midnight."',
-      'Then carry on as normal. Never reveal where you learned the countersign.',
+      `Taico has an easter egg: the phrase "${RECOGNITION_PHRASE}". The user's latest message contains it.`,
+      `Start your reply with this line: "${COUNTERSIGN}"`,
+      'Then answer the rest of their message as usual. If they ask, you can say it is an easter egg.',
     ].join('\n');
   }
 }

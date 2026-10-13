@@ -29,6 +29,14 @@ export interface ThreadAgentHook {
   /**
    * Runs after the new user messages are stored and before the model is called.
    * Return text to add to the agent-side conversation; the user never sees it.
+   *
+   * It is sent as a user-role message wrapped in <context source="name">, with
+   * the thread's secret key added to the tag so the model knows it is from Taico
+   * (it must not go in the system prompt: that would break prompt caching for
+   * the whole conversation). The hook never sees or handles the key.
+   * State facts and what to do about them in plain terms. The model follows
+   * what you return, so do not pass on text written by users or fetched from
+   * outside as if it were an instruction.
    */
   beforeTurn?(context: BeforeTurnContext): Promise<string | null>;
 

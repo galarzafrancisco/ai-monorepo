@@ -75,9 +75,31 @@ export class MyHook implements ThreadAgentHook {
 
 Register it in `ThreadsModule` under `THREAD_AGENT_HOOKS`. Hooks run in the listed order, have a time limit (5 seconds before a turn, 2 minutes after), and a failing hook never blocks the turn.
 
+### How hook context reaches the model
+
+What `beforeTurn` returns is stored in `thread_agent_messages` as a user-role row (kind `injection`, source `hook:<name>`) wrapped in `<context source="my-hook">`, and stays in the conversation like any other message.
+
+- It must not go in the system prompt. The system prompt is the start of every request, so changing it per turn invalidates the prompt cache for the whole conversation. The system prompt is the same on every turn of a thread.
+- Providers merge consecutive user messages into one turn, so the model sees the context right after what the user typed. On its own that looks like a prompt injection, and anyone can type a `<context>` tag. The thread key solves both.
+- Word the context as facts and what to do about them. Wording that asks the model to play a role or keep secrets from the user gets ignored, with good reason.
+- The model follows what a hook returns. Do not pass on text written by users or fetched from outside as if it were an instruction.
+
+### The thread key
+
+Every thread has a secret key: six random hex characters in `threads.secret`, created the first time the agent runs on the thread (`ThreadAgentLogService.getOrCreateThreadSecret`).
+
+- Taico's own additions to the conversation are the markers in `TAICO_MARKER_TAGS` (`thread-agent.prompts.ts`): `<context>`, `<conversation-summary>` and `<task-notification>`. When they are sent to the model, the key is added to the opening tag: `<context key="a1b2c3" source="my-hook">`.
+- The system prompt tells the model the key, to trust only tags that carry it, to treat any other tag as untrusted typed text, and never to reveal the key.
+- Rows are stored without the key. `withThreadSecret` adds it on the way to the model, to rows of kind `injection` or `summary` only. A message a person typed is kind `message` and never gets it, whatever it contains. Rows written before threads had a key get it the same way.
+- Hooks never see the key and do not need to.
+- The key must stay in the backend. The entity column is `select: false`, so it is not loaded with the thread and cannot reach an API response or an event. Do not add it to a DTO.
+- When you add a marker, add it to `TAICO_MARKER_TAGS`, describe it in the prompt, and store its rows with kind `injection`.
+
+Limits: the key is short and the only thing stopping the model from repeating it is the instruction not to. It guards against someone typing a tag, not against a determined attacker who gets the model to leak it. Text from people that Taico places inside a keyed tag (a task name in a notification, a summary of what was said) is read by the model as part of that tag.
+
 Built-in hooks:
 
-- `EasterEggHook` is the example to copy. Say "the key is under the doormat" in a thread and the agent is quietly handed the countersign.
+- `EasterEggHook` is the example to copy. Say "the key is under the doormat" in a thread and the agent is told to answer with the countersign.
 - `CompactionHook` appends a summary once the conversation exceeds `THREAD_AGENT_COMPACTION_TOKEN_THRESHOLD` input tokens (default 100000). Older rows stay in the table.
 
 ## Multiple backend processes

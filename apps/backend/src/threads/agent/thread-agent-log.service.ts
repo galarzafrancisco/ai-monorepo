@@ -5,7 +5,11 @@ import { randomUUID } from 'node:crypto';
 import { ModelMessage } from 'ai';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadNotFoundError } from '../errors/threads.errors';
-import { formatMessage, formatTaskNotification } from './thread-agent.prompts';
+import {
+  formatMessage,
+  formatTaskNotification,
+  generateThreadSecret,
+} from './thread-agent.prompts';
 import { TaskStatus } from '../../tasks/enums';
 import { AgentContextRow } from './agent-context.utils';
 import { ThreadAgentMessageEntity } from './thread-agent-message.entity';
@@ -290,6 +294,7 @@ export class ThreadAgentLogService {
   async loadContext(threadId: string): Promise<AgentContextRow[]> {
     const rows: Array<{
       id: string;
+      kind: ThreadAgentMessageKind;
       source: string;
       message: unknown;
       format_version: number;
@@ -307,18 +312,43 @@ export class ThreadAgentLogService {
            JOIN chain c ON p.id = c.parent_id
           WHERE c.kind <> $2
        )
-       SELECT id, source, message, format_version, provider_type, model_id FROM chain ORDER BY depth DESC`,
+       SELECT id, kind, source, message, format_version, provider_type, model_id FROM chain ORDER BY depth DESC`,
       [threadId, ThreadAgentMessageKind.SUMMARY],
     );
 
     return rows.map((row) => ({
       id: row.id,
+      kind: row.kind,
       source: row.source,
       message: row.message,
       formatVersion: row.format_version,
       providerType: row.provider_type,
       modelId: row.model_id,
     }));
+  }
+
+  /**
+   * The thread's secret key for Taico-written tags, created the first time the
+   * agent runs on the thread. It is only ever sent to the model: never return
+   * it from the API or put it in an event.
+   */
+  async getOrCreateThreadSecret(threadId: string): Promise<string> {
+    // One statement, so two processes starting a thread agree on the key.
+    // Raw update: it must not bump the thread's row version.
+    // TypeORM's Postgres query runner answers a raw UPDATE with
+    // [rows, affected count], unlike SELECT and INSERT which answer rows only.
+    // thread-agent.e2e-spec.ts runs this against a real database.
+    const [rows]: [Array<{ secret: string }>, number] = await this.dataSource.query(
+      `UPDATE threads SET secret = COALESCE(secret, $2)
+        WHERE id = $1 RETURNING secret`,
+      [threadId, generateThreadSecret()],
+    );
+
+    if (rows.length === 0) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    return rows[0].secret;
   }
 
   private async lockHead(
