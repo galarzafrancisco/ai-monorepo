@@ -50,11 +50,19 @@ Threads are the reference implementation:
 - Thread title updates emit to both list and detail rooms.
 - Subscribing to the list also joins `threads-actor-<actorId>`, a room holding every list connection of one actor (all their tabs and devices). Use an actor room for state that belongs to one person.
 
+The order of the thread list is built on the same event:
+
+- `threads.last_activity_at` is the time of the latest message people can see in the thread, or its creation time when it has none. `GET /threads` orders by it, newest first, with the id as the tie-break, and returns it as `lastActivityAt`.
+- `last_activity_at` keeps whole milliseconds (cut off, not rounded), although message times have microseconds. The API and `thread.activity` send milliseconds, so the stored value has to match for clients to sort exactly as the server does; two messages in the same millisecond tie and the id decides on both sides.
+- Only `ThreadMessageWriterService` writes to `thread_messages`, and it moves `last_activity_at` in the same transaction. Post a visible message through it and nowhere else. The agent log (`thread_agent_messages`: tool calls, reasoning, injected task notifications, summaries) never moves it, and neither does renaming or tagging a thread: that is what `updatedAt` records.
+- On `thread.activity` each client sets the thread's `lastActivityAt` and sorts with the same rule as the server (`apps/ui/src/features/threads/threadListOrder.ts`). This happens for every message, including the user's own and ones in the open thread. Counting a message as unread is a separate decision.
+- A message in a thread the list has not loaded makes the client fetch the list again.
+
 Unread messages are built on these rooms:
 
 - `thread_read_states` stores how far each actor has read each thread. `GET /threads` returns `unreadCount` per thread: messages written by someone else after that point.
 - `POST /threads/:id/read` moves the caller's read position to now and emits `thread.read` to their actor room, so their other tabs and devices clear the indicator.
-- Every new message emits `thread.activity` (ids only) to the list room. Each client adds one to its own count unless its user wrote the message or is looking at that thread.
+- Every new message emits `thread.activity` (ids and the message time, no content) to the list room. Each client adds one to its own count unless its user wrote the message or is looking at that thread.
 - The open chat marks its thread read while the browser tab is visible (`apps/ui/src/features/threads/useMarkThreadRead.ts`).
 - The list and its unread counts are held by `ThreadsProvider`, mounted once around the app shell (`apps/ui/src/app/App.tsx`), not inside the Threads section. A tab therefore keeps its list socket on every page, and the "Threads" entry of the main navigation shows how many threads have unread messages. A provider mounted per section would leave tabs on other pages deaf to `thread.read` and `thread.activity`.
 - The list is fetched from REST again each time its subscription to the list room is acknowledged: on page load and on every reconnect. Messages posted before the socket joined the room were never sent to it, so the first fetch alone can be out of date.

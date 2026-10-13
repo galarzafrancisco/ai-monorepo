@@ -21,6 +21,13 @@ export class ThreadListItemResponseDto {
 
   @ApiProperty({
     description:
+      'When the latest message people can see was posted, or when the thread was created if it has none. The list is ordered by this, newest first',
+    example: '2026-01-01T00:00:00.000Z',
+  })
+  lastActivityAt!: string;
+
+  @ApiProperty({
+    description:
       'Messages in this thread written by someone else that the caller has not read yet',
     example: 2,
   })

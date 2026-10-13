@@ -93,6 +93,7 @@ describe('ThreadsService - State Context Block', () => {
     rowVersion: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
+    lastActivityAt: new Date(),
     deletedAt: null,
   } as ThreadEntity;
 

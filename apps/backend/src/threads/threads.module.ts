@@ -36,6 +36,7 @@ import { AiProvidersModule } from '../ai-providers/ai-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
 import { ThreadReadStateEntity } from './read-state/thread-read-state.entity';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadMessageWriterService } from './thread-message-writer.service';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { ThreadReadStateService } from './read-state/thread-read-state.service';
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
     ThreadReadStateService,
+    ThreadMessageWriterService,
   ],
   exports: [ThreadsService],
 })

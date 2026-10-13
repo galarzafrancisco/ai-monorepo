@@ -11,6 +11,7 @@ import {
 } from '@taico/events';
 import { useAuth } from '../../auth';
 import { createSnapshotSync, SnapshotSync } from './snapshotSync';
+import { applyThreadActivity } from './threadListOrder';
 
 type ThreadsSubscribeAck = {
   ok: boolean;
@@ -32,7 +33,7 @@ type ThreadsSnapshot = {
 };
 
 /**
- * Fetches the first `pageCount` pages, newest first.
+ * Fetches the first `pageCount` pages, latest message first.
  *
  * Every refresh fetches everything the list is showing, not just the last
  * page, so the list stays one snapshot: see snapshotSync.ts.
@@ -181,9 +182,13 @@ export const useThreads = () => {
   // Create a new thread
   const createThread = useCallback(async (title?: string): Promise<Thread> => {
     const thread = await ThreadsService.ThreadsController_createThread({ body: { title } });
-    // Add to local state optimistically
+    // Add to local state optimistically. A thread with no messages yet is
+    // ordered by when it was created, so the new one goes first.
     sync.noteChange();
-    setThreads((prev) => [{ ...thread, unreadCount: 0 }, ...prev]);
+    setThreads((prev) => [
+      { ...thread, lastActivityAt: thread.createdAt, unreadCount: 0 },
+      ...prev,
+    ]);
     setTotalThreads((prev) => prev + 1);
     return thread;
   }, [sync]);
@@ -234,28 +239,22 @@ export const useThreads = () => {
     });
 
     newSocket.on(ThreadWireEvents.THREAD_ACTIVITY, (event: ThreadActivityWireEvent) => {
-      const { threadId, createdByActorId } = event.payload;
-      if (createdByActorId === actorIdRef.current) {
-        return;
-      }
-      // The user is watching this message arrive; the open chat marks it read.
-      if (viewingThreadIdRef.current === threadId) {
-        return;
-      }
-
-      if (!threadIdsRef.current.has(threadId)) {
-        // A thread this list has not loaded, e.g. created in another tab.
+      if (!threadIdsRef.current.has(event.payload.threadId)) {
+        // A thread this list has not loaded: created in another tab, or older
+        // than every loaded page. The server now lists it first.
         void refreshThreads();
         return;
       }
 
+      // Every message moves its thread up, the user's own included. Whether it
+      // also counts as unread is decided separately: see threadListOrder.ts.
       sync.noteChange();
-      setThreads((prev) =>
-        prev.map((thread) =>
-          thread.id === threadId
-            ? { ...thread, unreadCount: thread.unreadCount + 1 }
-            : thread,
-        ),
+      setThreads(
+        (prev) =>
+          applyThreadActivity(prev, event.payload, {
+            actorId: actorIdRef.current,
+            viewingThreadId: viewingThreadIdRef.current,
+          }) ?? prev,
       );
     });
 
