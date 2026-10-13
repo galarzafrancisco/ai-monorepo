@@ -14,6 +14,10 @@ export type ThreadsContextValue = {
   isLoading: boolean;
   error: string | null;
   loadThreads: () => Promise<void>;
+  /** Fetches the list again in the background, without the loading state. */
+  refreshThreads: () => Promise<void>;
+  /** How many threads have at least one unread message. */
+  unreadThreadCount: number;
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
   navItems: NavegationItem[];
@@ -31,11 +35,23 @@ export type ThreadsContextValue = {
 
 const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 
+/**
+ * Holds the thread list and its unread counts for the whole app.
+ *
+ * Mounted once around the shell, not per section: the main navigation shows
+ * an unread badge on every page, and a tab has to hear `thread.read` and
+ * `thread.activity` whichever page it is on.
+ */
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error, loadThreads, getThread, createThread, deleteThread, markThreadRead, setViewingThreadId } = useThreads();
+  const { threads, isLoading, error, loadThreads, refreshThreads, getThread, createThread, deleteThread, markThreadRead, setViewingThreadId } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
   const [navItems, setNavItems] = useState<NavegationItem[]>([]);
   const [optimisticDraftThread, setOptimisticDraftThread] = useState<OptimisticThreadDraft | null>(null);
+
+  const unreadThreadCount = useMemo(
+    () => threads.filter((thread) => thread.unreadCount > 0).length,
+    [threads],
+  );
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<ThreadsContextValue>(() => {
@@ -44,6 +60,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       error,
       loadThreads,
+      refreshThreads,
+      unreadThreadCount,
       sectionTitle,
       setSectionTitle,
       navItems,
@@ -61,6 +79,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     error,
     loadThreads,
+    refreshThreads,
+    unreadThreadCount,
     sectionTitle,
     setSectionTitle,
     navItems,

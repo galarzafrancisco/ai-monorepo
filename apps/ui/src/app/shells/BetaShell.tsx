@@ -10,12 +10,15 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useAuth } from "../../auth/AuthContext";
 import { Footprints } from "lucide-react";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
+import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
+import { UnreadBadge } from "../../features/threads/UnreadBadge";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
 
   const { user } = useAuth();
   const location = useLocation();
+  const { unreadThreadCount } = useThreadsCtx();
   useDocumentTitle();
 
   const navItems = useMemo(() => {
@@ -69,6 +72,13 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
                     >
                       <NavigationIcon icon={item.icon} className="beta-shell__desktop__nav-icon" />
                       {!isCollapsed && <span className="beta-shell__desktop__nav-label">{item.label}</span>}
+                      {item.path === '/threads' && (
+                        <UnreadBadge
+                          count={unreadThreadCount}
+                          unit="thread"
+                          className="beta-shell__desktop__nav-badge"
+                        />
+                      )}
                     </Link>
                   )
                 })}
