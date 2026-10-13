@@ -14,6 +14,8 @@ import { ThreadEntity } from '../src/threads/thread.entity';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadTurnsService } from '../src/threads/agent/thread-turns.service';
+import { ThreadAgentLogService } from '../src/threads/agent/thread-agent-log.service';
+import { ThreadNotFoundError } from '../src/threads/errors/threads.errors';
 import { ThreadTurnStatus } from '../src/threads/agent/thread-agent.enums';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
@@ -308,6 +310,30 @@ describe('Thread agent E2E', () => {
     expect(texts).toHaveLength(1);
     expect(texts[0]).toContain(typed);
     expect(texts[0]).not.toContain(key);
+  });
+
+  // Runs the real UPDATE ... RETURNING through TypeORM and Postgres, so it fails
+  // if the shape of that result is ever read wrongly.
+  it('creates the thread key once and returns the same key afterwards', async () => {
+    const agentLog = app.get(ThreadAgentLogService);
+    const threadId = await createThread();
+
+    const first = await agentLog.getOrCreateContextKey(threadId);
+    const second = await agentLog.getOrCreateContextKey(threadId);
+
+    expect(first).toMatch(/^[0-9a-f]{6}$/);
+    expect(second).toBe(first);
+    const [{ agent_context_key: stored }] = await dataSource.query(
+      `SELECT agent_context_key FROM threads WHERE id = $1`,
+      [threadId],
+    );
+    expect(stored).toBe(first);
+  });
+
+  it('refuses to create a thread key for a thread that does not exist', async () => {
+    await expect(
+      app.get(ThreadAgentLogService).getOrCreateContextKey('00000000-0000-4000-8000-000000000000'),
+    ).rejects.toBeInstanceOf(ThreadNotFoundError);
   });
 
   it('never returns the thread key from the API', async () => {
