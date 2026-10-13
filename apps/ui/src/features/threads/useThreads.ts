@@ -191,9 +191,9 @@ export const useThreads = () => {
   const deleteThread = useCallback(async (id: string) => {
     await ThreadsService.ThreadsController_deleteThread({ id });
     sync.noteChange();
-    if (threadIdsRef.current.has(id)) {
-      setTotalThreads((prev) => Math.max(0, prev - 1));
-    }
+    // The thread is gone from the server whether or not this list had loaded
+    // it: one opened by URL can be older than every loaded page.
+    setTotalThreads((prev) => Math.max(0, prev - 1));
     setThreads((prev) => prev.filter((thread) => thread.id !== id));
   }, [sync]);
 
