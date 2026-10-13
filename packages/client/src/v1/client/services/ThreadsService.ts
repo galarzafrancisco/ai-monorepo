@@ -394,7 +394,7 @@ export class ThreadsService {
         });
     }
     /**
-     * List messages in a thread
+     * List messages in a thread, newest first
      * @param id Thread UUID
      * @param page Page number
      * @param limit Number of items per page

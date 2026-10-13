@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
 import type { Message } from './types';
-import { useThreadData } from './useThreadData';
+import { sortMessages, useThreadData } from './useThreadData';
 import { useThreadSocket } from './useThreadSocket';
-
-const sortMessages = (messages: Message[]): Message[] => {
-  return [...messages].sort((a, b) => {
-    const dateA = new Date(a.updatedAt).getTime();
-    const dateB = new Date(b.updatedAt).getTime();
-    return dateA - dateB; // Ascending order (oldest first)
-  });
-};
 
 /**
  * Main hook for thread interactions - orchestrates data fetching and WebSocket transport
@@ -34,8 +26,11 @@ export const useThread = (threadId: string) => {
     chatError,
     chatIsSending,
     chatSendError,
+    hasOlderMessages,
+    isLoadingOlderMessages,
     loadThread,
     loadMessages,
+    loadOlderMessages,
     sendMessage,
     setMessages,
   } = useThreadData(threadId);
@@ -73,11 +68,14 @@ export const useThread = (threadId: string) => {
     chatError,
     chatIsSending,
     chatSendError,
+    hasOlderMessages,
+    isLoadingOlderMessages,
 
     // Data
     messages,
     agentActivity,
     agentResponseStream,
     sendMessage,
+    loadOlderMessages,
   };
 };

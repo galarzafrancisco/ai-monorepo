@@ -1120,7 +1120,9 @@ export class ThreadsService {
     const [messages, total] = await this.threadMessageRepository.findAndCount({
       where: { threadId: input.threadId },
       relations: ['createdByActor'],
-      order: { createdAt: 'ASC' },
+      // Newest first, so page 1 is always the latest messages however long
+      // the thread gets. The id breaks ties so pages never overlap or skip.
+      order: { createdAt: 'DESC', id: 'DESC' },
       skip,
       take: input.limit,
     });

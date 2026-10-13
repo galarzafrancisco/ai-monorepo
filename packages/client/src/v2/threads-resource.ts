@@ -86,7 +86,7 @@ export class ThreadsResource extends BaseClient {
     return this.request('POST', `/api/v1/threads/${params.id}/messages`, { body: params.body, signal: params?.signal });
   }
 
-  /** List messages in a thread */
+  /** List messages in a thread, newest first */
   async ThreadsController_listMessages(params: { id: string; page?: number; limit?: number; signal?: AbortSignal }): Promise<ListThreadMessagesResponseDto> {
     return this.request('GET', `/api/v1/threads/${params.id}/messages`, { params: { page: params.page, limit: params.limit }, signal: params?.signal });
   }

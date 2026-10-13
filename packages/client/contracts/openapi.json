@@ -5017,7 +5017,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "List messages in a thread",
+        "summary": "List messages in a thread, newest first",
         "tags": [
           "Threads"
         ]
