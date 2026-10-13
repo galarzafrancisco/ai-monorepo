@@ -141,3 +141,11 @@
     width: 100%;
   }
 }
+
+/* Touch devices wider than the mobile breakpoint (e.g. phones in landscape):
+   still prevent iOS zoom on focus */
+@media (pointer: coarse) {
+  .context-block-create__editor {
+    font-size: var(--fs-input-mobile-safe);
+  }
+}

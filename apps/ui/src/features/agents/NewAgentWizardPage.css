@@ -226,3 +226,10 @@
     font-size: clamp(1.5rem, 6vw, 2rem);
   }
 }
+
+/* Touch devices: keep the compact desktop size, but prevent iOS zoom on focus */
+@media (pointer: coarse) {
+  .new-agent-wizard__prompt-editor {
+    font-size: var(--fs-input-mobile-safe);
+  }
+}
