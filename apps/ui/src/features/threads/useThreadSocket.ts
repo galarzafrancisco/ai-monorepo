@@ -52,7 +52,7 @@ export interface UseThreadSocketResult {
    * Registers a handler called each time the socket joins the thread room:
    * on the first connect and on every reconnect.
    */
-  onSubscribed: (handler: () => void) => void;
+  onSubscribed: (handler: (() => void) | null) => void;
 }
 
 /**
@@ -90,7 +90,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
     messageHandlerRef.current = handler;
   }, []);
 
-  const onSubscribed = useCallback((handler: () => void) => {
+  const onSubscribed = useCallback((handler: (() => void) | null) => {
     subscribedHandlerRef.current = handler;
   }, []);
 

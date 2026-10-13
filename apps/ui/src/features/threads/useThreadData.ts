@@ -104,7 +104,8 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chatIsLoading, setChatIsLoading] = useState(false);
+  // True from the start: the first load of messages always follows the mount.
+  const [chatIsLoading, setChatIsLoading] = useState(true);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatIsSending, setChatIsSending] = useState(false);
   const [chatSendError, setChatSendError] = useState<string | null>(null);
