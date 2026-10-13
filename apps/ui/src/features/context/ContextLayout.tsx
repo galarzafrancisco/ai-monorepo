@@ -1,8 +1,8 @@
 import { Outlet, useNavigate, useParams, Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useContextCtx } from "./ContextProvider";
-import { ContextBlockTree } from "./ContextBlockTree";
+import { ContextBlockTree, normalizeParentId } from "./ContextBlockTree";
 import { Text, Row } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
@@ -11,11 +11,38 @@ import "./ContextHome.css";
 
 export function ContextLayout(): React.JSX.Element {
   const isDesktop = useIsDesktop();
-  const { sectionTitle, blocks, isLoading, error } = useContextCtx();
+  const { sectionTitle, blocks, allBlocks, isLoading, error } = useContextCtx();
   const navigate = useNavigate();
   const location = useLocation();
   const { id: selectedBlockId } = useParams<{ id?: string }>();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // The open block must always be findable in the sidebar, so when it (or one
+  // of its ancestors) is a hidden thread state block, show that chain anyway.
+  const sidebarBlocks = useMemo(() => {
+    if (!selectedBlockId || blocks.length === allBlocks.length) {
+      return blocks;
+    }
+
+    const visibleIds = new Set(blocks.map((block) => block.id));
+    const allById = new Map(allBlocks.map((block) => [block.id, block]));
+    const missing = new Set<string>();
+    let current = allById.get(selectedBlockId);
+    const seen = new Set<string>();
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      if (!visibleIds.has(current.id)) {
+        missing.add(current.id);
+      }
+      const parentId = normalizeParentId(current.parentId);
+      current = parentId ? allById.get(parentId) : undefined;
+    }
+
+    // Filter allBlocks rather than appending, to keep the list order.
+    return missing.size === 0
+      ? blocks
+      : allBlocks.filter((block) => visibleIds.has(block.id) || missing.has(block.id));
+  }, [blocks, allBlocks, selectedBlockId]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -132,11 +159,11 @@ export function ContextLayout(): React.JSX.Element {
                 <div className="context-home__loading">Loading context blocks...</div>
               ) : error ? (
                 <div className="context-home__error">Error: {error}</div>
-              ) : blocks.length === 0 ? (
+              ) : sidebarBlocks.length === 0 ? (
                 <div className="context-home__empty">No context blocks found</div>
               ) : (
                 <ContextBlockTree
-                  blocks={blocks}
+                  blocks={sidebarBlocks}
                   onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
                   onAddChild={(parentId) => navigate(`/context/new?parentId=${parentId}`)}
                   selectedBlockId={selectedBlockId}
