@@ -24,6 +24,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "test": "tsx src/test.ts",
+    "test:unit": "tsx --test 'src/**/*.test.ts'",
     "build": "tsc -p tsconfig.build.json",
     "build:prod": "npm run build",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",

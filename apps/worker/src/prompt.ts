@@ -7,6 +7,51 @@ import type {
   InputRequestLike,
   RunMode,
 } from "./types.js";
+import type { PreparedRepo } from "./helpers/prepareWorkspace.js";
+import type { SkippedProject } from "./helpers/projectRepos.js";
+
+export type WorkspaceContext = {
+  cwd: string;
+  repos: PreparedRepo[];
+  skipped: SkippedProject[];
+};
+
+const SKIPPED_REASON_TEXT: Record<SkippedProject['reason'], string> = {
+  not_found: 'project not found',
+  no_repo_url: 'project has no repository URL',
+};
+
+/**
+ * Only emitted when there is something the agent could not infer from its cwd:
+ * several repositories, or project tags that could not be prepared.
+ */
+export function buildWorkspaceInstructions(workspace?: WorkspaceContext): string[] {
+  if (!workspace) {
+    return [];
+  }
+  const { cwd, repos, skipped } = workspace;
+  if (repos.length <= 1 && skipped.length === 0) {
+    return [];
+  }
+
+  const lines = ['', 'Workspace:'];
+  if (repos.length > 1) {
+    lines.push(
+      `- This task is tagged with ${repos.length} projects. Each repository is cloned in its own folder under your working directory "${cwd}":`,
+      ...repos.map((repo) => `  - project:${repo.slug} -> ${repo.dir} (${repo.repoUrl})`),
+      '- Each folder is an independent git repository: run git commands, branches, builds and PRs from inside the relevant folder.',
+    );
+  } else if (repos.length === 1) {
+    lines.push(`- Repository for project:${repos[0].slug} is at ${repos[0].dir}.`);
+  }
+  if (skipped.length > 0) {
+    lines.push(
+      '- The following project tags could not be prepared and have no local folder:',
+      ...skipped.map((project) => `  - project:${project.slug} (${SKIPPED_REASON_TEXT[project.reason]})`),
+    );
+  }
+  return lines;
+}
 
 function buildThreadContextInstructions(task: TaskResponseDto, thread: ThreadResponseDto): string[] {
   return [
@@ -26,6 +71,7 @@ export function buildPrompt(
   mode: RunMode,
   inputRequest?: InputRequestLike,
   thread?: ThreadResponseDto | null,
+  workspace?: WorkspaceContext,
 ) {
   const threadContextInstructions = thread
     ? buildThreadContextInstructions(task, thread)
@@ -50,6 +96,7 @@ export function buildPrompt(
     `You got triggered by new activity in task "${task.id}".`,
     'Fetch the task and proceed according to the following instructions.',
     ...threadContextInstructions,
+    ...buildWorkspaceInstructions(workspace),
     '',
     agent.systemPrompt,
   ].join('\n');

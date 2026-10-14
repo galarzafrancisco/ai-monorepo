@@ -2,6 +2,7 @@ import { ApiClient } from '@taico/client/v2';
 import { AgentToolPermissionResponseDto, ServerResponseDto } from '@taico/client/v2';
 import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
+import { getProjectSlugsFromTags, resolveProjectRepos } from './helpers/projectRepos.js';
 import { EXECUTION_ID_HEADER } from './helpers/config.js';
 import { BaseAgentRunner } from './runners/BaseAgentRunner.js';
 import {
@@ -82,24 +83,25 @@ export async function executeTask({
       );
     }
 
-    // See if the task needs a repo cloned
-    let repoUrl: string | undefined = undefined;
-    const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
-    if (projectTag) {
-      const projectSlug = projectTag.name.replace('project:', '');
-      const project = await workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug: projectSlug });
-      if (project) {
-        repoUrl = project.repoUrl;
-      }
+    // Prepare one repo per project tag, each in its own folder
+    const projectSlugs = getProjectSlugsFromTags(task.tags);
+    const { repos: projectRepos, skipped: skippedProjects } = await resolveProjectRepos(
+      projectSlugs,
+      (slug) => workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug }),
+    );
+    for (const project of skippedProjects) {
+      console.warn(
+        `[worker] skipping project:${project.slug} for task ${taskId}: ${project.reason === 'not_found' ? 'project not found' : 'project has no repoUrl'}`,
+      );
     }
 
-    // Prepare the workspace
-    const workDir = await prepareWorkspace({
+    const workspace = await prepareWorkspace({
       taskId,
       agentId: agent.actorId,
       baseDir,
-      repoUrl: repoUrl,
+      repos: projectRepos,
     });
+    const workDir = workspace.cwd;
 
     const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
 
@@ -178,7 +180,10 @@ export async function executeTask({
       await runner.run(
         {
           taskId,
-          prompt: buildPrompt(task, agent, mode, inputRequest, thread),
+          prompt: buildPrompt(task, agent, mode, inputRequest, thread, {
+            ...workspace,
+            skipped: skippedProjects,
+          }),
           cwd: workDir,
           baseUrl,
           accessToken: agentToken.token,
