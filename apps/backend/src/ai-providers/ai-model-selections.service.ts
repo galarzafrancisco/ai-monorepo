@@ -9,8 +9,20 @@ import {
   ResolvedAiModelSelection,
   SetAiModelSelectionInput,
 } from './dto/service/ai-providers.service.types';
-import { AiModelJob, JOBS_FOLLOWING_CONVERSATION } from './enums';
-import { AiModelNotSelectedError, AiProviderNotFoundError } from './errors/ai-providers.errors';
+import { AiModelJob, isUserConnectedProviderType, JOBS_FOLLOWING_CONVERSATION } from './enums';
+import {
+  AiModelNotSelectedError,
+  AiProviderJobNotAllowedError,
+  AiProviderNotFoundError,
+} from './errors/ai-providers.errors';
+
+/**
+ * A provider that runs on a person's own plan answers in threads and nowhere
+ * else. Background jobs are not something that person asked for.
+ */
+function mayRunJob(provider: AiProviderEntity, job: AiModelJob): boolean {
+  return job === AiModelJob.CONVERSATION || !isUserConnectedProviderType(provider.type);
+}
 
 /**
  * Which provider and model each job uses. Read from the database on every
@@ -41,8 +53,13 @@ export class AiModelSelectionsService {
     return Object.values(AiModelJob).map((job) => {
       const own = byJob.get(job) ?? null;
       const followsConversation = !own && JOBS_FOLLOWING_CONVERSATION.includes(job);
-      const effective = followsConversation ? byJob.get(AiModelJob.CONVERSATION) ?? null : own;
-      const provider = effective ? providersById.get(effective.aiProviderId) : undefined;
+      let effective = followsConversation ? byJob.get(AiModelJob.CONVERSATION) ?? null : own;
+      let provider = effective ? providersById.get(effective.aiProviderId) : undefined;
+      // The job does not inherit a conversation model that runs on a person's plan.
+      if (provider && !mayRunJob(provider, job)) {
+        effective = null;
+        provider = undefined;
+      }
 
       return {
         job,
@@ -73,6 +90,9 @@ export class AiModelSelectionsService {
       if (!provider) {
         throw new AiProviderNotFoundError(input.aiProviderId);
       }
+      if (!mayRunJob(provider, input.job)) {
+        throw new AiProviderJobNotAllowedError(provider.id, input.job);
+      }
 
       // Upsert so two processes setting the same job at once cannot both insert.
       await manager
@@ -101,6 +121,16 @@ export class AiModelSelectionsService {
     }
     if (!selection) {
       throw new AiModelNotSelectedError(job);
+    }
+
+    const entity = await this.aiProviderRepository.findOne({
+      where: { id: selection.aiProviderId },
+    });
+    if (entity && !mayRunJob(entity, job)) {
+      // Inherited from the conversation: the job simply has no model. Selected directly: refuse.
+      throw selection.job === job
+        ? new AiProviderJobNotAllowedError(entity.id, job)
+        : new AiModelNotSelectedError(job);
     }
 
     const provider = await this.aiProvidersService.getAiProviderConfigById(selection.aiProviderId);

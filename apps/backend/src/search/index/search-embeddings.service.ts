@@ -133,5 +133,9 @@ function buildEmbeddingModel(config: AiProviderConfigResult, modelId: string): E
       return createOpenAICompatible({ name: config.type, baseURL, apiKey }).textEmbeddingModel(
         modelId,
       );
+
+    case AiProviderType.CHATGPT_SUBSCRIPTION:
+      // A person's plan only answers in threads. It cannot be selected for embeddings.
+      return null;
   }
 }

@@ -319,3 +319,23 @@ export function isPlaintextSecretsInsecurelyAllowed(): boolean {
 export function isThreadStateReconcilerEnabled(): boolean {
   return getConfig().threadStateReconcilerEnabled;
 }
+
+/**
+ * Feature flag: Sign in with ChatGPT as a Threads AI provider.
+ * Off by default. OpenAI's terms allow it only where each person controls the
+ * machine that stores their tokens and makes the requests: a local or
+ * self-hosted Taico. Setting CHATGPT_SUBSCRIPTION_ENABLED=true is the operator
+ * stating that this deployment is one. Do not set it on a managed, hosted Taico.
+ */
+export function isChatgptSubscriptionEnabled(): boolean {
+  return process.env.CHATGPT_SUBSCRIPTION_ENABLED === 'true';
+}
+
+/**
+ * Port of the loopback listener that receives the Sign in with ChatGPT
+ * redirect on 127.0.0.1. 0 (the default) picks a free port.
+ */
+export function getChatgptSubscriptionCallbackPort(): number {
+  const parsed = parseInt(process.env.CHATGPT_SUBSCRIPTION_CALLBACK_PORT || '0', 10);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535 ? parsed : 0;
+}

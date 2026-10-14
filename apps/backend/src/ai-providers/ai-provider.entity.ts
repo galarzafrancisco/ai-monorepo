@@ -43,6 +43,14 @@ export class AiProviderEntity {
   @Column({ type: 'text', nullable: true })
   location!: string | null;
 
+  /**
+   * Stable, opaque id of this Taico installation, sent to the provider when a
+   * person signs in. Only set for provider types where people connect their own
+   * account. Says nothing about who the person is.
+   */
+  @Column({ type: 'text', nullable: true, name: 'host_id' })
+  hostId!: string | null;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

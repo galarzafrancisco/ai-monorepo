@@ -7,10 +7,17 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
 import { AiProvidersService } from 'src/ai-providers/ai-providers.service';
-import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
+import {
+  AiProviderConfigResult,
+  OnBehalfOf,
+} from 'src/ai-providers/dto/service/ai-providers.service.types';
+import { ChatgptSubscriptionService } from 'src/ai-providers/chatgpt-subscription/chatgpt-subscription.service';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
-import { AiProviderNotConfiguredError } from 'src/ai-providers/errors/ai-providers.errors';
+import {
+  AiProviderJobNotAllowedError,
+  AiProviderNotConfiguredError,
+} from 'src/ai-providers/errors/ai-providers.errors';
 import {
   googleApiKeyFromEnv,
   vertexLocationFromEnv,
@@ -25,6 +32,11 @@ export type ResolvedChatModel = {
   providerType: string;
   modelId: string;
   providerOptions?: ProviderOptions;
+  /**
+   * True when the provider rejects non-streaming requests. Callers that only
+   * want the final text must still call streamText() and read it to the end.
+   */
+  requiresStreaming?: boolean;
 };
 
 export type ResolveChatModelInput = {
@@ -33,6 +45,12 @@ export type ResolveChatModelInput = {
   /** A thread's own provider and model. Both must be set to override the job's selection. */
   aiProviderId?: string | null;
   modelId?: string | null;
+  /**
+   * Who a thread turn is for. Needed by providers that run on a person's own
+   * plan, which use that person's connection and nobody else's. Only the
+   * threads agent passes it, so those providers cannot serve anything else.
+   */
+  onBehalfOf?: OnBehalfOf;
 };
 
 /** Maps a job's selected provider and model to an AI SDK model. */
@@ -41,19 +59,24 @@ export class ChatModelFactory {
   constructor(
     private readonly aiProvidersService: AiProvidersService,
     private readonly aiModelSelectionsService: AiModelSelectionsService,
+    private readonly chatgptSubscription: ChatgptSubscriptionService,
   ) {}
 
   async resolve(input: ResolveChatModelInput): Promise<ResolvedChatModel> {
     if (input.aiProviderId && input.modelId) {
       const config = await this.aiProvidersService.getAiProviderConfigById(input.aiProviderId);
-      return this.build(config, input.modelId);
+      return this.build(config, input.modelId, input);
     }
 
     const selection = await this.aiModelSelectionsService.resolve(input.job);
-    return this.build(selection.provider, selection.modelId);
+    return this.build(selection.provider, selection.modelId, input);
   }
 
-  private build(config: AiProviderConfigResult, modelId: string): ResolvedChatModel {
+  private async build(
+    config: AiProviderConfigResult,
+    modelId: string,
+    input: ResolveChatModelInput,
+  ): Promise<ResolvedChatModel> {
     const apiKey = config.apiKey ?? undefined;
     const baseURL = config.baseUrl ?? undefined;
 
@@ -99,6 +122,22 @@ export class ChatModelFactory {
           model: createOpenAICompatible({ name: config.type, baseURL, apiKey })(modelId),
           providerType: config.type,
           modelId,
+        };
+
+      case AiProviderType.CHATGPT_SUBSCRIPTION:
+        // A person's plan answers that person's thread turns and nothing else.
+        if (input.job !== AiModelJob.CONVERSATION || !input.onBehalfOf) {
+          throw new AiProviderJobNotAllowedError(config.id, input.job);
+        }
+        return {
+          model: await this.chatgptSubscription.modelForTurn({
+            providerId: config.id,
+            modelId,
+            onBehalfOf: input.onBehalfOf,
+          }),
+          providerType: config.type,
+          modelId,
+          requiresStreaming: true,
         };
     }
   }

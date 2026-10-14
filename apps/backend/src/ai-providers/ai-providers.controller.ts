@@ -123,8 +123,9 @@ export class AiProvidersController {
   @ApiNotFoundResponse({ description: 'AI provider not found' })
   async listAiProviderModels(
     @Param() params: AiProviderParamsDto,
+    @CurrentUser() user: UserContext,
   ): Promise<AiProviderModelResponseDto[]> {
-    const models = await this.aiProviderModelsService.listModels(params.id);
+    const models = await this.aiProviderModelsService.listModels(params.id, user.actorId);
     return models.map((model) => ({
       id: model.id,
       displayName: model.displayName,

@@ -162,6 +162,9 @@ export class ThreadAgentService {
       job: AiModelJob.CONVERSATION,
       aiProviderId: thread?.aiProviderId,
       modelId: thread?.modelId,
+      // Whose plan a personal-plan provider may use: the author of the newest
+      // message, or for a task update, whoever the agent subscribed for.
+      onBehalfOf: { actorId: triggerActor.id, automated: !author },
     });
 
     let rows = await this.agentLog.loadContext(threadId);

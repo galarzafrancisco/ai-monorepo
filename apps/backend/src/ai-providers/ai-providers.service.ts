@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { randomUUID } from 'node:crypto';
+import { isChatgptSubscriptionEnabled } from '../config/env.config';
 import { AiProviderEntity } from './ai-provider.entity';
 import { AiModelSelectionEntity } from './ai-model-selection.entity';
 import { SecretsService } from '../secrets/secrets.service';
@@ -14,7 +16,9 @@ import {
   AiProviderNotFoundError,
   AiProviderNotConfiguredError,
   AiProviderInUseError,
+  AiProviderAlreadyExistsError,
 } from './errors/ai-providers.errors';
+import { ChatgptConnectionsService } from './chatgpt-subscription/chatgpt-connections.service';
 import { AiProviderType } from './enums';
 import {
   googleApiKeyFromEnv,
@@ -46,6 +50,9 @@ export function isAiProviderConfigured(provider: AiProviderEntity): boolean {
       return !!provider.secretId || !!googleApiKeyFromEnv();
     case AiProviderType.OPENAI_COMPATIBLE:
       return !!provider.baseUrl;
+    case AiProviderType.CHATGPT_SUBSCRIPTION:
+      // No shared credentials: each person connects their own account.
+      return isChatgptSubscriptionEnabled();
     default:
       return !!provider.secretId;
   }
@@ -60,12 +67,22 @@ export class AiProvidersService {
     private readonly aiProviderRepository: Repository<AiProviderEntity>,
     private readonly secretsService: SecretsService,
     private readonly dataSource: DataSource,
+    private readonly chatgptConnections: ChatgptConnectionsService,
   ) {}
 
   async createAiProvider(
     input: CreateAiProviderInput,
   ): Promise<AiProviderResult> {
     this.logger.log({ message: 'Creating AI provider', name: input.name });
+
+    const isChatgpt = input.type === AiProviderType.CHATGPT_SUBSCRIPTION;
+    if (isChatgpt) {
+      this.chatgptConnections.assertAvailable();
+      // One is enough: it holds no account of its own. A unique index backs this check.
+      if (await this.aiProviderRepository.exists({ where: { type: input.type } })) {
+        throw new AiProviderAlreadyExistsError(input.type);
+      }
+    }
 
     const provider = this.aiProviderRepository.create({
       name: input.name,
@@ -74,6 +91,7 @@ export class AiProvidersService {
       baseUrl: normalizeOptionalText(input.baseUrl) ?? null,
       project: normalizeOptionalText(input.project) ?? null,
       location: normalizeOptionalText(input.location) ?? null,
+      hostId: isChatgpt ? `urn:uuid:${randomUUID()}` : null,
     });
 
     const saved = await this.aiProviderRepository.save(provider);
@@ -168,7 +186,7 @@ export class AiProvidersService {
   async deleteAiProvider(id: string): Promise<void> {
     this.logger.log({ message: 'Deleting AI provider', id });
 
-    await this.dataSource.transaction(async (manager) => {
+    const type = await this.dataSource.transaction(async (manager) => {
       // Locked so a job cannot select this provider while it is being deleted.
       const provider = await manager.getRepository(AiProviderEntity).findOne({
         where: { id },
@@ -192,7 +210,13 @@ export class AiProvidersService {
         `UPDATE threads SET ai_provider_id = NULL, model_id = NULL WHERE ai_provider_id = $1`,
         [id],
       );
+      return provider.type;
     });
+
+    if (type === AiProviderType.CHATGPT_SUBSCRIPTION) {
+      // Nobody can use the provider any more, so nobody's grant should outlive it.
+      await this.chatgptConnections.disconnectAll(id);
+    }
   }
 
   async getAiProviderConfigById(
