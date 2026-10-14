@@ -55,7 +55,7 @@ const JOBS: JobInfo[] = [
   {
     job: 'embeddings',
     label: 'Search embeddings',
-    help: 'Turns content into vectors for search. Search does not use it yet. Changing it later means re-indexing everything, so pick one and keep it.',
+    help: 'Turns content into vectors for search. Changing it later means re-indexing everything, so pick one and keep it.',
     kind: 'embedding',
     followsConversation: false,
   },
