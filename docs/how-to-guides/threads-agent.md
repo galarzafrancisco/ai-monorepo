@@ -33,18 +33,24 @@ Nothing is kept in memory between turns. A turn whose process died stops heartbe
 
 Providers and models are separate, and both are set in Settings → AI models.
 
-An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai` or `openai_compatible`), an optional stored secret, and an endpoint. It has no model.
+An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai`, `openai_compatible` or `chatgpt_subscription`), an optional stored secret, and an endpoint. It has no model.
+
+`chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider answers in threads only. See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
 
 A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
 
 | Job | Used by | When nothing is selected |
 |---|---|---|
 | `conversation` | The threads agent, and compaction | Threads cannot answer |
-| `quick_tasks` | Thread titles | Uses the conversation model |
-| `middle_manager` | The thread state reconciler | Uses the conversation model |
+| `quick_tasks` | Thread titles | Uses the conversation model, unless that is a ChatGPT plan |
+| `middle_manager` | The thread state reconciler | Uses the conversation model, unless that is a ChatGPT plan |
 | `embeddings` | Nothing yet (reserved for search) | Not available |
 
 Selections are read from the database on every call, so a change applies to every backend process on its next turn. `ChatModelFactory.resolve({ job })` turns a job into an AI SDK model.
+
+The threads agent also passes `onBehalfOf`: the actor the turn is for, and whether anybody typed. Providers with shared credentials ignore it. A ChatGPT plan provider requires it, which is what keeps it out of every other job.
+
+A resolved model can set `requiresStreaming`. Code that only wants the final text (compaction) must then call `streamText()` and read it to the end instead of `generateText()`.
 
 `GET /api/v1/ai-providers/:id/models` asks the provider which models it offers, using each provider type's own listing endpoint (the AI SDK has none). The model id is stored as plain text, so a model the listing does not return can still be typed in.
 
@@ -100,7 +106,7 @@ Limits: the key is short and the only thing stopping the model from repeating it
 Built-in hooks:
 
 - `EasterEggHook` is the example to copy. Say "the key is under the doormat" in a thread and the agent is told to answer with the countersign.
-- `CompactionHook` appends a summary once the conversation exceeds `THREAD_AGENT_COMPACTION_TOKEN_THRESHOLD` input tokens (default 100000). Older rows stay in the table.
+- `CompactionHook` appends a summary once the conversation exceeds `THREAD_AGENT_COMPACTION_TOKEN_THRESHOLD` input tokens (default 100000). Older rows stay in the table. It uses the model of the turn it follows. A summary whose request fails or ends early is not stored.
 
 ## Multiple backend processes
 
@@ -112,5 +118,6 @@ Built-in hooks:
 ```bash
 npx jest src/threads/agent                 # unit
 npm run test:e2e:threads-agent             # real Postgres, mock model
+npm run test:e2e:chatgpt-subscription      # real Postgres, fake OpenAI (Sign in with ChatGPT)
 npm run build && npm run test:live:threads # two processes, fake model server
 ```

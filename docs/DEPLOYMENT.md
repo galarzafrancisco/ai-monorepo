@@ -127,6 +127,10 @@ replacements:
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
 
+### Sign in with ChatGPT
+
+`CHATGPT_SUBSCRIPTION_ENABLED` is off by default and must stay off on a Taico that is hosted for other people. OpenAI's terms allow the ChatGPT plan provider only where each person controls the machine that stores their tokens and makes the requests. See [Sign in with ChatGPT](how-to-guides/sign-in-with-chatgpt.md#where-it-may-be-used).
+
 ### PostgreSQL extensions
 
 The database needs the `pg_trgm` extension (it ships with PostgreSQL; the first migration that needs it enables it). Semantic search also needs `pgvector`: install it on the PostgreSQL server and run `CREATE EXTENSION vector;` as a superuser in the Taico database. Without it Taico still starts and search works on keywords and fuzzy titles. See [Search](how-to-guides/search.md#postgresql-requirements).
