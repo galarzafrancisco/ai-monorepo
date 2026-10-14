@@ -451,9 +451,11 @@ export class ChatgptConnectionsService {
     onBehalfOf: OnBehalfOf,
   ): Promise<{ connectionId: string }> {
     this.assertAvailable();
-    const whose = onBehalfOf.automated
-      ? 'the person this task update is for'
-      : 'the person who wrote the message';
+    const whose =
+      onBehalfOf.description ??
+      (onBehalfOf.automated
+        ? 'the person this task update is for'
+        : 'the person who wrote the message');
 
     const user = await this.findUser(onBehalfOf.actorId);
     const connection = user

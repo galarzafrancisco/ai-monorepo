@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { generateText, isStepCount } from 'ai';
+import { generateText, isStepCount, streamText } from 'ai';
 import { AgentsService } from 'src/agents/agents.service';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { ActorType } from 'src/identity-provider/enums';
 import { AiModelJob } from 'src/ai-providers/enums';
 import { AiModelNotSelectedError } from 'src/ai-providers/errors/ai-providers.errors';
+import { OnBehalfOf } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { ChatModelFactory } from './agent/chat-model.factory';
 import { McpActor, TaicoMcpToolsFactory } from './agent/taico-mcp-tools.factory';
 import {
@@ -59,9 +60,17 @@ export class ChatService {
     instructions: string;
     prompt: string;
     actor: ActorEntity | null;
+    /**
+     * Whose plan pays when the middle manager runs on a person's own plan.
+     * Without it such a provider refuses the run.
+     */
+    onBehalfOf?: OnBehalfOf;
   }): Promise<void> {
     const self = await this.getSelf();
-    const resolved = await this.chatModelFactory.resolve({ job: AiModelJob.MIDDLE_MANAGER });
+    const resolved = await this.chatModelFactory.resolve({
+      job: AiModelJob.MIDDLE_MANAGER,
+      onBehalfOf: args.onBehalfOf,
+    });
 
     const selfActor: McpActor = {
       id: self.actorId,
@@ -79,17 +88,45 @@ export class ChatService {
       : selfActor;
 
     const mcp = await this.mcpToolsFactory.open({ subject: selfActor, issuedBy });
+    const request = {
+      model: resolved.model,
+      instructions: args.instructions,
+      prompt: args.prompt,
+      tools: mcp.tools,
+      providerOptions: resolved.providerOptions,
+      stopWhen: isStepCount(THREAD_AGENT_MAX_STEPS),
+    };
     try {
-      await generateText({
-        model: resolved.model,
-        instructions: args.instructions,
-        prompt: args.prompt,
-        tools: mcp.tools,
-        providerOptions: resolved.providerOptions,
-        stopWhen: isStepCount(THREAD_AGENT_MAX_STEPS),
-      });
+      if (resolved.requiresStreaming) {
+        await this.streamToEnd(request);
+      } else {
+        await generateText(request);
+      }
     } finally {
       await mcp.close();
+    }
+  }
+
+  /**
+   * Runs a request on a provider that only streams, reading it to the end.
+   * A failure reported only as a stream part still fails the run.
+   */
+  private async streamToEnd(request: Parameters<typeof streamText>[0]): Promise<void> {
+    const failures: unknown[] = [];
+    const result = streamText({
+      ...request,
+      onError: ({ error }) => {
+        failures.push(error);
+      },
+    });
+    try {
+      await result.text;
+    } catch (error) {
+      failures.push(error);
+    }
+    if (failures.length > 0) {
+      const [first] = failures;
+      throw first instanceof Error ? first : new Error(String(first));
     }
   }
 }

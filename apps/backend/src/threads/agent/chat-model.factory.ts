@@ -13,7 +13,11 @@ import {
 } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { ChatgptSubscriptionService } from 'src/ai-providers/chatgpt-subscription/chatgpt-subscription.service';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
-import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
+import {
+  AiModelJob,
+  AiProviderType,
+  USER_CONNECTED_PROVIDER_JOBS,
+} from 'src/ai-providers/enums';
 import {
   AiProviderJobNotAllowedError,
   AiProviderNotConfiguredError,
@@ -46,9 +50,11 @@ export type ResolveChatModelInput = {
   aiProviderId?: string | null;
   modelId?: string | null;
   /**
-   * Who a thread turn is for. Needed by providers that run on a person's own
-   * plan, which use that person's connection and nobody else's. Only the
-   * threads agent passes it, so those providers cannot serve anything else.
+   * Whose plan pays for the call. Needed by providers that run on a person's
+   * own plan, which use that person's connection and nobody else's. Only the
+   * threads agent (the person the turn is for) and the middle manager (the
+   * thread's creator, as an unattended run) pass it; any other caller is
+   * refused by those providers.
    */
   onBehalfOf?: OnBehalfOf;
 };
@@ -125,8 +131,8 @@ export class ChatModelFactory {
         };
 
       case AiProviderType.CHATGPT_SUBSCRIPTION:
-        // A person's plan answers that person's thread turns and nothing else.
-        if (input.job !== AiModelJob.CONVERSATION || !input.onBehalfOf) {
+        // A person's plan only runs jobs that say whose plan pays for the call.
+        if (!USER_CONNECTED_PROVIDER_JOBS.includes(input.job) || !input.onBehalfOf) {
           throw new AiProviderJobNotAllowedError(config.id, input.job);
         }
         return {

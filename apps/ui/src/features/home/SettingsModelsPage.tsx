@@ -28,6 +28,9 @@ type JobInfo = {
   followsConversation: boolean;
 };
 
+/** Jobs a provider that runs on a person's own plan may be selected for. Mirrors the backend. */
+const PERSONAL_PLAN_JOBS: readonly string[] = ['conversation', 'middle_manager'];
+
 const JOBS: JobInfo[] = [
   {
     job: 'conversation',
@@ -719,9 +722,10 @@ function JobRow({
   const provider = providers.find((p) => p.id === providerId);
   const canListModels = !!provider?.isConfigured;
   const usesPersonalPlan = !!provider && !!PROVIDER_TYPES[provider.type].personalPlan;
-  // A person's plan answers that person's messages in threads and nothing else.
+  // A person's plan only runs jobs that know whose plan pays: the conversation
+  // (the person the turn is for) and the middle manager (the thread's creator).
   const selectableProviders = providers.filter(
-    (p) => info.job === 'conversation' || !PROVIDER_TYPES[p.type].personalPlan,
+    (p) => PERSONAL_PLAN_JOBS.includes(info.job) || !PROVIDER_TYPES[p.type].personalPlan,
   );
   const cannotFollowConversation =
     info.followsConversation && providerId === '' && conversationUsesPersonalPlan;
@@ -841,7 +845,14 @@ function JobRow({
           Finish setting up this provider to pick from its models.
         </Text>
       ) : null}
-      {usesPersonalPlan ? (
+      {usesPersonalPlan && info.job === 'middle_manager' ? (
+        <Text size="1" tone="muted" className="settings-models__job-note">
+          Using ChatGPT plan: the shared notes of a thread are kept on the plan of the person who
+          created it, and only if they turned on "Also answer task updates on my plan". Otherwise
+          the notes of that thread are not updated. Models listed are the ones your own account
+          offers.
+        </Text>
+      ) : usesPersonalPlan ? (
         <Text size="1" tone="muted" className="settings-models__job-note">
           Using ChatGPT plan: each person's own plan answers the messages they write. Someone who
           has not connected their account gets a note in the thread instead of an answer. Models
@@ -850,8 +861,8 @@ function JobRow({
       ) : null}
       {cannotFollowConversation ? (
         <Text size="1" tone="muted" className="settings-models__job-note">
-          The ChatGPT plan only answers in threads, so this job does not use it. Pick a model from
-          another provider, or leave it off.
+          This job does not follow a Conversation model that runs on a ChatGPT plan. Pick a model
+          for it here, or leave it off.
         </Text>
       ) : null}
     </div>

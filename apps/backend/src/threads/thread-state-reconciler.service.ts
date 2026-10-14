@@ -143,6 +143,13 @@ Now run the required process. If relevant, update the state block with context__
           taskId: latestItem.taskId,
         }),
         actor,
+        // On a provider that runs on a person's own plan, the thread's creator
+        // pays, and only if they allowed unattended runs. Nobody typed here.
+        onBehalfOf: {
+          actorId: thread.createdByActor.id,
+          automated: true,
+          description: 'the person who created this thread',
+        },
       });
     } catch (error) {
       this.logger.warn({

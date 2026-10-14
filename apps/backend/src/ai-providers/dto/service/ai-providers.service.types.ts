@@ -85,6 +85,8 @@ export type OnBehalfOf = {
   actorId: string;
   /** True when nobody typed a message: the turn was started by a task update. */
   automated: boolean;
+  /** Who the actor is, for error messages, e.g. "the person who created this thread". */
+  description?: string;
 };
 
 export type AiProviderConnectionResult = {

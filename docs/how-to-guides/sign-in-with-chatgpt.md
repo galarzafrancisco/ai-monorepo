@@ -1,6 +1,6 @@
 # Sign in with ChatGPT (ChatGPT plan provider)
 
-Lets the threads agent answer on a person's own ChatGPT plan instead of an API key. It is an AI provider type (`chatgpt_subscription`), set up in Settings → AI models next to the API-key providers.
+Lets the threads agent (and, if selected, the middle manager) run on a person's own ChatGPT plan instead of an API key. It is an AI provider type (`chatgpt_subscription`), set up in Settings → AI models next to the API-key providers.
 
 It is not a way to log in to Taico. A Taico user signs in to Taico as before, then connects a ChatGPT account to their user. Taico's own users, authentication and scopes are unchanged.
 
@@ -24,7 +24,7 @@ It also needs encrypted secret storage: `SECRETS_ENABLED=true` and a `SECRETS_EN
 
 ## What a person sees
 
-1. An admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model. There is one such provider per installation and it holds no account.
+1. An admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model, and optionally as the Middle manager model. There is one such provider per installation and it holds no account.
 2. Each person clicks **Continue with ChatGPT** on that provider, approves at OpenAI, and comes back to settings: "You're using your ChatGPT plan."
 3. Settings shows which account is connected, **Manage usage** (ChatGPT's usage page), **Reconnect** and **Disconnect**. Threads show "Using ChatGPT plan" next to the model.
 4. Disconnect revokes the grant at OpenAI and deletes everything stored about the account.
@@ -38,6 +38,7 @@ The model list on this provider is the list of the signed-in person's own accoun
 | A message a person wrote | That person's. With several unanswered messages, the author of the newest one |
 | A task update (nobody typed) | The person the agent subscribed for, and only if they turned on "Also answer task updates on my plan" |
 | An agent's message | None. The turn fails |
+| The middle manager (thread state reconciler) | The person who **created the thread**, and only if they turned on "Also answer task updates on my plan". Never the person or agent who changed the task |
 
 Only that one person's connection is looked up. If it is missing, expired, or lacks plan access, the turn fails and the thread shows why. Taico never uses someone else's plan and never falls back to another provider, including an API-key provider that is configured.
 
@@ -45,13 +46,23 @@ Other people's earlier messages in the thread are still part of the conversation
 
 A failed turn has already taken in the messages that started it, so the agent sees them on the next turn. This is how every failed turn behaves, not something specific to this provider.
 
-## Threads only
+## Which jobs
 
 A provider of this type:
 
-- can be selected for the `conversation` job and no other (`PUT /ai-model-selections/quick_tasks` answers `AI_PROVIDER_JOB_NOT_ALLOWED`);
-- is not inherited by `quick_tasks` and `middle_manager`, which normally follow the conversation model. With this provider as the conversation model they count as "not selected": thread titles are skipped and the thread state reconciler does not run until they get a model of their own;
-- is refused by `ChatModelFactory` unless the caller says who the turn is for, which only `ThreadAgentService` does.
+- can be selected for the `conversation` and `middle_manager` jobs and no others (`PUT /ai-model-selections/quick_tasks` or `/embeddings` answers `AI_PROVIDER_JOB_NOT_ALLOWED`). The list is `USER_CONNECTED_PROVIDER_JOBS` in `enums/ai-model-job.enum.ts`;
+- is never inherited. `quick_tasks` and `middle_manager` normally follow the conversation model; with this provider as the conversation model they count as "not selected": thread titles are skipped and the thread state reconciler does not run until they get a model of their own. For the middle manager that can be this same provider, selected directly;
+- is refused by `ChatModelFactory` unless the caller says whose plan pays (`onBehalfOf`). Only `ThreadAgentService` (the person the turn is for) and `ThreadStateReconcilerService` via `ChatService.runTask` (the thread's creator) do.
+
+### The middle manager
+
+The thread state reconciler only runs because a task changed, so nobody typed and every run is unattended (`automated: true`):
+
+- It runs on the plan of the thread's creator (`threads.created_by_actor_id`). The person whose change triggered it is not used: it is usually an agent, and their plan would pay for someone else's thread.
+- The creator must have turned on "Also answer task updates on my plan". The same consent covers unattended thread turns and middle manager runs.
+- If the creator is an agent, is not connected, needs to sign in again, or has not given that consent, the run fails and is logged as a warning (`Thread state reconciliation failed`). The thread's shared notes are not updated. Nothing falls back to another provider, and nothing is shown in the thread.
+- The run streams (`streamText()` read to the end), as this provider requires. A failed stream fails the run.
+- A thread's own provider and model (`threads.ai_provider_id`) only apply to the conversation. The middle manager always uses the `middle_manager` selection.
 
 Compaction is part of a thread turn. It runs after the reply, on the same person's connection as the turn. When the turn was a task update, the consent for task updates covers it.
 
@@ -156,3 +167,5 @@ Things only this check can confirm, because the fake cannot: that OpenAI accepts
 - The usage limit is not remembered as a pause: each new message makes one request, which OpenAI refuses until the plan resets. OpenAI gives no reset time to wait for.
 - A disconnect made at OpenAI is not pushed to Taico. Taico notices on the next request or refresh.
 - `isReady` in `GET /ai-model-selections` says the provider is turned on, not that the person asking has connected.
+- A middle manager run that cannot use the creator's plan only leaves a server log line. Settings does not show it, and the thread's shared notes silently stop updating.
+- Threads created by an agent (for example by an agent creating subtasks) have no plan to run the middle manager on, so it never runs for them while this provider is selected.
