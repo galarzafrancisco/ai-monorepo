@@ -15,6 +15,9 @@ export const DEFAULT_AGENT_ALLOWED_TOOLS = [
   'Read',
   'Write',
   'Edit',
+  // Web access, so agents can read external documentation while working.
+  'WebSearch',
+  'WebFetch',
 ] as const;
 
 export type AgentRuntimeScopeLike = {
