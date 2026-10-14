@@ -483,4 +483,52 @@ export const ErrorCatalog: Record<
     type: '/errors/ai-providers/model-not-selected',
     retryable: false,
   },
+  [ErrorCodes.AI_PROVIDER_TYPE_DISABLED]: {
+    status: 403,
+    title: 'This AI provider type is turned off on this server',
+    type: '/errors/ai-providers/type-disabled',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_ALREADY_EXISTS]: {
+    status: 409,
+    title: 'An AI provider of this type already exists',
+    type: '/errors/ai-providers/already-exists',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_JOB_NOT_ALLOWED]: {
+    status: 400,
+    title: 'This AI provider cannot be used for this job',
+    type: '/errors/ai-providers/job-not-allowed',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_CONNECTION_NOT_SUPPORTED]: {
+    status: 400,
+    title: 'This AI provider does not use personal connections',
+    type: '/errors/ai-providers/connection-not-supported',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_CONNECTION_REQUIRED]: {
+    status: 409,
+    title: 'A personal connection to the AI provider is required',
+    type: '/errors/ai-providers/connection-required',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_CONNECTION_CONSENT_REQUIRED]: {
+    status: 403,
+    title: 'The connected person has not allowed this use',
+    type: '/errors/ai-providers/connection-consent-required',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_AUTHORIZATION_FAILED]: {
+    status: 400,
+    title: 'Connecting to the AI provider failed',
+    type: '/errors/ai-providers/authorization-failed',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_REQUEST_FAILED]: {
+    status: 502,
+    title: 'The AI provider refused or failed the request',
+    type: '/errors/ai-providers/request-failed',
+    retryable: false,
+  },
 };

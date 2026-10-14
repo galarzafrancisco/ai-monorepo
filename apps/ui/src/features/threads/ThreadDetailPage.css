@@ -436,6 +436,17 @@
   color: var(--text-muted);
 }
 
+.thread-detail-page__model-link {
+  color: var(--accent);
+  font-size: var(--fs-1);
+  text-decoration: none;
+}
+
+.thread-detail-page__model-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 .thread-detail-page__token-usage {
   display: inline-flex;
   align-items: center;

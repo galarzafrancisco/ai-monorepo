@@ -83,6 +83,11 @@ export class SecretsEncryptionService {
     }
   }
 
+  /** True when values are stored encrypted, not when the feature is off or in plaintext mode. */
+  isEncrypting(): boolean {
+    return this.key !== null;
+  }
+
   private assertEnabled(): void {
     if (!this.key && !this.allowPlaintextStorage) {
       throw new SecretsFeatureDisabledError();

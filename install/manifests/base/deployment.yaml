@@ -24,6 +24,10 @@ spec:
             - containerPort: 3000
               name: http
               protocol: TCP
+          # Enable Sign in with ChatGPT for this Taico deployment.
+          env:
+            - name: CHATGPT_SUBSCRIPTION_ENABLED
+              value: "true"
           envFrom:
             - configMapRef:
                 name: taico-config

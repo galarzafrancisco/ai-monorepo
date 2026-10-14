@@ -306,15 +306,38 @@ export function ThreadDetailPage() {
   }
 }
 
+/** Where a person sees how much of their ChatGPT plan they have used. */
+const CHATGPT_MANAGE_USAGE_URL = 'https://chatgpt.com/settings/usage';
+
 /** The model answering in this thread, marked with an icon so it reads as a model id. */
-function ThreadModelLabel({ label }: { label: string }) {
+function ThreadModelLabel({ label, usesChatgptPlan }: { label: string; usesChatgptPlan: boolean }) {
   return (
-    <span className="thread-detail-page__model" title="Model answering in this thread">
-      <Bot size={14} strokeWidth={1.8} aria-hidden="true" />
-      <Text size="1" tone="muted">
-        {label}
-      </Text>
-    </span>
+    <>
+      <span className="thread-detail-page__model" title="Model answering in this thread">
+        <Bot size={14} strokeWidth={1.8} aria-hidden="true" />
+        <Text size="1" tone="muted">
+          {label}
+        </Text>
+      </span>
+      {usesChatgptPlan ? (
+        <span
+          className="thread-detail-page__model"
+          title="Your own ChatGPT plan answers the messages you write here"
+        >
+          <Text size="1" tone="muted">
+            Using ChatGPT plan ·
+          </Text>
+          <a
+            className="thread-detail-page__model-link"
+            href={CHATGPT_MANAGE_USAGE_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Manage usage
+          </a>
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -399,6 +422,7 @@ function ThreadDetailPageDesktop({
                   {conversationModel && (
                     <ThreadModelLabel
                       label={`${conversationModel.modelId} via ${conversationModel.providerName}`}
+                      usesChatgptPlan={conversationModel.usesChatgptPlan}
                     />
                   )}
                   <ThreadTokenUsageLabel usage={tokenUsage} />
@@ -559,7 +583,12 @@ function ThreadDetailPageMobile({
             <Text size="1" tone="muted">
               #{thread.id.slice(0, 6)} · {thread.participants.length} participants
             </Text>
-            {conversationModel && <ThreadModelLabel label={conversationModel.modelId} />}
+            {conversationModel && (
+              <ThreadModelLabel
+                label={conversationModel.modelId}
+                usesChatgptPlan={conversationModel.usesChatgptPlan}
+              />
+            )}
             <ThreadTokenUsageLabel usage={tokenUsage} />
           </div>
         </div>

@@ -7,6 +7,12 @@ jest.mock('src/ai-providers/ai-model-selections.service', () => ({
 }));
 jest.mock('src/ai-providers/errors/ai-providers.errors', () => ({
   AiProviderNotConfiguredError: class extends Error {},
+  AiProviderJobNotAllowedError: class extends Error {
+    readonly code = 'AI_PROVIDER_JOB_NOT_ALLOWED';
+  },
+}));
+jest.mock('src/ai-providers/chatgpt-subscription/chatgpt-subscription.service', () => ({
+  ChatgptSubscriptionService: class {},
 }));
 
 const GOOGLE_ENV_KEYS = [
@@ -35,11 +41,13 @@ describe('ChatModelFactory', () => {
       modelId: selectedModelId,
     }));
     const getAiProviderConfigById = jest.fn(async () => providerConfig(type));
+    const modelForTurn = jest.fn(async () => ({ modelId: 'plan-model' }));
     const factory = new ChatModelFactory(
       { getAiProviderConfigById } as never,
       { resolve: resolveSelection } as never,
+      { modelForTurn } as never,
     );
-    return { factory, resolveSelection, getAiProviderConfigById };
+    return { factory, resolveSelection, getAiProviderConfigById, modelForTurn };
   };
 
   beforeEach(() => {
@@ -98,5 +106,75 @@ describe('ChatModelFactory', () => {
     expect(getAiProviderConfigById).toHaveBeenCalledWith('provider-1');
     expect(resolveSelection).not.toHaveBeenCalled();
     expect(resolved.modelId).toBe('claude-opus-5-5');
+  });
+
+  describe('a provider that runs on a person\u2019s own plan', () => {
+    const onBehalfOf = { actorId: 'actor-1', automated: false };
+
+    it('binds a thread turn to the person it is for and marks the model streaming-only', async () => {
+      const { factory, modelForTurn } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-large',
+      );
+
+      const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION, onBehalfOf });
+
+      expect(modelForTurn).toHaveBeenCalledWith({
+        providerId: 'provider-1',
+        modelId: 'gpt-plan-large',
+        onBehalfOf,
+      });
+      expect(resolved).toMatchObject({
+        providerType: AiProviderType.CHATGPT_SUBSCRIPTION,
+        modelId: 'gpt-plan-large',
+        requiresStreaming: true,
+      });
+    });
+
+    it('honours a thread\u2019s own provider and model', async () => {
+      const { factory, modelForTurn, resolveSelection } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-large',
+      );
+
+      await factory.resolve({
+        job: AiModelJob.CONVERSATION,
+        aiProviderId: 'provider-1',
+        modelId: 'gpt-plan-small',
+        onBehalfOf,
+      });
+
+      expect(resolveSelection).not.toHaveBeenCalled();
+      expect(modelForTurn).toHaveBeenCalledWith(
+        expect.objectContaining({ modelId: 'gpt-plan-small', onBehalfOf }),
+      );
+    });
+
+    it.each([AiModelJob.QUICK_TASKS, AiModelJob.MIDDLE_MANAGER, AiModelJob.EMBEDDINGS])(
+      'refuses the %s job even when told who it is for',
+      async (job) => {
+        const { factory, modelForTurn } = factoryFor(
+          AiProviderType.CHATGPT_SUBSCRIPTION,
+          'gpt-plan-large',
+        );
+
+        await expect(factory.resolve({ job, onBehalfOf })).rejects.toMatchObject({
+          code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
+        });
+        expect(modelForTurn).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a conversation call that does not say who it is for', async () => {
+      const { factory, modelForTurn } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-large',
+      );
+
+      await expect(factory.resolve({ job: AiModelJob.CONVERSATION })).rejects.toMatchObject({
+        code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
+      });
+      expect(modelForTurn).not.toHaveBeenCalled();
+    });
   });
 });

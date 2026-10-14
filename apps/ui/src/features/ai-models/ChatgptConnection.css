@@ -1,0 +1,83 @@
+.chatgpt-connection {
+  /* Takes the full width under the provider's name and buttons. */
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.chatgpt-connection__line {
+  flex-wrap: wrap;
+}
+
+.chatgpt-connection__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.chatgpt-connection__link {
+  color: var(--accent);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+}
+
+.chatgpt-connection__link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* At the usage limit this is the one useful action, so it reads as a button. */
+.chatgpt-connection__link--primary {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--r-2);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.chatgpt-connection__link--primary:hover {
+  background: var(--accent-hover);
+  color: var(--accent-contrast);
+  text-decoration: none;
+}
+
+.chatgpt-connection__notice {
+  color: var(--success);
+}
+
+.chatgpt-connection__warning {
+  color: var(--warning);
+}
+
+.chatgpt-connection__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.chatgpt-connection__consent input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.chatgpt-connection__consent span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.chatgpt-connection__paste {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.chatgpt-connection__paste .row {
+  flex-wrap: nowrap;
+}

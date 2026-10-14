@@ -11,6 +11,8 @@ import {
   AiProviderNotConfiguredError,
 } from './errors/ai-providers.errors';
 import { googleApiKeyFromEnv, vertexProjectFromEnv } from './google-environment';
+import { ChatgptSubscriptionService } from './chatgpt-subscription/chatgpt-subscription.service';
+import { AiProvidersDomainError } from './errors/ai-providers.errors';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_PAGES = 10;
@@ -57,10 +59,31 @@ function trimSlash(url: string): string {
 export class AiProviderModelsService {
   private readonly logger = new Logger(AiProviderModelsService.name);
 
-  constructor(private readonly aiProvidersService: AiProvidersService) {}
+  constructor(
+    private readonly aiProvidersService: AiProvidersService,
+    private readonly chatgptSubscription: ChatgptSubscriptionService,
+  ) {}
 
-  async listModels(providerId: string): Promise<AiProviderModelResult[]> {
+  /**
+   * `actorId` is who is asking. Providers that run on a person's own plan list
+   * that person's models; the others ignore it.
+   */
+  async listModels(providerId: string, actorId: string): Promise<AiProviderModelResult[]> {
     const config = await this.aiProvidersService.getAiProviderConfigById(providerId);
+
+    if (config.type === AiProviderType.CHATGPT_SUBSCRIPTION) {
+      try {
+        // Kept in the order OpenAI returns them.
+        return await this.chatgptSubscription.listModels(providerId, actorId);
+      } catch (error) {
+        if (error instanceof AiProvidersDomainError) {
+          throw error;
+        }
+        const reason = error instanceof Error ? error.message : String(error);
+        this.logger.warn({ message: 'Listing provider models failed', providerId, reason });
+        throw new AiProviderModelListingFailedError(providerId, reason);
+      }
+    }
 
     let models: AiProviderModelResult[];
     try {
@@ -96,6 +119,9 @@ export class AiProviderModelsService {
         return this.listGoogle(config);
       case AiProviderType.GOOGLE_VERTEX:
         return this.listVertex(config);
+      case AiProviderType.CHATGPT_SUBSCRIPTION:
+        // Listed per person in listModels; there are no shared credentials to list with.
+        throw new AiProviderNotConfiguredError(config.id);
     }
   }
 
