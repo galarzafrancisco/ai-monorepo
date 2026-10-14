@@ -7,7 +7,6 @@ data:
   # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
   SECRETS_ENABLED: "true"
-  ALLOW_PLAINTEXT_SECRETS_INSECURE: "true"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
   DATABASE_SSL: "false"
   TYPEORM_SCHEMA_MODE: "migrate"

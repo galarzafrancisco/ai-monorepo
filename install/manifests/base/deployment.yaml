@@ -33,6 +33,11 @@ spec:
                 name: taico-config
             - secretRef:
                 name: taico-database
+            # SECRETS_ENCRYPTION_KEY. Restored from the host key file by
+            # bootstrap/taico-secrets-key.sh; never committed. Not optional: a
+            # missing key must stop the pod, not fall back to plaintext.
+            - secretRef:
+                name: taico-secrets-encryption
           volumeMounts:
             - name: data
               mountPath: /app/data
