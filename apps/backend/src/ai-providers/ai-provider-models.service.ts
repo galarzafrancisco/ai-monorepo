@@ -22,10 +22,11 @@ const ANTHROPIC_BASE_URL = 'https://api.anthropic.com/v1';
 const XAI_BASE_URL = 'https://api.x.ai/v1';
 const GOOGLE_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 /**
- * The global endpoint lists the Gemini models. Regional endpoints return the
+ * The global endpoint lists a publisher's models. Regional endpoints return the
  * whole Model Garden (vision, OCR, AutoML), which is not what a user picks from.
+ * `google` holds the Gemini models, `anthropic` the Claude models.
  */
-const VERTEX_MODELS_URL = 'https://aiplatform.googleapis.com/v1beta1/publishers/google/models';
+const VERTEX_PUBLISHER_MODELS_URL = 'https://aiplatform.googleapis.com/v1beta1/publishers';
 
 type OpenAiModelList = { data?: { id?: string }[] };
 type AnthropicModelList = {
@@ -229,6 +230,35 @@ export class AiProviderModelsService {
       headers['x-goog-user-project'] = project;
     }
 
+    const [gemini, claude] = await Promise.allSettled([
+      this.listVertexPublisher('google', headers),
+      this.listVertexPublisher('anthropic', headers),
+    ]);
+
+    // Gemini is the main offering: if it cannot be listed, the listing fails.
+    if (gemini.status === 'rejected') {
+      throw gemini.reason;
+    }
+
+    // Claude is extra. A project without access to it still lists Gemini.
+    if (claude.status === 'rejected') {
+      const reason = claude.reason instanceof Error ? claude.reason.message : String(claude.reason);
+      this.logger.warn({
+        message: 'Listing Claude models on Vertex AI failed; listing Gemini models only',
+        providerId: config.id,
+        reason,
+      });
+      return gemini.value;
+    }
+
+    // Claude has no embedding models; the ids are listed as language models.
+    return [...gemini.value, ...claude.value];
+  }
+
+  private async listVertexPublisher(
+    publisher: 'google' | 'anthropic',
+    headers: Record<string, string>,
+  ): Promise<AiProviderModelResult[]> {
     const models: AiProviderModelResult[] = [];
     let pageToken: string | undefined;
 
@@ -237,7 +267,10 @@ export class AiProviderModelsService {
       if (pageToken) {
         query.set('pageToken', pageToken);
       }
-      const body = await this.getJson<VertexModelList>(`${VERTEX_MODELS_URL}?${query}`, headers);
+      const body = await this.getJson<VertexModelList>(
+        `${VERTEX_PUBLISHER_MODELS_URL}/${publisher}/models?${query}`,
+        headers,
+      );
 
       for (const model of body.publisherModels ?? []) {
         const id = model.name?.split('/').pop();

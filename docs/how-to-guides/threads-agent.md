@@ -58,6 +58,15 @@ Threads normally store no provider or model and follow the `conversation` select
 
 A Google Vertex AI provider is created by default. It uses the stored service account JSON, project and location when present. Anything left empty falls back to application default credentials, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
 
+### Claude on Vertex AI
+
+A `google_vertex` provider also serves Anthropic's Claude models. There is no separate provider type:
+
+- **Running:** `ChatModelFactory` sends a model id that starts with `claude-` (for example `claude-sonnet-4-5` or `claude-opus-4-1@20250805`) through `createVertexAnthropic` (`@ai-sdk/google-vertex/anthropic`). Every other id goes through `createVertex` (Gemini). Both use the provider's project, location and credentials. `providerType` stays `google_vertex`. Switching between Gemini and Claude changes the model id, so history is still adapted on replay.
+- **Listing:** the model list asks for both the `google` and the `anthropic` publishers and merges the results. If the Claude listing fails (for example, no Model Garden access), a warning is logged and only the Gemini models are returned. If the Gemini listing fails, the whole listing fails, as before.
+- **Prerequisites:** enable the Claude model in the project's Model Garden and use a location that serves it (`global`, `us-east5`, `europe-west1`, …). Not every region serves Claude. When the region that suits Gemini does not serve Claude, create a second Google Vertex AI provider with a location that does, and select Claude from that provider.
+- **Embeddings:** Claude has no embedding models. Keep the `embeddings` job on a Gemini (or other) embedding model.
+
 When a message was produced by a different model than the one being called, its reasoning parts and provider-specific options are dropped before replay (`agent-context.utils.ts`).
 
 ## Hooks

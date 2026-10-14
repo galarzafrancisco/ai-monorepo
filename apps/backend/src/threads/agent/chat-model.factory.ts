@@ -3,6 +3,7 @@ import { LanguageModel } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogle } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
+import { createVertexAnthropic } from '@ai-sdk/google-vertex/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
@@ -24,6 +25,7 @@ import {
 } from 'src/ai-providers/errors/ai-providers.errors';
 import {
   googleApiKeyFromEnv,
+  isVertexAnthropicModelId,
   vertexLocationFromEnv,
   vertexProjectFromEnv,
 } from 'src/ai-providers/google-environment';
@@ -151,6 +153,10 @@ export class ChatModelFactory {
   /**
    * Stored project, location and service account win. Anything left empty
    * falls back to the environment and application default credentials.
+   *
+   * Claude models (`claude-*`) go through Vertex AI's Anthropic API; every
+   * other model id goes through the Gemini API. Both use the same project,
+   * location and credentials.
    */
   private buildVertex(config: AiProviderConfigResult, modelId: string): ResolvedChatModel {
     let credentials: Record<string, unknown> | undefined;
@@ -162,12 +168,16 @@ export class ChatModelFactory {
       }
     }
 
-    const vertex = createVertex({
+    const settings = {
       project: config.project ?? vertexProjectFromEnv(),
       location: config.location ?? vertexLocationFromEnv(),
       googleAuthOptions: credentials ? { credentials } : undefined,
-    });
+    };
 
-    return { model: vertex(modelId), providerType: AiProviderType.GOOGLE_VERTEX, modelId };
+    const model = isVertexAnthropicModelId(modelId)
+      ? createVertexAnthropic(settings)(modelId)
+      : createVertex(settings)(modelId);
+
+    return { model, providerType: AiProviderType.GOOGLE_VERTEX, modelId };
   }
 }

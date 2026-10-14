@@ -73,6 +73,37 @@ describe('ChatModelFactory', () => {
     });
   });
 
+  it('runs a Gemini model on Vertex AI through the Gemini API', async () => {
+    process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
+    process.env.GOOGLE_CLOUD_LOCATION = 'global';
+
+    const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash');
+    const resolved = await factory.resolve({
+      job: AiModelJob.CONVERSATION,
+      aiProviderId: 'provider-1',
+      modelId: 'gemini-3.6-flash',
+    });
+
+    const model = resolved.model as { provider: string };
+    expect(model.provider).toMatch(/vertex/i);
+    expect(model.provider).not.toMatch(/anthropic/i);
+  });
+
+  it.each(['claude-sonnet-4-5', 'claude-opus-4-1@20250805'])(
+    'runs %s on Vertex AI through the Anthropic API',
+    async (modelId) => {
+      process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
+      process.env.GOOGLE_CLOUD_LOCATION = 'us-east5';
+
+      const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, modelId);
+      const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+
+      expect(resolved).toMatchObject({ providerType: AiProviderType.GOOGLE_VERTEX, modelId });
+      expect((resolved.model as { provider: string }).provider).toBe('googleVertex.anthropic.messages');
+      expect((resolved.model as { modelId: string }).modelId).toBe(modelId);
+    },
+  );
+
   it('builds an xAI model for a Grok provider', async () => {
     const { factory } = factoryFor(AiProviderType.XAI, 'grok-4');
 
