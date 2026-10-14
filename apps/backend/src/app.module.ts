@@ -34,6 +34,7 @@ import { ThreadSecret1761300000000 } from './migrations/1761300000000-ThreadSecr
 import { ThreadReadStates1761400000000 } from './migrations/1761400000000-ThreadReadStates';
 import { ThreadLastActivity1761500000000 } from './migrations/1761500000000-ThreadLastActivity';
 import { AiProviderConnections1761600000000 } from './migrations/1761600000000-AiProviderConnections';
+import { SplitSmallTasksSelection1761700000000 } from './migrations/1761700000000-SplitSmallTasksSelection';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -69,6 +70,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadReadStates1761400000000,
         ThreadLastActivity1761500000000,
         AiProviderConnections1761600000000,
+        SplitSmallTasksSelection1761700000000,
       ],
     }),
     EventEmitterModule.forRoot(),

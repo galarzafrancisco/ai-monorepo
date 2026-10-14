@@ -11,6 +11,7 @@ import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AiModelJob } from '../src/ai-providers/enums';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
+import { SplitSmallTasksSelection1761700000000 } from '../src/migrations/1761700000000-SplitSmallTasksSelection';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
 describe('AI model selection E2E', () => {
@@ -68,13 +69,14 @@ describe('AI model selection E2E', () => {
     await app.close();
   });
 
-  it('selects a different provider and model per job, with quick tasks and the middle manager following the conversation', async () => {
+  it('selects a different provider and model per job, with small tasks and the middle manager following the conversation', async () => {
     const threadId = await createThread();
 
     // Nothing selected: no job can run.
     expect(await selections()).toMatchObject({
       conversation: { modelId: null, isReady: false, followsConversation: false },
-      quick_tasks: { modelId: null, isReady: false, followsConversation: true },
+      user_small_tasks: { modelId: null, isReady: false, followsConversation: true },
+      system_small_tasks: { modelId: null, isReady: false, followsConversation: true },
       middle_manager: { modelId: null, isReady: false, followsConversation: true },
       embeddings: { modelId: null, isReady: false, followsConversation: false },
     });
@@ -101,7 +103,13 @@ describe('AI model selection E2E', () => {
 
     expect(await selections()).toMatchObject({
       conversation: { modelId: 'claude-opus-5-5', isReady: true },
-      quick_tasks: {
+      user_small_tasks: {
+        modelId: null,
+        followsConversation: true,
+        effectiveModelId: 'claude-opus-5-5',
+        isReady: true,
+      },
+      system_small_tasks: {
         modelId: null,
         followsConversation: true,
         effectiveModelId: 'claude-opus-5-5',
@@ -118,14 +126,14 @@ describe('AI model selection E2E', () => {
       model_id: null,
     });
 
-    // Quick tasks on another provider and model.
+    // System small tasks on another provider and model; user small tasks keep following.
     const local = (
       await api('post', '/ai-providers')
         .send({ name: 'Local', type: 'openai_compatible', baseUrl: 'http://localhost:11434/v1' })
         .expect(201)
     ).body;
     expect(local.isConfigured).toBe(true);
-    await api('put', '/ai-model-selections/quick_tasks')
+    await api('put', '/ai-model-selections/system_small_tasks')
       .send({ aiProviderId: local.id, modelId: 'llama-small' })
       .expect(200);
 
@@ -133,9 +141,13 @@ describe('AI model selection E2E', () => {
       providerType: 'anthropic',
       modelId: 'claude-opus-5-5',
     });
-    expect(await factory().resolve({ job: AiModelJob.QUICK_TASKS })).toMatchObject({
+    expect(await factory().resolve({ job: AiModelJob.SYSTEM_SMALL_TASKS })).toMatchObject({
       providerType: 'openai_compatible',
       modelId: 'llama-small',
+    });
+    expect(await factory().resolve({ job: AiModelJob.USER_SMALL_TASKS })).toMatchObject({
+      providerType: 'anthropic',
+      modelId: 'claude-opus-5-5',
     });
     expect(await factory().resolve({ job: AiModelJob.MIDDLE_MANAGER })).toMatchObject({
       providerType: 'anthropic',
@@ -152,14 +164,17 @@ describe('AI model selection E2E', () => {
     expect(await threadSelection(threadId)).toEqual({ ai_provider_id: null, model_id: null });
 
     // Clearing a job's own selection sends it back to the conversation model.
-    await api('delete', '/ai-model-selections/quick_tasks').expect(204);
-    expect((await factory().resolve({ job: AiModelJob.QUICK_TASKS })).modelId).toBe(
+    await api('delete', '/ai-model-selections/system_small_tasks').expect(204);
+    expect((await factory().resolve({ job: AiModelJob.SYSTEM_SMALL_TASKS })).modelId).toBe(
       'claude-sonnet-5-5',
     );
   });
 
-  it('rejects unknown jobs and unknown providers', async () => {
+  it('rejects unknown jobs, including the retired quick_tasks job, and unknown providers', async () => {
     await api('put', '/ai-model-selections/nonsense')
+      .send({ aiProviderId: randomUUID(), modelId: 'x' })
+      .expect(400);
+    await api('put', '/ai-model-selections/quick_tasks')
       .send({ aiProviderId: randomUUID(), modelId: 'x' })
       .expect(400);
     await api('put', '/ai-model-selections/embeddings')
@@ -236,14 +251,14 @@ describe('AI model selection E2E', () => {
         'zeta-chat',
       ]);
 
-      await api('put', '/ai-model-selections/quick_tasks')
+      await api('put', '/ai-model-selections/user_small_tasks')
         .send({ aiProviderId: grok.id, modelId: 'grok-4' })
         .expect(200);
-      expect(await factory().resolve({ job: AiModelJob.QUICK_TASKS })).toMatchObject({
+      expect(await factory().resolve({ job: AiModelJob.USER_SMALL_TASKS })).toMatchObject({
         providerType: 'xai',
         modelId: 'grok-4',
       });
-      await api('delete', '/ai-model-selections/quick_tasks').expect(204);
+      await api('delete', '/ai-model-selections/user_small_tasks').expect(204);
     } finally {
       await new Promise((resolve) => llm.close(resolve));
     }
@@ -285,5 +300,82 @@ describe('AI model selection E2E', () => {
     } finally {
       process.env = savedEnv;
     }
+  });
+  describe('splitting the retired quick_tasks selection', () => {
+    const insertProvider = async (type: string): Promise<string> => {
+      const [row] = await dataSource.query(
+        `INSERT INTO ai_providers (name, type, row_version) VALUES ($1, $2, 1) RETURNING id`,
+        [`Migrated ${type}`, type],
+      );
+      return row.id;
+    };
+    const rows = async () =>
+      Object.fromEntries(
+        (
+          await dataSource.query(
+            `SELECT job, ai_provider_id, model_id FROM ai_model_selections
+              WHERE job IN ('quick_tasks', 'user_small_tasks', 'system_small_tasks')`,
+          )
+        ).map((row: { job: string }) => [row.job, row]),
+      );
+    const migrate = async (direction: 'up' | 'down') => {
+      const runner = dataSource.createQueryRunner();
+      try {
+        await new SplitSmallTasksSelection1761700000000()[direction](runner);
+      } finally {
+        await runner.release();
+      }
+    };
+    const cleanUp = async (providerId: string) => {
+      await dataSource.query(
+        `DELETE FROM ai_model_selections WHERE job IN ('quick_tasks', 'user_small_tasks', 'system_small_tasks')`,
+      );
+      await dataSource.query(`DELETE FROM ai_providers WHERE id = $1`, [providerId]);
+    };
+
+    it('carries an API-key selection over to both jobs, and back', async () => {
+      const providerId = await insertProvider('openai_compatible');
+      try {
+        await dataSource.query(
+          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id) VALUES ('quick_tasks', $1, 'small-model')`,
+          [providerId],
+        );
+
+        await migrate('up');
+        expect(await rows()).toEqual({
+          user_small_tasks: { job: 'user_small_tasks', ai_provider_id: providerId, model_id: 'small-model' },
+          system_small_tasks: { job: 'system_small_tasks', ai_provider_id: providerId, model_id: 'small-model' },
+        });
+
+        await migrate('down');
+        expect(await rows()).toEqual({
+          quick_tasks: { job: 'quick_tasks', ai_provider_id: providerId, model_id: 'small-model' },
+        });
+      } finally {
+        await cleanUp(providerId);
+      }
+    });
+
+    it('never carries a personal-plan selection over to system small tasks', async () => {
+      const providerId = await insertProvider('chatgpt_subscription');
+      try {
+        await dataSource.query(
+          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id) VALUES ('quick_tasks', $1, 'plan-model')`,
+          [providerId],
+        );
+
+        await migrate('up');
+        expect(await rows()).toEqual({
+          user_small_tasks: { job: 'user_small_tasks', ai_provider_id: providerId, model_id: 'plan-model' },
+        });
+      } finally {
+        await cleanUp(providerId);
+      }
+    });
+
+    it('does nothing when quick tasks had no selection of their own', async () => {
+      await migrate('up');
+      expect(await rows()).toEqual({});
+    });
   });
 });

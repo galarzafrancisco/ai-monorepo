@@ -55,9 +55,9 @@ export type ResolveChatModelInput = {
    * Whose plan pays for the call. Needed by providers that run on a person's
    * own plan, which use that person's connection and nobody else's. Only the
    * threads agent (the person the turn is for), the middle manager (the
-   * thread's creator, as an unattended run) and thread titles (the message
-   * author, or the thread's creator as an unattended run) pass it; any other
-   * caller is refused by those providers.
+   * thread's creator, as an unattended run) and user small tasks (the person
+   * who started the call, never unattended) pass it; any other caller, and
+   * every system small task, is refused by those providers.
    */
   onBehalfOf?: OnBehalfOf;
 };
@@ -135,7 +135,13 @@ export class ChatModelFactory {
 
       case AiProviderType.CHATGPT_SUBSCRIPTION:
         // A person's plan only runs jobs that say whose plan pays for the call.
-        if (!USER_CONNECTED_PROVIDER_JOBS.includes(input.job) || !input.onBehalfOf) {
+        // User small tasks additionally need the person who started the call
+        // right now; an unattended call is not theirs to pay for.
+        if (
+          !USER_CONNECTED_PROVIDER_JOBS.includes(input.job) ||
+          !input.onBehalfOf ||
+          (input.job === AiModelJob.USER_SMALL_TASKS && input.onBehalfOf.automated)
+        ) {
           throw new AiProviderJobNotAllowedError(config.id, input.job);
         }
         return {

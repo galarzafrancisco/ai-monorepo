@@ -3918,7 +3918,7 @@ export interface components {
              * @example conversation
              * @enum {string}
              */
-            job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            job: "conversation" | "user_small_tasks" | "system_small_tasks" | "middle_manager" | "embeddings";
             /**
              * @description Provider of the job's own selection. Null when nothing is selected for it.
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3998,7 +3998,7 @@ export interface components {
         CompleteAiProviderAuthorizationDto: {
             /**
              * @description The full address the browser was sent back to, pasted as is
-             * @example http://127.0.0.1:41873/auth/callback?code=...&state=...
+             * @example http://127.0.0.1:1456/auth/callback?code=...&state=...
              */
             callbackUrl?: string;
             /** @description The `state` query parameter */
@@ -8969,7 +8969,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The job the model is selected for */
-                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+                job: "conversation" | "user_small_tasks" | "system_small_tasks" | "middle_manager" | "embeddings";
             };
             cookie?: never;
         };
@@ -9003,7 +9003,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The job the model is selected for */
-                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+                job: "conversation" | "user_small_tasks" | "system_small_tasks" | "middle_manager" | "embeddings";
             };
             cookie?: never;
         };

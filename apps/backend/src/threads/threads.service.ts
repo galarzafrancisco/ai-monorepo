@@ -45,7 +45,6 @@ import {
   ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ThreadAgentService } from './agent/thread-agent.service';
-import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadMessageWriterService } from './thread-message-writer.service';
@@ -122,10 +121,10 @@ export class ThreadsService {
     // Generate title based on available context
     const title = input.title
       || (parentTask
-        ? ((await this.threadTitleService.generateFromParentTask(
-            parentTask,
-            input.createdByActorId,
-          ))
+        ? ((await this.threadTitleService.generateFromParentTask(parentTask, {
+            id: createdByActor.id,
+            type: createdByActor.type,
+          }))
           || ThreadsService.DEFAULT_THREAD_TITLE)
         : ThreadsService.DEFAULT_THREAD_TITLE);
 
@@ -807,9 +806,6 @@ export class ThreadsService {
   private async maybeGenerateTitleFromFirstMessage(
     input: GenerateTitleFromFirstMessageInput,
   ): Promise<void> {
-    if (input.actor.type !== ActorType.HUMAN) {
-      return;
-    }
     if (input.existingMessageCount > 0) {
       return;
     }
@@ -822,10 +818,11 @@ export class ThreadsService {
       return;
     }
 
-    const generatedTitle = await this.threadTitleService.generateFromMessage(
-      content,
-      input.actor.id,
-    );
+    // A person's message is named on user small tasks, an agent's on system small tasks.
+    const generatedTitle = await this.threadTitleService.generateFromMessage(content, {
+      id: input.actor.id,
+      type: input.actor.type,
+    });
     if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
       return;
     }

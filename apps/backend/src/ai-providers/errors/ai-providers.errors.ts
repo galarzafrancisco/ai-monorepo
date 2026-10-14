@@ -69,11 +69,22 @@ export class AiProviderModelListingFailedError extends AiProvidersDomainError {
   }
 }
 
+/** What to do when a job has no model, for messages people act on. */
+const SETUP_GUIDANCE: Partial<Record<AiModelJob, string>> = {
+  [AiModelJob.SYSTEM_SMALL_TASKS]:
+    'System small tasks run work no person started, such as naming threads agents create. In Settings > Models, pick a model for System small tasks from a provider with an API key, or pick an API-key model for Conversation so it can follow it.',
+  [AiModelJob.USER_SMALL_TASKS]:
+    'In Settings > Models, pick a model for User small tasks, or pick an API-key model for Conversation so it can follow it.',
+};
+
 export class AiModelNotSelectedError extends AiProvidersDomainError {
   constructor(job: AiModelJob) {
-    super(`No model is selected for ${job}.`, AiProvidersErrorCodes.AI_MODEL_NOT_SELECTED, {
-      job,
-    });
+    const guidance = SETUP_GUIDANCE[job];
+    super(
+      `No model is selected for ${job}.${guidance ? ` ${guidance}` : ''}`,
+      AiProvidersErrorCodes.AI_MODEL_NOT_SELECTED,
+      { job },
+    );
   }
 }
 
@@ -97,7 +108,9 @@ export class AiProviderAlreadyExistsError extends AiProvidersDomainError {
 export class AiProviderJobNotAllowedError extends AiProvidersDomainError {
   constructor(providerId: string, job: AiModelJob) {
     super(
-      `This provider uses a person's own plan and cannot be used for ${job}, because that job does not say whose plan would pay.`,
+      job === AiModelJob.SYSTEM_SMALL_TASKS
+        ? `This provider uses a person's own plan and cannot be used for ${job}: nobody started that work, so nobody's plan may pay. Pick a provider with an API key for it.`
+        : `This provider uses a person's own plan and cannot be used for ${job}, because that job does not say whose plan would pay.`,
       AiProvidersErrorCodes.AI_PROVIDER_JOB_NOT_ALLOWED,
       { providerId, job },
     );

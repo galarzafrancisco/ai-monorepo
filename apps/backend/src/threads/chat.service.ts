@@ -14,6 +14,19 @@ import {
   THREAD_AGENT_SLUG,
 } from './agent/thread-agent.service';
 
+/**
+ * Which small tasks job a one-shot call runs on.
+ * - user: a person started it directly; a provider on a person's own plan
+ *   bills that person, and only for calls they started (never unattended).
+ * - system: nobody started it; only a provider with an API key may run it.
+ */
+export type SmallTaskRunFor =
+  | {
+      job: AiModelJob.USER_SMALL_TASKS;
+      onBehalfOf: OnBehalfOf & { automated: false };
+    }
+  | { job: AiModelJob.SYSTEM_SMALL_TASKS };
+
 /** One-shot LLM calls with no conversation history (titles, thread state reconciliation). */
 @Injectable()
 export class ChatService {
@@ -30,25 +43,18 @@ export class ChatService {
   }
 
   /**
-   * One-shot text generation with no tools, on the quick tasks model. Returns
+   * One-shot text generation with no tools, on a small tasks model. Returns
    * null on failure, including when a provider that runs on a person's own
-   * plan cannot use that person's plan; it never falls back to another provider.
+   * plan cannot use that person's plan; it never falls back to another
+   * provider or job.
    */
-  public async generateText(
-    prompt: string,
-    options: {
-      /**
-       * Whose plan pays when quick tasks run on a person's own plan. Without
-       * it such a provider refuses the call.
-       */
-      onBehalfOf?: OnBehalfOf;
-    } = {},
-  ): Promise<string | null> {
+  public async generateText(prompt: string, runFor: SmallTaskRunFor): Promise<string | null> {
     try {
-      const resolved = await this.chatModelFactory.resolve({
-        job: AiModelJob.QUICK_TASKS,
-        onBehalfOf: options.onBehalfOf,
-      });
+      const resolved = await this.chatModelFactory.resolve(
+        runFor.job === AiModelJob.USER_SMALL_TASKS
+          ? { job: runFor.job, onBehalfOf: runFor.onBehalfOf }
+          : { job: runFor.job },
+      );
       const request = {
         model: resolved.model,
         prompt,
@@ -59,17 +65,21 @@ export class ChatService {
         : (await generateText(request)).text;
       return text.trim() || null;
     } catch (error) {
-      if (!(error instanceof AiModelNotSelectedError)) {
-        this.logger.warn({
-          message: 'Text generation failed',
-          onBehalfOf: options.onBehalfOf
-            ? {
-                actorId: options.onBehalfOf.actorId,
-                automated: options.onBehalfOf.automated,
-              }
+      const log = {
+        message: 'Text generation failed',
+        job: runFor.job,
+        onBehalfOf:
+          runFor.job === AiModelJob.USER_SMALL_TASKS
+            ? { actorId: runFor.onBehalfOf.actorId, automated: runFor.onBehalfOf.automated }
             : undefined,
-          error: describeError(error),
-        });
+        error: describeError(error),
+      };
+      // User small tasks left unselected is a choice. System small tasks have
+      // no person to fall back on, so a missing model is setup to finish.
+      if (error instanceof AiModelNotSelectedError && runFor.job === AiModelJob.USER_SMALL_TASKS) {
+        this.logger.debug(log);
+      } else {
+        this.logger.warn(log);
       }
       return null;
     }

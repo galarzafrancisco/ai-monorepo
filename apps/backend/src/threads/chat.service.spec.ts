@@ -36,7 +36,7 @@ const textChunks = (...deltas: string[]) => [
   { type: 'text-end', id: 't' },
 ];
 
-describe('ChatService.generateText (quick tasks)', () => {
+describe('ChatService.generateText (small tasks)', () => {
   const setup = (options: {
     requiresStreaming?: boolean;
     streamChunks?: unknown[];
@@ -71,26 +71,37 @@ describe('ChatService.generateText (quick tasks)', () => {
       {} as never,
     );
     const warn = jest.spyOn((service as any).logger, 'warn').mockImplementation(() => undefined);
-    return { service, resolve, doGenerate, doStream, warn };
+    const debug = jest.spyOn((service as any).logger, 'debug').mockImplementation(() => undefined);
+    return { service, resolve, doGenerate, doStream, warn, debug };
   };
 
-  const author = { actorId: 'author-1', automated: false };
+  const author = { actorId: 'author-1', automated: false as const };
+  const asUser = { job: AiModelJob.USER_SMALL_TASKS as const, onBehalfOf: author };
+  const asSystem = { job: AiModelJob.SYSTEM_SMALL_TASKS as const };
 
-  it('asks for the quick tasks model on behalf of the person the call is for', async () => {
+  it('asks for the user small tasks model on behalf of the person who started the call', async () => {
     const { service, resolve } = setup({});
 
-    await service.generateText('Name this', { onBehalfOf: author });
+    await service.generateText('Name this', asUser);
 
     expect(resolve).toHaveBeenCalledWith({
-      job: AiModelJob.QUICK_TASKS,
+      job: AiModelJob.USER_SMALL_TASKS,
       onBehalfOf: author,
     });
+  });
+
+  it('asks for the system small tasks model without naming anyone', async () => {
+    const { service, resolve } = setup({});
+
+    await service.generateText('Name this', asSystem);
+
+    expect(resolve).toHaveBeenCalledWith({ job: AiModelJob.SYSTEM_SMALL_TASKS });
   });
 
   it('keeps a single non-streaming call on an ordinary provider', async () => {
     const { service, doGenerate, doStream } = setup({});
 
-    await expect(service.generateText('Name this')).resolves.toBe('Generated title');
+    await expect(service.generateText('Name this', asSystem)).resolves.toBe('Generated title');
     expect(doGenerate).toHaveBeenCalledTimes(1);
     expect(doStream).not.toHaveBeenCalled();
   });
@@ -99,7 +110,7 @@ describe('ChatService.generateText (quick tasks)', () => {
     const { service, doGenerate, doStream } = setup({ requiresStreaming: true });
 
     await expect(
-      service.generateText('Name this', { onBehalfOf: author }),
+      service.generateText('Name this', asUser),
     ).resolves.toBe('Streamed title');
     expect(doStream).toHaveBeenCalledTimes(1);
     expect(doGenerate).not.toHaveBeenCalled();
@@ -115,12 +126,13 @@ describe('ChatService.generateText (quick tasks)', () => {
     });
 
     await expect(
-      service.generateText('Name this', { onBehalfOf: author }),
+      service.generateText('Name this', asUser),
     ).resolves.toBeNull();
     expect(doGenerate).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Text generation failed',
+        job: AiModelJob.USER_SMALL_TASKS,
         onBehalfOf: author,
         error: expect.objectContaining({
           code: 'AI_PROVIDER_REQUEST_FAILED',
@@ -137,7 +149,7 @@ describe('ChatService.generateText (quick tasks)', () => {
     const { service, doGenerate, doStream, warn } = setup({ resolveError: error });
 
     await expect(
-      service.generateText('Name this', { onBehalfOf: author }),
+      service.generateText('Name this', asUser),
     ).resolves.toBeNull();
     expect(doGenerate).not.toHaveBeenCalled();
     expect(doStream).not.toHaveBeenCalled();
@@ -148,12 +160,33 @@ describe('ChatService.generateText (quick tasks)', () => {
     );
   });
 
-  it('stays quiet when quick tasks have no model', async () => {
-    const { service, warn } = setup({
-      resolveError: new AiModelNotSelectedError(AiModelJob.QUICK_TASKS),
+  it('logs quietly when user small tasks have no model, which is a choice', async () => {
+    const { service, warn, debug } = setup({
+      resolveError: new AiModelNotSelectedError(AiModelJob.USER_SMALL_TASKS),
     });
 
-    await expect(service.generateText('Name this')).resolves.toBeNull();
+    await expect(service.generateText('Name this', asUser)).resolves.toBeNull();
     expect(warn).not.toHaveBeenCalled();
+    expect(debug).toHaveBeenCalled();
+  });
+
+  it('warns with setup guidance when system small tasks have no model', async () => {
+    const { service, warn, doGenerate, doStream } = setup({
+      resolveError: new AiModelNotSelectedError(AiModelJob.SYSTEM_SMALL_TASKS),
+    });
+
+    await expect(service.generateText('Name this', asSystem)).resolves.toBeNull();
+    expect(doGenerate).not.toHaveBeenCalled();
+    expect(doStream).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job: AiModelJob.SYSTEM_SMALL_TASKS,
+        onBehalfOf: undefined,
+        error: expect.objectContaining({
+          code: 'AI_MODEL_NOT_SELECTED',
+          message: expect.stringContaining('provider with an API key'),
+        }),
+      }),
+    );
   });
 });
