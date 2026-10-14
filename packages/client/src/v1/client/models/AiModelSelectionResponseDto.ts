@@ -38,7 +38,8 @@ export namespace AiModelSelectionResponseDto {
      */
     export enum job {
         CONVERSATION = 'conversation',
-        QUICK_TASKS = 'quick_tasks',
+        USER_SMALL_TASKS = 'user_small_tasks',
+        SYSTEM_SMALL_TASKS = 'system_small_tasks',
         MIDDLE_MANAGER = 'middle_manager',
         EMBEDDINGS = 'embeddings',
     }

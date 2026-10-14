@@ -451,7 +451,7 @@ export interface AiProviderModelResponseDto {
 }
 
 export interface AiModelSelectionResponseDto {
-  job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings';
+  job: 'conversation' | 'user_small_tasks' | 'system_small_tasks' | 'middle_manager' | 'embeddings';
   aiProviderId?: string | null;
   modelId?: string | null;
   followsConversation: boolean;

@@ -135,7 +135,7 @@ function buildEmbeddingModel(config: AiProviderConfigResult, modelId: string): E
       );
 
     case AiProviderType.CHATGPT_SUBSCRIPTION:
-      // A person's plan only answers in threads. It cannot be selected for embeddings.
+      // A person's plan only runs jobs that say whose plan pays. It cannot be selected for embeddings.
       return null;
   }
 }

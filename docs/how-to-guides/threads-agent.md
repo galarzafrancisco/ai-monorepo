@@ -35,20 +35,25 @@ Providers and models are separate, and both are set in Settings → AI models.
 
 An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai`, `openai_compatible` or `chatgpt_subscription`), an optional stored secret, and an endpoint. It has no model.
 
-`chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider answers in threads only. See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
+`chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider only runs jobs that say whose plan pays (conversation, user small tasks, middle manager). It never runs system small tasks. See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
 
 A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
 
 | Job | Used by | When nothing is selected |
 |---|---|---|
 | `conversation` | The threads agent, and compaction | Threads cannot answer |
-| `quick_tasks` | Thread titles | Uses the conversation model, unless that is a ChatGPT plan |
+| `user_small_tasks` | Thread titles a person triggered: a thread they created, or its first message they wrote | Uses the conversation model, unless that is a ChatGPT plan |
+| `system_small_tasks` | Thread titles an agent triggered, e.g. the parent's thread created with a subtask. API-key providers only | Uses the conversation model, unless that is a ChatGPT plan; then it needs setup and agent-created threads keep the default title |
 | `middle_manager` | The thread state reconciler | Uses the conversation model, unless that is a ChatGPT plan |
 | `embeddings` | Nothing yet (reserved for search) | Not available |
 
+The small tasks jobs replaced a single `quick_tasks` job. Migration `1761700000000-SplitSmallTasksSelection` copies an existing `quick_tasks` selection into `user_small_tasks`, and into `system_small_tasks` unless it runs on a ChatGPT plan. Rolling back restores `quick_tasks` from `user_small_tasks` (whatever its provider), or from `system_small_tasks` when there is no user selection. `/ai-model-selections/quick_tasks` now answers 400.
+
+`ThreadTitleService` picks the job from the type of the actor who triggered the title: a human gets `user_small_tasks`, anything else gets `system_small_tasks`. A new small-task caller must make the same choice through `ChatService.generateText(prompt, { job, ... })`. A user small task always names the person who started it (`onBehalfOf` with `automated: false`). When a job has no usable model, `generateText` returns null. For system small tasks it also logs `Text generation failed` as a warning with setup guidance.
+
 Selections are read from the database on every call, so a change applies to every backend process on its next turn. `ChatModelFactory.resolve({ job })` turns a job into an AI SDK model.
 
-The threads agent also passes `onBehalfOf`: the actor the turn is for, and whether anybody typed. Providers with shared credentials ignore it. A ChatGPT plan provider requires it, which is what keeps it out of every other job.
+The threads agent also passes `onBehalfOf`: the actor the turn is for, and whether anybody typed. The middle manager and user small tasks pass it too; system small tasks never do. Providers with shared credentials ignore it. A ChatGPT plan provider requires it, which is what keeps it out of every other caller.
 
 A resolved model can set `requiresStreaming`. Code that only wants the final text (compaction) must then call `streamText()` and read it to the end instead of `generateText()`.
 

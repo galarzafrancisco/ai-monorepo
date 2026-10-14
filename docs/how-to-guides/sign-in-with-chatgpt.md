@@ -1,6 +1,6 @@
 # Sign in with ChatGPT (ChatGPT plan provider)
 
-Lets the threads agent (and, if selected, the middle manager) run on a person's own ChatGPT plan instead of an API key. It is an AI provider type (`chatgpt_subscription`), set up in Settings → AI models next to the API-key providers.
+Lets the threads agent (and, if selected, user small tasks and the middle manager) run on a person's own ChatGPT plan instead of an API key. It is an AI provider type (`chatgpt_subscription`), set up in Settings → AI models next to the API-key providers.
 
 It is not a way to log in to Taico. A Taico user signs in to Taico as before, then connects a ChatGPT account to their user. Taico's own users, authentication and scopes are unchanged.
 
@@ -24,7 +24,7 @@ It also needs encrypted secret storage: `SECRETS_ENABLED=true` and a `SECRETS_EN
 
 ## What a person sees
 
-1. An admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model, and optionally as the Middle manager model. There is one such provider per installation and it holds no account.
+1. An admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model, and optionally as the User small tasks and Middle manager models. System small tasks need a provider with an API key. There is one such provider per installation and it holds no account.
 2. Each person clicks **Continue with ChatGPT** on that provider. OpenAI opens in a new tab. They approve there; the tab then shows a "can't be reached" page at `http://127.0.0.1:1456/auth/callback?…`. They copy that whole address, paste it under **Finish signing in** in the Taico tab, and click **Finish**: "You're using your ChatGPT plan."
 3. Settings shows which account is connected, **Manage usage** (ChatGPT's usage page), **Reconnect** and **Disconnect**. Threads show "Using ChatGPT plan" next to the model.
 4. Disconnect revokes the grant at OpenAI and deletes everything stored about the account.
@@ -39,6 +39,9 @@ The model list on this provider is the list of the signed-in person's own accoun
 | A task update (nobody typed) | The person the agent subscribed for, and only if they turned on "Also answer task updates on my plan" |
 | An agent's message | None. The turn fails |
 | The middle manager (thread state reconciler) | The person who **created the thread**, and only if they turned on "Also answer task updates on my plan". Never the person or agent who changed the task |
+| User small tasks: a title from a thread's first message, written by a person | The person who **wrote that message** |
+| User small tasks: a title from the parent task, for a thread a person created | The person who **created the thread** (they just did it, so no extra consent) |
+| System small tasks: any title an agent triggered (e.g. creating a subtask) | None, ever. Runs on the System small tasks model, which must use an API key |
 
 Only that one person's connection is looked up. If it is missing, expired, or lacks plan access, the turn fails and the thread shows why. Taico never uses someone else's plan and never falls back to another provider, including an API-key provider that is configured.
 
@@ -50,9 +53,20 @@ A failed turn has already taken in the messages that started it, so the agent se
 
 A provider of this type:
 
-- can be selected for the `conversation` and `middle_manager` jobs and no others (`PUT /ai-model-selections/quick_tasks` or `/embeddings` answers `AI_PROVIDER_JOB_NOT_ALLOWED`). The list is `USER_CONNECTED_PROVIDER_JOBS` in `enums/ai-model-job.enum.ts`;
-- is never inherited. `quick_tasks` and `middle_manager` normally follow the conversation model; with this provider as the conversation model they count as "not selected": thread titles are skipped and the thread state reconciler does not run until they get a model of their own. For the middle manager that can be this same provider, selected directly;
-- is refused by `ChatModelFactory` unless the caller says whose plan pays (`onBehalfOf`). Only `ThreadAgentService` (the person the turn is for) and `ThreadStateReconcilerService` via `ChatService.runTask` (the thread's creator) do.
+- can be selected for the `conversation`, `user_small_tasks` and `middle_manager` jobs and no others (`PUT /ai-model-selections/system_small_tasks` or `/embeddings` answers `AI_PROVIDER_JOB_NOT_ALLOWED`). The list is `USER_CONNECTED_PROVIDER_JOBS` in `enums/ai-model-job.enum.ts`;
+- is never inherited. `user_small_tasks`, `system_small_tasks` and `middle_manager` normally follow the conversation model; with this provider as the conversation model they count as "not selected" until they get a model of their own. For user small tasks and the middle manager that can be this same provider, selected directly; system small tasks need an API-key provider, and Settings shows a warning until they have one;
+- is refused by `ChatModelFactory` unless the caller says whose plan pays (`onBehalfOf`). Only `ThreadAgentService` (the person the turn is for), `ThreadStateReconcilerService` via `ChatService.runTask` (the thread's creator) and `ThreadTitleService` via `ChatService.generateText` for user small tasks (see below) do. The factory also refuses a user small task marked `automated`, and every system small task.
+
+### Small tasks (thread titles)
+
+Thread titles are the only small task today. There are two jobs, and `ThreadTitleService` picks one from the actor who triggered the title:
+
+- **User small tasks** (`user_small_tasks`): a person triggered it. That covers a thread they created with a parent task (`POST /threads`) and the first message they wrote. The call names that person (`onBehalfOf`, `automated: false`), so on this provider it runs on their plan and nobody else's. It needs no "Also answer task updates on my plan" consent, because they just acted. An unattended call (`automated: true`) is refused.
+- **System small tasks** (`system_small_tasks`): no person triggered it. That covers a thread created when an agent creates a subtask (`TasksService.createTaskInThread`), an agent calling `POST /threads`, and a first message an agent wrote. This job never runs on a person's plan: the selection, the resolver and `ChatModelFactory` all refuse this provider. It needs an API-key provider, either selected directly or followed from an API-key conversation model. Without one, Settings → AI models shows a warning on the job. Each such title is also logged at warn level as `Text generation failed` with `AI_MODEL_NOT_SELECTED` and how to fix it, and the thread keeps "New thread".
+
+If a user small task cannot use that one person's plan (not connected, needs to sign in again, no plan access, usage limit, a failed or incomplete stream), the thread keeps its default title and a warning is logged with the error code and, for OpenAI failures, `upstreamCode`. Nothing falls back to another provider or to system small tasks, and nothing is shown in the thread.
+
+The call streams (`streamText()` read to the end, with `stream: true` and `store: false`), as this provider requires. Text that arrived before a failure is thrown away.
 
 ### The middle manager
 
@@ -150,7 +164,7 @@ npx jest src/ai-providers/chatgpt-subscription src/threads/agent   # unit
 npm run test:e2e:chatgpt-subscription                              # real Postgres, fake OpenAI
 ```
 
-The end-to-end spec runs the whole flow against `FakeOpenAi`, which checks PKCE, the exact redirect URI and refresh-token rotation the way OpenAI does. It covers the sign-in and its failure cases, token storage, per-person isolation, model listing, job scope, a full thread turn with streaming and a tool call, refresh races, usage limits, compaction, disconnect and provider deletion. It is part of `npm run test:e2e`, which CI runs.
+The end-to-end spec runs the whole flow against `FakeOpenAi`, which checks PKCE, the exact redirect URI and refresh-token rotation the way OpenAI does. It covers the sign-in and its failure cases, token storage, per-person isolation, model listing, job scope, user/system small-task routing, a full thread turn with streaming and a tool call, refresh races, usage limits, compaction, disconnect and provider deletion. It is part of `npm run test:e2e`, which CI runs.
 
 ## Manual check with a real account
 
@@ -176,5 +190,5 @@ Things only this check can confirm, because the fake cannot: that OpenAI accepts
 - The usage limit is not remembered as a pause: each new message makes one request, which OpenAI refuses until the plan resets. OpenAI gives no reset time to wait for.
 - A disconnect made at OpenAI is not pushed to Taico. Taico notices on the next request or refresh.
 - `isReady` in `GET /ai-model-selections` says the provider is turned on, not that the person asking has connected.
-- A middle manager run that cannot use the creator's plan only leaves a server log line. Settings does not show it, and the thread's shared notes silently stop updating.
-- Threads created by an agent (for example by an agent creating subtasks) have no plan to run the middle manager on, so it never runs for them while this provider is selected.
+- A middle manager run or user small task that cannot use the person's plan only leaves a server log line. Settings does not show it, and the thread's shared notes silently stop updating.
+- Threads created by an agent (for example by an agent creating subtasks) have no plan to run the middle manager on, so it never runs for them while this provider is selected. Their titles come from System small tasks, which use an API key.

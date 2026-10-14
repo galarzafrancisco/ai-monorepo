@@ -6,16 +6,20 @@ import { App } from 'supertest/types';
 import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
 import { createHash, randomBytes } from 'node:crypto';
+import { createServer, Server } from 'node:http';
+import { AddressInfo } from 'node:net';
 import { jsonSchema, tool } from 'ai';
 import { AppModule } from '../src/app.module';
 import { getConfig } from '../src/config/env.config';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AgentsService } from '../src/agents/agents.service';
 import { AiModelJob } from '../src/ai-providers/enums';
+import { ActorType } from '../src/identity-provider/enums';
 import { ChatgptConnectionsService } from '../src/ai-providers/chatgpt-subscription/chatgpt-connections.service';
 import { CHATGPT_SUBSCRIPTION_ENDPOINTS } from '../src/ai-providers/chatgpt-subscription/chatgpt-subscription.constants';
 import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
 import { ChatService } from '../src/threads/chat.service';
+import { ThreadTitleService } from '../src/threads/thread-title.service';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadAgentResponseDeltaEvent } from '../src/threads/events/threads.events';
@@ -539,21 +543,19 @@ describe('Sign in with ChatGPT E2E', () => {
       expect(fake.modelsRequests).toHaveLength(before);
     });
 
-    it('can be selected for the conversation, but not for quick tasks or embeddings', async () => {
+    it('can be selected for the conversation, but not for embeddings', async () => {
       await api(aliceCookies, 'put', '/ai-model-selections/conversation')
         .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
         .expect(200);
 
-      for (const job of ['quick_tasks', 'embeddings']) {
-        const refused = await api(
-          aliceCookies,
-          'put',
-          `/ai-model-selections/${job}`,
-        )
-          .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
-          .expect(400);
-        expect(refused.body.code).toBe('AI_PROVIDER_JOB_NOT_ALLOWED');
-      }
+      const refused = await api(
+        aliceCookies,
+        'put',
+        '/ai-model-selections/embeddings',
+      )
+        .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
+        .expect(400);
+      expect(refused.body.code).toBe('AI_PROVIDER_JOB_NOT_ALLOWED');
     });
 
     it('is not inherited by the jobs that normally follow the conversation model', async () => {
@@ -566,7 +568,12 @@ describe('Sign in with ChatGPT E2E', () => {
 
       expect(byJob).toMatchObject({
         conversation: { effectiveModelId: 'gpt-plan-large', isReady: true },
-        quick_tasks: {
+        user_small_tasks: {
+          followsConversation: true,
+          effectiveModelId: null,
+          isReady: false,
+        },
+        system_small_tasks: {
           followsConversation: true,
           effectiveModelId: null,
           isReady: false,
@@ -580,7 +587,11 @@ describe('Sign in with ChatGPT E2E', () => {
 
       const factory = app.get(ChatModelFactory);
       const onBehalfOf = { actorId: aliceActorId, automated: false };
-      for (const job of [AiModelJob.QUICK_TASKS, AiModelJob.MIDDLE_MANAGER]) {
+      for (const job of [
+        AiModelJob.USER_SMALL_TASKS,
+        AiModelJob.SYSTEM_SMALL_TASKS,
+        AiModelJob.MIDDLE_MANAGER,
+      ]) {
         await expect(factory.resolve({ job })).rejects.toMatchObject({
           code: 'AI_MODEL_NOT_SELECTED',
         });
@@ -602,7 +613,15 @@ describe('Sign in with ChatGPT E2E', () => {
       const before = fake.responsesRequests.length;
       const chat = app.get(ChatService);
 
-      await expect(chat.generateText('Name this thread')).resolves.toBeNull();
+      await expect(
+        chat.generateText('Name this thread', {
+          job: AiModelJob.USER_SMALL_TASKS,
+          onBehalfOf: { actorId: aliceActorId, automated: false },
+        }),
+      ).resolves.toBeNull();
+      await expect(
+        chat.generateText('Name this thread', { job: AiModelJob.SYSTEM_SMALL_TASKS }),
+      ).resolves.toBeNull();
       await expect(
         chat.runTask({
           instructions: 'Reconcile',
@@ -832,10 +851,10 @@ describe('Sign in with ChatGPT E2E', () => {
         effectiveModelId: 'gpt-plan-small',
         isReady: true,
       });
-      // Quick tasks still do not inherit the conversation's plan.
-      expect(list.find((s) => s.job === 'quick_tasks')).toMatchObject({
-        effectiveModelId: null,
-      });
+      // Small tasks still do not inherit the conversation's plan.
+      for (const job of ['user_small_tasks', 'system_small_tasks']) {
+        expect(list.find((s) => s.job === job)).toMatchObject({ effectiveModelId: null });
+      }
     });
 
     it('runs streamed, on the plan of the person it is for, who allowed unattended runs', async () => {
@@ -879,6 +898,241 @@ describe('Sign in with ChatGPT E2E', () => {
       });
 
       expect(fake.responsesRequests).toHaveLength(before);
+    });
+  });
+
+  describe('user small tasks (thread titles a person started) on the plan', () => {
+    // By now Alice is connected and allowed unattended runs; Bob is connected
+    // but has not; the agent has no plan.
+    const titles = () => app.get(ThreadTitleService);
+    const task = { name: 'Ship it', description: 'Release 1.0' } as never;
+    const human = (id: string) => ({ id, type: ActorType.HUMAN });
+    const agent = (id: string) => ({ id, type: ActorType.AGENT });
+
+    beforeAll(async () => {
+      await api(aliceCookies, 'put', '/ai-model-selections/user_small_tasks')
+        .send({ aiProviderId: providerId, modelId: 'gpt-plan-small' })
+        .expect(200);
+    });
+
+    afterAll(async () => {
+      await api(aliceCookies, 'delete', '/ai-model-selections/user_small_tasks').expect(204);
+    });
+
+    it('can be selected for user small tasks directly, but never for system small tasks', async () => {
+      const list: Array<Record<string, unknown>> = (
+        await api(aliceCookies, 'get', '/ai-model-selections').expect(200)
+      ).body;
+      expect(list.find((s) => s.job === 'user_small_tasks')).toMatchObject({
+        aiProviderId: providerId,
+        modelId: 'gpt-plan-small',
+        followsConversation: false,
+        effectiveModelId: 'gpt-plan-small',
+        isReady: true,
+      });
+
+      const refused = await api(aliceCookies, 'put', '/ai-model-selections/system_small_tasks')
+        .send({ aiProviderId: providerId, modelId: 'gpt-plan-small' })
+        .expect(400);
+      expect(refused.body.code).toBe('AI_PROVIDER_JOB_NOT_ALLOWED');
+      expect(refused.body.detail).toContain('Pick a provider with an API key');
+      expect(list.find((s) => s.job === 'system_small_tasks')).toMatchObject({
+        aiProviderId: null,
+        effectiveModelId: null,
+        isReady: false,
+      });
+    });
+
+    it('names a thread from its first message on the author’s plan, streamed', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(textResponse('Bob’s release plan'));
+
+      // Bob has not allowed unattended runs; he typed this, so none is needed.
+      await expect(
+        titles().generateFromMessage('Plan the release', human(bobActorId)),
+      ).resolves.toBe('Bob’s release plan');
+
+      const requests = fake.responsesRequests.slice(before);
+      expect(requests).toHaveLength(1);
+      expect(requests[0].authorization).toBe(`Bearer ${fake.accessTokenFor(BOB.subject)}`);
+      expect(requests[0].body).toMatchObject({
+        model: 'gpt-plan-small',
+        store: false,
+        stream: true,
+      });
+      expect(inputText(requests[0].body)).toContain('Plan the release');
+    });
+
+    it('names a thread a person creates for a task on that person’s plan, through the API', async () => {
+      const parent = (
+        await api(bobCookies, 'post', '/tasks/tasks')
+          .send({ name: 'Ship it', description: 'Release 1.0' })
+          .expect(201)
+      ).body;
+      const before = fake.responsesRequests.length;
+      fake.script.push(textResponse('Ship release one'));
+
+      const thread = (
+        await api(bobCookies, 'post', '/threads').send({ parentTaskId: parent.id }).expect(201)
+      ).body;
+
+      expect(thread.title).toBe('Ship release one');
+      const requests = fake.responsesRequests.slice(before);
+      expect(requests).toHaveLength(1);
+      // Bob created it, so Bob's plan pays; nobody else's, and no consent for unattended runs needed.
+      expect(requests[0].authorization).toBe(`Bearer ${fake.accessTokenFor(BOB.subject)}`);
+    });
+
+    it('never runs work an agent started on anyone’s plan', async () => {
+      const before = fake.responsesRequests.length;
+
+      // No system small tasks model: the title stays default and nobody's plan is touched.
+      await expect(titles().generateFromParentTask(task, agent(agentActorId))).resolves.toBeNull();
+      await expect(titles().generateFromMessage('Hi', agent(agentActorId))).resolves.toBeNull();
+
+      expect(fake.responsesRequests).toHaveLength(before);
+    });
+
+    it('refuses an unattended user small task, even for someone who allowed unattended runs', async () => {
+      const before = fake.responsesRequests.length;
+
+      await expect(
+        app.get(ChatModelFactory).resolve({
+          job: AiModelJob.USER_SMALL_TASKS,
+          onBehalfOf: { actorId: aliceActorId, automated: true },
+        }),
+      ).rejects.toMatchObject({ code: 'AI_PROVIDER_JOB_NOT_ALLOWED' });
+
+      expect(fake.responsesRequests).toHaveLength(before);
+    });
+
+    it('gives no title when the stream fails, and tries nothing else', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(failedResponse('server_error', 'Something went wrong', 'Half a'));
+
+      await expect(
+        titles().generateFromMessage('Plan the release', human(aliceActorId)),
+      ).resolves.toBeNull();
+
+      expect(fake.responsesRequests).toHaveLength(before + 1);
+    });
+
+    it('gives no title at the usage limit, and tries nothing else', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(
+        failedResponse('subscription_sharing_usage_limit_exceeded', 'Usage limit reached'),
+      );
+
+      await expect(
+        titles().generateFromMessage('Plan the release', human(aliceActorId)),
+      ).resolves.toBeNull();
+
+      expect(fake.responsesRequests).toHaveLength(before + 1);
+    });
+
+    describe('with an API-key provider for system small tasks', () => {
+      let server: Server;
+      let apiProviderId: string;
+      const completions: Array<{ authorization?: string; body: Record<string, unknown> }> = [];
+
+      beforeAll(async () => {
+        server = createServer((req, res) => {
+          const chunks: Buffer[] = [];
+          req.on('data', (chunk: Buffer) => chunks.push(chunk));
+          req.on('end', () => {
+            completions.push({
+              authorization: req.headers.authorization,
+              body: JSON.parse(Buffer.concat(chunks).toString('utf8')),
+            });
+            res.setHeader('content-type', 'application/json');
+            res.end(
+              JSON.stringify({
+                id: 'chatcmpl-1',
+                object: 'chat.completion',
+                created: 0,
+                model: 'small-api-model',
+                choices: [
+                  {
+                    index: 0,
+                    message: { role: 'assistant', content: 'Agent subtask plan' },
+                    finish_reason: 'stop',
+                  },
+                ],
+                usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+              }),
+            );
+          });
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        const { port } = server.address() as AddressInfo;
+        apiProviderId = (
+          await api(aliceCookies, 'post', '/ai-providers')
+            .send({
+              name: 'Small API',
+              type: 'openai_compatible',
+              baseUrl: `http://127.0.0.1:${port}/v1`,
+            })
+            .expect(201)
+        ).body.id;
+        await api(aliceCookies, 'patch', `/ai-providers/${apiProviderId}`)
+          .send({ apiKey: 'sk-system' })
+          .expect(200);
+        await api(aliceCookies, 'put', '/ai-model-selections/system_small_tasks')
+          .send({ aiProviderId: apiProviderId, modelId: 'small-api-model' })
+          .expect(200);
+      });
+
+      afterAll(async () => {
+        try {
+          await api(aliceCookies, 'delete', '/ai-model-selections/system_small_tasks').expect(204);
+          await api(aliceCookies, 'delete', `/ai-providers/${apiProviderId}`).expect(204);
+        } finally {
+          await new Promise((resolve) => server.close(resolve));
+        }
+      });
+
+      it('names a thread an agent created on the API-key provider, never on a plan', async () => {
+        const planBefore = fake.responsesRequests.length;
+        const apiBefore = completions.length;
+
+        await expect(
+          titles().generateFromParentTask(task, agent(agentActorId)),
+        ).resolves.toBe('Agent subtask plan');
+
+        expect(fake.responsesRequests).toHaveLength(planBefore);
+        expect(completions.slice(apiBefore)).toEqual([
+          expect.objectContaining({
+            authorization: 'Bearer sk-system',
+            body: expect.objectContaining({ model: 'small-api-model' }),
+          }),
+        ]);
+      });
+
+      it('keeps work a person started on their own plan', async () => {
+        const planBefore = fake.responsesRequests.length;
+        const apiBefore = completions.length;
+        fake.script.push(textResponse('Alice’s title'));
+
+        await expect(
+          titles().generateFromMessage('Plan the release', human(aliceActorId)),
+        ).resolves.toBe('Alice’s title');
+
+        expect(fake.responsesRequests).toHaveLength(planBefore + 1);
+        expect(completions).toHaveLength(apiBefore);
+      });
+
+      it('does not fall back to the API-key provider when a person’s plan fails', async () => {
+        const apiBefore = completions.length;
+        fake.script.push(
+          failedResponse('subscription_sharing_usage_limit_exceeded', 'Usage limit reached'),
+        );
+
+        await expect(
+          titles().generateFromMessage('Plan the release', human(aliceActorId)),
+        ).resolves.toBeNull();
+
+        expect(completions).toHaveLength(apiBefore);
+      });
     });
   });
 

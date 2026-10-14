@@ -137,6 +137,10 @@
   grid-column: 2;
 }
 
+.settings-models__job-note--warning {
+  color: var(--warning);
+}
+
 .settings-models__status {
   display: inline-flex;
   align-items: center;

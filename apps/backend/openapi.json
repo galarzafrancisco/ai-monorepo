@@ -2789,7 +2789,8 @@
               "type": "string",
               "enum": [
                 "conversation",
-                "quick_tasks",
+                "user_small_tasks",
+                "system_small_tasks",
                 "middle_manager",
                 "embeddings"
               ]
@@ -2844,7 +2845,8 @@
               "type": "string",
               "enum": [
                 "conversation",
-                "quick_tasks",
+                "user_small_tasks",
+                "system_small_tasks",
                 "middle_manager",
                 "embeddings"
               ]
@@ -10146,7 +10148,8 @@
             "description": "The job the model is selected for",
             "enum": [
               "conversation",
-              "quick_tasks",
+              "user_small_tasks",
+              "system_small_tasks",
               "middle_manager",
               "embeddings"
             ],
@@ -10295,7 +10298,7 @@
           "callbackUrl": {
             "type": "string",
             "description": "The full address the browser was sent back to, pasted as is",
-            "example": "http://127.0.0.1:41873/auth/callback?code=...&state=..."
+            "example": "http://127.0.0.1:1456/auth/callback?code=...&state=..."
           },
           "state": {
             "type": "string",

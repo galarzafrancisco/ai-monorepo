@@ -28,7 +28,7 @@ type JobInfo = {
 };
 
 /** Jobs a provider that runs on a person's own plan may be selected for. Mirrors the backend. */
-const PERSONAL_PLAN_JOBS: readonly string[] = ['conversation', 'middle_manager'];
+const PERSONAL_PLAN_JOBS: readonly string[] = ['conversation', 'user_small_tasks', 'middle_manager'];
 
 const JOBS: JobInfo[] = [
   {
@@ -39,9 +39,16 @@ const JOBS: JobInfo[] = [
     followsConversation: false,
   },
   {
-    job: 'quick_tasks',
-    label: 'Quick tasks',
-    help: 'Small background jobs like naming threads and enriching context. Pick something fast and cheap, such as Claude Haiku or GPT Luna.',
+    job: 'user_small_tasks',
+    label: 'User small tasks',
+    help: 'Small jobs a person starts, like naming a thread they create or write in. Pick something fast and cheap, such as Claude Haiku or GPT Luna.',
+    kind: 'language',
+    followsConversation: true,
+  },
+  {
+    job: 'system_small_tasks',
+    label: 'System small tasks',
+    help: 'Small jobs nobody starts directly, like naming threads that agents create. Runs on a provider with an API key, never on a person\'s plan.',
     kind: 'language',
     followsConversation: true,
   },
@@ -73,7 +80,7 @@ type ProviderTypeInfo = {
   hasVertexSettings?: boolean;
   /**
    * Runs on each person's own plan instead of shared credentials. Such a
-   * provider only answers in threads, so it is offered for the conversation only.
+   * provider is only offered for the jobs in PERSONAL_PLAN_JOBS.
    */
   personalPlan?: boolean;
 };
@@ -718,7 +725,8 @@ function JobRow({
   const canListModels = !!provider?.isConfigured;
   const usesPersonalPlan = !!provider && !!PROVIDER_TYPES[provider.type].personalPlan;
   // A person's plan only runs jobs that know whose plan pays: the conversation
-  // (the person the turn is for) and the middle manager (the thread's creator).
+  // (the person the turn is for), user small tasks (the person who started the
+  // call) and the middle manager (the thread's creator). Never system small tasks.
   const selectableProviders = providers.filter(
     (p) => PERSONAL_PLAN_JOBS.includes(info.job) || !PROVIDER_TYPES[p.type].personalPlan,
   );
@@ -840,7 +848,14 @@ function JobRow({
           Finish setting up this provider to pick from its models.
         </Text>
       ) : null}
-      {usesPersonalPlan && info.job === 'middle_manager' ? (
+      {usesPersonalPlan && info.job === 'user_small_tasks' ? (
+        <Text size="1" tone="muted" className="settings-models__job-note">
+          Using ChatGPT plan: each call runs on the plan of the person who started it, such as the
+          person who created a thread or wrote its first message. Someone who has not connected
+          their account gets the default title. Work agents start uses System small tasks instead.
+          Models listed are the ones your own account offers.
+        </Text>
+      ) : usesPersonalPlan && info.job === 'middle_manager' ? (
         <Text size="1" tone="muted" className="settings-models__job-note">
           Using ChatGPT plan: the shared notes of a thread are kept on the plan of the person who
           created it, and only if they turned on "Also answer task updates on my plan". Otherwise
@@ -854,7 +869,15 @@ function JobRow({
           listed are the ones your own account offers.
         </Text>
       ) : null}
-      {cannotFollowConversation ? (
+      {info.job === 'system_small_tasks' && !selection.isReady && !isDirty ? (
+        <Text size="1" className="settings-models__job-note settings-models__job-note--warning">
+          {selection.effectiveModelId
+            ? 'Finish setting up the selected provider.'
+            : 'Needs a model.'}{' '}
+          Until then, threads that agents create keep the default title. Pick a model from a
+          provider with an API key here, or use an API-key model for Conversation.
+        </Text>
+      ) : cannotFollowConversation ? (
         <Text size="1" tone="muted" className="settings-models__job-note">
           This job does not follow a Conversation model that runs on a ChatGPT plan. Pick a model
           for it here, or leave it off.
