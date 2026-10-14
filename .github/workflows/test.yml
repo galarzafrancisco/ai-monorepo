@@ -72,6 +72,17 @@ jobs:
       - name: Run worker unit tests
         run: npm -w apps/worker run test:unit
 
+      # Real `opencode serve` (pinned) against a local mock LLM — no credentials needed.
+      # Keep the version in sync with OPENCODE_PINNED_VERSION in apps/worker/src/runners/opencode-v2/version.ts.
+      - name: Install pinned OpenCode CLI
+        run: npm install --no-save --prefix "$RUNNER_TEMP/opencode" opencode-ai@1.19.0
+
+      - name: Run OpenCode v2 runner parity suite
+        env:
+          TAICO_OPENCODE_BIN: ${{ runner.temp }}/opencode/node_modules/.bin/opencode
+          TAICO_OPENCODE_REQUIRED: '1'
+        run: npm -w apps/worker run test:opencode-v2
+
       - name: Run E2E tests
         id: tests
         run: npm -w apps/backend run test:e2e
