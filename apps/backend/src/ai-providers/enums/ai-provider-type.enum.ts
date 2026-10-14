@@ -12,7 +12,8 @@ export enum AiProviderType {
 /**
  * Provider types that hold no shared credentials. Each person connects their
  * own account, and a request runs on the plan of the person it is for. They
- * only answer in threads; see AiModelSelectionsService and ChatModelFactory.
+ * only run the jobs in USER_CONNECTED_PROVIDER_JOBS; see
+ * AiModelSelectionsService and ChatModelFactory.
  */
 export const USER_CONNECTED_PROVIDER_TYPES: readonly AiProviderType[] = [
   AiProviderType.CHATGPT_SUBSCRIPTION,

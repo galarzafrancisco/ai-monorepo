@@ -522,12 +522,12 @@ describe('Sign in with ChatGPT E2E', () => {
       expect(fake.modelsRequests).toHaveLength(before);
     });
 
-    it('can be selected for the conversation and for nothing else', async () => {
+    it('can be selected for the conversation, but not for quick tasks or embeddings', async () => {
       await api(aliceCookies, 'put', '/ai-model-selections/conversation')
         .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
         .expect(200);
 
-      for (const job of ['quick_tasks', 'middle_manager', 'embeddings']) {
+      for (const job of ['quick_tasks', 'embeddings']) {
         const refused = await api(
           aliceCookies,
           'put',
@@ -780,6 +780,88 @@ describe('Sign in with ChatGPT E2E', () => {
       await expect(turnFor(agentActorId, false)).rejects.toMatchObject({
         code: 'AI_PROVIDER_CONNECTION_REQUIRED',
       });
+    });
+  });
+
+  describe('the middle manager on the plan', () => {
+    const runFor = (actorId: string | null) =>
+      app.get(ChatService).runTask({
+        instructions: 'Reconcile the thread state',
+        prompt: 'Task 1 changed status to DONE.',
+        actor: null,
+        onBehalfOf: actorId
+          ? { actorId, automated: true, description: 'the person who created this thread' }
+          : undefined,
+      });
+
+    beforeAll(async () => {
+      await api(aliceCookies, 'put', '/ai-model-selections/middle_manager')
+        .send({ aiProviderId: providerId, modelId: 'gpt-plan-small' })
+        .expect(200);
+    });
+
+    afterAll(async () => {
+      await api(aliceCookies, 'delete', '/ai-model-selections/middle_manager').expect(204);
+    });
+
+    it('can be selected for the middle manager directly', async () => {
+      const list: Array<Record<string, unknown>> = (
+        await api(aliceCookies, 'get', '/ai-model-selections').expect(200)
+      ).body;
+      expect(list.find((s) => s.job === 'middle_manager')).toMatchObject({
+        aiProviderId: providerId,
+        modelId: 'gpt-plan-small',
+        followsConversation: false,
+        effectiveModelId: 'gpt-plan-small',
+        isReady: true,
+      });
+      // Quick tasks still do not inherit the conversation's plan.
+      expect(list.find((s) => s.job === 'quick_tasks')).toMatchObject({
+        effectiveModelId: null,
+      });
+    });
+
+    it('runs streamed, on the plan of the person it is for, who allowed unattended runs', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(textResponse('Nothing relevant.'));
+
+      await runFor(aliceActorId);
+
+      const requests = fake.responsesRequests.slice(before);
+      expect(requests).toHaveLength(1);
+      expect(requests[0].authorization).toBe(
+        `Bearer ${fake.accessTokenFor(ALICE.subject)}`,
+      );
+      expect(requests[0].body).toMatchObject({
+        model: 'gpt-plan-small',
+        store: false,
+        stream: true,
+      });
+      expect(inputText(requests[0].body)).toContain('Task 1 changed status to DONE.');
+    });
+
+    it('fails the run when the stream fails, without trying anything else', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(failedResponse('server_error', 'Something went wrong'));
+
+      await expect(runFor(aliceActorId)).rejects.toBeDefined();
+      expect(fake.responsesRequests).toHaveLength(before + 1);
+    });
+
+    it('makes no request without consent, for an agent, or without saying whose plan', async () => {
+      const before = fake.responsesRequests.length;
+
+      await expect(runFor(bobActorId)).rejects.toMatchObject({
+        code: expect.stringMatching(/^AI_PROVIDER_CONNECTION_(CONSENT_)?REQUIRED$/),
+      });
+      await expect(runFor(agentActorId)).rejects.toMatchObject({
+        code: 'AI_PROVIDER_CONNECTION_REQUIRED',
+      });
+      await expect(runFor(null)).rejects.toMatchObject({
+        code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
+      });
+
+      expect(fake.responsesRequests).toHaveLength(before);
     });
   });
 

@@ -9,7 +9,12 @@ import {
   ResolvedAiModelSelection,
   SetAiModelSelectionInput,
 } from './dto/service/ai-providers.service.types';
-import { AiModelJob, isUserConnectedProviderType, JOBS_FOLLOWING_CONVERSATION } from './enums';
+import {
+  AiModelJob,
+  isUserConnectedProviderType,
+  JOBS_FOLLOWING_CONVERSATION,
+  USER_CONNECTED_PROVIDER_JOBS,
+} from './enums';
 import {
   AiModelNotSelectedError,
   AiProviderJobNotAllowedError,
@@ -17,11 +22,16 @@ import {
 } from './errors/ai-providers.errors';
 
 /**
- * A provider that runs on a person's own plan answers in threads and nowhere
- * else. Background jobs are not something that person asked for.
+ * A provider that runs on a person's own plan only runs the jobs that know
+ * whose plan pays (USER_CONNECTED_PROVIDER_JOBS), and only when selected for
+ * that job directly. Inheriting it from the conversation would start spending
+ * people's plans on work nobody chose.
  */
-function mayRunJob(provider: AiProviderEntity, job: AiModelJob): boolean {
-  return job === AiModelJob.CONVERSATION || !isUserConnectedProviderType(provider.type);
+function mayRunJob(provider: AiProviderEntity, job: AiModelJob, inherited: boolean): boolean {
+  if (!isUserConnectedProviderType(provider.type)) {
+    return true;
+  }
+  return !inherited && USER_CONNECTED_PROVIDER_JOBS.includes(job);
 }
 
 /**
@@ -56,7 +66,7 @@ export class AiModelSelectionsService {
       let effective = followsConversation ? byJob.get(AiModelJob.CONVERSATION) ?? null : own;
       let provider = effective ? providersById.get(effective.aiProviderId) : undefined;
       // The job does not inherit a conversation model that runs on a person's plan.
-      if (provider && !mayRunJob(provider, job)) {
+      if (provider && !mayRunJob(provider, job, followsConversation)) {
         effective = null;
         provider = undefined;
       }
@@ -90,7 +100,7 @@ export class AiModelSelectionsService {
       if (!provider) {
         throw new AiProviderNotFoundError(input.aiProviderId);
       }
-      if (!mayRunJob(provider, input.job)) {
+      if (!mayRunJob(provider, input.job, false)) {
         throw new AiProviderJobNotAllowedError(provider.id, input.job);
       }
 
@@ -126,9 +136,10 @@ export class AiModelSelectionsService {
     const entity = await this.aiProviderRepository.findOne({
       where: { id: selection.aiProviderId },
     });
-    if (entity && !mayRunJob(entity, job)) {
+    const inherited = selection.job !== job;
+    if (entity && !mayRunJob(entity, job, inherited)) {
       // Inherited from the conversation: the job simply has no model. Selected directly: refuse.
-      throw selection.job === job
+      throw !inherited
         ? new AiProviderJobNotAllowedError(entity.id, job)
         : new AiModelNotSelectedError(job);
     }

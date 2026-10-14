@@ -150,7 +150,40 @@ describe('ChatModelFactory', () => {
       );
     });
 
-    it.each([AiModelJob.QUICK_TASKS, AiModelJob.MIDDLE_MANAGER, AiModelJob.EMBEDDINGS])(
+    it('binds a middle manager run to the person it is for, as an unattended run', async () => {
+      const { factory, modelForTurn, resolveSelection } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-small',
+      );
+      const creator = { actorId: 'creator-1', automated: true };
+
+      const resolved = await factory.resolve({
+        job: AiModelJob.MIDDLE_MANAGER,
+        onBehalfOf: creator,
+      });
+
+      expect(resolveSelection).toHaveBeenCalledWith(AiModelJob.MIDDLE_MANAGER);
+      expect(modelForTurn).toHaveBeenCalledWith({
+        providerId: 'provider-1',
+        modelId: 'gpt-plan-small',
+        onBehalfOf: creator,
+      });
+      expect(resolved.requiresStreaming).toBe(true);
+    });
+
+    it('refuses a middle manager run that does not say who it is for', async () => {
+      const { factory, modelForTurn } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-small',
+      );
+
+      await expect(factory.resolve({ job: AiModelJob.MIDDLE_MANAGER })).rejects.toMatchObject({
+        code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
+      });
+      expect(modelForTurn).not.toHaveBeenCalled();
+    });
+
+    it.each([AiModelJob.QUICK_TASKS, AiModelJob.EMBEDDINGS])(
       'refuses the %s job even when told who it is for',
       async (job) => {
         const { factory, modelForTurn } = factoryFor(

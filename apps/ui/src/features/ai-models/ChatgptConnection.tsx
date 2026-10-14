@@ -193,7 +193,9 @@ export function ChatgptConnection({ providerId, isEnabled, justConnected, onChan
             <Text size="2">Also answer task updates on my plan</Text>
             <Text size="1" tone="muted">
               When a task a thread is waiting for changes, the agent replies without anyone typing.
-              Leave this off and those replies are skipped with a note in the thread.
+              Leave this off and those replies are skipped with a note in the thread. If the middle
+              manager runs on this plan, it also keeps the shared notes of the threads you created
+              up to date as their tasks change.
             </Text>
           </span>
         </label>
