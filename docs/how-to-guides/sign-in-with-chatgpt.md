@@ -20,12 +20,12 @@ It also needs encrypted secret storage: `SECRETS_ENABLED=true` and a `SECRETS_EN
 | Variable | Default | Meaning |
 |---|---|---|
 | `CHATGPT_SUBSCRIPTION_ENABLED` | off | Turns the provider type on |
-| `CHATGPT_SUBSCRIPTION_CALLBACK_PORT` | `0` (any free port) | Port of the sign-in listener on `127.0.0.1` |
+| `CHATGPT_SUBSCRIPTION_CALLBACK_PORT` | `1456` | Port in the redirect address `http://127.0.0.1:<port>/auth/callback`. Nothing listens on it (see [The sign-in flow](#the-sign-in-flow)) |
 
 ## What a person sees
 
 1. An admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model, and optionally as the Middle manager model. There is one such provider per installation and it holds no account.
-2. Each person clicks **Continue with ChatGPT** on that provider, approves at OpenAI, and comes back to settings: "You're using your ChatGPT plan."
+2. Each person clicks **Continue with ChatGPT** on that provider. OpenAI opens in a new tab. They approve there; the tab then shows a "can't be reached" page at `http://127.0.0.1:1456/auth/callback?…`. They copy that whole address, paste it under **Finish signing in** in the Taico tab, and click **Finish**: "You're using your ChatGPT plan."
 3. Settings shows which account is connected, **Manage usage** (ChatGPT's usage page), **Reconnect** and **Disconnect**. Threads show "Using ChatGPT plan" next to the model.
 4. Disconnect revokes the grant at OpenAI and deletes everything stored about the account.
 
@@ -72,13 +72,23 @@ A per-thread provider and model (`threads.ai_provider_id`, `threads.model_id`) w
 
 Taico is a public OAuth client of OpenAI here. This is separate from Taico's own authorization server (`authorization-server/`), which issues tokens to Taico's clients; none of that code is involved.
 
-1. `POST /ai-providers/:id/connection/authorize` creates a state, a nonce and a PKCE verifier, stores them (state hashed, verifier encrypted) in `ai_provider_authorization_attempts`, opens a listener on `127.0.0.1`, and returns OpenAI's authorization address.
+1. `POST /ai-providers/:id/connection/authorize` creates a state, a nonce and a PKCE verifier, stores them (state hashed, verifier encrypted) in `ai_provider_authorization_attempts` together with the redirect URI, and returns OpenAI's authorization address. The UI opens it in a new tab and keeps settings open.
 2. The first sign-in uses OpenAI's shared client `dynamic_agent_client`; the redirect brings back a client id issued for this installation (`oaiapp_…`), which is stored and used from then on.
-3. OpenAI redirects the browser to `http://127.0.0.1:<port>/auth/callback`. The listener does not finish anything. It forwards the browser to `/settings/models/chatgpt-callback` in the Taico UI with the same query.
-4. The UI posts the query to `POST /ai-providers/:id/connection/callback` as the signed-in user. Only the Taico user who started the sign-in can finish it, once, within 10 minutes.
-5. The backend exchanges the code, verifies the ID token (signature, issuer, audience, expiry, nonce), and stores the connection. Without the `chatgpt.tokens.use.direct` scope the account is recorded but no plan requests are made.
+3. OpenAI redirects the browser to `http://127.0.0.1:<CHATGPT_SUBSCRIPTION_CALLBACK_PORT>/auth/callback?code=…&state=…`. **Nothing listens there**, so the browser shows an error page. That is expected.
+4. The person copies the address from the address bar and pastes it under **Finish signing in**. The UI posts it as `callbackUrl` to `POST /ai-providers/:id/connection/callback` as the signed-in user. Only the Taico user who started the sign-in can finish it, once, within 10 minutes. The pasted address must be the redirect URI the attempt was started with (scheme, host, port and path); otherwise the attempt is used up and nothing is exchanged.
+5. The backend exchanges the code (repeating the stored redirect URI and the PKCE verifier), verifies the ID token (signature, issuer, audience, expiry, nonce), and stores the connection. Without the `chatgpt.tokens.use.direct` scope the account is recorded but no plan requests are made.
 
-**When Taico is not on your own computer** (Docker, a home server), your browser cannot reach the backend's `127.0.0.1` and shows an error page after you approve. Copy the address from the address bar and paste it under "Finish signing in" in settings. It goes to the same endpoint with the same checks. Alternatively set `CHATGPT_SUBSCRIPTION_CALLBACK_PORT` and forward that port to the backend.
+### Why the address is pasted
+
+OpenAI accepts only `http://127.0.0.1:<port>/auth/callback` as the redirect for this kind of client: the host and path are fixed and only the port may vary. Taico normally runs in a container or on another machine, so `127.0.0.1` in the person's browser is never the Taico backend. Earlier versions opened a temporary listener on the backend's own `127.0.0.1` and forwarded the browser to the UI; it only worked when the browser and backend shared a machine, so it was removed. Pasting works the same in every deployment.
+
+Redirect configuration:
+
+- There is nothing to register at OpenAI and no port to expose or forward. The redirect URI is sent with each authorization request and repeated in the code exchange.
+- `CHATGPT_SUBSCRIPTION_CALLBACK_PORT` (default `1456`) only changes the port in that address. Change it if something on people's computers already answers on `1456`: whatever answers would receive the redirect (the code is useless without the verifier held by Taico, but the person would not see the expected error page). Invalid values fall back to `1456`.
+- Changing the port while a sign-in is in progress makes that sign-in fail; start again.
+
+The authorization code appears in the pasted address and in the request body to the callback endpoint. It is not logged and never returned in a response.
 
 ## What is stored
 
@@ -124,7 +134,6 @@ apps/backend/src/ai-providers/
 ├── ai-provider-connections.controller.ts       # /ai-providers/:id/connection
 └── chatgpt-subscription/
     ├── chatgpt-oauth.client.ts                 # authorize URL, token, refresh, revoke, ID token
-    ├── chatgpt-loopback-listener.service.ts    # 127.0.0.1 redirect → Taico UI
     ├── chatgpt-connections.service.ts          # lifecycle, token rotation, who may use a plan
     ├── chatgpt-responses.model.ts              # the guarded Responses model
     ├── chatgpt-subscription.service.ts         # model for a turn, model catalog
@@ -152,8 +161,8 @@ The end-to-end spec runs the whole flow against `FakeOpenAi`, which checks PKCE,
    CHATGPT_SUBSCRIPTION_ENABLED=true
    ```
    and remove `ALLOW_PLAINTEXT_SECRETS_INSECURE`. Changing the secrets mode makes secrets stored earlier in plaintext unreadable, so use a fresh database or re-enter API keys.
-2. `npm run dev`, open the UI in a browser on the same machine.
-3. Settings → AI models → Add provider → **ChatGPT plan** → **Continue with ChatGPT**, and approve.
+2. `npm run dev`, open the UI in a browser (any machine).
+3. Settings → AI models → Add provider → **ChatGPT plan** → **Continue with ChatGPT**, approve in the new tab, then paste the `http://127.0.0.1:1456/auth/callback?…` address from that tab under **Finish signing in** and click **Finish**.
 4. Pick the provider and a model for **Conversation**, then write in a thread. Ask for something that needs a tool, such as "list my tasks".
 5. Check: the reply streams in, the thread header says "Using ChatGPT plan", and ChatGPT's usage page shows the usage.
 6. Click **Disconnect**, write again, and check that the thread says you are not connected.

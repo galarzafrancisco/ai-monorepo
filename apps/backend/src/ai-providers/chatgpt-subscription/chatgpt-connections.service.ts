@@ -8,7 +8,10 @@ import {
   MoreThan,
   Repository,
 } from 'typeorm';
-import { isChatgptSubscriptionEnabled } from 'src/config/env.config';
+import {
+  getChatgptSubscriptionCallbackPort,
+  isChatgptSubscriptionEnabled,
+} from 'src/config/env.config';
 import { User } from 'src/identity-provider/user.entity';
 import { SecretsEncryptionService } from 'src/secrets/secrets-encryption.service';
 import { AiProviderAuthorizationAttemptEntity } from '../ai-provider-authorization-attempt.entity';
@@ -31,7 +34,6 @@ import {
   AiProviderRequestFailedError,
   AiProviderTypeDisabledError,
 } from '../errors/ai-providers.errors';
-import { ChatgptLoopbackListenerService } from './chatgpt-loopback-listener.service';
 import {
   ChatgptOAuthClient,
   ChatgptTokenEndpointError,
@@ -42,6 +44,8 @@ import {
   AUTHORIZATION_ATTEMPT_TTL_MS,
   MANAGE_USAGE_URL,
   PLAN_USAGE_SCOPE,
+  REDIRECT_HOST,
+  REDIRECT_PATH,
   REGISTRATION_CLIENT_ID,
 } from './chatgpt-subscription.constants';
 
@@ -62,6 +66,12 @@ type RefreshOutcome =
   | { kind: 'reauthorize' }
   | { kind: 'plan_access_lost' }
   | { kind: 'failed'; error: ChatgptTokenEndpointError | Error };
+
+/** Scheme, host, port and path, normalized the same way as a pasted address. */
+function withoutQuery(address: string): string {
+  const url = new URL(address);
+  return `${url.origin}${url.pathname}`;
+}
 
 function hashState(state: string): string {
   return createHash('sha256').update(state).digest('hex');
@@ -116,7 +126,6 @@ export class ChatgptConnectionsService {
     private readonly dataSource: DataSource,
     private readonly encryption: SecretsEncryptionService,
     private readonly oauth: ChatgptOAuthClient,
-    private readonly listener: ChatgptLoopbackListenerService,
   ) {}
 
   /** Throws when this server may not use Sign in with ChatGPT. */
@@ -166,10 +175,8 @@ export class ChatgptConnectionsService {
     const nonce = randomBytes(32).toString('base64url');
     const codeVerifier = randomBytes(48).toString('base64url');
     const expiresAt = new Date(Date.now() + AUTHORIZATION_ATTEMPT_TTL_MS);
-    const redirectUri = await this.listener.expect(
-      state,
-      AUTHORIZATION_ATTEMPT_TTL_MS,
-    );
+    // Stored with the attempt, so the code exchange repeats exactly what OpenAI saw.
+    const redirectUri = `http://${REDIRECT_HOST}:${getChatgptSubscriptionCallbackPort()}${REDIRECT_PATH}`;
 
     await this.attempts.delete({ aiProviderId: providerId, userId: user.id });
     await this.attempts.delete({ expiresAt: LessThan(new Date()) });
@@ -233,7 +240,6 @@ export class ChatgptConnectionsService {
       )
       .returning('*')
       .execute();
-    this.listener.forget(callback.state);
 
     const row = (claimed.raw as Array<Record<string, unknown>>)[0];
     if (!row || new Date(row.expires_at as string).getTime() < Date.now()) {
@@ -248,6 +254,16 @@ export class ChatgptConnectionsService {
       clientId: row.client_id as string,
       isRegistration: row.is_registration as boolean,
     };
+
+    // A pasted address must be the redirect this sign-in asked OpenAI for.
+    if (
+      callback.redirectAddress &&
+      callback.redirectAddress !== withoutQuery(attempt.redirectUri)
+    ) {
+      throw new AiProviderAuthorizationFailedError(
+        `That address is not where OpenAI sends this sign-in back to (${attempt.redirectUri}). Start again and paste the address your browser lands on.`,
+      );
+    }
 
     if (callback.error) {
       throw new AiProviderAuthorizationFailedError(

@@ -8,7 +8,6 @@ import { SettingsAppearancePage } from "./SettingsAppearancePage";
 import { SettingsProjectsPage } from "./SettingsProjectsPage";
 import { SettingsProjectCreatePage } from "./SettingsProjectCreatePage";
 import { SettingsModelsPage } from "./SettingsModelsPage";
-import { ChatgptCallbackPage } from "./ChatgptCallbackPage";
 import { SettingsDataPage } from './SettingsDataPage';
 import { SettingsWorkersPage } from './SettingsWorkersPage';
 import { SettingsAIUsagePage } from './SettingsAIUsagePage';
@@ -28,7 +27,6 @@ export function HomeRoutes() {
           <Route path="/settings/projects" element={<SettingsProjectsPage />} />
           <Route path="/settings/projects/new" element={<SettingsProjectCreatePage />} />
           <Route path="/settings/models" element={<SettingsModelsPage />} />
-          <Route path="/settings/models/chatgpt-callback" element={<ChatgptCallbackPage />} />
           {/* Old addresses of the two pages above and below. */}
           <Route path="/settings/chat" element={<Navigate to="/settings/models" replace />} />
           <Route path="/settings/ai-providers" element={<Navigate to="/settings/ai-usage" replace />} />

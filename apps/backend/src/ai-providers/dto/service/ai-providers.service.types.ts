@@ -113,6 +113,11 @@ export type StartAiProviderAuthorizationResult = {
 
 export type CompleteAiProviderAuthorizationInput = {
   state: string;
+  /**
+   * Scheme, host, port and path of a pasted redirect address, without its
+   * query. Checked against the redirect the sign-in was started with.
+   */
+  redirectAddress?: string | null;
   code?: string | null;
   clientId?: string | null;
   error?: string | null;

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import {
   AiModelSelectionsService,
   AiProvidersService,
@@ -165,9 +164,6 @@ export function SettingsModelsPage() {
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const requestedModels = useRef(new Set<string>());
-  // Set by the page that finishes a ChatGPT sign-in, to confirm it once.
-  const justConnectedChatgpt =
-    (useLocation().state as { chatgptConnected?: boolean } | null)?.chatgptConnected === true;
 
   useDocumentTitle();
 
@@ -391,7 +387,6 @@ export function SettingsModelsPage() {
                   onSave={(form) => handleSaveProvider(provider, form)}
                   onDelete={() => handleDeleteProvider(provider)}
                   onTest={() => loadModels(provider.id, true)}
-                  justConnected={justConnectedChatgpt}
                 />
               ))
             )}
@@ -879,7 +874,6 @@ function ProviderRow({
   onSave,
   onDelete,
   onTest,
-  justConnected,
 }: {
   provider: AiProviderResponseDto;
   usedBy: string[];
@@ -890,7 +884,6 @@ function ProviderRow({
   onSave: (form: ProviderForm) => void;
   onDelete: () => void;
   onTest: () => void;
-  justConnected: boolean;
 }) {
   const info = PROVIDER_TYPES[provider.type];
   const notReadyLabel = info.personalPlan ? 'Turned off on this server' : 'Needs setup';
@@ -1007,7 +1000,6 @@ function ProviderRow({
           <ChatgptConnection
             providerId={provider.id}
             isEnabled={provider.isConfigured}
-            justConnected={justConnected}
             onChanged={onTest}
           />
         ) : null}
