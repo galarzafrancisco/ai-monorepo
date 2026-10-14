@@ -54,9 +54,10 @@ export type ResolveChatModelInput = {
   /**
    * Whose plan pays for the call. Needed by providers that run on a person's
    * own plan, which use that person's connection and nobody else's. Only the
-   * threads agent (the person the turn is for) and the middle manager (the
-   * thread's creator, as an unattended run) pass it; any other caller is
-   * refused by those providers.
+   * threads agent (the person the turn is for), the middle manager (the
+   * thread's creator, as an unattended run) and thread titles (the message
+   * author, or the thread's creator as an unattended run) pass it; any other
+   * caller is refused by those providers.
    */
   onBehalfOf?: OnBehalfOf;
 };

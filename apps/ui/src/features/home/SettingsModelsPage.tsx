@@ -28,7 +28,7 @@ type JobInfo = {
 };
 
 /** Jobs a provider that runs on a person's own plan may be selected for. Mirrors the backend. */
-const PERSONAL_PLAN_JOBS: readonly string[] = ['conversation', 'middle_manager'];
+const PERSONAL_PLAN_JOBS: readonly string[] = ['conversation', 'quick_tasks', 'middle_manager'];
 
 const JOBS: JobInfo[] = [
   {
@@ -73,7 +73,7 @@ type ProviderTypeInfo = {
   hasVertexSettings?: boolean;
   /**
    * Runs on each person's own plan instead of shared credentials. Such a
-   * provider only answers in threads, so it is offered for the conversation only.
+   * provider is only offered for the jobs in PERSONAL_PLAN_JOBS.
    */
   personalPlan?: boolean;
 };
@@ -718,7 +718,8 @@ function JobRow({
   const canListModels = !!provider?.isConfigured;
   const usesPersonalPlan = !!provider && !!PROVIDER_TYPES[provider.type].personalPlan;
   // A person's plan only runs jobs that know whose plan pays: the conversation
-  // (the person the turn is for) and the middle manager (the thread's creator).
+  // (the person the turn is for), quick tasks (the person each call is for) and
+  // the middle manager (the thread's creator).
   const selectableProviders = providers.filter(
     (p) => PERSONAL_PLAN_JOBS.includes(info.job) || !PROVIDER_TYPES[p.type].personalPlan,
   );
@@ -840,7 +841,14 @@ function JobRow({
           Finish setting up this provider to pick from its models.
         </Text>
       ) : null}
-      {usesPersonalPlan && info.job === 'middle_manager' ? (
+      {usesPersonalPlan && info.job === 'quick_tasks' ? (
+        <Text size="1" tone="muted" className="settings-models__job-note">
+          Using ChatGPT plan: a thread named from its first message uses the plan of the person who
+          wrote it. A thread created for a task is named on the plan of the person who created it,
+          and only if they turned on "Also answer task updates on my plan". Otherwise the thread
+          keeps its default title. Models listed are the ones your own account offers.
+        </Text>
+      ) : usesPersonalPlan && info.job === 'middle_manager' ? (
         <Text size="1" tone="muted" className="settings-models__job-note">
           Using ChatGPT plan: the shared notes of a thread are kept on the plan of the person who
           created it, and only if they turned on "Also answer task updates on my plan". Otherwise

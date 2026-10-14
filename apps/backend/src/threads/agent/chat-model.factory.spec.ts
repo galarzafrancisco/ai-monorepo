@@ -214,20 +214,54 @@ describe('ChatModelFactory', () => {
       expect(modelForTurn).not.toHaveBeenCalled();
     });
 
-    it.each([AiModelJob.QUICK_TASKS, AiModelJob.EMBEDDINGS])(
-      'refuses the %s job even when told who it is for',
-      async (job) => {
-        const { factory, modelForTurn } = factoryFor(
-          AiProviderType.CHATGPT_SUBSCRIPTION,
-          'gpt-plan-large',
-        );
+    it.each([
+      { actorId: 'author-1', automated: false },
+      { actorId: 'creator-1', automated: true },
+    ])('binds a quick task to the person it is for (automated: $automated)', async (forWhom) => {
+      const { factory, modelForTurn, resolveSelection } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-small',
+      );
 
-        await expect(factory.resolve({ job, onBehalfOf })).rejects.toMatchObject({
-          code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
-        });
-        expect(modelForTurn).not.toHaveBeenCalled();
-      },
-    );
+      const resolved = await factory.resolve({
+        job: AiModelJob.QUICK_TASKS,
+        onBehalfOf: forWhom,
+      });
+
+      expect(resolveSelection).toHaveBeenCalledWith(AiModelJob.QUICK_TASKS);
+      expect(modelForTurn).toHaveBeenCalledWith({
+        providerId: 'provider-1',
+        modelId: 'gpt-plan-small',
+        onBehalfOf: forWhom,
+      });
+      expect(resolved.requiresStreaming).toBe(true);
+    });
+
+    it('refuses a quick task that does not say who it is for', async () => {
+      const { factory, modelForTurn } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-small',
+      );
+
+      await expect(factory.resolve({ job: AiModelJob.QUICK_TASKS })).rejects.toMatchObject({
+        code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
+      });
+      expect(modelForTurn).not.toHaveBeenCalled();
+    });
+
+    it('refuses the embeddings job even when told who it is for', async () => {
+      const { factory, modelForTurn } = factoryFor(
+        AiProviderType.CHATGPT_SUBSCRIPTION,
+        'gpt-plan-large',
+      );
+
+      await expect(
+        factory.resolve({ job: AiModelJob.EMBEDDINGS, onBehalfOf }),
+      ).rejects.toMatchObject({
+        code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
+      });
+      expect(modelForTurn).not.toHaveBeenCalled();
+    });
 
     it('refuses a conversation call that does not say who it is for', async () => {
       const { factory, modelForTurn } = factoryFor(

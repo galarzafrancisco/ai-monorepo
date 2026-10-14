@@ -122,7 +122,10 @@ export class ThreadsService {
     // Generate title based on available context
     const title = input.title
       || (parentTask
-        ? ((await this.threadTitleService.generateFromParentTask(parentTask))
+        ? ((await this.threadTitleService.generateFromParentTask(
+            parentTask,
+            input.createdByActorId,
+          ))
           || ThreadsService.DEFAULT_THREAD_TITLE)
         : ThreadsService.DEFAULT_THREAD_TITLE);
 
@@ -819,7 +822,10 @@ export class ThreadsService {
       return;
     }
 
-    const generatedTitle = await this.threadTitleService.generateFromMessage(content);
+    const generatedTitle = await this.threadTitleService.generateFromMessage(
+      content,
+      input.actor.id,
+    );
     if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
       return;
     }

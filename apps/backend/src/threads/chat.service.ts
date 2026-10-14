@@ -29,23 +29,46 @@ export class ChatService {
     return this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
   }
 
-  /** One-shot text generation with no tools, on the quick tasks model. Returns null on failure. */
-  public async generateText(prompt: string): Promise<string | null> {
+  /**
+   * One-shot text generation with no tools, on the quick tasks model. Returns
+   * null on failure, including when a provider that runs on a person's own
+   * plan cannot use that person's plan; it never falls back to another provider.
+   */
+  public async generateText(
+    prompt: string,
+    options: {
+      /**
+       * Whose plan pays when quick tasks run on a person's own plan. Without
+       * it such a provider refuses the call.
+       */
+      onBehalfOf?: OnBehalfOf;
+    } = {},
+  ): Promise<string | null> {
     try {
-      const resolved = await this.chatModelFactory.resolve({ job: AiModelJob.QUICK_TASKS });
-      const result = await generateText({
+      const resolved = await this.chatModelFactory.resolve({
+        job: AiModelJob.QUICK_TASKS,
+        onBehalfOf: options.onBehalfOf,
+      });
+      const request = {
         model: resolved.model,
         prompt,
         providerOptions: resolved.providerOptions,
-      });
-      return result.text.trim() || null;
+      };
+      const text = resolved.requiresStreaming
+        ? await this.streamToEnd(request)
+        : (await generateText(request)).text;
+      return text.trim() || null;
     } catch (error) {
       if (!(error instanceof AiModelNotSelectedError)) {
         this.logger.warn({
           message: 'Text generation failed',
-          error: error instanceof Error
-            ? { message: error.message, name: error.name }
-            : String(error),
+          onBehalfOf: options.onBehalfOf
+            ? {
+                actorId: options.onBehalfOf.actorId,
+                automated: options.onBehalfOf.automated,
+              }
+            : undefined,
+          error: describeError(error),
         });
       }
       return null;
@@ -108,10 +131,11 @@ export class ChatService {
   }
 
   /**
-   * Runs a request on a provider that only streams, reading it to the end.
-   * A failure reported only as a stream part still fails the run.
+   * Runs a request on a provider that only streams, reading it to the end,
+   * and returns the full text. A failure reported only as a stream part still
+   * fails the run, even after some text arrived.
    */
-  private async streamToEnd(request: Parameters<typeof streamText>[0]): Promise<void> {
+  private async streamToEnd(request: Parameters<typeof streamText>[0]): Promise<string> {
     const failures: unknown[] = [];
     const result = streamText({
       ...request,
@@ -119,8 +143,9 @@ export class ChatService {
         failures.push(error);
       },
     });
+    let text = '';
     try {
-      await result.text;
+      text = await result.text;
     } catch (error) {
       failures.push(error);
     }
@@ -128,5 +153,23 @@ export class ChatService {
       const [first] = failures;
       throw first instanceof Error ? first : new Error(String(first));
     }
+    return text;
   }
+}
+
+/** Name, message and error code of a failure, for logs. Never includes tokens. */
+function describeError(error: unknown): Record<string, unknown> | string {
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+  const code = (error as { code?: unknown }).code;
+  const context = (error as { context?: Record<string, unknown> }).context;
+  return {
+    name: error.name,
+    message: error.message,
+    ...(typeof code === 'string' ? { code } : {}),
+    ...(typeof context?.upstreamCode === 'string'
+      ? { upstreamCode: context.upstreamCode }
+      : {}),
+  };
 }

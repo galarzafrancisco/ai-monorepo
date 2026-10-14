@@ -35,7 +35,7 @@ Providers and models are separate, and both are set in Settings → AI models.
 
 An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai`, `openai_compatible` or `chatgpt_subscription`), an optional stored secret, and an endpoint. It has no model.
 
-`chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider answers in threads only. See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
+`chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider only runs jobs that say whose plan pays (conversation, quick tasks, middle manager). See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
 
 A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
 
@@ -48,7 +48,7 @@ A model is picked per job (`ai_model_selections`, one row per job, holding a pro
 
 Selections are read from the database on every call, so a change applies to every backend process on its next turn. `ChatModelFactory.resolve({ job })` turns a job into an AI SDK model.
 
-The threads agent also passes `onBehalfOf`: the actor the turn is for, and whether anybody typed. Providers with shared credentials ignore it. A ChatGPT plan provider requires it, which is what keeps it out of every other job.
+The threads agent also passes `onBehalfOf`: the actor the turn is for, and whether anybody typed. The middle manager and thread titles pass it too. Providers with shared credentials ignore it. A ChatGPT plan provider requires it, which is what keeps it out of every other caller.
 
 A resolved model can set `requiresStreaming`. Code that only wants the final text (compaction) must then call `streamText()` and read it to the end instead of `generateText()`.
 

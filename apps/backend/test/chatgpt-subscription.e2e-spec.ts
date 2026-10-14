@@ -16,6 +16,7 @@ import { ChatgptConnectionsService } from '../src/ai-providers/chatgpt-subscript
 import { CHATGPT_SUBSCRIPTION_ENDPOINTS } from '../src/ai-providers/chatgpt-subscription/chatgpt-subscription.constants';
 import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
 import { ChatService } from '../src/threads/chat.service';
+import { ThreadTitleService } from '../src/threads/thread-title.service';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadAgentResponseDeltaEvent } from '../src/threads/events/threads.events';
@@ -539,21 +540,19 @@ describe('Sign in with ChatGPT E2E', () => {
       expect(fake.modelsRequests).toHaveLength(before);
     });
 
-    it('can be selected for the conversation, but not for quick tasks or embeddings', async () => {
+    it('can be selected for the conversation, but not for embeddings', async () => {
       await api(aliceCookies, 'put', '/ai-model-selections/conversation')
         .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
         .expect(200);
 
-      for (const job of ['quick_tasks', 'embeddings']) {
-        const refused = await api(
-          aliceCookies,
-          'put',
-          `/ai-model-selections/${job}`,
-        )
-          .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
-          .expect(400);
-        expect(refused.body.code).toBe('AI_PROVIDER_JOB_NOT_ALLOWED');
-      }
+      const refused = await api(
+        aliceCookies,
+        'put',
+        '/ai-model-selections/embeddings',
+      )
+        .send({ aiProviderId: providerId, modelId: 'gpt-plan-large' })
+        .expect(400);
+      expect(refused.body.code).toBe('AI_PROVIDER_JOB_NOT_ALLOWED');
     });
 
     it('is not inherited by the jobs that normally follow the conversation model', async () => {
@@ -879,6 +878,100 @@ describe('Sign in with ChatGPT E2E', () => {
       });
 
       expect(fake.responsesRequests).toHaveLength(before);
+    });
+  });
+
+  describe('quick tasks (thread titles) on the plan', () => {
+    // By now Alice is connected and allowed unattended runs; Bob is connected
+    // but has not; the agent has no plan.
+    const titles = () => app.get(ThreadTitleService);
+    const task = { name: 'Ship it', description: 'Release 1.0' } as never;
+
+    beforeAll(async () => {
+      await api(aliceCookies, 'put', '/ai-model-selections/quick_tasks')
+        .send({ aiProviderId: providerId, modelId: 'gpt-plan-small' })
+        .expect(200);
+    });
+
+    afterAll(async () => {
+      await api(aliceCookies, 'delete', '/ai-model-selections/quick_tasks').expect(204);
+    });
+
+    it('can be selected for quick tasks directly', async () => {
+      const list: Array<Record<string, unknown>> = (
+        await api(aliceCookies, 'get', '/ai-model-selections').expect(200)
+      ).body;
+      expect(list.find((s) => s.job === 'quick_tasks')).toMatchObject({
+        aiProviderId: providerId,
+        modelId: 'gpt-plan-small',
+        followsConversation: false,
+        effectiveModelId: 'gpt-plan-small',
+        isReady: true,
+      });
+    });
+
+    it('names a thread from its first message on the author’s plan, streamed', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(textResponse('Bob’s release plan'));
+
+      // Bob has not allowed unattended runs; he typed this, so none is needed.
+      await expect(titles().generateFromMessage('Plan the release', bobActorId)).resolves.toBe(
+        'Bob’s release plan',
+      );
+
+      const requests = fake.responsesRequests.slice(before);
+      expect(requests).toHaveLength(1);
+      expect(requests[0].authorization).toBe(`Bearer ${fake.accessTokenFor(BOB.subject)}`);
+      expect(requests[0].body).toMatchObject({
+        model: 'gpt-plan-small',
+        store: false,
+        stream: true,
+      });
+      expect(inputText(requests[0].body)).toContain('Plan the release');
+    });
+
+    it('names a thread from its parent task on the creator’s plan, with their consent', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(textResponse('Ship release one'));
+
+      await expect(titles().generateFromParentTask(task, aliceActorId)).resolves.toBe(
+        'Ship release one',
+      );
+
+      const requests = fake.responsesRequests.slice(before);
+      expect(requests).toHaveLength(1);
+      expect(requests[0].authorization).toBe(`Bearer ${fake.accessTokenFor(ALICE.subject)}`);
+    });
+
+    it('makes no request for a creator who did not allow it, an agent, or nobody', async () => {
+      const before = fake.responsesRequests.length;
+
+      await expect(titles().generateFromParentTask(task, bobActorId)).resolves.toBeNull();
+      await expect(titles().generateFromParentTask(task, agentActorId)).resolves.toBeNull();
+      await expect(titles().generateFromMessage('Hi', agentActorId)).resolves.toBeNull();
+      await expect(app.get(ChatService).generateText('Name this thread')).resolves.toBeNull();
+
+      expect(fake.responsesRequests).toHaveLength(before);
+    });
+
+    it('gives no title when the stream fails, and tries nothing else', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(failedResponse('server_error', 'Something went wrong', 'Half a'));
+
+      await expect(titles().generateFromMessage('Plan the release', aliceActorId)).resolves.toBeNull();
+
+      expect(fake.responsesRequests).toHaveLength(before + 1);
+    });
+
+    it('gives no title at the usage limit, and tries nothing else', async () => {
+      const before = fake.responsesRequests.length;
+      fake.script.push(
+        failedResponse('subscription_sharing_usage_limit_exceeded', 'Usage limit reached'),
+      );
+
+      await expect(titles().generateFromMessage('Plan the release', aliceActorId)).resolves.toBeNull();
+
+      expect(fake.responsesRequests).toHaveLength(before + 1);
     });
   });
 

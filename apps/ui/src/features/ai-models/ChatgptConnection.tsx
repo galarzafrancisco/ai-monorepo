@@ -212,7 +212,8 @@ export function ChatgptConnection({ providerId, isEnabled, onChanged }: Props) {
               When a task a thread is waiting for changes, the agent replies without anyone typing.
               Leave this off and those replies are skipped with a note in the thread. If the middle
               manager runs on this plan, it also keeps the shared notes of the threads you created
-              up to date as their tasks change.
+              up to date as their tasks change. If quick tasks run on this plan, it also names the
+              threads you create for a task.
             </Text>
           </span>
         </label>

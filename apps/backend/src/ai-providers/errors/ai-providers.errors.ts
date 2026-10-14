@@ -97,7 +97,7 @@ export class AiProviderAlreadyExistsError extends AiProvidersDomainError {
 export class AiProviderJobNotAllowedError extends AiProvidersDomainError {
   constructor(providerId: string, job: AiModelJob) {
     super(
-      `This provider uses a person's own plan and only answers in threads. It cannot be used for ${job}.`,
+      `This provider uses a person's own plan and cannot be used for ${job}, because that job does not say whose plan would pay.`,
       AiProvidersErrorCodes.AI_PROVIDER_JOB_NOT_ALLOWED,
       { providerId, job },
     );
