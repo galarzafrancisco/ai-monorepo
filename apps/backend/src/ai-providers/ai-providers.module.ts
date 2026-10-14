@@ -11,7 +11,6 @@ import { AiProvidersController } from './ai-providers.controller';
 import { AiModelSelectionsController } from './ai-model-selections.controller';
 import { AiProviderConnectionsController } from './ai-provider-connections.controller';
 import { ChatgptConnectionsService } from './chatgpt-subscription/chatgpt-connections.service';
-import { ChatgptLoopbackListenerService } from './chatgpt-subscription/chatgpt-loopback-listener.service';
 import { ChatgptOAuthClient } from './chatgpt-subscription/chatgpt-oauth.client';
 import { ChatgptSubscriptionService } from './chatgpt-subscription/chatgpt-subscription.service';
 import {
@@ -45,7 +44,6 @@ import { User } from '../identity-provider/user.entity';
     AiModelSelectionsService,
     { provide: CHATGPT_SUBSCRIPTION_ENDPOINTS, useValue: DEFAULT_CHATGPT_SUBSCRIPTION_ENDPOINTS },
     ChatgptOAuthClient,
-    ChatgptLoopbackListenerService,
     ChatgptConnectionsService,
     ChatgptSubscriptionService,
   ],

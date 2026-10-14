@@ -82,7 +82,7 @@ export class StartAiProviderAuthorizationResponseDto {
 export class CompleteAiProviderAuthorizationDto {
   @ApiPropertyOptional({
     description: 'The full address the browser was sent back to, pasted as is',
-    example: 'http://127.0.0.1:41873/auth/callback?code=...&state=...',
+    example: 'http://127.0.0.1:1456/auth/callback?code=...&state=...',
   })
   @IsOptional()
   @IsString()

@@ -13,8 +13,6 @@ type Props = {
   providerId: string;
   /** False when the server has Sign in with ChatGPT turned off. */
   isEnabled: boolean;
-  /** True right after a sign-in finished, to confirm it once. */
-  justConnected: boolean;
   /** Called when the connection changed, so the model list can be reloaded. */
   onChanged: () => void;
 };
@@ -23,7 +21,7 @@ type Props = {
  * The signed-in person's own ChatGPT connection: sign in, see which account is
  * connected, choose whether task updates may use the plan, and disconnect.
  */
-export function ChatgptConnection({ providerId, isEnabled, justConnected, onChanged }: Props) {
+export function ChatgptConnection({ providerId, isEnabled, onChanged }: Props) {
   const [connection, setConnection] = useState<AiProviderConnectionResponseDto | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -59,14 +57,35 @@ export function ChatgptConnection({ providerId, isEnabled, justConnected, onChan
     }
   };
 
-  const signIn = () =>
-    run(async () => {
-      const { authorizationUrl } =
-        await AiProviderConnectionsService.aiProviderConnectionsControllerStartAuthorization(
-          providerId,
-        );
-      window.location.assign(authorizationUrl);
+  /**
+   * Opens OpenAI in a new tab and keeps this page open, because the sign-in is
+   * finished here: OpenAI's redirect goes to 127.0.0.1, which nothing answers,
+   * and the person pastes that address below.
+   */
+  const signIn = () => {
+    // Opened before the request so the browser treats it as part of the click.
+    const tab = window.open('', '_blank');
+    return run(async () => {
+      try {
+        const { authorizationUrl } =
+          await AiProviderConnectionsService.aiProviderConnectionsControllerStartAuthorization(
+            providerId,
+          );
+        if (tab) {
+          tab.opener = null;
+          tab.location.href = authorizationUrl;
+        } else {
+          // Pop-ups blocked: go there in this tab and paste the address when back.
+          window.location.assign(authorizationUrl);
+        }
+      } catch (err) {
+        tab?.close();
+        throw err;
+      }
+      setPastedAddress('');
+      await load();
     }, 'Could not start signing in to ChatGPT.');
+  };
 
   const finishWithPastedAddress = () =>
     run(async () => {
@@ -127,8 +146,6 @@ export function ChatgptConnection({ providerId, isEnabled, justConnected, onChan
   const hasAccount = status !== 'disconnected';
   const hitUsageLimit = isConnected && connection.lastErrorCode === USAGE_LIMIT_CODE;
 
-  const shownNotice =
-    notice || (justConnected && isConnected ? "You're using your ChatGPT plan." : '');
 
   const manageUsage = (
     <a
@@ -143,10 +160,10 @@ export function ChatgptConnection({ providerId, isEnabled, justConnected, onChan
 
   return (
     <Stack spacing="3" className="chatgpt-connection">
-      {shownNotice ? (
+      {notice ? (
         <div role="status">
           <Text size="2" weight="medium" className="chatgpt-connection__notice">
-            {shownNotice}
+            {notice}
           </Text>
         </div>
       ) : null}
@@ -239,11 +256,25 @@ export function ChatgptConnection({ providerId, isEnabled, justConnected, onChan
           <Text size="2" weight="medium">
             Finish signing in
           </Text>
-          <Text size="1" tone="muted">
-            After you approve at OpenAI, your browser goes to an address that starts with
-            http://127.0.0.1. If it shows an error page there, Taico is running on another machine:
-            copy the whole address from the address bar and paste it here.
-          </Text>
+          <ol className="chatgpt-connection__steps">
+            <li>
+              <Text size="1" tone="muted">
+                Approve Taico at OpenAI in the tab that opened.
+              </Text>
+            </li>
+            <li>
+              <Text size="1" tone="muted">
+                That tab then shows a page that cannot be reached, at an address starting with
+                http://127.0.0.1. This is expected: nothing runs there.
+              </Text>
+            </li>
+            <li>
+              <Text size="1" tone="muted">
+                Copy the whole address from that tab's address bar, paste it here and click
+                Finish. It works once, for you only, within 10 minutes.
+              </Text>
+            </li>
+          </ol>
           <Row spacing="2" align="center">
             <input
               type="text"

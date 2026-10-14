@@ -271,7 +271,7 @@ describe('Sign in with ChatGPT E2E', () => {
   });
 
   describe('sign-in', () => {
-    it('sends the browser to OpenAI with PKCE, state, nonce and a loopback redirect', async () => {
+    it('sends the browser to OpenAI with PKCE, state, nonce and the 127.0.0.1 redirect', async () => {
       const url = new URL(await startSignIn(aliceCookies));
       const params = url.searchParams;
 
@@ -285,8 +285,8 @@ describe('Sign in with ChatGPT E2E', () => {
         resource: fake.endpoints.apiBaseUrl,
         code_challenge_method: 'S256',
       });
-      expect(params.get('redirect_uri')).toMatch(
-        /^http:\/\/127\.0\.0\.1:\d+\/auth\/callback$/,
+      expect(params.get('redirect_uri')).toBe(
+        'http://127.0.0.1:1456/auth/callback',
       );
       expect(params.get('state')!.length).toBeGreaterThanOrEqual(43);
       expect(params.get('nonce')!.length).toBeGreaterThanOrEqual(43);
@@ -301,24 +301,41 @@ describe('Sign in with ChatGPT E2E', () => {
       expect(pending.body.isAuthorizationPending).toBe(true);
     });
 
-    it('forwards the loopback redirect to the Taico UI, once, without finishing anything', async () => {
-      const callbackUrl = fake.approve(await startSignIn(aliceCookies), ALICE);
-
-      const forwarded = await fetch(callbackUrl, { redirect: 'manual' });
-      expect(forwarded.status).toBe(302);
-      const location = new URL(forwarded.headers.get('location')!);
-      expect(location.origin).toBe(new URL(getConfig().issuerUrl).origin);
-      expect(location.pathname).toBe('/settings/models/chatgpt-callback');
-      expect(location.search).toBe(new URL(callbackUrl).search);
-      expect(forwarded.headers.get('cache-control')).toBe('no-store');
+    it('connects nothing after approval until the address is pasted', async () => {
+      fake.approve(await startSignIn(aliceCookies), ALICE);
 
       expect((await connectionRow(aliceActorId))?.status).toBeUndefined();
 
-      const unknown = new URL(callbackUrl);
-      unknown.searchParams.set('state', 'not-a-state');
-      await expect(
-        fetch(unknown, { redirect: 'manual' }).then((r) => r.status),
-      ).resolves.toBe(400);
+      const pending = await api(aliceCookies, 'get', connectionPath()).expect(
+        200,
+      );
+      expect(pending.body.isAuthorizationPending).toBe(true);
+    });
+
+    it('refuses a pasted address that is not the redirect the sign-in asked for', async () => {
+      const callbackUrl = fake.approve(await startSignIn(aliceCookies), ALICE);
+      const tokenRequestsBefore = fake.tokenRequests.length;
+
+      const elsewhere = new URL(callbackUrl);
+      elsewhere.host = 'attacker.example';
+      const response = await api(
+        aliceCookies,
+        'post',
+        `${connectionPath()}/callback`,
+      )
+        .send({ callbackUrl: elsewhere.toString() })
+        .expect(400);
+
+      expect(response.body.code).toBe('AI_PROVIDER_AUTHORIZATION_FAILED');
+      expect(response.body.detail).toContain(
+        'http://127.0.0.1:1456/auth/callback',
+      );
+      // Never echoes the authorization code back.
+      expect(JSON.stringify(response.body)).not.toContain(
+        new URL(callbackUrl).searchParams.get('code')!,
+      );
+      expect(fake.tokenRequests).toHaveLength(tokenRequestsBefore);
+      expect((await connectionRow(aliceActorId))?.status).toBeUndefined();
     });
 
     it('lets only the Taico user who started a sign-in finish it', async () => {

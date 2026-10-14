@@ -41,14 +41,20 @@ export const AUTHORIZATION_SCOPES = [
   PLAN_USAGE_SCOPE,
 ].join(' ');
 
-/** Path of the loopback redirect. Fixed by OpenAI; only the port may vary. */
-export const LOOPBACK_CALLBACK_PATH = '/auth/callback';
-export const LOOPBACK_HOST = '127.0.0.1';
+/**
+ * The redirect address OpenAI sends the browser to after approval. OpenAI only
+ * accepts `http://127.0.0.1:<port>/auth/callback` for this kind of client; the
+ * host and path are fixed and only the port may vary.
+ *
+ * Nothing in Taico listens there. Taico usually runs in a container or on
+ * another machine, so the browser could not reach it anyway. The browser shows
+ * a "can't connect" page and the person pastes that page's address into
+ * settings, which posts it to the API as the signed-in Taico user.
+ */
+export const REDIRECT_HOST = '127.0.0.1';
+export const REDIRECT_PATH = '/auth/callback';
 
 /** Where the person sees and manages how much of their plan they have used. */
 export const MANAGE_USAGE_URL = 'https://chatgpt.com/settings/usage';
-
-/** Route of the Taico UI that finishes a sign-in. */
-export const UI_CALLBACK_PATH = '/settings/models/chatgpt-callback';
 
 export const AUTHORIZATION_ATTEMPT_TTL_MS = 10 * 60 * 1000;

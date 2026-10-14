@@ -136,9 +136,12 @@ export class AiProviderConnectionsController {
     dto: CompleteAiProviderAuthorizationDto,
   ): CompleteAiProviderAuthorizationInput {
     let query: URLSearchParams | null = null;
+    let redirectAddress: string | null = null;
     if (dto.callbackUrl?.trim()) {
       try {
-        query = new URL(dto.callbackUrl.trim()).searchParams;
+        const pasted = new URL(dto.callbackUrl.trim());
+        query = pasted.searchParams;
+        redirectAddress = `${pasted.origin}${pasted.pathname}`;
       } catch {
         throw new AiProviderAuthorizationFailedError(
           'That is not a complete address. Copy everything in the address bar, starting with http://127.0.0.1.',
@@ -155,6 +158,7 @@ export class AiProviderConnectionsController {
 
     return {
       state,
+      redirectAddress,
       code: query?.get('code') ?? dto.code ?? null,
       clientId: query?.get('client_id') ?? dto.clientId ?? null,
       error: query?.get('error') ?? dto.error ?? null,

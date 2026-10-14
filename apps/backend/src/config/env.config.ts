@@ -331,11 +331,23 @@ export function isChatgptSubscriptionEnabled(): boolean {
   return process.env.CHATGPT_SUBSCRIPTION_ENABLED === 'true';
 }
 
+/** Port used in the Sign in with ChatGPT redirect when none is configured. */
+export const DEFAULT_CHATGPT_SUBSCRIPTION_CALLBACK_PORT = 1456;
+
 /**
- * Port of the loopback listener that receives the Sign in with ChatGPT
- * redirect on 127.0.0.1. 0 (the default) picks a free port.
+ * Port in the Sign in with ChatGPT redirect address
+ * (`http://127.0.0.1:<port>/auth/callback`). Nothing listens on it: the person
+ * copies the address their browser lands on and pastes it into settings.
+ * Change it only if something on people's computers already answers on the
+ * default port. Invalid values fall back to the default.
  */
 export function getChatgptSubscriptionCallbackPort(): number {
-  const parsed = parseInt(process.env.CHATGPT_SUBSCRIPTION_CALLBACK_PORT || '0', 10);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535 ? parsed : 0;
+  const raw = process.env.CHATGPT_SUBSCRIPTION_CALLBACK_PORT?.trim();
+  if (!raw) {
+    return DEFAULT_CHATGPT_SUBSCRIPTION_CALLBACK_PORT;
+  }
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 65535
+    ? parsed
+    : DEFAULT_CHATGPT_SUBSCRIPTION_CALLBACK_PORT;
 }
