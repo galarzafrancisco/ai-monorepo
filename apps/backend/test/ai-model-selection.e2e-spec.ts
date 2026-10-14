@@ -368,6 +368,48 @@ describe('AI model selection E2E', () => {
         expect(await rows()).toEqual({
           user_small_tasks: { job: 'user_small_tasks', ai_provider_id: providerId, model_id: 'plan-model' },
         });
+
+        await migrate('down');
+        expect(await rows()).toEqual({
+          quick_tasks: { job: 'quick_tasks', ai_provider_id: providerId, model_id: 'plan-model' },
+        });
+      } finally {
+        await cleanUp(providerId);
+      }
+    });
+
+    it('rolls back to the user small tasks selection even when it runs on a personal plan', async () => {
+      const planProviderId = await insertProvider('chatgpt_subscription');
+      const apiProviderId = await insertProvider('openai_compatible');
+      try {
+        await dataSource.query(
+          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id)
+           VALUES ('user_small_tasks', $1, 'plan-model'), ('system_small_tasks', $2, 'api-model')`,
+          [planProviderId, apiProviderId],
+        );
+
+        await migrate('down');
+        expect(await rows()).toEqual({
+          quick_tasks: { job: 'quick_tasks', ai_provider_id: planProviderId, model_id: 'plan-model' },
+        });
+      } finally {
+        await cleanUp(planProviderId);
+        await dataSource.query(`DELETE FROM ai_providers WHERE id = $1`, [apiProviderId]);
+      }
+    });
+
+    it('rolls back to the system small tasks selection when user small tasks has none', async () => {
+      const providerId = await insertProvider('openai_compatible');
+      try {
+        await dataSource.query(
+          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id) VALUES ('system_small_tasks', $1, 'api-model')`,
+          [providerId],
+        );
+
+        await migrate('down');
+        expect(await rows()).toEqual({
+          quick_tasks: { job: 'quick_tasks', ai_provider_id: providerId, model_id: 'api-model' },
+        });
       } finally {
         await cleanUp(providerId);
       }

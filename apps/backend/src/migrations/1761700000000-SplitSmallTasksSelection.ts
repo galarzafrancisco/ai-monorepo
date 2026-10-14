@@ -33,15 +33,14 @@ export class SplitSmallTasksSelection1761700000000 implements MigrationInterface
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Before the split, quick tasks could not run on a person's own plan, so
-    // prefer whichever split selection uses shared credentials.
+    // Restore quick_tasks from the user small tasks selection, whatever its
+    // provider (up() kept a personal-plan selection there, so rollback keeps
+    // it too). Use system small tasks only when user small tasks has none.
     await queryRunner.query(
       `INSERT INTO "ai_model_selections" ("job", "ai_provider_id", "model_id")
        SELECT 'quick_tasks', s."ai_provider_id", s."model_id"
          FROM "ai_model_selections" s
-         JOIN "ai_providers" p ON p."id" = s."ai_provider_id"
         WHERE s."job" IN ('user_small_tasks', 'system_small_tasks')
-          AND p."type" <> 'chatgpt_subscription'
         ORDER BY CASE s."job" WHEN 'user_small_tasks' THEN 0 ELSE 1 END
         LIMIT 1
        ON CONFLICT ("job") DO NOTHING`,

@@ -47,7 +47,7 @@ A model is picked per job (`ai_model_selections`, one row per job, holding a pro
 | `middle_manager` | The thread state reconciler | Uses the conversation model, unless that is a ChatGPT plan |
 | `embeddings` | Nothing yet (reserved for search) | Not available |
 
-The small tasks jobs replaced a single `quick_tasks` job. Migration `1761700000000-SplitSmallTasksSelection` copies an existing `quick_tasks` selection into `user_small_tasks`, and into `system_small_tasks` unless it runs on a ChatGPT plan. `/ai-model-selections/quick_tasks` now answers 400.
+The small tasks jobs replaced a single `quick_tasks` job. Migration `1761700000000-SplitSmallTasksSelection` copies an existing `quick_tasks` selection into `user_small_tasks`, and into `system_small_tasks` unless it runs on a ChatGPT plan. Rolling back restores `quick_tasks` from `user_small_tasks` (whatever its provider), or from `system_small_tasks` when there is no user selection. `/ai-model-selections/quick_tasks` now answers 400.
 
 `ThreadTitleService` picks the job from the type of the actor who triggered the title: a human gets `user_small_tasks`, anything else gets `system_small_tasks`. A new small-task caller must make the same choice through `ChatService.generateText(prompt, { job, ... })`. A user small task always names the person who started it (`onBehalfOf` with `automated: false`). When a job has no usable model, `generateText` returns null. For system small tasks it also logs `Text generation failed` as a warning with setup guidance.
 
