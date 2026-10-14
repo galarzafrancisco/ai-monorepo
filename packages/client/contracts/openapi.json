@@ -2867,6 +2867,215 @@
         ]
       }
     },
+    "/api/v1/ai-providers/{id}/connection": {
+      "get": {
+        "operationId": "AiProviderConnectionsController_getConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get your own connection to the provider",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      },
+      "patch": {
+        "operationId": "AiProviderConnectionsController_updateConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAiProviderConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Change what your connection may be used for",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      },
+      "delete": {
+        "operationId": "AiProviderConnectionsController_disconnect",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisconnectAiProviderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Disconnect your account and revoke its grant at the provider",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}/connection/authorize": {
+      "post": {
+        "operationId": "AiProviderConnectionsController_startAuthorization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartAiProviderAuthorizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Start signing in to the provider with your own account",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}/connection/callback": {
+      "post": {
+        "operationId": "AiProviderConnectionsController_completeAuthorization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteAiProviderAuthorizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Finish the sign-in you started with what the provider sent back",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      }
+    },
     "/api/v1/secrets": {
       "post": {
         "operationId": "SecretsController_createSecret",
@@ -9746,7 +9955,8 @@
               "google",
               "google_vertex",
               "xai",
-              "openai_compatible"
+              "openai_compatible",
+              "chatgpt_subscription"
             ],
             "example": "openai"
           },
@@ -9801,7 +10011,8 @@
               "google",
               "google_vertex",
               "xai",
-              "openai_compatible"
+              "openai_compatible",
+              "chatgpt_subscription"
             ],
             "example": "openai"
           },
@@ -9999,6 +10210,137 @@
         "required": [
           "aiProviderId",
           "modelId"
+        ]
+      },
+      "AiProviderConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "aiProviderId": {
+            "type": "string",
+            "description": "AI provider identifier"
+          },
+          "status": {
+            "type": "string",
+            "description": "State of your own connection to the provider",
+            "enum": [
+              "connected",
+              "plan_access_not_granted",
+              "needs_reauthorization",
+              "disconnected"
+            ],
+            "example": "connected"
+          },
+          "accountEmail": {
+            "type": "string",
+            "description": "Email of the connected account",
+            "nullable": true
+          },
+          "canUsePlan": {
+            "type": "boolean",
+            "description": "Whether requests can run on your plan right now"
+          },
+          "automatedTurnsAllowed": {
+            "type": "boolean",
+            "description": "Whether turns nobody typed (task updates) may run on your plan"
+          },
+          "isAuthorizationPending": {
+            "type": "boolean",
+            "description": "Whether a sign-in was started and not finished"
+          },
+          "lastErrorCode": {
+            "type": "string",
+            "description": "The provider's code for the last failed request, cleared by the next success",
+            "example": "subscription_sharing_usage_limit_exceeded",
+            "nullable": true
+          },
+          "lastErrorAt": {
+            "type": "string",
+            "description": "ISO timestamp of the last failed request",
+            "nullable": true
+          },
+          "manageUsageUrl": {
+            "type": "string",
+            "description": "Where you see and manage your plan usage"
+          }
+        },
+        "required": [
+          "aiProviderId",
+          "status",
+          "canUsePlan",
+          "automatedTurnsAllowed",
+          "isAuthorizationPending",
+          "manageUsageUrl"
+        ]
+      },
+      "StartAiProviderAuthorizationResponseDto": {
+        "type": "object",
+        "properties": {
+          "authorizationUrl": {
+            "type": "string",
+            "description": "Address to open in the browser to sign in at the provider"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO timestamp after which this sign-in can no longer be finished"
+          }
+        },
+        "required": [
+          "authorizationUrl",
+          "expiresAt"
+        ]
+      },
+      "CompleteAiProviderAuthorizationDto": {
+        "type": "object",
+        "properties": {
+          "callbackUrl": {
+            "type": "string",
+            "description": "The full address the browser was sent back to, pasted as is",
+            "example": "http://127.0.0.1:41873/auth/callback?code=...&state=..."
+          },
+          "state": {
+            "type": "string",
+            "description": "The `state` query parameter"
+          },
+          "code": {
+            "type": "string",
+            "description": "The `code` query parameter"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The `client_id` query parameter"
+          },
+          "error": {
+            "type": "string",
+            "description": "The `error` query parameter"
+          },
+          "errorDescription": {
+            "type": "string",
+            "description": "The `error_description` query parameter"
+          }
+        }
+      },
+      "UpdateAiProviderConnectionDto": {
+        "type": "object",
+        "properties": {
+          "automatedTurnsAllowed": {
+            "type": "boolean",
+            "description": "Allow turns nobody typed (task updates in threads you subscribed to) to run on your plan"
+          }
+        },
+        "required": [
+          "automatedTurnsAllowed"
+        ]
+      },
+      "DisconnectAiProviderResponseDto": {
+        "type": "object",
+        "properties": {
+          "revokedAtProvider": {
+            "type": "boolean",
+            "description": "False when the provider could not be told. The tokens stored in Taico are removed either way."
+          }
+        },
+        "required": [
+          "revokedAtProvider"
         ]
       },
       "CreateSecretDto": {

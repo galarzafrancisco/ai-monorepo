@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   AiModelSelectionsService,
   AiProvidersService,
@@ -10,6 +11,7 @@ import { Stack, Text, Card, Button, Modal, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useHomeCtx } from './HomeProvider';
+import { ChatgptConnection } from '../ai-models/ChatgptConnection';
 import './SettingsPage.css';
 import './SettingsModelsPage.css';
 
@@ -67,6 +69,11 @@ type ProviderTypeInfo = {
   multilineSecret?: boolean;
   hasBaseUrl?: boolean;
   hasVertexSettings?: boolean;
+  /**
+   * Runs on each person's own plan instead of shared credentials. Such a
+   * provider only answers in threads, so it is offered for the conversation only.
+   */
+  personalPlan?: boolean;
 };
 
 const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
@@ -115,6 +122,14 @@ const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
     secretRequired: false,
     hasBaseUrl: true,
   },
+  chatgpt_subscription: {
+    label: 'ChatGPT plan (Sign in with ChatGPT)',
+    help: 'No API key. Each person signs in with their own ChatGPT account, and their plan answers the messages they write in threads. Only for a Taico you run yourself, not a hosted one.',
+    secretLabel: null,
+    secretPlaceholder: '',
+    secretRequired: false,
+    personalPlan: true,
+  },
 };
 
 const CREATABLE_TYPES = Object.keys(PROVIDER_TYPES) as ProviderType[];
@@ -147,6 +162,9 @@ export function SettingsModelsPage() {
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const requestedModels = useRef(new Set<string>());
+  // Set by the page that finishes a ChatGPT sign-in, to confirm it once.
+  const justConnectedChatgpt =
+    (useLocation().state as { chatgptConnected?: boolean } | null)?.chatgptConnected === true;
 
   useDocumentTitle();
 
@@ -286,6 +304,12 @@ export function SettingsModelsPage() {
     );
   }
 
+  const conversationProvider = providers.find(
+    (p) => p.id === selections.find((s) => s.job === 'conversation')?.aiProviderId,
+  );
+  const conversationUsesPersonalPlan =
+    !!conversationProvider && !!PROVIDER_TYPES[conversationProvider.type].personalPlan;
+
   const jobsByProvider = (providerId: string): string[] =>
     JOBS.filter((info) =>
       selections.some((s) => s.job === info.job && s.aiProviderId === providerId),
@@ -318,6 +342,7 @@ export function SettingsModelsPage() {
                   info={info}
                   selection={selection}
                   providers={providers}
+                  conversationUsesPersonalPlan={conversationUsesPersonalPlan}
                   modelsByProvider={modelsByProvider}
                   onLoadModels={loadModels}
                   onSave={(providerId, modelId) =>
@@ -363,6 +388,7 @@ export function SettingsModelsPage() {
                   onSave={(form) => handleSaveProvider(provider, form)}
                   onDelete={() => handleDeleteProvider(provider)}
                   onTest={() => loadModels(provider.id, true)}
+                  justConnected={justConnectedChatgpt}
                 />
               ))
             )}
@@ -662,6 +688,7 @@ function JobRow({
   info,
   selection,
   providers,
+  conversationUsesPersonalPlan,
   modelsByProvider,
   onLoadModels,
   onSave,
@@ -670,6 +697,8 @@ function JobRow({
   info: JobInfo;
   selection: AiModelSelectionResponseDto;
   providers: AiProviderResponseDto[];
+  /** True when the conversation runs on each person's own plan, which other jobs do not inherit. */
+  conversationUsesPersonalPlan: boolean;
   modelsByProvider: Record<string, ProviderModels>;
   onLoadModels: (providerId: string) => void;
   onSave: (providerId: string, modelId: string) => Promise<boolean>;
@@ -689,6 +718,13 @@ function JobRow({
 
   const provider = providers.find((p) => p.id === providerId);
   const canListModels = !!provider?.isConfigured;
+  const usesPersonalPlan = !!provider && !!PROVIDER_TYPES[provider.type].personalPlan;
+  // A person's plan answers that person's messages in threads and nothing else.
+  const selectableProviders = providers.filter(
+    (p) => info.job === 'conversation' || !PROVIDER_TYPES[p.type].personalPlan,
+  );
+  const cannotFollowConversation =
+    info.followsConversation && providerId === '' && conversationUsesPersonalPlan;
 
   useEffect(() => {
     if (providerId && canListModels) {
@@ -730,7 +766,8 @@ function JobRow({
     setJustSaved(saved);
   };
 
-  const emptyLabel = info.followsConversation ? 'Same as Conversation' : 'Not selected';
+  const emptyLabel =
+    info.followsConversation && !cannotFollowConversation ? 'Same as Conversation' : 'Not selected';
 
   let status: { text: string; tone: 'ready' | 'pending' };
   if (selection.isReady) {
@@ -770,7 +807,7 @@ function JobRow({
           aria-label={`${info.label} provider`}
         >
           <option value="">{emptyLabel}</option>
-          {providers.map((p) => (
+          {selectableProviders.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
               {p.isConfigured ? '' : ' (needs setup)'}
@@ -804,6 +841,19 @@ function JobRow({
           Finish setting up this provider to pick from its models.
         </Text>
       ) : null}
+      {usesPersonalPlan ? (
+        <Text size="1" tone="muted" className="settings-models__job-note">
+          Using ChatGPT plan: each person's own plan answers the messages they write. Someone who
+          has not connected their account gets a note in the thread instead of an answer. Models
+          listed are the ones your own account offers.
+        </Text>
+      ) : null}
+      {cannotFollowConversation ? (
+        <Text size="1" tone="muted" className="settings-models__job-note">
+          The ChatGPT plan only answers in threads, so this job does not use it. Pick a model from
+          another provider, or leave it off.
+        </Text>
+      ) : null}
     </div>
   );
 }
@@ -818,6 +868,7 @@ function ProviderRow({
   onSave,
   onDelete,
   onTest,
+  justConnected,
 }: {
   provider: AiProviderResponseDto;
   usedBy: string[];
@@ -828,8 +879,10 @@ function ProviderRow({
   onSave: (form: ProviderForm) => void;
   onDelete: () => void;
   onTest: () => void;
+  justConnected: boolean;
 }) {
   const info = PROVIDER_TYPES[provider.type];
+  const notReadyLabel = info.personalPlan ? 'Turned off on this server' : 'Needs setup';
   const [form, setForm] = useState<ProviderForm>(EMPTY_PROVIDER_FORM);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [hasTested, setHasTested] = useState(false);
@@ -868,7 +921,7 @@ function ProviderRow({
               className="settings-models__status"
               data-tone={provider.isConfigured ? 'ready' : 'pending'}
             >
-              {provider.isConfigured ? 'Ready' : 'Needs setup'}
+              {provider.isConfigured ? 'Ready' : notReadyLabel}
             </span>
           </Row>
           <Text size="1" tone="muted">
@@ -920,7 +973,7 @@ function ProviderRow({
         ) : (
           <Row spacing="2" align="center" className="settings-models__actions">
             <Button variant="secondary" size="sm" onClick={onEdit}>
-              {provider.isConfigured ? 'Edit' : 'Set up'}
+              {provider.isConfigured || info.personalPlan ? 'Edit' : 'Set up'}
             </Button>
             <Button
               variant="secondary"
@@ -938,6 +991,15 @@ function ProviderRow({
             </Button>
           </Row>
         )}
+
+        {info.personalPlan && !isEditing ? (
+          <ChatgptConnection
+            providerId={provider.id}
+            isEnabled={provider.isConfigured}
+            justConnected={justConnected}
+            onChanged={onTest}
+          />
+        ) : null}
       </Stack>
     </div>
   );

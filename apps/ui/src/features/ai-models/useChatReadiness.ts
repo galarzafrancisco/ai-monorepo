@@ -61,6 +61,8 @@ const getChatReadiness = (
 export type ConversationModel = {
   providerName: string;
   modelId: string;
+  /** True when each person's own ChatGPT plan answers, not a shared API key. */
+  usesChatgptPlan: boolean;
 };
 
 const getConversationModel = (
@@ -71,7 +73,11 @@ const getConversationModel = (
   const provider = providers.find((p) => p.id === conversation?.effectiveAiProviderId);
 
   return conversation?.isReady && conversation.effectiveModelId && provider
-    ? { providerName: provider.name, modelId: conversation.effectiveModelId }
+    ? {
+        providerName: provider.name,
+        modelId: conversation.effectiveModelId,
+        usesChatgptPlan: provider.type === 'chatgpt_subscription',
+      }
     : null;
 };
 

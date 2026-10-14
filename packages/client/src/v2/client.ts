@@ -10,6 +10,7 @@ import { JwksResource } from './jwks-resource.js';
 import { ActorsResource } from './actors-resource.js';
 import { AiProvidersResource } from './ai-providers-resource.js';
 import { AiModelSelectionsResource } from './ai-model-selections-resource.js';
+import { AiProviderConnectionsResource } from './ai-provider-connections-resource.js';
 import { SecretsResource } from './secrets-resource.js';
 import { TaskResource } from './task-resource.js';
 import { AgentrunResource } from './agent-run-resource.js';
@@ -38,6 +39,7 @@ export class ApiClient {
   public readonly actors: ActorsResource;
   public readonly aiProviders: AiProvidersResource;
   public readonly aiModelSelections: AiModelSelectionsResource;
+  public readonly aiProviderConnections: AiProviderConnectionsResource;
   public readonly secrets: SecretsResource;
   public readonly task: TaskResource;
   public readonly agentrun: AgentrunResource;
@@ -66,6 +68,7 @@ export class ApiClient {
     this.actors = new ActorsResource(config);
     this.aiProviders = new AiProvidersResource(config);
     this.aiModelSelections = new AiModelSelectionsResource(config);
+    this.aiProviderConnections = new AiProviderConnectionsResource(config);
     this.secrets = new SecretsResource(config);
     this.task = new TaskResource(config);
     this.agentrun = new AgentrunResource(config);

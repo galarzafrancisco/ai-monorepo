@@ -942,6 +942,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-providers/{id}/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get your own connection to the provider */
+        get: operations["AiProviderConnectionsController_getConnection"];
+        put?: never;
+        post?: never;
+        /** Disconnect your account and revoke its grant at the provider */
+        delete: operations["AiProviderConnectionsController_disconnect"];
+        options?: never;
+        head?: never;
+        /** Change what your connection may be used for */
+        patch: operations["AiProviderConnectionsController_updateConnection"];
+        trace?: never;
+    };
+    "/api/v1/ai-providers/{id}/connection/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start signing in to the provider with your own account */
+        post: operations["AiProviderConnectionsController_startAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-providers/{id}/connection/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish the sign-in you started with what the provider sent back */
+        post: operations["AiProviderConnectionsController_completeAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/secrets": {
         parameters: {
             query?: never;
@@ -3729,7 +3782,7 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible" | "chatgpt_subscription";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3767,7 +3820,7 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible" | "chatgpt_subscription";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3908,6 +3961,64 @@ export interface components {
              * @example claude-haiku-5-5
              */
             modelId: string;
+        };
+        AiProviderConnectionResponseDto: {
+            /** @description AI provider identifier */
+            aiProviderId: string;
+            /**
+             * @description State of your own connection to the provider
+             * @example connected
+             * @enum {string}
+             */
+            status: "connected" | "plan_access_not_granted" | "needs_reauthorization" | "disconnected";
+            /** @description Email of the connected account */
+            accountEmail?: string | null;
+            /** @description Whether requests can run on your plan right now */
+            canUsePlan: boolean;
+            /** @description Whether turns nobody typed (task updates) may run on your plan */
+            automatedTurnsAllowed: boolean;
+            /** @description Whether a sign-in was started and not finished */
+            isAuthorizationPending: boolean;
+            /**
+             * @description The provider's code for the last failed request, cleared by the next success
+             * @example subscription_sharing_usage_limit_exceeded
+             */
+            lastErrorCode?: string | null;
+            /** @description ISO timestamp of the last failed request */
+            lastErrorAt?: string | null;
+            /** @description Where you see and manage your plan usage */
+            manageUsageUrl: string;
+        };
+        StartAiProviderAuthorizationResponseDto: {
+            /** @description Address to open in the browser to sign in at the provider */
+            authorizationUrl: string;
+            /** @description ISO timestamp after which this sign-in can no longer be finished */
+            expiresAt: string;
+        };
+        CompleteAiProviderAuthorizationDto: {
+            /**
+             * @description The full address the browser was sent back to, pasted as is
+             * @example http://127.0.0.1:41873/auth/callback?code=...&state=...
+             */
+            callbackUrl?: string;
+            /** @description The `state` query parameter */
+            state?: string;
+            /** @description The `code` query parameter */
+            code?: string;
+            /** @description The `client_id` query parameter */
+            clientId?: string;
+            /** @description The `error` query parameter */
+            error?: string;
+            /** @description The `error_description` query parameter */
+            errorDescription?: string;
+        };
+        UpdateAiProviderConnectionDto: {
+            /** @description Allow turns nobody typed (task updates in threads you subscribed to) to run on your plan */
+            automatedTurnsAllowed: boolean;
+        };
+        DisconnectAiProviderResponseDto: {
+            /** @description False when the provider could not be told. The tokens stored in Taico are removed either way. */
+            revokedAtProvider: boolean;
         };
         CreateSecretDto: {
             /**
@@ -8904,6 +9015,131 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AiProviderConnectionsController_getConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderConnectionResponseDto"];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiProviderConnectionsController_disconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisconnectAiProviderResponseDto"];
+                };
+            };
+        };
+    };
+    AiProviderConnectionsController_updateConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAiProviderConnectionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    AiProviderConnectionsController_startAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartAiProviderAuthorizationResponseDto"];
+                };
+            };
+        };
+    };
+    AiProviderConnectionsController_completeAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteAiProviderAuthorizationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderConnectionResponseDto"];
+                };
             };
         };
     };

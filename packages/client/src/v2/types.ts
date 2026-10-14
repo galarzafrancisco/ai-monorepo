@@ -414,7 +414,7 @@ export interface JwksResponseDto {
 
 export interface CreateAiProviderDto {
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible' | 'chatgpt_subscription';
   secretId?: string;
   baseUrl?: string | null;
   project?: string | null;
@@ -424,7 +424,7 @@ export interface CreateAiProviderDto {
 export interface AiProviderResponseDto {
   id: string;
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible' | 'chatgpt_subscription';
   secretId?: string | null;
   baseUrl?: string | null;
   project?: string | null;
@@ -463,6 +463,40 @@ export interface AiModelSelectionResponseDto {
 export interface SetAiModelSelectionDto {
   aiProviderId: string;
   modelId: string;
+}
+
+export interface AiProviderConnectionResponseDto {
+  aiProviderId: string;
+  status: 'connected' | 'plan_access_not_granted' | 'needs_reauthorization' | 'disconnected';
+  accountEmail?: string | null;
+  canUsePlan: boolean;
+  automatedTurnsAllowed: boolean;
+  isAuthorizationPending: boolean;
+  lastErrorCode?: string | null;
+  lastErrorAt?: string | null;
+  manageUsageUrl: string;
+}
+
+export interface StartAiProviderAuthorizationResponseDto {
+  authorizationUrl: string;
+  expiresAt: string;
+}
+
+export interface CompleteAiProviderAuthorizationDto {
+  callbackUrl?: string;
+  state?: string;
+  code?: string;
+  clientId?: string;
+  error?: string;
+  errorDescription?: string;
+}
+
+export interface UpdateAiProviderConnectionDto {
+  automatedTurnsAllowed: boolean;
+}
+
+export interface DisconnectAiProviderResponseDto {
+  revokedAtProvider: boolean;
 }
 
 export interface CreateSecretDto {
