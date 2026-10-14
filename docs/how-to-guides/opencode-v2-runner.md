@@ -8,7 +8,7 @@ Background research: context block *OpenCode v2 worker integration assessment*.
 
 | Concern | Current runner (`OpenCodeAgentRunner`) | v2 runner (`OpenCodeV2AgentRunner`) |
 |---|---|---|
-| Version | SDK `^1.x`, any CLI on `PATH` | SDK pinned to `1.19.0`. The run fails on startup if `GET /global/health` returns a different version (`OPENCODE_PINNED_VERSION`) |
+| Version | SDK `^1.x`, any CLI on `PATH` | SDK pinned to `1.19.0`. Before spawning `serve`, the run checks `<bin> --version` and fails with `OpencodeVersionMismatchError` if it differs from `OPENCODE_PINNED_VERSION`, so no server process starts. After startup, `GET /global/health` must report the same version |
 | Working directory | Global `process.chdir` lock (`initBullshit`) | Child spawned with `cwd` + v2 client `directory`. No global state |
 | Port | Tries ports 4000–4100 one by one | Picks a free loopback port and retries up to 3 times if another process takes it first. Not `--port 0`, which always tries 4096 first (see below) |
 | Server access | Unauthenticated loopback | Random per-run `OPENCODE_SERVER_PASSWORD` (basic auth) |

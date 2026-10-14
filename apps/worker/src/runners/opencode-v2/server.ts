@@ -3,7 +3,13 @@ import { randomBytes } from 'node:crypto';
 import { createServer, type AddressInfo } from 'node:net';
 import { createOpencodeClient, type Config, type OpencodeClient } from '@opencode-ai/sdk/v2';
 import { killProcessTree } from './process-tree.js';
-import { assertServerVersion, OPENCODE_PINNED_VERSION, resolveOpencodeBin } from './version.js';
+import {
+  assertServerVersion,
+  checkOpencodeCli,
+  OPENCODE_PINNED_VERSION,
+  OpencodeVersionMismatchError,
+  resolveOpencodeBin,
+} from './version.js';
 
 export type OpencodeV2ServerOptions = {
   /** Directory the server process starts in. Also the client's default `directory`. */
@@ -66,27 +72,57 @@ const LISTENING_RE = /opencode server listening on\s+(https?:\/\/\S+)/;
  *   the directory with every request.
  * - Detached process group + tree snapshot kill, so tool shells and local MCP
  *   servers do not outlive the execution.
- * - Startup is bounded by `startupTimeoutMs`, including the health/version check.
+ * - CLI preflight: `<bin> --version` must equal the pinned version before any
+ *   `serve` process is spawned (mismatch → OpencodeVersionMismatchError).
+ * - Startup is bounded by `startupTimeoutMs`, including the CLI preflight and
+ *   the server health/version check.
  */
 export async function startOpencodeV2Server(options: OpencodeV2ServerOptions): Promise<OpencodeV2Server> {
+  const deadline = Date.now() + (options.startupTimeoutMs ?? 30_000);
+  const bin = resolveOpencodeBin(options.bin);
+  const expected = options.expectedVersion ?? OPENCODE_PINNED_VERSION;
+
+  if (options.signal?.aborted) {
+    throw new OpencodeStartupAbortedError();
+  }
+
+  // CLI preflight: refuse to start a server from a binary that is not the
+  // pinned version. Runs before any `serve` process exists and counts toward
+  // the startup deadline.
+  await preflightCli(bin, expected, deadline - Date.now(), options.signal);
+
   if (options.port !== undefined) {
-    return startOnce(options, options.port);
+    return startOnce({ ...options, bin, startupTimeoutMs: Math.max(1, deadline - Date.now()) }, options.port);
   }
   // A reserved port can be grabbed by someone else before OpenCode binds it.
   // OpenCode only reports an opaque "ServeError" then, so retry early exits a few times.
-  const deadline = Date.now() + (options.startupTimeoutMs ?? 30_000);
-  let lastError: unknown;
+  let lastError: unknown = new OpencodeStartupError('OpenCode server startup deadline exceeded after CLI preflight', '');
   for (let attempt = 1; attempt <= 3; attempt++) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) break;
     try {
-      return await startOnce({ ...options, startupTimeoutMs: remaining }, await reserveFreePort());
+      return await startOnce({ ...options, bin, startupTimeoutMs: remaining }, await reserveFreePort());
     } catch (error) {
       lastError = error;
       if (!(error instanceof OpencodeStartupError) || !error.exitedEarly) throw error;
     }
   }
   throw lastError;
+}
+
+async function preflightCli(bin: string, expected: string, budgetMs: number, signal?: AbortSignal): Promise<void> {
+  if (budgetMs <= 0) {
+    throw new OpencodeStartupError('OpenCode startup deadline exceeded before CLI preflight', '');
+  }
+  try {
+    await checkOpencodeCli({ bin, expected, timeoutMs: Math.min(10_000, budgetMs), signal });
+  } catch (error) {
+    if (error instanceof OpencodeVersionMismatchError) throw error;
+    if (signal?.aborted) throw new OpencodeStartupAbortedError();
+    const err = error as NodeJS.ErrnoException & { killed?: boolean; stderr?: string };
+    const reason = err.killed ? 'timed out' : `failed: ${err.message}`;
+    throw new OpencodeStartupError(`OpenCode CLI preflight (\`${bin} --version\`) ${reason}`, err.stderr ?? '');
+  }
 }
 
 function reserveFreePort(): Promise<number> {

@@ -46,12 +46,15 @@ export async function checkOpencodeCli({
   bin = resolveOpencodeBin(),
   expected = OPENCODE_PINNED_VERSION,
   timeoutMs = 10_000,
+  signal,
 }: {
   bin?: string;
   expected?: string;
   timeoutMs?: number;
+  /** Aborting kills the `--version` child and rejects with an AbortError. */
+  signal?: AbortSignal;
 } = {}): Promise<OpencodeCliCheck> {
-  const { stdout } = await execFileAsync(bin, ['--version'], { timeout: timeoutMs });
+  const { stdout } = await execFileAsync(bin, ['--version'], { timeout: timeoutMs, signal });
   const version = stdout.trim();
   if (version !== expected) {
     throw new OpencodeVersionMismatchError('cli', version, expected);
