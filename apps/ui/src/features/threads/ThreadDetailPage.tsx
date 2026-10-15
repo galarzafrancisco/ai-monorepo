@@ -63,7 +63,8 @@ const STATUS_ORDER = [
 
 /**
  * Reminders, schedules and watched tasks, in that order, leaving out empty
- * ones. Shown at the top of the thread's details.
+ * ones. Shown near the top of the thread's details (below participants on
+ * desktop).
  */
 const waitSections = (thread: Thread) => {
   const reminders = thread.timers.filter(isReminder);
@@ -478,16 +479,6 @@ function ThreadDetailPageDesktop({
       <div className={`thread-detail-page__sidebar ${!isSidebarOpen ? "thread-detail-page__sidebar--collapsed" : ""}`}>
         {isSidebarOpen && (
           <div className="thread-detail-page__sidebar-scroll">
-            {/* What will wake the agent up: first, so it is never missed */}
-            {waitSections(thread).map((section) => (
-              <div key={section.key} className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  {section.title} ({section.count})
-                </Text>
-                {section.list}
-              </div>
-            ))}
-
             {thread.participants.length > 0 && (
               <div className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
@@ -515,6 +506,16 @@ function ThreadDetailPageDesktop({
                 </div>
               </div>
             )}
+
+            {/* What will wake the agent up: right after participants, so it is never missed */}
+            {waitSections(thread).map((section) => (
+              <div key={section.key} className="thread-detail-page__sidebar-section">
+                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+                  {section.title} ({section.count})
+                </Text>
+                {section.list}
+              </div>
+            ))}
 
             {/* Tasks grouped by status */}
             {taskGroups.map((group) => (
