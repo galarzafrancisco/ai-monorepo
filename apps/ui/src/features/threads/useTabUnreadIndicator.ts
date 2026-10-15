@@ -1,18 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-/** Matches a count prefix we added earlier, e.g. "(3) " or "(99+) ". */
-const COUNT_PREFIX = /^\(\d+\+?\) /;
 const MAX_SHOWN = 99;
 /** The icon we draw the dot on. Same file index.html links as the 32px icon. */
 const BASE_ICON_HREF = "/favicon-32x32.png";
 const ICON_SIZE = 32;
 
-function stripCount(title: string): string {
-  return title.replace(COUNT_PREFIX, "");
-}
-
-function withCount(title: string, count: number): string {
-  const base = stripCount(title);
+function withCount(base: string, count: number): string {
   if (count <= 0) return base;
   const label = count > MAX_SHOWN ? `${MAX_SHOWN}+` : String(count);
   return `(${label}) ${base}`;
@@ -67,11 +60,24 @@ async function drawBadgedIcon(): Promise<string | null> {
  * prefix is re-applied whenever the title changes instead of owning it.
  */
 export function useTabUnreadIndicator(unreadThreadCount: number) {
+  // We remember the exact title we wrote. If document.title still equals it,
+  // the prefix is ours and `base` holds the page's own title. Anything else is
+  // a fresh title from the app and is taken as-is, so app titles that happen
+  // to start with "(N) " are never stripped.
+  const titleState = useRef<{ base: string; applied: string | null }>({
+    base: document.title,
+    applied: null,
+  });
+
   // Title prefix: apply now, and again whenever a page rewrites the title.
   useEffect(() => {
+    const state = titleState.current;
     const apply = () => {
-      const next = withCount(document.title, unreadThreadCount);
-      if (next !== document.title) document.title = next;
+      const current = document.title;
+      if (current !== state.applied) state.base = current;
+      const next = withCount(state.base, unreadThreadCount);
+      state.applied = next;
+      if (next !== current) document.title = next;
     };
     apply();
 
@@ -85,10 +91,15 @@ export function useTabUnreadIndicator(unreadThreadCount: number) {
     return () => observer.disconnect();
   }, [unreadThreadCount]);
 
-  // Drop the prefix when the indicator goes away (e.g. logout).
+  // Drop the prefix when the indicator goes away (e.g. logout), but only if
+  // the title is still the one we wrote.
   useEffect(() => {
+    const state = titleState.current;
     return () => {
-      document.title = stripCount(document.title);
+      if (state.applied !== null && document.title === state.applied) {
+        document.title = state.base;
+      }
+      state.applied = null;
     };
   }, []);
 
