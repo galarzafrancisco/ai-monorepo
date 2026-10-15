@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useThreads } from "./useThreads";
+import { useTabUnreadIndicator } from "./useTabUnreadIndicator";
 import type { ThreadListItem, Thread } from "./types";
 import { NavegationItem } from "src/shared/types/NavegationItem";
 
@@ -61,6 +62,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     () => threads.filter((thread) => thread.unreadCount > 0).length,
     [threads],
   );
+  useTabUnreadIndicator(unreadThreadCount);
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<ThreadsContextValue>(() => {
