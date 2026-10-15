@@ -82,6 +82,10 @@ function createHarness(steps: unknown[][]) {
       .fn()
       .mockResolvedValue({ triggerActor: null, notifiedTaskIds: [] }),
     hasPendingTaskNotifications: jest.fn().mockResolvedValue(false),
+    ingestTimerFirings: jest
+      .fn()
+      .mockResolvedValue({ triggerActor: null, firedTimerIds: [] }),
+    hasPendingTimerFirings: jest.fn().mockResolvedValue(false),
     getOrCreateThreadSecret: jest.fn().mockResolvedValue('a1b2c3'),
     loadContext: jest.fn().mockResolvedValue([
       {
@@ -333,6 +337,33 @@ describe('ThreadAgentService', () => {
   it('runs another turn when a task notification arrived while the first one was running', async () => {
     const h = createHarness([textStep('First.'), textStep('Second.')]);
     h.agentLog.hasPendingTaskNotifications.mockResolvedValueOnce(true).mockResolvedValue(false);
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.turns.tryClaim).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs a turn for a reminder or schedule firing, as an automated turn', async () => {
+    const h = createHarness([textStep('Trying the deployment again.')]);
+    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+    h.agentLog.ingestTimerFirings.mockResolvedValue({
+      triggerActor: USER,
+      firedTimerIds: ['timer-1'],
+    });
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.mcpOpen).toHaveBeenCalledWith(expect.objectContaining({ issuedBy: USER }));
+    expect(h.resolveModel).toHaveBeenCalledWith(
+      expect.objectContaining({ onBehalfOf: { actorId: USER.id, automated: true } }),
+    );
+    expect(h.displayMessages.map((m) => m.content)).toEqual(['Trying the deployment again.']);
+    expect(h.emitted.filter((e) => e.event === ThreadUpdatedEvent.INTERNAL)).toHaveLength(1);
+  });
+
+  it('runs another turn when a timer fired while the first one was running', async () => {
+    const h = createHarness([textStep('First.'), textStep('Second.')]);
+    h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
 
     await h.service.drain(THREAD_ID);
 

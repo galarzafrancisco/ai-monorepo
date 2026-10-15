@@ -48,6 +48,8 @@ import { ListThreadMessagesQueryDto } from './dto/list-thread-messages-query.dto
 import { ListThreadMessagesResponseDto } from './dto/list-thread-messages-response.dto';
 import { ThreadTokenUsageResponseDto } from './dto/thread-token-usage-response.dto';
 import { ThreadAgentLogService } from './agent/thread-agent-log.service';
+import { ThreadTimerParamsDto } from './dto/thread-timer-params.dto';
+import { ThreadTaskSubscriptionParamsDto } from './dto/thread-task-subscription-params.dto';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
@@ -206,6 +208,38 @@ export class ThreadsController {
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.attachTask(params.id, dto.taskId);
     return ThreadResponseDto.fromResult(result);
+  }
+
+  @Delete(':id/timers/:timerId')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Cancel a reminder or schedule of the threads agent',
+    description: 'Idempotent: cancelling a timer that already finished or was cancelled succeeds.',
+  })
+  @ApiNoContentResponse({ description: 'Timer cancelled, or already gone' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async cancelTimer(
+    @Param() params: ThreadTimerParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadsService.cancelTimer(params.id, params.timerId, user.actorId);
+  }
+
+  @Delete(':id/task-subscriptions/:taskId')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Stop the threads agent watching a task',
+    description: 'Idempotent: removing a watch that does not exist succeeds.',
+  })
+  @ApiNoContentResponse({ description: 'Watch removed, or already gone' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async removeTaskSubscription(
+    @Param() params: ThreadTaskSubscriptionParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadsService.removeTaskSubscription(params.id, params.taskId, user.actorId);
   }
 
   @Post(':id/context-blocks')

@@ -7,9 +7,12 @@ import { ActorType } from 'src/identity-provider/enums';
 import { ThreadNotFoundError } from '../errors/threads.errors';
 import {
   formatMessage,
+  formatReminderFiring,
+  formatScheduleFiring,
   formatTaskNotification,
   generateThreadSecret,
 } from './thread-agent.prompts';
+import { ThreadTimerKind } from '../timers/thread-timer.enums';
 import { TaskStatus } from '../../tasks/enums';
 import { ThreadTokenUsageResult } from '../dto/service/threads.service.types';
 import { AgentContextRow } from './agent-context.utils';
@@ -21,6 +24,8 @@ import {
 
 /** `source` of the agent-log rows that carry a task notification. */
 export const TASK_NOTIFICATION_SOURCE = 'subscription:task';
+/** `source` of the agent-log rows that carry a reminder or schedule firing. */
+export const TIMER_FIRING_SOURCE = 'timer';
 
 export type AgentMessageDraft = {
   role: ThreadAgentMessageRole;
@@ -60,6 +65,26 @@ type PendingTaskNotificationRow = {
   triggered_status: TaskStatus;
   triggered_task_name: string;
   waiting_for: string | null;
+  actor_id: string;
+  actor_slug: string;
+  actor_type: ActorType;
+  actor_display_name: string;
+};
+
+export type IngestTimerFiringsResult = {
+  /** Who the agent was answering when it set the timer, or null when nothing was waiting. */
+  triggerActor: TriggerActor | null;
+  /** Timers the agent has just been told about, oldest firing first. */
+  firedTimerIds: string[];
+};
+
+type PendingTimerFiringRow = {
+  id: string;
+  kind: ThreadTimerKind;
+  reason: string;
+  pending_iteration: number;
+  max_iterations: number;
+  fired_count: number;
   actor_id: string;
   actor_slug: string;
   actor_type: ActorType;
@@ -281,6 +306,101 @@ export class ThreadAgentLogService {
   async hasPendingTaskNotifications(threadId: string): Promise<boolean> {
     const rows: unknown[] = await this.dataSource.query(
       `SELECT 1 FROM thread_task_subscriptions
+        WHERE thread_id = $1 AND triggered_at IS NOT NULL
+        LIMIT 1`,
+      [threadId],
+    );
+    return rows.length > 0;
+  }
+
+  /**
+   * Tells the agent about reminders and schedules that fired, as messages the
+   * user never sees. A timer with no firings left is removed once delivered.
+   *
+   * One transaction, with the timer rows locked: a firing is delivered exactly
+   * once, however many processes try.
+   */
+  async ingestTimerFirings(input: {
+    threadId: string;
+    turnId: string;
+  }): Promise<IngestTimerFiringsResult> {
+    return this.dataSource.transaction(async (manager) => {
+      // Same lock order as every other writer to the log: the thread first.
+      await this.lockHead(manager, input.threadId);
+
+      const pending: PendingTimerFiringRow[] = await manager.query(
+        `SELECT tt.id, tt.kind, tt.reason, tt.pending_iteration, tt.max_iterations, tt.fired_count,
+                a.id AS actor_id, a.slug AS actor_slug, a.type AS actor_type,
+                a.display_name AS actor_display_name
+           FROM thread_timers tt
+           JOIN actors a ON a.id = tt.created_for_actor_id
+          WHERE tt.thread_id = $1 AND tt.triggered_at IS NOT NULL
+          ORDER BY tt.triggered_at ASC, tt.id ASC
+            FOR UPDATE OF tt`,
+        [input.threadId],
+      );
+
+      if (pending.length === 0) {
+        return { triggerActor: null, firedTimerIds: [] };
+      }
+
+      await this.appendWithManager(
+        manager,
+        input.threadId,
+        pending.map((row): AgentMessageDraft => ({
+          role: ThreadAgentMessageRole.USER,
+          kind: ThreadAgentMessageKind.INJECTION,
+          source: TIMER_FIRING_SOURCE,
+          turnId: input.turnId,
+          message: {
+            role: 'user',
+            content:
+              row.kind === ThreadTimerKind.REMINDER
+                ? formatReminderFiring({ id: row.id, reason: row.reason })
+                : formatScheduleFiring({
+                    id: row.id,
+                    reason: row.reason,
+                    iteration: row.pending_iteration,
+                    maxIterations: row.max_iterations,
+                  }),
+          },
+        })),
+      );
+
+      const finished = pending
+        .filter((row) => row.fired_count >= row.max_iterations)
+        .map((row) => row.id);
+      const ongoing = pending
+        .filter((row) => row.fired_count < row.max_iterations)
+        .map((row) => row.id);
+
+      await manager.query(
+        `DELETE FROM thread_timers WHERE thread_id = $1 AND id = ANY($2::uuid[])`,
+        [input.threadId, finished],
+      );
+      await manager.query(
+        `UPDATE thread_timers SET pending_iteration = NULL, triggered_at = NULL
+          WHERE thread_id = $1 AND id = ANY($2::uuid[])`,
+        [input.threadId, ongoing],
+      );
+
+      const last = pending[pending.length - 1];
+      return {
+        triggerActor: {
+          id: last.actor_id,
+          slug: last.actor_slug,
+          type: last.actor_type,
+          displayName: last.actor_display_name,
+        },
+        firedTimerIds: pending.map((row) => row.id),
+      };
+    });
+  }
+
+  /** True when a reminder or schedule fired and the agent has not been told yet. */
+  async hasPendingTimerFirings(threadId: string): Promise<boolean> {
+    const rows: unknown[] = await this.dataSource.query(
+      `SELECT 1 FROM thread_timers
         WHERE thread_id = $1 AND triggered_at IS NOT NULL
         LIMIT 1`,
       [threadId],
