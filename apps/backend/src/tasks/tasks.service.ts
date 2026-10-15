@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In, SelectQueryBuilder } from 'typeorm';
+import { Repository, In, SelectQueryBuilder, IsNull } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
@@ -707,6 +707,26 @@ export class TasksService {
 
     if (!task) {
       throw new TaskNotFoundError(taskId);
+    }
+
+    // Check if an artifact with the same name and link already exists for this task
+    const existingArtefact = await this.artefactRepository.findOne({
+      where: {
+        taskId,
+        name: input.name,
+        link: input.link,
+        deletedAt: IsNull(),
+      },
+      relations: ['task'],
+    });
+
+    if (existingArtefact) {
+      this.logger.log({
+        message: 'Artefact already exists, skipping duplicate',
+        artefactId: existingArtefact.id,
+        taskId,
+      });
+      return this.mapArtefactToResult(existingArtefact);
     }
 
     const artefact = this.artefactRepository.create({
