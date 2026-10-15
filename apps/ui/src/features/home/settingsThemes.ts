@@ -228,4 +228,20 @@ export const SETTINGS_THEME_OPTIONS: SettingsThemeOption[] = [
       font: 'Inter',
     },
   },
+  {
+    value: 'dusk',
+    label: 'Dusk',
+    description: 'Warm twilight plums with a soft peach glow.',
+    preview: {
+      background: '#1d1a24',
+      surface: '#27222f',
+      card: '#1d1a24',
+      border: '#3a3245',
+      text: '#ece4ef',
+      muted: '#a99bb3',
+      accent: '#f4a77c',
+      accentSoft: '#3d2c2e',
+      font: 'Inter',
+    },
+  },
 ];

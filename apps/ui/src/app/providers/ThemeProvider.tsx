@@ -14,7 +14,8 @@ export type Theme =
   | 'terminal-amber'
   | 'oceanic'
   | 'party'
-  | 'tribute';
+  | 'tribute'
+  | 'dusk';
 
 interface ThemeContextValue {
   theme: Theme;
