@@ -1404,6 +1404,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/timers/{timerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel a reminder or schedule of the threads agent
+         * @description Idempotent: cancelling a timer that already finished or was cancelled succeeds.
+         */
+        delete: operations["ThreadsController_cancelTimer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Stop the threads agent watching a task
+         * @description Idempotent: removing a watch that does not exist succeeds.
+         */
+        delete: operations["ThreadsController_removeTaskSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/context-blocks": {
         parameters: {
             query?: never;
@@ -4756,6 +4796,53 @@ export interface components {
              */
             createdAt: string;
         };
+        /**
+         * @description reminder fires once; schedule fires every period, up to maxIterations times
+         * @enum {string}
+         */
+        ThreadTimerKind: "reminder" | "schedule";
+        ThreadTimerResponseDto: {
+            /**
+             * @description Timer ID; use it to cancel the timer
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description reminder fires once; schedule fires every period, up to maxIterations times
+             * @example schedule
+             */
+            kind: components["schemas"]["ThreadTimerKind"];
+            /**
+             * @description What the threads agent wants to be reminded of
+             * @example Check task #123 for new comments
+             */
+            reason: string;
+            /**
+             * @description Seconds between firings (null for a reminder)
+             * @example 300
+             */
+            periodSeconds: number | null;
+            /**
+             * @description Most times the timer fires
+             * @example 5
+             */
+            maxIterations: number;
+            /**
+             * @description Times the timer has fired so far
+             * @example 1
+             */
+            firedCount: number;
+            /**
+             * @description When the timer fires next (UTC)
+             * @example 2024-01-15T10:35:00.000Z
+             */
+            nextFireAt: string;
+            /**
+             * @description When the timer was set (UTC)
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            createdAt: string;
+        };
         ThreadResponseDto: {
             /**
              * @description Thread ID
@@ -4789,6 +4876,8 @@ export interface components {
             participants: components["schemas"]["ActorResponseDto"][];
             /** @description Tasks the threads agent will be notified about when they go to review or are done */
             taskSubscriptions: components["schemas"]["TaskSubscriptionResponseDto"][];
+            /** @description Reminders and recurring schedules of the threads agent that will still fire, soonest first */
+            timers: components["schemas"]["ThreadTimerResponseDto"][];
             /**
              * @description Row version for optimistic locking
              * @example 1
@@ -10324,6 +10413,66 @@ export interface operations {
                 content?: never;
             };
             /** @description Thread or task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_cancelTimer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+                /** @description Timer UUID */
+                timerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Timer cancelled, or already gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_removeTaskSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+                /** @description UUID of the watched task */
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Watch removed, or already gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -37,6 +37,10 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
 import { ThreadReadStateEntity } from './read-state/thread-read-state.entity';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadMessageWriterService } from './thread-message-writer.service';
+import { ThreadTimerEntity } from './timers/thread-timer.entity';
+import { ThreadTimerFiringEntity } from './timers/thread-timer-firing.entity';
+import { ThreadTimersService } from './timers/thread-timers.service';
+import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service';
 
 @Module({
   imports: [
@@ -46,6 +50,8 @@ import { ThreadMessageWriterService } from './thread-message-writer.service';
       ThreadAgentMessageEntity,
       ThreadTurnEntity,
       ThreadTaskSubscriptionEntity,
+      ThreadTimerEntity,
+      ThreadTimerFiringEntity,
       ThreadReadStateEntity,
       TaskEntity,
       ContextBlockEntity,
@@ -72,6 +78,8 @@ import { ThreadMessageWriterService } from './thread-message-writer.service';
     ThreadAgentToolsFactory,
     ThreadTaskSubscriptionsService,
     ThreadTaskSubscriptionNotifierService,
+    ThreadTimersService,
+    ThreadTimerSweeperService,
     ThreadAgentHooksRunner,
     EasterEggHook,
     CompactionHook,

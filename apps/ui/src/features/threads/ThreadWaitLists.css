@@ -1,0 +1,95 @@
+.thread-wait-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-2) var(--space-3);
+  list-style: none;
+}
+
+.thread-wait-list__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--r-2);
+}
+
+.thread-wait-list__row:hover {
+  background: var(--card-bg);
+}
+
+.thread-wait-list__row--removing {
+  opacity: 0.5;
+}
+
+.thread-wait-list__item {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  color: var(--text);
+  font-size: var(--fs-2);
+  text-decoration: none;
+}
+
+.thread-wait-list__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.thread-wait-list__lead {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  white-space: nowrap;
+}
+
+.thread-wait-list__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.thread-wait-list__trail {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}
+
+.thread-wait-list__remove {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--space-1);
+  padding: var(--space-1);
+  border: none;
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.thread-wait-list__row:hover .thread-wait-list__remove,
+.thread-wait-list__remove:focus-visible,
+.thread-wait-list__remove--failed {
+  visibility: visible;
+}
+
+.thread-wait-list__remove:hover,
+.thread-wait-list__remove--failed {
+  color: var(--danger);
+}
+
+.thread-wait-list__remove:disabled {
+  cursor: default;
+}
+
+/* Touch screens have no hover: keep the action reachable. */
+@media (hover: none) {
+  .thread-wait-list__remove {
+    visibility: visible;
+  }
+}

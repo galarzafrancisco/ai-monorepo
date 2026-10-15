@@ -24,7 +24,13 @@ import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
 import { ThreadTaskRow } from "./ThreadTaskRow";
-import { ThreadTaskSubscriptionList } from "./ThreadTaskSubscriptionList";
+import {
+  isReminder,
+  isSchedule,
+  ThreadReminderList,
+  ThreadScheduleList,
+  ThreadTaskSubscriptionList,
+} from "./ThreadWaitLists";
 import { ThreadChat } from "./ThreadChat";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { useThreadTokenUsage } from "./useThreadTokenUsage";
@@ -54,6 +60,37 @@ const STATUS_ORDER = [
   TaskStatus.IN_PROGRESS,
   TaskStatus.NOT_STARTED,
 ] as const;
+
+/**
+ * Reminders, schedules and watched tasks, in that order, leaving out empty
+ * ones. Shown at the top of the thread's details.
+ */
+const waitSections = (thread: Thread) => {
+  const reminders = thread.timers.filter(isReminder);
+  const schedules = thread.timers.filter(isSchedule);
+  return [
+    {
+      key: "reminders",
+      title: "Reminders",
+      count: reminders.length,
+      list: <ThreadReminderList threadId={thread.id} reminders={reminders} />,
+    },
+    {
+      key: "schedules",
+      title: "Schedules",
+      count: schedules.length,
+      list: <ThreadScheduleList threadId={thread.id} schedules={schedules} />,
+    },
+    {
+      key: "watching",
+      title: "Watching for completion",
+      count: thread.taskSubscriptions.length,
+      list: (
+        <ThreadTaskSubscriptionList threadId={thread.id} subscriptions={thread.taskSubscriptions} />
+      ),
+    },
+  ].filter((section) => section.count > 0);
+};
 
 // Group tasks by status, with parent task first
 const groupTasksByStatus = (thread: Thread) => {
@@ -441,6 +478,16 @@ function ThreadDetailPageDesktop({
       <div className={`thread-detail-page__sidebar ${!isSidebarOpen ? "thread-detail-page__sidebar--collapsed" : ""}`}>
         {isSidebarOpen && (
           <div className="thread-detail-page__sidebar-scroll">
+            {/* What will wake the agent up: first, so it is never missed */}
+            {waitSections(thread).map((section) => (
+              <div key={section.key} className="thread-detail-page__sidebar-section">
+                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+                  {section.title} ({section.count})
+                </Text>
+                {section.list}
+              </div>
+            ))}
+
             {thread.participants.length > 0 && (
               <div className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
@@ -482,16 +529,6 @@ function ThreadDetailPageDesktop({
                 </div>
               </div>
             ))}
-
-            {/* Tasks the agent is waiting to hear about */}
-            {thread.taskSubscriptions.length > 0 && (
-              <div className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  Watching ({thread.taskSubscriptions.length})
-                </Text>
-                <ThreadTaskSubscriptionList subscriptions={thread.taskSubscriptions} />
-              </div>
-            )}
 
             {/* Context section */}
             {contextBlocks.length > 0 && (
@@ -644,13 +681,11 @@ function ThreadDetailPageMobile({
 
         {mobileView === "tasks" && (
           <div className="thread-detail-page__mobile-scrollable">
-            {thread.taskSubscriptions.length > 0 && (
-              <div className="thread-detail-page__mobile-section">
-                <DataRowContainer title="Watching">
-                  <ThreadTaskSubscriptionList subscriptions={thread.taskSubscriptions} />
-                </DataRowContainer>
+            {waitSections(thread).map((section) => (
+              <div key={section.key} className="thread-detail-page__mobile-section">
+                <DataRowContainer title={section.title}>{section.list}</DataRowContainer>
               </div>
-            )}
+            ))}
             {taskGroups.length > 0 ? (
               taskGroups.map((group) => (
                 <div key={group.status} className="thread-detail-page__mobile-section">

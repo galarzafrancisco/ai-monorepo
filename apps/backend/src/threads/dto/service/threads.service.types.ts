@@ -1,5 +1,6 @@
 import { ActorType } from '../../../identity-provider/enums';
 import { TaskStatus } from '../../../tasks/enums';
+import { ThreadTimerKind } from '../../timers/thread-timer.enums';
 
 /**
  * Service layer types - transport agnostic
@@ -41,6 +42,21 @@ export type TaskSubscriptionResult = {
   taskId: string;
   name: string;
   status: TaskStatus;
+  createdAt: Date;
+};
+
+/** A reminder or recurring schedule of the threads agent that will still fire. */
+export type ThreadTimerResult = {
+  id: string;
+  kind: ThreadTimerKind;
+  /** What the agent wants to be reminded of. */
+  reason: string;
+  /** Seconds between firings; null for a reminder. */
+  periodSeconds: number | null;
+  maxIterations: number;
+  /** Firings so far. */
+  firedCount: number;
+  nextFireAt: Date;
   createdAt: Date;
 };
 
@@ -87,6 +103,8 @@ export type ThreadResult = {
   tags: TagResult[];
   participants: ActorResult[];
   taskSubscriptions: TaskSubscriptionResult[];
+  /** Reminders and schedules that will still fire, soonest first. */
+  timers: ThreadTimerResult[];
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;

@@ -124,7 +124,8 @@ export class ThreadAgentService {
       // turn was finishing is never left without an owner.
       if (
         !(await this.agentLog.hasPending(threadId, self.actorId)) &&
-        !(await this.agentLog.hasPendingTaskNotifications(threadId))
+        !(await this.agentLog.hasPendingTaskNotifications(threadId)) &&
+        !(await this.agentLog.hasPendingTimerFirings(threadId))
       ) {
         return;
       }
@@ -144,15 +145,24 @@ export class ThreadAgentService {
       threadId,
       turnId: turn.id,
     });
-    // A turn started by a task notification acts for whoever the agent subscribed for.
-    const triggerActor = author ?? notifications.triggerActor;
+    const firings = await this.agentLog.ingestTimerFirings({
+      threadId,
+      turnId: turn.id,
+    });
+    // A turn started by a task notification or a timer acts for whoever the
+    // agent subscribed or set the timer for.
+    const triggerActor = author ?? notifications.triggerActor ?? firings.triggerActor;
     if (!triggerActor) {
       return null;
     }
 
     const thread = await this.threadRepository.findOne({ where: { id: threadId } });
-    if (thread && notifications.notifiedTaskIds.length > 0) {
-      // A done task ended its subscription; viewers of the thread see the list change.
+    if (
+      thread &&
+      (notifications.notifiedTaskIds.length > 0 || firings.firedTimerIds.length > 0)
+    ) {
+      // A done task ended its subscription and a finished timer is gone;
+      // viewers of the thread see the lists change.
       this.eventEmitter.emit(
         ThreadUpdatedEvent.INTERNAL,
         new ThreadUpdatedEvent({ id: self.actorId }, thread),
@@ -163,7 +173,7 @@ export class ThreadAgentService {
       aiProviderId: thread?.aiProviderId,
       modelId: thread?.modelId,
       // Whose plan a personal-plan provider may use: the author of the newest
-      // message, or for a task update, whoever the agent subscribed for.
+      // message, or for a task update or timer, whoever the agent did it for.
       onBehalfOf: { actorId: triggerActor.id, automated: !author },
     });
 

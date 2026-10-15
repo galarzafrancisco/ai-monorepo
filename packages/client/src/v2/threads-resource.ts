@@ -46,6 +46,16 @@ export class ThreadsResource extends BaseClient {
     return this.request('POST', `/api/v1/threads/${params.id}/tasks`, { body: params.body, signal: params?.signal });
   }
 
+  /** Cancel a reminder or schedule of the threads agent */
+  async ThreadsController_cancelTimer(params: { id: string; timerId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/timers/${params.timerId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Stop the threads agent watching a task */
+  async ThreadsController_removeTaskSubscription(params: { id: string; taskId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/task-subscriptions/${params.taskId}`, { responseType: 'void', signal: params?.signal });
+  }
+
   /** Reference a context block in the thread */
   async ThreadsController_referenceContextBlock(params: { id: string; body: ReferenceContextBlockDto; signal?: AbortSignal }): Promise<ThreadResponseDto> {
     return this.request('POST', `/api/v1/threads/${params.id}/context-blocks`, { body: params.body, signal: params?.signal });

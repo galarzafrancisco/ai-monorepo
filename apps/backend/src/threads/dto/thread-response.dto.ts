@@ -4,6 +4,7 @@ import { MetaTagResponseDto } from '../../meta/dto/tag-response.dto';
 import { TaskSummaryResponseDto } from './task-summary-response.dto';
 import { ContextBlockSummaryResponseDto } from './context-block-summary-response.dto';
 import { TaskSubscriptionResponseDto } from './task-subscription-response.dto';
+import { ThreadTimerResponseDto } from './thread-timer-response.dto';
 import { ThreadResult } from './service/threads.service.types';
 
 export class ThreadResponseDto {
@@ -70,6 +71,12 @@ export class ThreadResponseDto {
   taskSubscriptions!: TaskSubscriptionResponseDto[];
 
   @ApiProperty({
+    description: 'Reminders and recurring schedules of the threads agent that will still fire, soonest first',
+    type: [ThreadTimerResponseDto],
+  })
+  timers!: ThreadTimerResponseDto[];
+
+  @ApiProperty({
     description: 'Row version for optimistic locking',
     example: 1,
   })
@@ -109,6 +116,7 @@ export class ThreadResponseDto {
       taskSubscriptions: result.taskSubscriptions.map((s) =>
         TaskSubscriptionResponseDto.fromResult(s),
       ),
+      timers: result.timers.map((t) => ThreadTimerResponseDto.fromResult(t)),
       rowVersion: result.rowVersion,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),

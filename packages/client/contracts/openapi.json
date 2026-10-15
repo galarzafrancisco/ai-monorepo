@@ -4760,6 +4760,96 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/timers/{timerId}": {
+      "delete": {
+        "description": "Idempotent: cancelling a timer that already finished or was cancelled succeeds.",
+        "operationId": "ThreadsController_cancelTimer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timerId",
+            "required": true,
+            "in": "path",
+            "description": "Timer UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Timer cancelled, or already gone"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Cancel a reminder or schedule of the threads agent",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
+      "delete": {
+        "description": "Idempotent: removing a watch that does not exist succeeds.",
+        "operationId": "ThreadsController_removeTaskSubscription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "required": true,
+            "in": "path",
+            "description": "UUID of the watched task",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Watch removed, or already gone"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Stop the threads agent watching a task",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/context-blocks": {
       "post": {
         "operationId": "ThreadsController_referenceContextBlock",
@@ -11475,6 +11565,74 @@
           "createdAt"
         ]
       },
+      "ThreadTimerKind": {
+        "type": "string",
+        "enum": [
+          "reminder",
+          "schedule"
+        ],
+        "description": "reminder fires once; schedule fires every period, up to maxIterations times"
+      },
+      "ThreadTimerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Timer ID; use it to cancel the timer",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "kind": {
+            "description": "reminder fires once; schedule fires every period, up to maxIterations times",
+            "example": "schedule",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadTimerKind"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "What the threads agent wants to be reminded of",
+            "example": "Check task #123 for new comments"
+          },
+          "periodSeconds": {
+            "type": "number",
+            "description": "Seconds between firings (null for a reminder)",
+            "example": 300,
+            "nullable": true
+          },
+          "maxIterations": {
+            "type": "number",
+            "description": "Most times the timer fires",
+            "example": 5
+          },
+          "firedCount": {
+            "type": "number",
+            "description": "Times the timer has fired so far",
+            "example": 1
+          },
+          "nextFireAt": {
+            "type": "string",
+            "description": "When the timer fires next (UTC)",
+            "example": "2024-01-15T10:35:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the timer was set (UTC)",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reason",
+          "periodSeconds",
+          "maxIterations",
+          "firedCount",
+          "nextFireAt",
+          "createdAt"
+        ]
+      },
       "ThreadResponseDto": {
         "type": "object",
         "properties": {
@@ -11542,6 +11700,13 @@
               "$ref": "#/components/schemas/TaskSubscriptionResponseDto"
             }
           },
+          "timers": {
+            "description": "Reminders and recurring schedules of the threads agent that will still fire, soonest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadTimerResponseDto"
+            }
+          },
           "rowVersion": {
             "type": "number",
             "description": "Row version for optimistic locking",
@@ -11568,6 +11733,7 @@
           "tags",
           "participants",
           "taskSubscriptions",
+          "timers",
           "rowVersion",
           "createdAt",
           "updatedAt"

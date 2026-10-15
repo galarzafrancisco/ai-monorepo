@@ -24,6 +24,7 @@ import {
   TagResult,
   TaskSummaryResult,
   TaskSubscriptionResult,
+  ThreadTimerResult,
   ContextBlockSummaryResult,
   CreateThreadMessageInput,
   ThreadMessageResult,
@@ -48,6 +49,8 @@ import { ThreadAgentService } from './agent/thread-agent.service';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadMessageWriterService } from './thread-message-writer.service';
+import { ThreadTimersService } from './timers/thread-timers.service';
+import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -90,6 +93,8 @@ export class ThreadsService {
     private readonly threadTitleService: ThreadTitleService,
     private readonly threadReadStateService: ThreadReadStateService,
     private readonly threadMessageWriter: ThreadMessageWriterService,
+    private readonly threadTimers: ThreadTimersService,
+    private readonly taskSubscriptions: ThreadTaskSubscriptionsService,
   ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -289,6 +294,25 @@ export class ThreadsService {
       message: 'Thread deleted',
       threadId,
     });
+  }
+
+  /** Cancels a reminder or schedule. Cancelling one that is already gone is harmless. */
+  async cancelTimer(threadId: string, timerId: string, actorId: string): Promise<void> {
+    await this.assertThreadExists(threadId);
+    await this.threadTimers.cancel({ threadId, timerId, actorId });
+  }
+
+  /** Stops the agent watching a task. Removing a watch that does not exist is harmless. */
+  async removeTaskSubscription(threadId: string, taskId: string, actorId: string): Promise<void> {
+    await this.assertThreadExists(threadId);
+    await this.taskSubscriptions.unsubscribe({ threadId, taskId, actorId });
+  }
+
+  private async assertThreadExists(threadId: string): Promise<void> {
+    const exists = await this.threadRepository.exists({ where: { id: threadId } });
+    if (!exists) {
+      throw new ThreadNotFoundError(threadId);
+    }
   }
 
   async getThreadById(threadId: string): Promise<ThreadResult> {
@@ -858,12 +882,17 @@ export class ThreadsService {
   }
 
   private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {
-    return this.mapThreadToResult(thread, await this.loadTaskSubscriptions(thread.id));
+    const [taskSubscriptions, timers] = await Promise.all([
+      this.loadTaskSubscriptions(thread.id),
+      this.threadTimers.listActive(thread.id),
+    ]);
+    return this.mapThreadToResult(thread, taskSubscriptions, timers);
   }
 
   private mapThreadToResult(
     thread: ThreadEntity,
     taskSubscriptions: TaskSubscriptionResult[],
+    timers: ThreadTimerResult[],
   ): ThreadResult {
     if (!thread.createdByActor) {
       throw new Error(`Thread ${thread.id} is missing createdByActor relation`);
@@ -884,6 +913,7 @@ export class ThreadsService {
         this.mapActorToResult(actor),
       ),
       taskSubscriptions,
+      timers,
       rowVersion: thread.rowVersion,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,

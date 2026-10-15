@@ -723,6 +723,19 @@ export interface TaskSubscriptionResponseDto {
   createdAt: string;
 }
 
+export type ThreadTimerKind = 'reminder' | 'schedule';
+
+export interface ThreadTimerResponseDto {
+  id: string;
+  kind: ThreadTimerKind;
+  reason: string;
+  periodSeconds: number | null;
+  maxIterations: number;
+  firedCount: number;
+  nextFireAt: string;
+  createdAt: string;
+}
+
 export interface ThreadResponseDto {
   id: string;
   title: string;
@@ -734,6 +747,7 @@ export interface ThreadResponseDto {
   tags: MetaTagResponseDto[];
   participants: ActorResponseDto[];
   taskSubscriptions: TaskSubscriptionResponseDto[];
+  timers: ThreadTimerResponseDto[];
   rowVersion: number;
   createdAt: string;
   updatedAt: string;

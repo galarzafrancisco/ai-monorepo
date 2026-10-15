@@ -194,6 +194,56 @@ export class ThreadsService {
         });
     }
     /**
+     * Cancel a reminder or schedule of the threads agent
+     * Idempotent: cancelling a timer that already finished or was cancelled succeeds.
+     * @param id Thread UUID
+     * @param timerId Timer UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerCancelTimer(
+        id: string,
+        timerId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/threads/{id}/timers/{timerId}',
+            path: {
+                'id': id,
+                'timerId': timerId,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Stop the threads agent watching a task
+     * Idempotent: removing a watch that does not exist succeeds.
+     * @param id Thread UUID
+     * @param taskId UUID of the watched task
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerRemoveTaskSubscription(
+        id: string,
+        taskId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/threads/{id}/task-subscriptions/{taskId}',
+            path: {
+                'id': id,
+                'taskId': taskId,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
      * Reference a context block in the thread
      * @param id Thread UUID
      * @param requestBody

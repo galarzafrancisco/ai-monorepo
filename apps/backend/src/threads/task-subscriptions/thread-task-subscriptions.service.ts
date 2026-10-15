@@ -17,6 +17,14 @@ export type SubscribedTask = {
   status: TaskStatus;
 };
 
+export type WatchedTask = {
+  taskId: string;
+  name: string;
+  status: TaskStatus;
+  waitingFor: string | null;
+  createdAt: Date;
+};
+
 /**
  * Which threads are waiting to hear about which tasks. All state lives in
  * Postgres, so any backend process can record a status change and any other
@@ -59,6 +67,31 @@ export class ThreadTaskSubscriptionsService {
 
     // Read again: the task may have moved on while the subscription was being saved.
     return (await this.findTask(task.id)) ?? task;
+  }
+
+  /** The tasks the thread waits for, oldest subscription first. Deleted tasks are left out. */
+  async listForThread(threadId: string): Promise<WatchedTask[]> {
+    const rows: Array<{
+      task_id: string;
+      name: string;
+      status: TaskStatus;
+      waiting_for: string | null;
+      created_at: Date;
+    }> = await this.dataSource.query(
+      `SELECT s.task_id, t.name, t.status, s.waiting_for, s.created_at
+         FROM thread_task_subscriptions s
+         JOIN tasks t ON t.id = s.task_id AND t.deleted_at IS NULL
+        WHERE s.thread_id = $1
+        ORDER BY s.created_at ASC, s.task_id ASC`,
+      [threadId],
+    );
+    return rows.map((row) => ({
+      taskId: row.task_id,
+      name: row.name,
+      status: row.status,
+      waitingFor: row.waiting_for,
+      createdAt: new Date(row.created_at),
+    }));
   }
 
   /** Returns false when the thread was not subscribed to the task. */
