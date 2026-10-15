@@ -626,3 +626,54 @@
   --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.5);
   --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
+
+/* ===== DUSK THEME (Warm twilight plums with a peach accent) ===== */
+[data-theme='dusk'] {
+  /*
+   * Intent:
+   * - A warm dark theme for evening work (the other dark themes are cool or mono).
+   * - Muted plum-slate surfaces, never pure black, to keep glare low.
+   * - A soft peach accent that stays readable without neon saturation.
+   */
+
+  /* Theme color values */
+  --theme-bg: #1d1a24;
+  --theme-app-surface: #16131c;
+  --theme-surface: #27222f;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 29, 26, 36;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #ece4ef;
+  --text-muted: #a99bb3;
+  --text-inverse: #1d1a24;
+
+  /* Colors - Borders */
+  --border: #3a3245;
+  --border-subtle: #2a2433;
+
+  /* Colors - Interactive */
+  --accent: #f4a77c;
+  --accent-contrast: #1d1a24;
+  --accent-hover: #f8bc98;
+
+  /* Colors - Semantic */
+  --success: #8fd19e;
+  --warning: #f2c46d;
+  --danger: #f2777a;
+
+  /* Colors - Focus */
+  --focus-ring: #f4a77c;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(8, 6, 12, 0.5);
+  --shadow-2: 0 4px 8px rgba(8, 6, 12, 0.5);
+  --shadow-3: 0 8px 24px rgba(8, 6, 12, 0.6);
+}
