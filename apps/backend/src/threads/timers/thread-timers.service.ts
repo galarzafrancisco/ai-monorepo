@@ -73,13 +73,22 @@ export class ThreadTimersService {
       return false;
     }
 
-    const removed: unknown[] = await this.dataSource.query(
-      `WITH removed AS (
-         DELETE FROM thread_timers WHERE thread_id = $1 AND id = $2 RETURNING id
-       )
-       SELECT id FROM removed`,
-      [input.threadId, input.timerId],
-    );
+    // Firings not yet delivered go with the timer. They are deleted first, in
+    // the same order a delivering turn locks things (firings, then the timer),
+    // so a cancel racing a delivery waits instead of deadlocking.
+    const removed: unknown[] = await this.dataSource.transaction(async (manager) => {
+      await manager.query(
+        `DELETE FROM thread_timer_firings WHERE thread_id = $1 AND timer_id = $2`,
+        [input.threadId, input.timerId],
+      );
+      return manager.query(
+        `WITH removed AS (
+           DELETE FROM thread_timers WHERE thread_id = $1 AND id = $2 RETURNING id
+         )
+         SELECT id FROM removed`,
+        [input.threadId, input.timerId],
+      );
+    });
     if (removed.length === 0) {
       return false;
     }
@@ -101,12 +110,17 @@ export class ThreadTimersService {
   }
 
   /**
-   * Claims every due firing and records it for delivery. Returns the threads
+   * Claims every due firing and queues it for delivery. Returns the threads
    * that now have a firing waiting.
    *
    * Safe to run on many processes at once: a due timer is locked by the first
    * sweep that reaches it and skipped by the others, and claiming it moves
    * `next_fire_at` past now, so it is not due again until its next period.
+   * The unique (timer, iteration) pair is a second guard against queueing a
+   * firing twice.
+   *
+   * Every claimed firing gets its own queued row, so firings that happen
+   * while the agent is still busy with an earlier one are all delivered.
    *
    * After downtime a timer that missed several occurrences fires once. Missed
    * occurrences are skipped, not counted, and the next firing keeps the
@@ -126,8 +140,6 @@ export class ThreadTimersService {
        fired AS (
          UPDATE thread_timers tt
             SET fired_count = tt.fired_count + 1,
-                pending_iteration = tt.fired_count + 1,
-                triggered_at = now(),
                 next_fire_at = CASE
                   WHEN tt.period_seconds IS NULL THEN tt.next_fire_at
                   ELSE tt.next_fire_at + make_interval(secs => tt.period_seconds * (
@@ -136,9 +148,15 @@ export class ThreadTimersService {
                 END
            FROM due
           WHERE tt.id = due.id
-          RETURNING tt.thread_id
+          RETURNING tt.id, tt.thread_id, tt.fired_count
+       ),
+       queued AS (
+         INSERT INTO thread_timer_firings (id, timer_id, thread_id, iteration)
+         SELECT gen_random_uuid(), fired.id, fired.thread_id, fired.fired_count FROM fired
+         ON CONFLICT ON CONSTRAINT "UQ_thread_timer_firings_iteration" DO NOTHING
+         RETURNING thread_id
        )
-       SELECT DISTINCT thread_id FROM fired`,
+       SELECT DISTINCT thread_id FROM queued`,
       [FIRE_BATCH_SIZE],
     );
     return rows.map((row) => row.thread_id);

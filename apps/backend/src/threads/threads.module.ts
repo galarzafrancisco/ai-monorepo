@@ -38,6 +38,7 @@ import { ThreadReadStateEntity } from './read-state/thread-read-state.entity';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadMessageWriterService } from './thread-message-writer.service';
 import { ThreadTimerEntity } from './timers/thread-timer.entity';
+import { ThreadTimerFiringEntity } from './timers/thread-timer-firing.entity';
 import { ThreadTimersService } from './timers/thread-timers.service';
 import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service';
 
@@ -50,6 +51,7 @@ import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service
       ThreadTurnEntity,
       ThreadTaskSubscriptionEntity,
       ThreadTimerEntity,
+      ThreadTimerFiringEntity,
       ThreadReadStateEntity,
       TaskEntity,
       ContextBlockEntity,

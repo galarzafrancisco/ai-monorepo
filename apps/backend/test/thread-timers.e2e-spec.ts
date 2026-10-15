@@ -18,8 +18,11 @@ import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
 type PromptMessage = { role: string; content: unknown };
 type ToolCall = { toolName: string; input: Record<string, unknown> };
-/** What the model does on one call: say something, or call tools. */
-type ModelStep = { text: string } | { toolCalls: ToolCall[] };
+/**
+ * What the model does on one call: say something, or call tools. With a
+ * `gate`, the call does not answer until the gate resolves: a slow turn.
+ */
+type ModelStep = ({ text: string } | { toolCalls: ToolCall[] }) & { gate?: Promise<void> };
 
 describe('Thread timers E2E', () => {
   let app: INestApplication<App>;
@@ -49,7 +52,10 @@ describe('Thread timers E2E', () => {
     doStream: async (options) => {
       prompts.push(options.prompt as PromptMessage[]);
       const call = ++callCount;
-      const step = script.shift() ?? { text: `Reply ${call}` };
+      const step: ModelStep = script.shift() ?? { text: `Reply ${call}` };
+      if (step.gate) {
+        await step.gate;
+      }
 
       const chunks =
         'text' in step
@@ -328,6 +334,77 @@ describe('Thread timers E2E', () => {
     expect(await dataSource.query(`SELECT 1 FROM thread_timers WHERE thread_id = $1`, [threadId])).toEqual([]);
   });
 
+  it('delivers every firing that happens while the agent is still busy, in order', async () => {
+    const threadId = await threadWithToolCall('schedule', {
+      period: '5m',
+      maxIterations: 3,
+      reason: 'Watch the queue',
+    });
+    const [timer] = await timers(threadId);
+    const service = app.get(ThreadTimersService);
+
+    // The turn for the first firing hangs in the model call...
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    script.push({ text: 'Looking.', gate }, { text: 'Caught up.' });
+    const callsBefore = callCount;
+    await makeDue(timer.id);
+    await sweepConcurrently();
+    for (let attempt = 0; callCount === callsBefore; attempt++) {
+      if (attempt > 100) throw new Error('The first firing never reached the model');
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // ...while the schedule fires twice more. (The app's own sweeper may get
+    // there first; either way each firing is queued once.)
+    await makeDue(timer.id);
+    await service.fireDue();
+    await makeDue(timer.id);
+    await service.fireDue();
+    const queued: Array<{ iteration: number }> = await dataSource.query(
+      `SELECT iteration FROM thread_timer_firings WHERE timer_id = $1 ORDER BY iteration`,
+      [timer.id],
+    );
+    expect(queued.map((row) => row.iteration)).toEqual([2, 3]);
+
+    // The busy turn finishes and the next one hears about both, oldest first.
+    release();
+    await waitForTurns(threadId, 3);
+
+    const delivered = await firings(threadId);
+    expect(delivered).toHaveLength(3);
+    expect(delivered[0]).toContain('iteration="1 of 3"');
+    expect(delivered[1]).toContain('iteration="2 of 3"');
+    expect(delivered[2]).toContain('iteration="3 of 3"');
+    expect(delivered[2]).toContain('This is the final scheduled reminder.');
+    expect(await timers(threadId)).toEqual([]);
+    expect(
+      await dataSource.query(`SELECT 1 FROM thread_timer_firings WHERE timer_id = $1`, [timer.id]),
+    ).toEqual([]);
+  });
+
+  it('drops firings not yet delivered when the timer is cancelled', async () => {
+    const threadId = await threadWithToolCall('schedule', {
+      period: '5m',
+      maxIterations: 3,
+      reason: 'Cancelled before delivery',
+    });
+    const [timer] = await timers(threadId);
+    await makeDue(timer.id);
+    await app.get(ThreadTimersService).fireDue();
+
+    await request(httpServer)
+      .delete(`/api/v1/threads/${threadId}/timers/${timer.id}`)
+      .set('Cookie', authCookies)
+      .expect(204);
+
+    expect(
+      await dataSource.query(`SELECT 1 FROM thread_timer_firings WHERE timer_id = $1`, [timer.id]),
+    ).toEqual([]);
+  });
+
   it('fires one catch-up after downtime and keeps the cadence', async () => {
     const threadId = await threadWithToolCall('schedule', {
       period: '5m',
@@ -393,9 +470,12 @@ describe('Thread timers E2E', () => {
   it.each([
     ['schedule', { period: '1h30m', maxIterations: 2, reason: 'x' }, 'Compound values'],
     ['schedule', { period: '5m', maxIterations: 0, reason: 'x' }, 'maxIterations must be a positive whole number'],
+    ['schedule', { period: '5m', maxIterations: 11, reason: 'x' }, 'maxIterations can be at most 10'],
     ['remind', { in: '5m', at: '2030-01-01T00:00:00Z', reason: 'x' }, 'exactly one of'],
     ['remind', { at: '2020-01-01T00:00:00Z', reason: 'x' }, 'is in the past'],
     ['remind', { at: '2030-01-01T00:00:00', reason: 'x' }, 'has no offset'],
+    ['remind', { at: '2030-01-01T00:00:00+24:00', reason: 'x' }, 'not a real UTC offset'],
+    ['remind', { at: '2030-01-01T00:00:00+11:60', reason: 'x' }, 'not a real UTC offset'],
     ['remind', { at: '2030-01-01T00:00:00+05:00', timezone: 'Australia/Sydney', reason: 'x' }, 'does not match timezone'],
   ])('rejects bad %s input %j', async (toolName, input, error) => {
     const threadId = await threadWithToolCall(toolName, input);

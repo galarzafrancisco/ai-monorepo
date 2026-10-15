@@ -9,7 +9,7 @@ export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 /** Longest period or delay a timer accepts. */
 export const MAX_DURATION_SECONDS = 366 * 24 * 60 * 60;
 /** Most firings a schedule accepts. */
-export const MAX_ITERATIONS = 1000;
+export const MAX_ITERATIONS = 10;
 
 const UNIT_SECONDS = { s: 1, m: 60, h: 3600 } as const;
 const UNIT_NAMES = { s: 'second', m: 'minute', h: 'hour' } as const;
@@ -100,6 +100,12 @@ export function parseInstant(at: string, timezone?: string): Parsed<Date> {
 
   if (offset) {
     const offsetMinutes = offset === 'Z' ? 0 : parseOffset(offset);
+    if (offsetMinutes === null) {
+      return {
+        ok: false,
+        error: `"${at}" has offset ${offset}, which is not a real UTC offset. Offsets run from -12:00 to +14:00 with minutes 00-59.`,
+      };
+    }
     const instant = new Date(asUtc - offsetMinutes * 60_000);
     if (zone && zoneOffsetMinutes(zone, instant) !== offsetMinutes) {
       return {
@@ -147,10 +153,22 @@ function isValidTimeZone(zone: string): boolean {
   }
 }
 
-function parseOffset(offset: string): number {
+/** Earliest and latest offsets any zone uses: -12:00 and +14:00. */
+const MIN_OFFSET_MINUTES = -12 * 60;
+const MAX_OFFSET_MINUTES = 14 * 60;
+
+/** Minutes ahead of UTC for "+HH:MM" / "-HH:MM", or null when no real zone could use it. */
+function parseOffset(offset: string): number | null {
   const sign = offset.startsWith('-') ? -1 : 1;
   const [hours, minutes] = offset.slice(1).split(':').map(Number);
-  return sign * (hours * 60 + minutes);
+  if (minutes > 59) {
+    return null;
+  }
+  const total = sign * (hours * 60 + minutes);
+  if (total < MIN_OFFSET_MINUTES || total > MAX_OFFSET_MINUTES) {
+    return null;
+  }
+  return total;
 }
 
 function formatOffset(minutes: number): string {

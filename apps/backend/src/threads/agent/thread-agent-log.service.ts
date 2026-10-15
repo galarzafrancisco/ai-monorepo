@@ -79,10 +79,11 @@ export type IngestTimerFiringsResult = {
 };
 
 type PendingTimerFiringRow = {
+  firing_id: string;
   id: string;
   kind: ThreadTimerKind;
   reason: string;
-  pending_iteration: number;
+  iteration: number;
   max_iterations: number;
   fired_count: number;
   actor_id: string;
@@ -315,10 +316,12 @@ export class ThreadAgentLogService {
 
   /**
    * Tells the agent about reminders and schedules that fired, as messages the
-   * user never sees. A timer with no firings left is removed once delivered.
+   * user never sees: one per queued firing, oldest first. A timer with no
+   * firings left is removed once its last firing is delivered.
    *
-   * One transaction, with the timer rows locked: a firing is delivered exactly
-   * once, however many processes try.
+   * One transaction, with the queued firings locked: a firing is delivered
+   * exactly once, however many processes try. Firings queued after the read
+   * wait for the next turn.
    */
   async ingestTimerFirings(input: {
     threadId: string;
@@ -329,14 +332,15 @@ export class ThreadAgentLogService {
       await this.lockHead(manager, input.threadId);
 
       const pending: PendingTimerFiringRow[] = await manager.query(
-        `SELECT tt.id, tt.kind, tt.reason, tt.pending_iteration, tt.max_iterations, tt.fired_count,
+        `SELECT f.id AS firing_id, tt.id, tt.kind, tt.reason, f.iteration, tt.max_iterations, tt.fired_count,
                 a.id AS actor_id, a.slug AS actor_slug, a.type AS actor_type,
                 a.display_name AS actor_display_name
-           FROM thread_timers tt
+           FROM thread_timer_firings f
+           JOIN thread_timers tt ON tt.id = f.timer_id
            JOIN actors a ON a.id = tt.created_for_actor_id
-          WHERE tt.thread_id = $1 AND tt.triggered_at IS NOT NULL
-          ORDER BY tt.triggered_at ASC, tt.id ASC
-            FOR UPDATE OF tt`,
+          WHERE f.thread_id = $1
+          ORDER BY f.fired_at ASC, f.iteration ASC, f.id ASC
+            FOR UPDATE OF f`,
         [input.threadId],
       );
 
@@ -360,28 +364,26 @@ export class ThreadAgentLogService {
                 : formatScheduleFiring({
                     id: row.id,
                     reason: row.reason,
-                    iteration: row.pending_iteration,
+                    iteration: row.iteration,
                     maxIterations: row.max_iterations,
                   }),
           },
         })),
       );
 
-      const finished = pending
-        .filter((row) => row.fired_count >= row.max_iterations)
-        .map((row) => row.id);
-      const ongoing = pending
-        .filter((row) => row.fired_count < row.max_iterations)
-        .map((row) => row.id);
+      const timerIds = [...new Set(pending.map((row) => row.id))];
 
       await manager.query(
-        `DELETE FROM thread_timers WHERE thread_id = $1 AND id = ANY($2::uuid[])`,
-        [input.threadId, finished],
+        `DELETE FROM thread_timer_firings WHERE id = ANY($1::uuid[])`,
+        [pending.map((row) => row.firing_id)],
       );
+      // A finished timer cannot queue more firings, so once none are left it is done.
       await manager.query(
-        `UPDATE thread_timers SET pending_iteration = NULL, triggered_at = NULL
-          WHERE thread_id = $1 AND id = ANY($2::uuid[])`,
-        [input.threadId, ongoing],
+        `DELETE FROM thread_timers tt
+          WHERE tt.thread_id = $1 AND tt.id = ANY($2::uuid[])
+            AND tt.fired_count >= tt.max_iterations
+            AND NOT EXISTS (SELECT 1 FROM thread_timer_firings f WHERE f.timer_id = tt.id)`,
+        [input.threadId, timerIds],
       );
 
       const last = pending[pending.length - 1];
@@ -392,7 +394,7 @@ export class ThreadAgentLogService {
           type: last.actor_type,
           displayName: last.actor_display_name,
         },
-        firedTimerIds: pending.map((row) => row.id),
+        firedTimerIds: timerIds,
       };
     });
   }
@@ -400,9 +402,7 @@ export class ThreadAgentLogService {
   /** True when a reminder or schedule fired and the agent has not been told yet. */
   async hasPendingTimerFirings(threadId: string): Promise<boolean> {
     const rows: unknown[] = await this.dataSource.query(
-      `SELECT 1 FROM thread_timers
-        WHERE thread_id = $1 AND triggered_at IS NOT NULL
-        LIMIT 1`,
+      `SELECT 1 FROM thread_timer_firings WHERE thread_id = $1 LIMIT 1`,
       [threadId],
     );
     return rows.length > 0;

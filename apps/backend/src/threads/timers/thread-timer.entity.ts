@@ -16,9 +16,9 @@ import { ThreadTimerKind } from './thread-timer.enums';
  * reminder is a timer that fires once.
  *
  * When the timer is due, one backend process claims the firing (advances
- * `next_fire_at`, bumps `fired_count`) and records it in the `pending_*`
- * columns. The next agent turn delivers it and clears them, or removes the
- * row when it was the last firing.
+ * `next_fire_at`, bumps `fired_count`) and queues it as a
+ * `ThreadTimerFiringEntity`. The next agent turn delivers every queued firing,
+ * and removes the timer once its last firing is delivered.
  */
 @Entity({ name: 'thread_timers' })
 @Index('IDX_thread_timers_due', ['nextFireAt'], { where: '"fired_count" < "max_iterations"' })
@@ -62,13 +62,6 @@ export class ThreadTimerEntity {
   @ManyToOne(() => ActorEntity)
   @JoinColumn({ name: 'created_for_actor_id' })
   createdForActor?: ActorEntity;
-
-  /** The firing waiting to be delivered (1-based), or null. */
-  @Column({ type: 'integer', nullable: true, name: 'pending_iteration' })
-  pendingIteration!: number | null;
-
-  @Column({ type: 'timestamptz', nullable: true, name: 'triggered_at' })
-  triggeredAt!: Date | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;

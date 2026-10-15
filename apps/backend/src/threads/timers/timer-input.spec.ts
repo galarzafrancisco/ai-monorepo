@@ -30,7 +30,11 @@ describe('timer input', () => {
       expect(parseMaxIterations(5)).toEqual({ ok: true, value: 5 });
     });
 
-    it.each([0, -1, 1.5, '5', undefined, 1001])('rejects %p', (input) => {
+    it('accepts up to 10', () => {
+      expect(parseMaxIterations(10)).toEqual({ ok: true, value: 10 });
+    });
+
+    it.each([0, -1, 1.5, '5', undefined, 11])('rejects %p', (input) => {
       expect(parseMaxIterations(input).ok).toBe(false);
     });
   });
@@ -88,6 +92,18 @@ describe('timer input', () => {
       const result = parseInstant('2026-04-05T02:30:00', 'Australia/Sydney');
       expect(result.ok).toBe(false);
       expect(!result.ok && result.error).toContain('happens twice');
+    });
+
+    it('accepts the extreme real offsets', () => {
+      expect(iso('2026-10-15T12:00:00+14:00')).toBe('2026-10-14T22:00:00.000Z');
+      expect(iso('2026-10-15T12:00:00-12:00')).toBe('2026-10-16T00:00:00.000Z');
+      expect(iso('2026-10-15T12:00:00+05:45')).toBe('2026-10-15T06:15:00.000Z');
+    });
+
+    it.each(['+24:00', '+11:60', '-13:00', '+14:01', '+99:99'])('rejects the invalid offset %p', (offset) => {
+      const result = parseInstant(`2026-10-15T12:00:00${offset}`);
+      expect(result.ok).toBe(false);
+      expect(!result.ok && result.error).toContain('not a real UTC offset');
     });
 
     it('rejects unknown timezones, impossible dates and other formats', () => {
