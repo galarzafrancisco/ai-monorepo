@@ -18,18 +18,15 @@ export class DedupeTaskArtefacts1761900000000 implements MigrationInterface {
       WHERE a."id" IN (
         SELECT a2."id"
         FROM "artefacts" a2
-        INNER JOIN (
-          SELECT "task_id", "name", "link", MIN("id") as first_id
-          FROM "artefacts"
-          WHERE "deleted_at" IS NULL
-          GROUP BY "task_id", "name", "link"
-          HAVING COUNT(*) > 1
-        ) duplicates ON (
-          a2."task_id" = duplicates."task_id"
-          AND a2."name" = duplicates."name"
-          AND a2."link" = duplicates."link"
-          AND a2."deleted_at" IS NULL
-          AND a2."id" != duplicates."first_id"
+        WHERE a2."deleted_at" IS NULL
+        AND EXISTS (
+          SELECT 1
+          FROM "artefacts" a3
+          WHERE a3."task_id" = a2."task_id"
+          AND a3."name" = a2."name"
+          AND a3."link" = a2."link"
+          AND a3."deleted_at" IS NULL
+          AND a3."created_at" < a2."created_at"
         )
       )
     `);
