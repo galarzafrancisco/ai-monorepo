@@ -36,6 +36,7 @@ import { ThreadLastActivity1761500000000 } from './migrations/1761500000000-Thre
 import { AiProviderConnections1761600000000 } from './migrations/1761600000000-AiProviderConnections';
 import { SplitSmallTasksSelection1761700000000 } from './migrations/1761700000000-SplitSmallTasksSelection';
 import { ThreadTimers1761800000000 } from './migrations/1761800000000-ThreadTimers';
+import { DedupeArtefacts1761900000000 } from './migrations/1761900000000-DedupeArtefacts';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -73,6 +74,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         AiProviderConnections1761600000000,
         SplitSmallTasksSelection1761700000000,
         ThreadTimers1761800000000,
+        DedupeArtefacts1761900000000,
       ],
     }),
     EventEmitterModule.forRoot(),

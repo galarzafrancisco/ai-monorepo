@@ -709,6 +709,24 @@ export class TasksService {
       throw new TaskNotFoundError(taskId);
     }
 
+    // An artefact is identified by its link within a task. Repeated rounds of
+    // work (e.g. re-submitting the same PR for review) must not pile up copies,
+    // so a duplicate is silently skipped and the existing one is returned.
+    const existingArtefact = await this.artefactRepository.findOne({
+      where: { taskId, link: input.link },
+      relations: ['task'],
+      order: { createdAt: 'ASC' },
+    });
+
+    if (existingArtefact) {
+      this.logger.log({
+        message: 'Artefact already exists, skipping',
+        artefactId: existingArtefact.id,
+        taskId,
+      });
+      return this.mapArtefactToResult(existingArtefact);
+    }
+
     const artefact = this.artefactRepository.create({
       task,
       name: input.name,
