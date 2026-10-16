@@ -20,15 +20,13 @@ The threads agent only acts when something wakes it up. Three things can wake it
 
 ## Current time and the user's timezone
 
-`get_time` takes no input. It returns:
+`get_time` takes no input. Its description is one line ("Get the current date and time and the user's timezone. Useful for relative-time reminders."); the system prompt does not mention it. It returns:
 
 | Field | Meaning |
 |---|---|
-| `now` | Current time, ISO 8601 in UTC (`2026-10-16T05:13:14Z`) |
-| `userTimezone` | IANA timezone of the latest user message (`Australia/Sydney`), or `null` |
-| `nowInUserTimezone` | `{ local, utcOffset, dayOfWeek }`: `2026-10-16T16:13:14+11:00`, `+11:00`, `Friday`. `null` without a timezone |
-| `latestUserMessage` | `{ sentAt, sentAtInUserTimezone, timezone, author }`, or `null` when no person has written in the thread |
-| `notes` | Why something is missing, and that the agent must ask or say it is using UTC rather than guess |
+| `now` | Current time, ISO 8601 with offset. In the user's timezone when known (`2026-10-16T16:13:14+11:00`), otherwise UTC (`2026-10-16T05:13:14Z`) |
+| `userTimezone` | IANA timezone of the latest user message (`Australia/Sydney`), or `null` when unknown |
+| `lastUserMessageAt` | When the latest user message was sent, same format as `now`; `null` when no person has written in the thread |
 
 Where the data comes from:
 
@@ -37,7 +35,7 @@ Where the data comes from:
 - "Latest user message" is the newest message in the thread written by a human actor. Its timezone is used even when it is `null`; older messages are not searched for one.
 - Each local time uses the offset in force at that instant, so a message sent before a daylight saving change and the current time after it get different offsets.
 
-The timezone is kept out of the conversation the model sees: the copy of the message in `thread_agent_messages` holds only the text. The model reads it only when it calls the tool, and the system prompt tells it to call `get_time` before turning relative dates into times.
+The timezone is kept out of the conversation the model sees: the copy of the message in `thread_agent_messages` holds only the text. The model reads it only when it calls the tool.
 
 Code: `apps/backend/src/threads/time/`.
 

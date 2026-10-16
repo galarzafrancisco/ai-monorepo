@@ -31,89 +31,30 @@ export function formatInZone(instant: Date, zone: string): string {
   return `${wall.toISOString().slice(0, 19)}${formatOffset(offset)}`;
 }
 
-/** Offset of `zone` at `instant`, as "+11:00". */
-export function offsetInZone(instant: Date, zone: string): string {
-  return formatOffset(zoneOffsetMinutes(zone, instant));
-}
-
-/** "Friday" in `zone` at `instant`. */
-export function weekdayInZone(instant: Date, zone: string): string {
-  return new Intl.DateTimeFormat('en-US', { timeZone: zone, weekday: 'long' }).format(instant);
-}
-
 export type LatestUserMessage = {
   createdAt: Date;
   timezone: string | null;
-  authorName: string | null;
-  authorSlug: string | null;
-};
-
-type ZonedTime = {
-  /** ISO 8601 with the zone's offset at that moment. */
-  local: string;
-  utcOffset: string;
-  dayOfWeek: string;
 };
 
 export type TimeContext = {
-  /** Current time, ISO 8601 in UTC. */
+  /** Current time, ISO 8601 with offset: in the user's timezone when known, else UTC. */
   now: string;
   /** IANA timezone of the latest user message, or null when unknown. */
   userTimezone: string | null;
-  /** Current time in `userTimezone`, or null when it is unknown. */
-  nowInUserTimezone: ZonedTime | null;
-  latestUserMessage: {
-    /** When it was sent, ISO 8601 in UTC. */
-    sentAt: string;
-    /** When it was sent in the sender's timezone, or null when it is unknown. */
-    sentAtInUserTimezone: ZonedTime | null;
-    timezone: string | null;
-    author: string | null;
-  } | null;
-  notes: string[];
+  /** When the latest user message was sent, same format as `now`; null when no person has written. */
+  lastUserMessageAt: string | null;
 };
-
-function zoned(instant: Date, zone: string): ZonedTime {
-  return {
-    local: formatInZone(instant, zone),
-    utcOffset: offsetInZone(instant, zone),
-    dayOfWeek: weekdayInZone(instant, zone),
-  };
-}
 
 /**
  * What `get_time` returns. The user's timezone is the one recorded with their
  * latest message; nothing is guessed when it is missing.
  */
 export function buildTimeContext(now: Date, latest: LatestUserMessage | null): TimeContext {
-  const notes: string[] = [];
   const zone = latest?.timezone && isIanaTimeZone(latest.timezone) ? latest.timezone : null;
-
-  if (!latest) {
-    notes.push('No person has written in this thread yet, so their timezone is unknown.');
-  } else if (!zone) {
-    notes.push("The latest user message has no timezone recorded (it may predate timezone tracking or come from a client that did not send one).");
-  }
-  if (!zone) {
-    notes.push(
-      'Do not guess the timezone. For a local time such as "tomorrow at 5pm", ask the user for their timezone, or state that you are using UTC.',
-    );
-  }
-
+  const format = (instant: Date) => (zone ? formatInZone(instant, zone) : formatUtc(instant));
   return {
-    now: formatUtc(now),
+    now: format(now),
     userTimezone: zone,
-    nowInUserTimezone: zone ? zoned(now, zone) : null,
-    latestUserMessage: latest
-      ? {
-          sentAt: formatUtc(latest.createdAt),
-          sentAtInUserTimezone: zone ? zoned(latest.createdAt, zone) : null,
-          timezone: zone,
-          author: latest.authorSlug
-            ? `${latest.authorName ?? latest.authorSlug} @${latest.authorSlug}`
-            : latest.authorName,
-        }
-      : null,
-    notes,
+    lastUserMessageAt: latest ? format(latest.createdAt) : null,
   };
 }

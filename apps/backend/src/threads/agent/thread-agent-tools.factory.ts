@@ -259,8 +259,7 @@ export class ThreadAgentToolsFactory {
         },
       }),
       [GET_TIME_TOOL]: tool({
-        description:
-          "Get the current time and the user's timezone. Call it before turning words like \"today\", \"tomorrow at 5pm\" or \"next Friday\" into a date or time, for example for the `at` of a reminder. Returns the current time in UTC and in the user's IANA timezone, and when the latest user message in this thread was sent. The timezone is the one the user's app reported with their latest message; when it is missing, `userTimezone` is null and you must not guess it.",
+        description: "Get the current date and time and the user's timezone. Useful for relative-time reminders.",
         inputSchema: z.object({}),
         execute: async () => this.time.getTimeContext(threadId),
       }),

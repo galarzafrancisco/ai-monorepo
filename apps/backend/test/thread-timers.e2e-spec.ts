@@ -577,7 +577,7 @@ describe('Thread timers E2E', () => {
       expect(await storedTimezones(threadId)).toEqual(['Australia/Sydney']);
       const [result] = await toolResults(threadId);
       expect(result).toContain('"userTimezone":"Australia/Sydney"');
-      expect(result).toMatch(/"local":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+1[01]:00"/);
+      expect(result).toMatch(/"now":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+1[01]:00"/);
 
       // The model only saw the timezone through the tool, not in the user's message.
       const firstPrompt = JSON.stringify(prompts[prompts.length - 2]);
@@ -594,7 +594,7 @@ describe('Thread timers E2E', () => {
       expect(await storedTimezones(threadId)).toEqual([null]);
       const [result] = await toolResults(threadId);
       expect(result).toContain('"userTimezone":null');
-      expect(result).toContain('Do not guess the timezone');
+      expect(result).toMatch(/"now":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"/);
     });
   });
 });

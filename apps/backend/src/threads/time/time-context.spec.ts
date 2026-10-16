@@ -43,25 +43,13 @@ describe('formatInZone', () => {
 describe('buildTimeContext', () => {
   const now = new Date('2026-10-16T05:13:14.988Z');
 
-  it('returns now and the latest message in the user timezone', () => {
-    const context = buildTimeContext(now, {
-      createdAt: new Date('2026-10-16T05:10:00Z'),
-      timezone: 'Australia/Sydney',
-      authorName: 'Fran',
-      authorSlug: 'fran',
-    });
-
-    expect(context).toEqual({
-      now: '2026-10-16T05:13:14Z',
+  it('returns now and the latest message time in the user timezone', () => {
+    expect(
+      buildTimeContext(now, { createdAt: new Date('2026-10-16T05:10:00Z'), timezone: 'Australia/Sydney' }),
+    ).toEqual({
+      now: '2026-10-16T16:13:14+11:00',
       userTimezone: 'Australia/Sydney',
-      nowInUserTimezone: { local: '2026-10-16T16:13:14+11:00', utcOffset: '+11:00', dayOfWeek: 'Friday' },
-      latestUserMessage: {
-        sentAt: '2026-10-16T05:10:00Z',
-        sentAtInUserTimezone: { local: '2026-10-16T16:10:00+11:00', utcOffset: '+11:00', dayOfWeek: 'Friday' },
-        timezone: 'Australia/Sydney',
-        author: 'Fran @fran',
-      },
-      notes: [],
+      lastUserMessageAt: '2026-10-16T16:10:00+11:00',
     });
   });
 
@@ -70,49 +58,28 @@ describe('buildTimeContext', () => {
     const context = buildTimeContext(new Date('2026-10-04T00:00:00Z'), {
       createdAt: new Date('2026-10-03T12:00:00Z'),
       timezone: 'Australia/Sydney',
-      authorName: 'Fran',
-      authorSlug: 'fran',
     });
-
-    expect(context.latestUserMessage?.sentAtInUserTimezone?.local).toBe('2026-10-03T22:00:00+10:00');
-    expect(context.nowInUserTimezone?.local).toBe('2026-10-04T11:00:00+11:00');
+    expect(context.lastUserMessageAt).toBe('2026-10-03T22:00:00+10:00');
+    expect(context.now).toBe('2026-10-04T11:00:00+11:00');
   });
 
-  it('reports a missing timezone without guessing', () => {
-    const context = buildTimeContext(now, {
-      createdAt: new Date('2026-10-16T05:10:00Z'),
-      timezone: null,
-      authorName: 'Fran',
-      authorSlug: 'fran',
+  it('falls back to UTC and a null timezone without guessing', () => {
+    expect(buildTimeContext(now, { createdAt: new Date('2026-10-16T05:10:00Z'), timezone: null })).toEqual({
+      now: '2026-10-16T05:13:14Z',
+      userTimezone: null,
+      lastUserMessageAt: '2026-10-16T05:10:00Z',
     });
-
-    expect(context.userTimezone).toBeNull();
-    expect(context.nowInUserTimezone).toBeNull();
-    expect(context.latestUserMessage).toMatchObject({
-      sentAt: '2026-10-16T05:10:00Z',
-      sentAtInUserTimezone: null,
-      timezone: null,
-    });
-    expect(context.notes.join(' ')).toMatch(/no timezone recorded/);
-    expect(context.notes.join(' ')).toMatch(/Do not guess/);
   });
 
   it('treats a stored timezone the runtime does not know as missing', () => {
-    const context = buildTimeContext(now, {
-      createdAt: now,
-      timezone: 'Mars/Olympus_Mons',
-      authorName: null,
-      authorSlug: null,
-    });
-    expect(context.userTimezone).toBeNull();
-    expect(context.latestUserMessage?.author).toBeNull();
+    expect(buildTimeContext(now, { createdAt: now, timezone: 'Mars/Olympus_Mons' }).userTimezone).toBeNull();
   });
 
   it('handles a thread with no user message', () => {
-    const context = buildTimeContext(now, null);
-    expect(context.now).toBe('2026-10-16T05:13:14Z');
-    expect(context.latestUserMessage).toBeNull();
-    expect(context.userTimezone).toBeNull();
-    expect(context.notes.join(' ')).toMatch(/No person has written/);
+    expect(buildTimeContext(now, null)).toEqual({
+      now: '2026-10-16T05:13:14Z',
+      userTimezone: null,
+      lastUserMessageAt: null,
+    });
   });
 });

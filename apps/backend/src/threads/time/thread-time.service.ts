@@ -24,7 +24,7 @@ export class ThreadTimeService {
   async findLatestUserMessage(threadId: string): Promise<LatestUserMessage | null> {
     const message = await this.messages
       .createQueryBuilder('message')
-      .innerJoinAndSelect('message.createdByActor', 'actor')
+      .innerJoin('message.createdByActor', 'actor')
       .where('message.thread_id = :threadId', { threadId })
       .andWhere('actor.type = :type', { type: ActorType.HUMAN })
       .orderBy('message.created_at', 'DESC')
@@ -34,11 +34,6 @@ export class ThreadTimeService {
     if (!message) {
       return null;
     }
-    return {
-      createdAt: message.createdAt,
-      timezone: message.timezone,
-      authorName: message.createdByActor?.displayName ?? null,
-      authorSlug: message.createdByActor?.slug ?? null,
-    };
+    return { createdAt: message.createdAt, timezone: message.timezone };
   }
 }
