@@ -52,6 +52,7 @@ export const CANCEL_SCHEDULE_TOOL = 'cancel_schedule';
 export const REMIND_TOOL = 'remind';
 export const CANCEL_REMINDER_TOOL = 'cancel_reminder';
 export const LIST_WAITS_TOOL = 'list_reminders_schedules_and_watchers';
+export const GET_TIME_TOOL = 'get_time';
 
 /**
  * What the agent is told when one of its schedules fires. The last firing says

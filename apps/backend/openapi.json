@@ -12016,6 +12016,11 @@
             "type": "string",
             "description": "Content of the message",
             "example": "What is the status of this feature?"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone of the person writing, as their client reports it. Lets the threads agent read relative times such as \"tomorrow at 5pm\". Raw offsets are rejected.",
+            "example": "Australia/Sydney"
           }
         },
         "required": [

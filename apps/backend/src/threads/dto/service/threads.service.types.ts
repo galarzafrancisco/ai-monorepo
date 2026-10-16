@@ -136,6 +136,8 @@ export type CreateThreadMessageInput = {
   threadId: string;
   content: string;
   createdByActorId: string;
+  /** IANA timezone the writer's client reported, if any. */
+  timezone?: string | null;
 };
 
 export type ThreadMessageResult = {

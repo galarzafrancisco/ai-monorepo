@@ -547,4 +547,54 @@ describe('Thread timers E2E', () => {
     await makeDue(timer.id);
     expect(await app.get(ThreadTimersService).fireDue()).not.toContain(threadId);
   });
+
+  describe('get_time', () => {
+    const postMessage = (threadId: string, body: Record<string, unknown>) =>
+      request(httpServer).post(`/api/v1/threads/${threadId}/messages`).set('Cookie', authCookies).send(body);
+
+    const storedTimezones = async (threadId: string): Promise<Array<string | null>> => {
+      const rows: Array<{ timezone: string | null }> = await dataSource.query(
+        `SELECT timezone FROM thread_messages WHERE thread_id = $1 AND created_by_actor_id = $2
+          ORDER BY created_at ASC`,
+        [threadId, userActorId],
+      );
+      return rows.map((row) => row.timezone);
+    };
+
+    it('rejects a timezone that is not an IANA name', async () => {
+      const threadId = await createThread();
+      await postMessage(threadId, { content: 'hi', timezone: '+10:00' }).expect(400);
+      await postMessage(threadId, { content: 'hi', timezone: 'Mars/Olympus_Mons' }).expect(400);
+      expect(await storedTimezones(threadId)).toEqual([]);
+    });
+
+    it("returns the time in the latest user message's timezone, and keeps it out of the conversation", async () => {
+      const threadId = await createThread();
+      script.push({ toolCalls: [{ toolName: 'get_time', input: {} }] }, { text: 'It is late in Sydney.' });
+      await postMessage(threadId, { content: 'remind me tomorrow at 5pm', timezone: 'Australia/Sydney' }).expect(201);
+      await waitForTurns(threadId, 1);
+
+      expect(await storedTimezones(threadId)).toEqual(['Australia/Sydney']);
+      const [result] = await toolResults(threadId);
+      expect(result).toContain('"userTimezone":"Australia/Sydney"');
+      expect(result).toMatch(/"now":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+1[01]:00"/);
+
+      // The model only saw the timezone through the tool, not in the user's message.
+      const firstPrompt = JSON.stringify(prompts[prompts.length - 2]);
+      expect(firstPrompt).toContain('remind me tomorrow at 5pm');
+      expect(firstPrompt).not.toContain('Australia/Sydney');
+    });
+
+    it('reports a missing timezone instead of guessing', async () => {
+      const threadId = await createThread();
+      script.push({ toolCalls: [{ toolName: 'get_time', input: {} }] }, { text: 'Which timezone are you in?' });
+      await sendMessage(threadId, 'remind me tomorrow at 5pm');
+      await waitForTurns(threadId, 1);
+
+      expect(await storedTimezones(threadId)).toEqual([null]);
+      const [result] = await toolResults(threadId);
+      expect(result).toContain('"userTimezone":null');
+      expect(result).toMatch(/"now":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"/);
+    });
+  });
 });

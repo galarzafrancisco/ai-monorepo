@@ -1114,6 +1114,7 @@ export class ThreadsService {
       threadId: input.threadId,
       content: input.content,
       createdByActorId: input.createdByActorId,
+      timezone: input.timezone ?? null,
     });
 
     this.logger.log({
