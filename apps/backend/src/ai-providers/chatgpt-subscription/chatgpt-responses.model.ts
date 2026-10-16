@@ -8,15 +8,15 @@ import {
   STREAM_INCOMPLETE,
   UpstreamFailure,
 } from './chatgpt-subscription.errors';
+import { THREAD_TOOL_NAMESPACE, withToolNamespaces } from '../tool-namespaces';
 
 /**
- * Sign in with ChatGPT accepts function tools only inside a namespace. All of
- * Taico's tools go in this one.
+ * Sign in with ChatGPT accepts function tools only inside a namespace. Every
+ * provider gets its tools in namespaces (see ai-providers/tool-namespaces);
+ * the plan model applies them too, so its requests are valid however it is
+ * wrapped. Tools without a server prefix go in this one.
  */
-export const TOOL_NAMESPACE = {
-  name: 'taico',
-  description: 'Tools for working with Taico tasks, threads and context.',
-} as const;
+export const TOOL_NAMESPACE = THREAD_TOOL_NAMESPACE;
 
 /** Request fields OpenAI rejects for plan-backed requests. Removed if anything sets them. */
 export const UNSUPPORTED_BODY_FIELDS = [
@@ -234,8 +234,8 @@ function planFailureIn(error: unknown): AiProviderRequestFailedError | null {
 
 /**
  * Removes sampling and length settings the plan does not accept, sends the
- * instructions as a developer message, and puts every function tool in
- * Taico's namespace.
+ * instructions as a developer message, and puts every function tool in a
+ * namespace: thread tools first, then one per MCP server.
  */
 const planRequestMiddleware: LanguageModelMiddleware = {
   specificationVersion: 'v4',
@@ -251,7 +251,7 @@ const planRequestMiddleware: LanguageModelMiddleware = {
     }
 
     return {
-      ...params,
+      ...withToolNamespaces(params),
       maxOutputTokens: undefined,
       temperature: undefined,
       topP: undefined,
@@ -259,20 +259,6 @@ const planRequestMiddleware: LanguageModelMiddleware = {
       presencePenalty: undefined,
       frequencyPenalty: undefined,
       seed: undefined,
-      tools: params.tools?.map((tool) =>
-        tool.type === 'function'
-          ? {
-              ...tool,
-              providerOptions: {
-                ...tool.providerOptions,
-                openai: {
-                  ...tool.providerOptions?.openai,
-                  namespace: TOOL_NAMESPACE,
-                },
-              },
-            }
-          : tool,
-      ),
       providerOptions: {
         ...params.providerOptions,
         openai: {

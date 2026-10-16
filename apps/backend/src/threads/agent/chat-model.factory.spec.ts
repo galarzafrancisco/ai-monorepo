@@ -1,3 +1,4 @@
+import { generateText, jsonSchema, tool } from 'ai';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
 import { ChatModelFactory } from './chat-model.factory';
 
@@ -26,18 +27,18 @@ const GOOGLE_ENV_KEYS = [
 describe('ChatModelFactory', () => {
   const originalEnv = { ...process.env };
 
-  const providerConfig = (type: AiProviderType) => ({
+  const providerConfig = (type: AiProviderType, apiKey: string | null = null) => ({
     id: 'provider-1',
     type,
-    apiKey: null,
+    apiKey,
     baseUrl: null,
     project: null,
     location: null,
   });
 
-  const factoryFor = (type: AiProviderType, selectedModelId: string) => {
+  const factoryFor = (type: AiProviderType, selectedModelId: string, apiKey: string | null = null) => {
     const resolveSelection = jest.fn(async () => ({
-      provider: providerConfig(type),
+      provider: providerConfig(type, apiKey),
       modelId: selectedModelId,
     }));
     const getAiProviderConfigById = jest.fn(async () => providerConfig(type));
@@ -103,6 +104,67 @@ describe('ChatModelFactory', () => {
       expect((resolved.model as { modelId: string }).modelId).toBe(modelId);
     },
   );
+
+  // A model that saw ~50 tools in one list missed the last ones (get_time,
+  // stay_silent). Every provider gets thread tools first; OpenAI also gets
+  // one namespace per group.
+  describe('tool namespaces', () => {
+    const noInput = jsonSchema<Record<string, never>>({ type: 'object', properties: {} });
+    const stub = () => tool({ description: 'stub', inputSchema: noInput, execute: async () => 'ok' });
+    const tools = {
+      tasks__get_all_tags: stub(),
+      context__get_all_tags: stub(),
+      get_time: stub(),
+      stay_silent: stub(),
+    };
+
+    const requestBodyFor = async (type: AiProviderType, modelId: string) => {
+      const bodies: Array<Record<string, any>> = [];
+      const fetchSpy = jest
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async (_url, init) => {
+          bodies.push(JSON.parse(String(init?.body)));
+          return new Response('{"error":{"message":"stop here"}}', { status: 400 });
+        });
+      try {
+        const { factory } = factoryFor(type, modelId, 'test-key');
+        const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+        await generateText({ model: resolved.model, tools, prompt: 'time?', maxRetries: 0 }).catch(
+          () => undefined,
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
+      return bodies[0];
+    };
+
+    it('sends OpenAI API-key models their tools in namespaces, thread tools first', async () => {
+      const body = await requestBodyFor(AiProviderType.OPENAI, 'gpt-6');
+
+      expect(
+        body.tools.map((ns: { type: string; name: string; tools: Array<{ name: string }> }) => [
+          ns.type,
+          ns.name,
+          ns.tools.map((t) => t.name),
+        ]),
+      ).toEqual([
+        ['namespace', 'taico', ['get_time', 'stay_silent']],
+        ['namespace', 'tasks', ['tasks__get_all_tags']],
+        ['namespace', 'context', ['context__get_all_tags']],
+      ]);
+    });
+
+    it('sends other providers their tools with thread tools first', async () => {
+      const body = await requestBodyFor(AiProviderType.ANTHROPIC, 'claude-haiku-5-5');
+
+      expect(body.tools.map((t: { name: string }) => t.name)).toEqual([
+        'get_time',
+        'stay_silent',
+        'tasks__get_all_tags',
+        'context__get_all_tags',
+      ]);
+    });
+  });
 
   it('builds an xAI model for a Grok provider', async () => {
     const { factory } = factoryFor(AiProviderType.XAI, 'grok-4');

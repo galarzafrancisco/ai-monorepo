@@ -123,7 +123,7 @@ Inference goes to `POST https://api.openai.com/v1/responses` with the person's O
 - has `stream: true` and `store: false`, and carries the whole conversation in `input` (no `previous_response_id`, no `conversation`);
 - has none of the fields the plan rejects (`temperature`, `max_output_tokens`, `metadata`, `user`, …);
 - sends instructions as a developer message, never a system input item;
-- has its function tools inside one namespace, `taico`.
+- has its function tools inside namespaces: thread tools (`get_time`, `remind`, `stay_silent`, …) in `taico`, sent first, and each MCP server's tools in a namespace named after it (`tasks__fetch` in `tasks`, `context__get_block` in `context`). This is the same grouping every provider gets (see [Tool namespaces](thread-timers.md#tool-namespaces-all-providers)). The plan model applies it too, because the plan rejects function tools outside a namespace.
 
 A non-streaming call (`generateText`) throws before anything is sent. `ResolvedChatModel.requiresStreaming` tells callers such as compaction to use `streamText()` and read it to the end.
 

@@ -29,6 +29,7 @@ import {
   vertexLocationFromEnv,
   vertexProjectFromEnv,
 } from 'src/ai-providers/google-environment';
+import { withToolNamespaceMiddleware } from 'src/ai-providers/tool-namespaces';
 
 type ProviderOptions = Record<string, Record<string, string | number | boolean | null>>;
 
@@ -71,7 +72,16 @@ export class ChatModelFactory {
     private readonly chatgptSubscription: ChatgptSubscriptionService,
   ) {}
 
+  /**
+   * Every model, whatever the provider, sends its tools grouped in namespaces
+   * with the thread tools first. See ai-providers/tool-namespaces.
+   */
   async resolve(input: ResolveChatModelInput): Promise<ResolvedChatModel> {
+    const resolved = await this.resolveUnwrapped(input);
+    return { ...resolved, model: withToolNamespaceMiddleware(resolved.model) };
+  }
+
+  private async resolveUnwrapped(input: ResolveChatModelInput): Promise<ResolvedChatModel> {
     if (input.aiProviderId && input.modelId) {
       const config = await this.aiProvidersService.getAiProviderConfigById(input.aiProviderId);
       return this.build(config, input.modelId, input);

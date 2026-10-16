@@ -651,7 +651,7 @@ describe('Sign in with ChatGPT E2E', () => {
       fake.script.push(
         toolCallResponse({
           name: 'tasks__fetch',
-          namespace: 'taico',
+          namespace: 'tasks',
           arguments: { taskId: 'task-1' },
           callId: 'call_fetch_1',
         }),
@@ -694,7 +694,14 @@ describe('Sign in with ChatGPT E2E', () => {
             (t) => t.type === 'namespace',
           ),
         ).toBe(true);
-        expect(JSON.stringify(body.tools)).toContain('tasks__fetch');
+        // Thread tools first in their own small namespace, then one per MCP server.
+        const namespaces = body.tools as Array<{ name: string; tools: Array<{ name: string }> }>;
+        expect(namespaces.map((ns) => ns.name).slice(0, 2)).toEqual(['taico', 'tasks']);
+        expect(namespaces[0].tools.map((t) => t.name)).toEqual(
+          expect.arrayContaining(['get_time', 'stay_silent', 'remind']),
+        );
+        expect(namespaces[0].tools.some((t) => t.name.includes('__'))).toBe(false);
+        expect(namespaces[1].tools.map((t) => t.name)).toContain('tasks__fetch');
       }
 
       expect(requests[1].body.input).toEqual(
@@ -702,7 +709,7 @@ describe('Sign in with ChatGPT E2E', () => {
           expect.objectContaining({
             type: 'function_call',
             call_id: 'call_fetch_1',
-            namespace: 'taico',
+            namespace: 'tasks',
           }),
           expect.objectContaining({
             type: 'function_call_output',

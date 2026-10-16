@@ -1,4 +1,4 @@
-import { generateText, isStepCount, jsonSchema, streamText, tool } from 'ai';
+import { generateText, isStepCount, jsonSchema, streamText, tool, ToolSet } from 'ai';
 import {
   createChatgptResponsesModel,
   requireCompletedResponse,
@@ -261,14 +261,74 @@ describe('ChatGPT plan Responses model', () => {
 
     expect(error).toBeNull();
     expect(answer).toBe('It is 5pm.');
-    const [namespace] = requests[0].body.tools;
-    expect(namespace.tools.map((t: { name: string }) => t.name)).toEqual([
-      'tasks__get_all_tags',
-      'context__get_all_tags',
-      'get_time',
+    // Thread tools come first, in their own namespace; MCP tools get one per server.
+    const namespaces = requests[0].body.tools as Array<{ name: string; tools: Array<{ name: string }> }>;
+    expect(namespaces.map((ns) => [ns.name, ns.tools.map((t) => t.name)])).toEqual([
+      [TOOL_NAMESPACE.name, ['get_time']],
+      ['tasks', ['tasks__get_all_tags']],
+      ['context', ['context__get_all_tags']],
     ]);
     expect(getTime).toHaveBeenCalledTimes(1);
     expect(getAllTags).not.toHaveBeenCalled();
+  });
+
+  // With ~50 tools in one namespace the model did not see the last ones.
+  it('keeps thread tools in a small namespace however many MCP tools there are', async () => {
+    const { model, requests } = harness([sse([created, ...text('ok'), completed])]);
+    const noInput = jsonSchema<Record<string, never>>({ type: 'object', properties: {} });
+    const tools: ToolSet = {};
+    for (let i = 0; i < 45; i++) {
+      tools[`tasks__tool_${i}`] = tool({ description: `Task tool ${i}`, inputSchema: noInput, execute: async () => i });
+    }
+    tools.get_time = tool({ description: 'Get the time', inputSchema: noInput, execute: async () => 'now' });
+    tools.stay_silent = tool({ description: 'Stay silent', inputSchema: noInput, execute: async () => 'ok' });
+
+    const { error } = await run(model, { tools });
+
+    expect(error).toBeNull();
+    const [first] = requests[0].body.tools as Array<{ name: string; tools: Array<{ name: string }> }>;
+    expect(first.name).toBe(TOOL_NAMESPACE.name);
+    expect(first.tools.map((t) => t.name)).toEqual(['get_time', 'stay_silent']);
+  });
+
+  it('moves replayed calls recorded in the old single namespace to their current one', async () => {
+    const { model, requests } = harness([sse([created, ...text('ok'), completed])]);
+    const noInput = jsonSchema<Record<string, never>>({ type: 'object', properties: {} });
+
+    const result = streamText({
+      model,
+      tools: {
+        tasks__get_all_tags: tool({ description: 'Tags', inputSchema: noInput, execute: async () => [] }),
+        remind: tool({ description: 'Remind', inputSchema: noInput, execute: async () => 'ok' }),
+      },
+      messages: [
+        { role: 'user', content: 'hi' },
+        {
+          role: 'assistant',
+          content: [
+            { type: 'tool-call', toolCallId: 'c1', toolName: 'tasks__get_all_tags', input: {}, providerOptions: { openai: { namespace: 'taico' } } },
+            { type: 'tool-call', toolCallId: 'c2', toolName: 'remind', input: {}, providerOptions: { openai: { namespace: 'taico' } } },
+          ],
+        },
+        {
+          role: 'tool',
+          content: [
+            { type: 'tool-result', toolCallId: 'c1', toolName: 'tasks__get_all_tags', output: { type: 'json', value: [] } },
+            { type: 'tool-result', toolCallId: 'c2', toolName: 'remind', output: { type: 'text', value: 'ok' } },
+          ],
+        },
+        { role: 'user', content: 'again' },
+      ],
+    });
+    await result.consumeStream();
+
+    const calls = (requests[0].body.input as Array<{ type?: string; name?: string; namespace?: string }>)
+      .filter((item) => item.type === 'function_call')
+      .map((item) => [item.name, item.namespace]);
+    expect(calls).toEqual([
+      ['tasks__get_all_tags', 'tasks'],
+      ['remind', TOOL_NAMESPACE.name],
+    ]);
   });
 
   it('refuses a non-streaming call without sending anything', async () => {

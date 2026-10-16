@@ -24,7 +24,17 @@ The threads agent only acts when something wakes it up. Three things can wake it
 
 A turn also ends when the model makes the same tool calls, with the same input, three steps in a row. The agent then posts a message naming the tool, so the user is not left with a silent turn. See `apps/backend/src/threads/agent/repeated-tool-call.ts`. Without this check, a model that picked the wrong tool repeated it until the 25-step limit.
 
-The line in the system prompt is needed. Without it, a model on the ChatGPT plan saw `get_time` (it said so when asked) but, when told to call it, called `tasks__get_all_tags` and kept repeating that call. On that provider all tools sit in one `taico` namespace, almost all named `tasks__*` or `context__*`. `get_time` has no prefix, and the only other no-input `get_*` tools are the two `get_all_tags`. The model sent that name itself: the SDK passes tool names through unchanged in both directions.
+On the ChatGPT plan, the prompt line and the loop check were not enough. The model said it had a time tool, but when told to call it, it called `tasks__get_all_tags` every time. Back then all ~50 tools went in one `taico` namespace, with `get_time` and `stay_silent` last, and the model later said its list "only showed task and context tools". The tail of a large namespace evidently does not reach the model. OpenAI advises keeping each namespace under about 10 functions.
+
+### Tool namespaces (all providers)
+
+Every model `ChatModelFactory` returns, whatever its provider, is wrapped in `toolNamespaceMiddleware` (`apps/backend/src/ai-providers/tool-namespaces.ts`). On each call it:
+
+- puts thread tools (no `<server>__` prefix: `get_time`, `remind`, `stay_silent`, …) in the `taico` namespace, and each MCP server's tools in a namespace named after the server (`tasks__fetch` in `tasks`, `context__get_block` in `context`);
+- lists the thread tools first, with the MCP tools after them in their original order;
+- gives replayed tool calls their tool's current namespace, so history recorded under the old single namespace, or with no namespace, still matches.
+
+OpenAI Responses models (API key and ChatGPT plan) send each group as a `namespace` tool. Other providers (Anthropic, Google, Vertex, xAI, OpenAI-compatible) have no namespaces and ignore the option, so for them the change is the grouping and the order. Tool names never change. New MCP servers get a namespace automatically. Add a description for one in `MCP_TOOL_NAMESPACES`.
 
 It returns:
 
