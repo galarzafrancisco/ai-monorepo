@@ -117,9 +117,11 @@ export function parseInstant(at: string, timezone?: string): Parsed<Date> {
   }
 
   if (!zone) {
+    // Not "add Z for UTC": told that, a model without the user's timezone set
+    // "10 am" reminders at 10:00 UTC instead of asking.
     return {
       ok: false,
-      error: `"${at}" has no offset. Add one ("Z" for UTC, or "+10:00") or pass a timezone such as "Australia/Sydney".`,
+      error: `"${at}" has no offset and no timezone. Pass the user's timezone (from get_time). If get_time returns no userTimezone, ask the user for their timezone; never assume UTC.`,
     };
   }
 

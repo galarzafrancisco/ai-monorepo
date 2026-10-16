@@ -13,6 +13,7 @@ import { useCommandPalette } from "../../ui/components";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { ChatSetupCallout } from "../ai-models/ChatSetupCallout";
 import { useDraftState } from "../../shared/hooks/useDraftState";
+import { browserTimeZone } from "../../shared/helpers/browserTimeZone";
 import { ThreadsService } from "./api";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { useAuth } from "../../auth";
@@ -180,7 +181,7 @@ function DesktopNewThreadPage() {
       const thread = await createThread();
       await ThreadsService.ThreadsController_createMessage({
         id: thread.id,
-        body: { content },
+        body: { content, timezone: browserTimeZone() },
       });
       clearDraft();
       setOptimisticDraftThread(null);

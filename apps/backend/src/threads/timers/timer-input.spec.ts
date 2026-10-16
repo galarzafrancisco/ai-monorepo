@@ -76,8 +76,12 @@ describe('timer input', () => {
       expect(parseInstant('2026-10-15T12:00:00+10:00', 'Australia/Sydney').ok).toBe(false);
     });
 
-    it('rejects a local time with no timezone', () => {
-      expect(parseInstant('2026-10-15T12:00:00').ok).toBe(false);
+    it('rejects a local time with no timezone, telling the model to ask rather than use UTC', () => {
+      const result = parseInstant('2026-10-15T12:00:00');
+      expect(result.ok).toBe(false);
+      const error = (result as { error: string }).error;
+      expect(error).toContain('ask the user for their timezone');
+      expect(error).not.toContain('"Z" for UTC');
     });
 
     it('rejects a local time that daylight saving skips', () => {

@@ -33,10 +33,13 @@ It returns:
 | `now` | Current time, ISO 8601 with offset. In the user's timezone when known (`2026-10-16T16:13:14+11:00`), otherwise UTC (`2026-10-16T05:13:14Z`) |
 | `userTimezone` | IANA timezone of the latest user message (`Australia/Sydney`), or `null` when unknown |
 | `lastUserMessageAt` | When the latest user message was sent, same format as `now`; `null` when no person has written in the thread |
+| `note` | Only when `userTimezone` is `null`: ask the user for their timezone before setting a time of day, and do not assume UTC |
+
+Without the timezone, a model asked for "tomorrow at 10 am" set the reminder for 10:00 UTC in about one turn in five; with `note`, 0 in 24 replays. For the same reason, `remind` rejects a local `at` with no `timezone` with an error that says to ask the user, not to add `Z`: the earlier wording ("add `Z` for UTC") led to UTC reminders in 7 of 24 replays, the new one in 0 of 24.
 
 Where the data comes from:
 
-- The UI sends the browser's IANA timezone (`Intl.DateTimeFormat().resolvedOptions().timeZone`) as `timezone` with every `POST /threads/:id/messages`. The field is optional; a value that is not an IANA name the backend knows (including raw offsets like `+10:00`) is rejected with 400.
+- The UI sends the browser's IANA timezone (`Intl.DateTimeFormat().resolvedOptions().timeZone`) as `timezone` with every `POST /threads/:id/messages`, including the first message of a new thread (that one used to be sent without it, so a thread's first request had no timezone). The field is optional; a value that is not an IANA name the backend knows (including raw offsets like `+10:00`) is rejected with 400.
 - It is stored per message in `thread_messages.timezone`, so a person who travels is placed correctly from their next message. Agent messages and messages from clients that send no timezone store `null`.
 - "Latest user message" is the newest message in the thread written by a human actor. Its timezone is used even when it is `null`; older messages are not searched for one.
 - Each local time uses the offset in force at that instant, so a message sent before a daylight saving change and the current time after it get different offsets.
