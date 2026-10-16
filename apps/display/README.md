@@ -1,6 +1,6 @@
 # @taico/display
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/display/0.8.2)](https://badge.socket.dev/npm/package/@taico/display/0.8.2)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/display/0.8.3)](https://badge.socket.dev/npm/package/@taico/display/0.8.3)
 
 `taico-display` keeps a Waveshare e-ink display synchronized with Taico task, worker, and active-execution status over Bluetooth LE.
 
