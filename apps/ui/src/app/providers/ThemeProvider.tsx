@@ -15,7 +15,8 @@ export type Theme =
   | 'oceanic'
   | 'party'
   | 'tribute'
-  | 'dusk';
+  | 'dusk'
+  | 'omarchy-quattro';
 
 interface ThemeContextValue {
   theme: Theme;

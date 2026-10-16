@@ -677,3 +677,56 @@
   --shadow-2: 0 4px 8px rgba(8, 6, 12, 0.5);
   --shadow-3: 0 8px 24px rgba(8, 6, 12, 0.6);
 }
+
+/* ===== OMARCHY QUATTRO THEME (Synthwave night with neon magenta + cyan) ===== */
+[data-theme='omarchy-quattro'] {
+  /*
+   * Intent:
+   * - A synthwave dark theme in the spirit of Omarchy desktop rices.
+   * - Deep indigo-violet night surfaces (never pure black) under a neon horizon.
+   * - Hot magenta accent; semantic colors borrow the retro palette
+   *   (neon cyan, sunset yellow, coral red) so status still reads at a glance.
+   * - Magenta-tinted shadows give a faint glow instead of flat darkness.
+   */
+
+  /* Theme color values */
+  --theme-bg: #1a1033;
+  --theme-app-surface: #120a26;
+  --theme-surface: #241645;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 26, 16, 51;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #f7e8ff;
+  --text-muted: #b9a3dc;
+  --text-inverse: #1a1033;
+
+  /* Colors - Borders */
+  --border: #3d2670;
+  --border-subtle: #2a1a50;
+
+  /* Colors - Interactive */
+  --accent: #ff4fb8;
+  --accent-contrast: #1a1033;
+  --accent-hover: #ff7acb;
+
+  /* Colors - Semantic */
+  --success: #36f9f6;
+  --warning: #fede5d;
+  --danger: #fe5f6b;
+
+  /* Colors - Focus */
+  --focus-ring: #36f9f6;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(255, 79, 184, 0.18);
+  --shadow-2: 0 4px 8px rgba(255, 79, 184, 0.2);
+  --shadow-3: 0 8px 24px rgba(255, 79, 184, 0.28);
+}

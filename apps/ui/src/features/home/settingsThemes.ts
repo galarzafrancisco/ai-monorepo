@@ -244,4 +244,20 @@ export const SETTINGS_THEME_OPTIONS: SettingsThemeOption[] = [
       font: 'Inter',
     },
   },
+  {
+    value: 'omarchy-quattro',
+    label: 'Omarchy Quattro',
+    description: 'Synthwave night: neon magenta and cyan over deep indigo.',
+    preview: {
+      background: '#1a1033',
+      surface: '#241645',
+      card: '#1a1033',
+      border: '#3d2670',
+      text: '#f7e8ff',
+      muted: '#b9a3dc',
+      accent: '#ff4fb8',
+      accentSoft: '#4a1f5e',
+      font: 'Inter',
+    },
+  },
 ];
