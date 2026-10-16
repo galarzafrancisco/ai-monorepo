@@ -6,9 +6,11 @@ const TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 
 /**
- * Pure helpers describing the on-disk format of `secrets.encrypted_value`.
- * Used by the one-off migration that encrypts pre-existing plaintext rows.
- * Must stay byte-compatible with SecretsEncryptionService.
+ * Pure helpers describing the on-disk format of encrypted secrets:
+ * base64(iv):base64(authTag):base64(ciphertext), AES-256-GCM.
+ * SecretsEncryptionService uses them, as do the one-off migration that
+ * encrypts pre-existing plaintext rows and tooling that runs without Nest
+ * (the agent evals read a dev database with `decryptSecret`).
  */
 export type StoredSecretClassification =
   /** Parses as an AES-GCM envelope and authenticates with the given key. */
@@ -48,7 +50,11 @@ function hasEnvelopeShape(value: string): boolean {
 }
 
 export function decryptEnvelope(value: string, key: Buffer): string {
-  const [ivB64, tagB64, ciphertextB64] = value.split(':');
+  const parts = value.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid encrypted value format');
+  }
+  const [ivB64, tagB64, ciphertextB64] = parts;
   const decipher = crypto.createDecipheriv(
     ALGORITHM,
     key,
@@ -89,4 +95,9 @@ export function classifyStoredSecret(
   } catch {
     return 'ambiguous';
   }
+}
+
+/** Decrypts a stored value with a 64-character hex key, without building SecretsEncryptionService. */
+export function decryptSecret(value: string, keyHex: string): string {
+  return decryptEnvelope(value, parseKeyHex(keyHex));
 }
