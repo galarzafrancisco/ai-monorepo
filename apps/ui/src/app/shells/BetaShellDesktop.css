@@ -186,6 +186,40 @@
 }
 
 
+/* Subtle command palette shortcut legend, sits right above the collapse toggle */
+.beta-shell__desktop__search-hint {
+  margin-top: auto;
+  margin-bottom: calc(-1 * var(--space-4)); /* cancel sidebar gap so it hugs the toggle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  white-space: nowrap;
+  opacity: 0.8;
+  user-select: none;
+}
+
+.beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__search-hint {
+  padding-left: var(--space-1);
+  padding-right: var(--space-1);
+}
+
+/* The hint already pushes itself + the toggle to the bottom */
+.beta-shell__desktop__search-hint + .beta-shell__desktop__sidebar--toggle {
+  margin-top: 0;
+}
+
+.beta-shell__desktop__search-hint-keys {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-1);
+}
+
 .beta-shell__desktop__sidebar--toggle {
   margin-top: auto;
   padding: var(--space-2);

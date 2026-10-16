@@ -12,6 +12,7 @@ import { Footprints } from "lucide-react";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
 import { UnreadBadge } from "../../features/threads/UnreadBadge";
+import { modifierKeyLabel } from "../../shared/helpers/platform";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
@@ -50,7 +51,10 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
     setIsCollapsed(!isCollapsed);
   };
 
-  const activeNavPath = getActiveNavigationPath(location.pathname, navItems);
+  // Platform-aware command palette shortcut hint ("⌘ /" on Apple, "Ctrl /" elsewhere)
+  const searchShortcut = useMemo(() => `${modifierKeyLabel()} /`, []);
+
+  const activeNavPath =getActiveNavigationPath(location.pathname, navItems);
 
   return (
     <div className={`${isDesktop ? 'beta-shell__desktop' : 'beta-shell__mobile'}`} data-shell={`${isDesktop ? 'desktop' : 'mobile'}`}>
@@ -85,6 +89,13 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
               </Stack>
             </div>
           </nav>
+          <div
+            className="beta-shell__desktop__search-hint"
+            title={`Press ${searchShortcut} to search`}
+          >
+            <kbd className="beta-shell__desktop__search-hint-keys">{searchShortcut}</kbd>
+            {!isCollapsed && <span>to search</span>}
+          </div>
           <button
             className="beta-shell__desktop__sidebar--toggle"
             onClick={toggleSidebar}
