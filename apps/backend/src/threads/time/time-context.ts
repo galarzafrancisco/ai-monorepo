@@ -43,7 +43,16 @@ export type TimeContext = {
   userTimezone: string | null;
   /** When the latest user message was sent, same format as `now`; null when no person has written. */
   lastUserMessageAt: string | null;
+  /** Only when `userTimezone` is null: tells the model to ask instead of assuming UTC. */
+  note?: string;
 };
+
+/**
+ * Without it, a model asked for "tomorrow at 10 am" with no timezone set the
+ * reminder for 10:00 UTC in about one turn in five.
+ */
+export const UNKNOWN_TIMEZONE_NOTE =
+  "The user's timezone is unknown. Before setting a time of day for them, ask which timezone they are in; do not assume UTC.";
 
 /**
  * What `get_time` returns. The user's timezone is the one recorded with their
@@ -56,5 +65,6 @@ export function buildTimeContext(now: Date, latest: LatestUserMessage | null): T
     now: format(now),
     userTimezone: zone,
     lastUserMessageAt: latest ? format(latest.createdAt) : null,
+    ...(zone ? {} : { note: UNKNOWN_TIMEZONE_NOTE }),
   };
 }

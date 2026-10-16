@@ -1,4 +1,4 @@
-import { buildTimeContext, formatInZone, formatUtc, isIanaTimeZone } from './time-context';
+import { buildTimeContext, formatInZone, formatUtc, isIanaTimeZone, UNKNOWN_TIMEZONE_NOTE } from './time-context';
 
 describe('isIanaTimeZone', () => {
   it.each(['Australia/Sydney', 'America/New_York', 'UTC', 'Asia/Kolkata', 'America/Argentina/Buenos_Aires'])(
@@ -63,11 +63,12 @@ describe('buildTimeContext', () => {
     expect(context.now).toBe('2026-10-04T11:00:00+11:00');
   });
 
-  it('falls back to UTC and a null timezone without guessing', () => {
+  it('falls back to UTC and a null timezone without guessing, and says to ask', () => {
     expect(buildTimeContext(now, { createdAt: new Date('2026-10-16T05:10:00Z'), timezone: null })).toEqual({
       now: '2026-10-16T05:13:14Z',
       userTimezone: null,
       lastUserMessageAt: '2026-10-16T05:10:00Z',
+      note: UNKNOWN_TIMEZONE_NOTE,
     });
   });
 
@@ -80,6 +81,7 @@ describe('buildTimeContext', () => {
       now: '2026-10-16T05:13:14Z',
       userTimezone: null,
       lastUserMessageAt: null,
+      note: UNKNOWN_TIMEZONE_NOTE,
     });
   });
 });
