@@ -1,3 +1,4 @@
+import { jsonSchema, streamText, tool } from 'ai';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
 import { ChatModelFactory } from './chat-model.factory';
 
@@ -111,6 +112,41 @@ describe('ChatModelFactory', () => {
 
     expect(resolved).toMatchObject({ providerType: AiProviderType.XAI, modelId: 'grok-4' });
     expect((resolved.model as { provider: string }).provider).toContain('xai');
+  });
+
+  it('sends an OpenAI model its tools in a namespace per MCP server, and Taico tools in their own', async () => {
+    process.env.OPENAI_API_KEY = 'test-key';
+    const bodies: Array<{ tools: Array<{ type: string; name: string; tools: Array<{ name: string }> }> }> = [];
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      bodies.push(JSON.parse(init?.body as string));
+      return new Response('{"error":{"message":"stop here"}}', { status: 400 });
+    });
+    const { factory } = factoryFor(AiProviderType.OPENAI, 'gpt-test');
+    const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+    const noInput = jsonSchema<Record<string, never>>({ type: 'object', properties: {} });
+
+    try {
+      const result = streamText({
+        model: resolved.model,
+        prompt: 'what time is it?',
+        tools: {
+          tasks__get_all_tags: tool({ description: 'List all tags', inputSchema: noInput }),
+          context__get_block: tool({ description: 'Get a block', inputSchema: noInput }),
+          get_time: tool({ description: 'Get the current time', inputSchema: noInput }),
+        },
+        maxRetries: 0,
+        onError: () => undefined,
+      });
+      await result.consumeStream();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+
+    expect(bodies[0].tools.map((ns) => [ns.type, ns.name, ns.tools.map((t) => t.name)])).toEqual([
+      ['namespace', 'tasks', ['tasks__get_all_tags']],
+      ['namespace', 'context', ['context__get_block']],
+      ['namespace', 'taico', ['get_time']],
+    ]);
   });
 
   it("asks for the job's selection when the thread has no model of its own", async () => {

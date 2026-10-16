@@ -651,7 +651,7 @@ describe('Sign in with ChatGPT E2E', () => {
       fake.script.push(
         toolCallResponse({
           name: 'tasks__fetch',
-          namespace: 'taico',
+          namespace: 'tasks',
           arguments: { taskId: 'task-1' },
           callId: 'call_fetch_1',
         }),
@@ -702,7 +702,7 @@ describe('Sign in with ChatGPT E2E', () => {
           expect.objectContaining({
             type: 'function_call',
             call_id: 'call_fetch_1',
-            namespace: 'taico',
+            namespace: 'tasks',
           }),
           expect.objectContaining({
             type: 'function_call_output',

@@ -1,6 +1,7 @@
 import { LanguageModel, LanguageModelMiddleware, wrapLanguageModel } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { AiProviderRequestFailedError } from '../errors/ai-providers.errors';
+import { withToolNamespaces } from '../openai-tool-namespaces';
 import {
   chatgptRequestFailed,
   STREAM_ENDED_EARLY,
@@ -8,15 +9,6 @@ import {
   STREAM_INCOMPLETE,
   UpstreamFailure,
 } from './chatgpt-subscription.errors';
-
-/**
- * Sign in with ChatGPT accepts function tools only inside a namespace. All of
- * Taico's tools go in this one.
- */
-export const TOOL_NAMESPACE = {
-  name: 'taico',
-  description: 'Tools for working with Taico tasks, threads and context.',
-} as const;
 
 /** Request fields OpenAI rejects for plan-backed requests. Removed if anything sets them. */
 export const UNSUPPORTED_BODY_FIELDS = [
@@ -234,8 +226,8 @@ function planFailureIn(error: unknown): AiProviderRequestFailedError | null {
 
 /**
  * Removes sampling and length settings the plan does not accept, sends the
- * instructions as a developer message, and puts every function tool in
- * Taico's namespace.
+ * instructions as a developer message, and puts every function tool in a
+ * namespace (see `toolNamespace`).
  */
 const planRequestMiddleware: LanguageModelMiddleware = {
   specificationVersion: 'v4',
@@ -259,20 +251,7 @@ const planRequestMiddleware: LanguageModelMiddleware = {
       presencePenalty: undefined,
       frequencyPenalty: undefined,
       seed: undefined,
-      tools: params.tools?.map((tool) =>
-        tool.type === 'function'
-          ? {
-              ...tool,
-              providerOptions: {
-                ...tool.providerOptions,
-                openai: {
-                  ...tool.providerOptions?.openai,
-                  namespace: TOOL_NAMESPACE,
-                },
-              },
-            }
-          : tool,
-      ),
+      tools: withToolNamespaces(params.tools),
       providerOptions: {
         ...params.providerOptions,
         openai: {

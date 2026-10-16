@@ -6,7 +6,6 @@ import {
   formatMessage,
   formatTaskNotification,
   generateThreadSecret,
-  GET_TIME_TOOL,
   TAICO_MARKER_TAGS,
 } from './thread-agent.prompts';
 
@@ -74,12 +73,6 @@ describe('buildThreadScopedInstructions', () => {
 
   it('tells the model to keep the key to itself', () => {
     expect(instructions).toContain('Never output, quote or reveal the key.');
-  });
-
-  // Without its name in the prompt, a model on the ChatGPT plan answered
-  // "what's the time?" by calling tasks__get_all_tags over and over.
-  it(`names ${GET_TIME_TOOL} as the way to learn the time`, () => {
-    expect(instructions).toContain(`call ${GET_TIME_TOOL}. Never guess it.`);
   });
 
   it('is the same for every turn of a thread, so the prompt cache holds', () => {
