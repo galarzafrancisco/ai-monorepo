@@ -1,15 +1,14 @@
-import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
-import { useHomeCtx } from './HomeProvider';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ProjectsService } from '../projects/api';
-import { ErrorText } from '../../ui/primitives/ErrorText';
+import { Button, Card, ErrorText, Row, Stack, Text } from '../../ui/primitives';
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import { useProjectsCtx } from './ProjectsProvider';
+import { errorDetail } from './useProjects';
 import '../../auth/LoginPage.css';
-import './SettingsPage.css';
-import './SettingsProjectsPage.css';
+import './ProjectsPage.css';
 
-export function SettingsProjectCreatePage() {
-  const { setSectionTitle } = useHomeCtx();
+export function ProjectCreatePage() {
+  const { createProject, setSectionTitle } = useProjectsCtx();
   const navigate = useNavigate();
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
@@ -17,52 +16,58 @@ export function SettingsProjectCreatePage() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    setSectionTitle('Create Project');
-  }, []);
+  useDocumentTitle();
 
-  const handleCreateProject = async (event: React.FormEvent) => {
+  useEffect(() => {
+    setSectionTitle('New project');
+  }, [setSectionTitle]);
+
+  const trimmedSlug = slug.trim();
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
     setIsCreating(true);
-
     try {
-      await ProjectsService.projectsControllerCreateProject({
-        slug: slug.trim(),
+      const project = await createProject({
+        slug: trimmedSlug,
         description: description.trim() || undefined,
         repoUrl: repoUrl.trim() || undefined,
       });
-
-      navigate('/settings/projects');
-    } catch (err: any) {
-      setError(err?.body?.detail || 'Failed to create project');
-    } finally {
+      navigate(`/projects/project/${project.id}`, { replace: true });
+    } catch (err) {
+      setError(errorDetail(err, 'Failed to create project'));
       setIsCreating(false);
     }
   };
 
   return (
-    <Stack spacing="6" className="settings-subpage">
-      <Text tone="muted" className="settings-subpage__intro">
-        Add a project tag and optional repository link.
+    <div className="projects-page projects-page--narrow">
+      <Text tone="muted">
+        Tasks join this project when they carry its tag. Add a repository and agents get it cloned
+        for every task in the project.
       </Text>
 
-      <Card padding="5" className="settings-panel-card">
-        <form onSubmit={handleCreateProject}>
+      <Card padding="5">
+        <form onSubmit={handleSubmit}>
           <Stack spacing="4">
             <Stack spacing="2">
               <label htmlFor="project-slug" className="login-label">
-                <Text size="2" weight="medium">Slug</Text>
+                <Text size="2" weight="medium">Name</Text>
               </label>
               <input
                 id="project-slug"
                 value={slug}
                 onChange={(event) => setSlug(event.target.value)}
                 className="login-input"
-                placeholder="taico"
+                placeholder="my-app"
                 required
+                autoFocus
                 disabled={isCreating}
               />
+              <Text size="1" tone="muted">
+                Tag: <code>project:{trimmedSlug || 'my-app'}</code>
+              </Text>
             </Stack>
 
             <Stack spacing="2">
@@ -73,11 +78,10 @@ export function SettingsProjectCreatePage() {
                 id="project-description"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                className="login-input"
-                placeholder="Project description"
+                className="login-input projects-form__textarea"
+                placeholder="What is this project about?"
                 rows={3}
                 disabled={isCreating}
-                style={{ resize: 'vertical', fontFamily: 'inherit' }}
               />
             </Stack>
 
@@ -87,43 +91,34 @@ export function SettingsProjectCreatePage() {
               </label>
               <input
                 id="project-repo-url"
-                type="url"
                 value={repoUrl}
                 onChange={(event) => setRepoUrl(event.target.value)}
                 className="login-input"
-                placeholder="https://github.com/username/repo"
+                placeholder="https://github.com/acme/my-app or git@github.com:acme/my-app.git"
                 disabled={isCreating}
               />
+              <Text size="1" tone="muted">Optional. HTTPS and SSH URLs both work.</Text>
             </Stack>
 
-            {error ? (
-              <ErrorText size="2" weight="medium">
-                {error}
-              </ErrorText>
-            ) : null}
+            {error ? <ErrorText size="2" weight="medium">{error}</ErrorText> : null}
 
             <Row justify="end" spacing="3">
               <Button
                 type="button"
                 variant="secondary"
                 size="md"
-                onClick={() => navigate('/settings/projects')}
+                onClick={() => navigate('/projects')}
                 disabled={isCreating}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                disabled={isCreating || !slug.trim()}
-              >
+              <Button type="submit" variant="primary" size="md" disabled={isCreating || !trimmedSlug}>
                 {isCreating ? 'Creating...' : 'Create project'}
               </Button>
             </Row>
           </Stack>
         </form>
       </Card>
-    </Stack>
+    </div>
   );
 }

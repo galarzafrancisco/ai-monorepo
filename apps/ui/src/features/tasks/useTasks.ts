@@ -3,6 +3,11 @@ import { io, Socket } from 'socket.io-client';
 import { ProjectsService, TasksService } from './api';
 import type { Task } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
+import {
+  SELECTED_PROJECT_STORAGE_KEY,
+  readStoredSelectedProjectId,
+  storeSelectedProjectId,
+} from './selectedProject';
 import type {
   CreateTaskDto,
   AssignTaskDto,
@@ -23,15 +28,6 @@ import {
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
 const TASKS_PAGE_SIZE = 100;
-const SELECTED_PROJECT_STORAGE_KEY = 'tasks.selectedProjectId';
-
-function readStoredSelectedProjectId(): string | null {
-  try {
-    return localStorage.getItem(SELECTED_PROJECT_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
 
 function taskHasTag(task: Pick<Task, 'tags'>, tagName: string): boolean {
   return task.tags.some((tag) => tag.name === tagName);
@@ -85,15 +81,7 @@ export const useTasks = () => {
 
   const setSelectedProjectId = useCallback((projectId: string | null) => {
     setSelectedProjectIdState(projectId);
-    try {
-      if (projectId) {
-        localStorage.setItem(SELECTED_PROJECT_STORAGE_KEY, projectId);
-      } else {
-        localStorage.removeItem(SELECTED_PROJECT_STORAGE_KEY);
-      }
-    } catch (err) {
-      console.error('Failed to persist selected task project', err);
-    }
+    storeSelectedProjectId(projectId);
   }, []);
 
   const loadProjects = useCallback(async () => {
