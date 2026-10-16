@@ -225,6 +225,52 @@ describe('ChatGPT plan Responses model', () => {
     );
   });
 
+  // A thread on the plan answered "what's the time?" by calling
+  // tasks__get_all_tags. The model chose it: names reach OpenAI unchanged
+  // and the call it returns runs the tool it names.
+  it('sends get_time by its own name next to the MCP tools and runs only it', async () => {
+    const getTimeCall = {
+      type: 'function_call',
+      id: 'fc_t',
+      call_id: 'call_t',
+      name: 'get_time',
+      namespace: TOOL_NAMESPACE.name,
+      arguments: '{}',
+    };
+    const { model, requests } = harness([
+      sse([
+        created,
+        { type: 'response.output_item.added', output_index: 0, item: { ...getTimeCall, arguments: '' } },
+        { type: 'response.output_item.done', output_index: 0, item: { ...getTimeCall, status: 'completed' } },
+        completed,
+      ]),
+      sse([created, ...text('It is 5pm.'), completed]),
+    ]);
+    const noInput = jsonSchema<Record<string, never>>({ type: 'object', properties: {} });
+    const getAllTags = jest.fn(async () => [{ name: 'code' }]);
+    const getTime = jest.fn(async () => ({ now: '2026-10-16T17:00:00+11:00' }));
+
+    const { text: answer, error } = await run(model, {
+      tools: {
+        tasks__get_all_tags: tool({ description: 'List all available tags', inputSchema: noInput, execute: getAllTags }),
+        context__get_all_tags: tool({ description: 'List all available tags', inputSchema: noInput, execute: getAllTags }),
+        get_time: tool({ description: 'Get the current date and time', inputSchema: noInput, execute: getTime }),
+      },
+      stopWhen: isStepCount(5),
+    });
+
+    expect(error).toBeNull();
+    expect(answer).toBe('It is 5pm.');
+    const [namespace] = requests[0].body.tools;
+    expect(namespace.tools.map((t: { name: string }) => t.name)).toEqual([
+      'tasks__get_all_tags',
+      'context__get_all_tags',
+      'get_time',
+    ]);
+    expect(getTime).toHaveBeenCalledTimes(1);
+    expect(getAllTags).not.toHaveBeenCalled();
+  });
+
   it('refuses a non-streaming call without sending anything', async () => {
     const { model, requests } = harness([]);
 

@@ -27,6 +27,7 @@ import { buildThreadScopedInstructions, STAY_SILENT_TOOL } from './thread-agent.
 import { ThreadAgentToolsFactory } from './thread-agent-tools.factory';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
+import { findRepeatedToolCall, isRepeatedToolCall } from './repeated-tool-call';
 
 export { THREAD_AGENT_SLUG };
 export const THREAD_AGENT_MAX_STEPS = 25;
@@ -249,7 +250,11 @@ export class ThreadAgentService {
       messages: input.messages,
       tools: input.tools,
       providerOptions: resolved.providerOptions,
-      stopWhen: [isStepCount(THREAD_AGENT_MAX_STEPS), hasToolCall(STAY_SILENT_TOOL)],
+      stopWhen: [
+        isStepCount(THREAD_AGENT_MAX_STEPS),
+        hasToolCall(STAY_SILENT_TOOL),
+        isRepeatedToolCall(),
+      ],
       // Errors arrive as stream parts and are handled below.
       onError: () => undefined,
       onStepEnd: (step) => {
@@ -292,6 +297,22 @@ export class ThreadAgentService {
     }
 
     await persisted;
+
+    const repeated = findRepeatedToolCall(await result.steps);
+    if (repeated) {
+      this.logger.warn({
+        message: 'Thread agent turn stopped: the model kept making the same tool call',
+        threadId,
+        turnId: turn.id,
+        toolNames: repeated.toolNames,
+      });
+      await this.saveDisplayMessage({
+        threadId,
+        actorId: self.actorId,
+        content: `I stopped because I called ${repeated.toolNames.map((name) => `\`${name}\``).join(', ')} ${repeated.times} times in a row with the same input. That was probably the wrong tool.`,
+        agentMessageId: null,
+      });
+    }
     return lastInputTokens;
   }
 

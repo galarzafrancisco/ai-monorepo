@@ -20,7 +20,13 @@ The threads agent only acts when something wakes it up. Three things can wake it
 
 ## Current time and the user's timezone
 
-`get_time` takes no input. Its description is one line ("Get the current date and time and the user's timezone. Useful for relative-time reminders."); the system prompt does not mention it. It returns:
+`get_time` takes no input. Its description says to call it when the user asks for the time or date, or before working out a local time for a reminder. The system prompt also names it in one line: the agent does not know the current time and must call `get_time` instead of guessing.
+
+A turn also ends when the model makes the same tool calls, with the same input, three steps in a row. The agent then posts a message naming the tool, so the user is not left with a silent turn. See `apps/backend/src/threads/agent/repeated-tool-call.ts`. Without this check, a model that picked the wrong tool repeated it until the 25-step limit.
+
+The line in the system prompt is needed. Without it, a model on the ChatGPT plan saw `get_time` (it said so when asked) but, when told to call it, called `tasks__get_all_tags` and kept repeating that call. On that provider all tools sit in one `taico` namespace, almost all named `tasks__*` or `context__*`. `get_time` has no prefix, and the only other no-input `get_*` tools are the two `get_all_tags`. The model sent that name itself: the SDK passes tool names through unchanged in both directions.
+
+It returns:
 
 | Field | Meaning |
 |---|---|
