@@ -3,9 +3,9 @@ import {
   createChatgptResponsesModel,
   requireCompletedResponse,
   sanitizeResponsesBody,
-  TOOL_NAMESPACE,
   UNSUPPORTED_BODY_FIELDS,
 } from './chatgpt-responses.model';
+import { TOOL_NAMESPACE } from '../openai-tool-namespaces';
 
 // The errors package is ESM, which this Jest setup does not load. Codes equal their names.
 jest.mock('@taico/errors', () => ({
@@ -226,9 +226,9 @@ describe('ChatGPT plan Responses model', () => {
   });
 
   // A thread on the plan answered "what's the time?" by calling
-  // tasks__get_all_tags. The model chose it: names reach OpenAI unchanged
-  // and the call it returns runs the tool it names.
-  it('sends get_time by its own name next to the MCP tools and runs only it', async () => {
+  // tasks__get_all_tags. With Taico's own tools in one namespace with the MCP
+  // tools, the model passed them over; each group now has its own namespace.
+  it('puts MCP tools in a namespace per server and Taico tools in their own, and runs the one called', async () => {
     const getTimeCall = {
       type: 'function_call',
       id: 'fc_t',
@@ -261,11 +261,16 @@ describe('ChatGPT plan Responses model', () => {
 
     expect(error).toBeNull();
     expect(answer).toBe('It is 5pm.');
-    const [namespace] = requests[0].body.tools;
-    expect(namespace.tools.map((t: { name: string }) => t.name)).toEqual([
-      'tasks__get_all_tags',
-      'context__get_all_tags',
-      'get_time',
+    expect(
+      requests[0].body.tools.map((ns: { type: string; name: string; tools: Array<{ name: string }> }) => [
+        ns.type,
+        ns.name,
+        ns.tools.map((t) => t.name),
+      ]),
+    ).toEqual([
+      ['namespace', 'tasks', ['tasks__get_all_tags']],
+      ['namespace', 'context', ['context__get_all_tags']],
+      ['namespace', TOOL_NAMESPACE.name, ['get_time']],
     ]);
     expect(getTime).toHaveBeenCalledTimes(1);
     expect(getAllTags).not.toHaveBeenCalled();

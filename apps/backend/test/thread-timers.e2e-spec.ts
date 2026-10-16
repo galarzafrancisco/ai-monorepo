@@ -603,9 +603,9 @@ describe('Thread timers E2E', () => {
 
     // A fresh thread on the ChatGPT plan answered "what's the time?" by calling
     // tasks__get_all_tags 40 times. These pin down what Taico controls: the
-    // tool is offered and named on the first turn, it runs only itself, and a
-    // repeated call cannot loop until the step limit.
-    it('offers get_time on the first turn of a new thread and tells the model to use it', async () => {
+    // tool is offered on the first turn, it runs only itself, and a repeated
+    // call cannot loop until the step limit.
+    it('offers get_time on the first turn of a new thread', async () => {
       const threadId = await createThread();
       const before = offeredTools.length;
       getAllTags.mockClear();
@@ -615,7 +615,6 @@ describe('Thread timers E2E', () => {
 
       const [firstCall] = offeredTools.slice(before);
       expect(firstCall).toEqual(expect.arrayContaining(['get_time', 'tasks__get_all_tags']));
-      expect(JSON.stringify(prompts[before])).toContain('call get_time. Never guess it.');
 
       const [result] = await toolResults(threadId);
       expect(result).toContain('"now":');

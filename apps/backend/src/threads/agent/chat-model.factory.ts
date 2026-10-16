@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { LanguageModel } from 'ai';
+import { LanguageModel, wrapLanguageModel } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogle } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
@@ -13,6 +13,7 @@ import {
   OnBehalfOf,
 } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { ChatgptSubscriptionService } from 'src/ai-providers/chatgpt-subscription/chatgpt-subscription.service';
+import { openaiToolNamespacesMiddleware } from 'src/ai-providers/openai-tool-namespaces';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
 import {
   AiModelJob,
@@ -92,7 +93,10 @@ export class ChatModelFactory {
     switch (config.type) {
       case AiProviderType.OPENAI:
         return {
-          model: createOpenAI({ apiKey, baseURL })(modelId),
+          model: wrapLanguageModel({
+            model: createOpenAI({ apiKey, baseURL })(modelId),
+            middleware: openaiToolNamespacesMiddleware,
+          }),
           providerType: config.type,
           modelId,
           // Send full history on every call instead of referencing items stored at OpenAI.

@@ -123,7 +123,7 @@ Inference goes to `POST https://api.openai.com/v1/responses` with the person's O
 - has `stream: true` and `store: false`, and carries the whole conversation in `input` (no `previous_response_id`, no `conversation`);
 - has none of the fields the plan rejects (`temperature`, `max_output_tokens`, `metadata`, `user`, …);
 - sends instructions as a developer message, never a system input item;
-- has its function tools inside one namespace, `taico`.
+- has its function tools inside namespaces: MCP tools named `<server>__<tool>` in one per server (`tasks`, `context`), every other tool in `taico`. With all of them in one namespace the model stopped calling Taico's own tools; see [Thread timers](thread-timers.md#current-time-and-the-users-timezone).
 
 A non-streaming call (`generateText`) throws before anything is sent. `ResolvedChatModel.requiresStreaming` tells callers such as compaction to use `streamText()` and read it to the end.
 
