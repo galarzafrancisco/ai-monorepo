@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { ThreadsService } from './api';
 import type { Thread, Message } from './types';
+import { browserTimeZone } from '../../shared/helpers/browserTimeZone';
 
 const compareMessages = (a: Message, b: Message): number => {
   const dateA = new Date(a.createdAt).getTime();
@@ -241,7 +242,7 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
     setChatSendError(null);
     let message: Message | null = null;
     try {
-      message = await ThreadsService.ThreadsController_createMessage({ id: threadId, body: { content } });
+      message = await ThreadsService.ThreadsController_createMessage({ id: threadId, body: { content, timezone: browserTimeZone() } });
     } catch (err) {
       setChatSendError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {

@@ -43,6 +43,7 @@ import { ThreadTimerEntity } from './timers/thread-timer.entity';
 import { ThreadTimerFiringEntity } from './timers/thread-timer-firing.entity';
 import { ThreadTimersService } from './timers/thread-timers.service';
 import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service';
+import { ThreadTimeService } from './time/thread-time.service';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service
     ThreadTaskSubscriptionNotifierService,
     ThreadTimersService,
     ThreadTimerSweeperService,
+    ThreadTimeService,
     ThreadAgentHooksRunner,
     EasterEggHook,
     CompactionHook,

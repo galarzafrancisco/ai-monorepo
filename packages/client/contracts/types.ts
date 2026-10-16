@@ -5046,6 +5046,11 @@ export interface components {
              * @example What is the status of this feature?
              */
             content: string;
+            /**
+             * @description IANA timezone of the person writing, as their client reports it. Lets the threads agent read relative times such as "tomorrow at 5pm". Raw offsets are rejected.
+             * @example Australia/Sydney
+             */
+            timezone?: string;
         };
         ThreadMessageResponseDto: {
             /**

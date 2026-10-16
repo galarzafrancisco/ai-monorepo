@@ -416,6 +416,7 @@ export class ThreadsController {
       threadId: params.id,
       content: dto.content,
       createdByActorId: user.actorId,
+      timezone: dto.timezone?.trim() || null,
     });
     return ThreadMessageResponseDto.fromResult(result);
   }

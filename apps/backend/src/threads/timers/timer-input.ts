@@ -144,7 +144,7 @@ export function parseInstant(at: string, timezone?: string): Parsed<Date> {
   return { ok: true, value: new Date(unique[0]) };
 }
 
-function isValidTimeZone(zone: string): boolean {
+export function isValidTimeZone(zone: string): boolean {
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: zone });
     return true;
@@ -171,14 +171,14 @@ function parseOffset(offset: string): number | null {
   return total;
 }
 
-function formatOffset(minutes: number): string {
+export function formatOffset(minutes: number): string {
   const sign = minutes < 0 ? '-' : '+';
   const abs = Math.abs(minutes);
   return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
 }
 
 /** How far `zone` is ahead of UTC at `instant`, in minutes. */
-function zoneOffsetMinutes(zone: string, instant: Date): number {
+export function zoneOffsetMinutes(zone: string, instant: Date): number {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: zone,
     hourCycle: 'h23',

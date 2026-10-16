@@ -42,6 +42,14 @@ export class ThreadMessageEntity {
   @JoinColumn({ name: 'agent_message_id' })
   agentMessage?: ThreadAgentMessageEntity | null;
 
+  /**
+   * IANA timezone of the person who wrote the message, as their client
+   * reported it (e.g. "Australia/Sydney"). Null for agent messages and for
+   * clients that did not send one. Only the `get_time` tool reads it.
+   */
+  @Column({ type: 'text', nullable: true })
+  timezone!: string | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 }

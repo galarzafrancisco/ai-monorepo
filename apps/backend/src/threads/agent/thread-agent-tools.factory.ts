@@ -4,6 +4,7 @@ import { z } from 'zod/v3';
 import { ThreadTaskSubscriptionsService } from '../task-subscriptions/thread-task-subscriptions.service';
 import { ThreadTimersService } from '../timers/thread-timers.service';
 import { ThreadTimerKind } from '../timers/thread-timer.enums';
+import { ThreadTimeService } from '../time/thread-time.service';
 import {
   describeDuration,
   MAX_ITERATIONS,
@@ -14,6 +15,7 @@ import {
 import {
   CANCEL_REMINDER_TOOL,
   CANCEL_SCHEDULE_TOOL,
+  GET_TIME_TOOL,
   LIST_WAITS_TOOL,
   REMIND_TOOL,
   SCHEDULE_TOOL,
@@ -29,14 +31,15 @@ const DURATION_DESCRIPTION =
  * Tools that only make sense inside a thread, so they are bound to the thread
  * the turn runs on instead of being exposed over MCP.
  *
- * Times the tools return are ISO 8601 in UTC. The backend does not know the
- * user's timezone; convert when you tell the user if you know it.
+ * Times the tools return are ISO 8601 in UTC. The user's timezone is only
+ * available through `get_time`, which reads it from their latest message.
  */
 @Injectable()
 export class ThreadAgentToolsFactory {
   constructor(
     private readonly subscriptions: ThreadTaskSubscriptionsService,
     private readonly timers: ThreadTimersService,
+    private readonly time: ThreadTimeService,
   ) {}
 
   build(input: {
@@ -254,6 +257,12 @@ export class ThreadAgentToolsFactory {
             })),
           };
         },
+      }),
+      [GET_TIME_TOOL]: tool({
+        description:
+          "Get the current time and the user's timezone. Call it before turning words like \"today\", \"tomorrow at 5pm\" or \"next Friday\" into a date or time, for example for the `at` of a reminder. Returns the current time in UTC and in the user's IANA timezone, and when the latest user message in this thread was sent. The timezone is the one the user's app reported with their latest message; when it is missing, `userTimezone` is null and you must not guess it.",
+        inputSchema: z.object({}),
+        execute: async () => this.time.getTimeContext(threadId),
       }),
       [STAY_SILENT_TOOL]: tool({
         description:

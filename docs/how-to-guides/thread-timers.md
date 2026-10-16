@@ -16,6 +16,30 @@ The threads agent only acts when something wakes it up. Three things can wake it
 - `maxIterations` is required and must be from 1 to 10.
 - `remind.at` must name exactly one instant. Give either an ISO datetime with an offset (`Z`, `+11:00`), or a local datetime plus an IANA `timezone`. The tool rejects a local time with no timezone, an offset that disagrees with the timezone, a time that is in the past, and local times that a DST change skips or repeats. See `apps/backend/src/threads/timers/timer-input.ts`.
 - The backend never guesses the user's timezone. Tool output and the API use UTC ISO timestamps, and the UI formats them in the browser's timezone.
+- To work out a local `at` (for example "tomorrow at 5pm"), the agent calls `get_time`. See [Current time and the user's timezone](#current-time-and-the-users-timezone).
+
+## Current time and the user's timezone
+
+`get_time` takes no input. It returns:
+
+| Field | Meaning |
+|---|---|
+| `now` | Current time, ISO 8601 in UTC (`2026-10-16T05:13:14Z`) |
+| `userTimezone` | IANA timezone of the latest user message (`Australia/Sydney`), or `null` |
+| `nowInUserTimezone` | `{ local, utcOffset, dayOfWeek }`: `2026-10-16T16:13:14+11:00`, `+11:00`, `Friday`. `null` without a timezone |
+| `latestUserMessage` | `{ sentAt, sentAtInUserTimezone, timezone, author }`, or `null` when no person has written in the thread |
+| `notes` | Why something is missing, and that the agent must ask or say it is using UTC rather than guess |
+
+Where the data comes from:
+
+- The UI sends the browser's IANA timezone (`Intl.DateTimeFormat().resolvedOptions().timeZone`) as `timezone` with every `POST /threads/:id/messages`. The field is optional; a value that is not an IANA name the backend knows (including raw offsets like `+10:00`) is rejected with 400.
+- It is stored per message in `thread_messages.timezone`, so a person who travels is placed correctly from their next message. Agent messages and messages from clients that send no timezone store `null`.
+- "Latest user message" is the newest message in the thread written by a human actor. Its timezone is used even when it is `null`; older messages are not searched for one.
+- Each local time uses the offset in force at that instant, so a message sent before a daylight saving change and the current time after it get different offsets.
+
+The timezone is kept out of the conversation the model sees: the copy of the message in `thread_agent_messages` holds only the text. The model reads it only when it calls the tool, and the system prompt tells it to call `get_time` before turning relative dates into times.
+
+Code: `apps/backend/src/threads/time/`.
 
 ## Firing
 

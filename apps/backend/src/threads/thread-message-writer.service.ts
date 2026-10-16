@@ -8,6 +8,8 @@ export type WriteThreadMessageInput = {
   createdByActorId: string;
   /** The agent-log row this message shows, when the agent wrote it. */
   agentMessageId?: string | null;
+  /** IANA timezone the writer's client reported. Null for agents. */
+  timezone?: string | null;
 };
 
 /**
@@ -33,6 +35,7 @@ export class ThreadMessageWriterService {
           content: input.content,
           createdByActorId: input.createdByActorId,
           agentMessageId: input.agentMessageId ?? null,
+          timezone: input.timezone ?? null,
         }),
       );
 

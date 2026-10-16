@@ -807,6 +807,7 @@ export interface AppendThreadStateDto {
 
 export interface CreateThreadMessageDto {
   content: string;
+  timezone?: string;
 }
 
 export interface ThreadMessageResponseDto {
