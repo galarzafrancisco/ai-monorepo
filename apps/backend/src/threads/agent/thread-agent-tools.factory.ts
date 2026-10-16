@@ -259,7 +259,8 @@ export class ThreadAgentToolsFactory {
         },
       }),
       [GET_TIME_TOOL]: tool({
-        description: "Get the current date and time and the user's timezone. Useful for relative-time reminders.",
+        description:
+          "Get the current date and time and the user's timezone. Call it whenever the user asks what time or date it is, or before working out a local time for a reminder.",
         inputSchema: z.object({}),
         execute: async () => this.time.getTimeContext(threadId),
       }),

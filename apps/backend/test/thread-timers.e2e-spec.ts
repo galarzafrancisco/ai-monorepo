@@ -4,7 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { simulateReadableStream } from 'ai';
+import { jsonSchema, simulateReadableStream, tool } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
@@ -33,6 +33,10 @@ describe('Thread timers E2E', () => {
   let dataSource: DataSource;
 
   const prompts: PromptMessage[][] = [];
+  /** The tool names offered on each model call, in the order of `prompts`. */
+  const offeredTools: string[][] = [];
+  /** An MCP tool the model must not reach for when asked the time. */
+  const getAllTags = jest.fn(async () => [{ name: 'project:taico' }]);
   /** Steps the model plays next, in order. With none left it replies with plain text. */
   const script: ModelStep[] = [];
   let callCount = 0;
@@ -51,6 +55,7 @@ describe('Thread timers E2E', () => {
     }),
     doStream: async (options) => {
       prompts.push(options.prompt as PromptMessage[]);
+      offeredTools.push((options.tools ?? []).map((t) => t.name));
       const call = ++callCount;
       const step: ModelStep = script.shift() ?? { text: `Reply ${call}` };
       if (step.gate) {
@@ -182,7 +187,18 @@ describe('Thread timers E2E', () => {
         resolve: async () => ({ model, providerType: 'mock', modelId: 'mock-model-id' }),
       })
       .overrideProvider(TaicoMcpToolsFactory)
-      .useValue({ open: async () => ({ tools: {}, close: async () => undefined }) })
+      .useValue({
+        open: async () => ({
+          tools: {
+            tasks__get_all_tags: tool({
+              description: 'List all available tags',
+              inputSchema: jsonSchema<Record<string, never>>({ type: 'object', properties: {} }),
+              execute: getAllTags,
+            }),
+          },
+          close: async () => undefined,
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -583,6 +599,43 @@ describe('Thread timers E2E', () => {
       const firstPrompt = JSON.stringify(prompts[prompts.length - 2]);
       expect(firstPrompt).toContain('remind me tomorrow at 5pm');
       expect(firstPrompt).not.toContain('Australia/Sydney');
+    });
+
+    // A fresh thread on the ChatGPT plan answered "what's the time?" by calling
+    // tasks__get_all_tags 40 times. These pin down what Taico controls: the
+    // tool is offered and named on the first turn, it runs only itself, and a
+    // repeated call cannot loop until the step limit.
+    it('offers get_time on the first turn of a new thread and tells the model to use it', async () => {
+      const threadId = await createThread();
+      const before = offeredTools.length;
+      getAllTags.mockClear();
+      script.push({ toolCalls: [{ toolName: 'get_time', input: {} }] }, { text: 'It is 5pm.' });
+      await sendMessage(threadId, "what's the time?");
+      await waitForTurns(threadId, 1);
+
+      const [firstCall] = offeredTools.slice(before);
+      expect(firstCall).toEqual(expect.arrayContaining(['get_time', 'tasks__get_all_tags']));
+      expect(JSON.stringify(prompts[before])).toContain('call get_time. Never guess it.');
+
+      const [result] = await toolResults(threadId);
+      expect(result).toContain('"now":');
+      expect(getAllTags).not.toHaveBeenCalled();
+      expect(await agentReplies(threadId)).toEqual(['It is 5pm.']);
+    });
+
+    it('stops a turn that keeps making the same tool call, and says so', async () => {
+      const threadId = await createThread();
+      const before = prompts.length;
+      getAllTags.mockClear();
+      const sameCall = { toolCalls: [{ toolName: 'tasks__get_all_tags', input: {} }] };
+      script.push(sameCall, sameCall, sameCall);
+      await sendMessage(threadId, "what's the time?");
+      await waitForTurns(threadId, 1);
+
+      expect(prompts.length - before).toBe(3);
+      expect(getAllTags).toHaveBeenCalledTimes(3);
+      const [reply] = await agentReplies(threadId);
+      expect(reply).toContain('`tasks__get_all_tags` 3 times in a row');
     });
 
     it('reports a missing timezone instead of guessing', async () => {
