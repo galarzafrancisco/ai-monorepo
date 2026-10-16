@@ -23,5 +23,9 @@ export type ThreadListItemResponseDto = {
      * Messages in this thread written by someone else that the caller has not read yet
      */
     unreadCount: number;
+    /**
+     * The caller pinned this thread. Pinned threads are listed before all others
+     */
+    pinned: boolean;
 };
 

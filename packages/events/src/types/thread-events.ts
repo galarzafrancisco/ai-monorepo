@@ -23,6 +23,7 @@ export const ThreadWireEvents = {
   MESSAGE_CREATED: 'thread.message.created',
   THREAD_ACTIVITY: 'thread.activity',
   THREAD_READ: 'thread.read',
+  THREAD_PINNED: 'thread.pinned',
   AGENT_ACTIVITY: 'thread.agent.activity',
   AGENT_RESPONSE_DELTA: 'thread.agent.response.delta',
 } as const;
@@ -181,6 +182,19 @@ export interface ThreadReadWireEvent {
   actor: MinimalEventActor;
 }
 
+/**
+ * Thread pinned event
+ * Emitted only to the actor who pinned or unpinned the thread, on all their
+ * connections, so every tab and device moves it in or out of the pinned group.
+ */
+export interface ThreadPinnedWireEvent {
+  payload: {
+    threadId: string;
+    pinned: boolean;
+  };
+  actor: MinimalEventActor;
+}
+
 export type ThreadAgentActivityKind = 'thinking' | 'tool_calling';
 
 /**
@@ -219,5 +233,6 @@ export type ThreadWireEvent =
   | MessageCreatedWireEvent
   | ThreadActivityWireEvent
   | ThreadReadWireEvent
+  | ThreadPinnedWireEvent
   | AgentActivityWireEvent
   | AgentResponseDeltaWireEvent;

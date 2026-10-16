@@ -1,0 +1,49 @@
+.thread-pin-button {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+
+.thread-pin-button:hover,
+.thread-pin-button:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.thread-pin-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.thread-pin-button--pinned {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Where there is hover, unpinned rows only show the pin when hovered. */
+@media (hover: hover) {
+  .thread-pin-button:not(.thread-pin-button--pinned) {
+    opacity: 0;
+  }
+
+  *:hover > .thread-pin-button:not(.thread-pin-button--pinned),
+  .data-row:hover .thread-pin-button:not(.thread-pin-button--pinned),
+  .thread-pin-button:focus-visible {
+    opacity: 0.6;
+  }
+
+  .thread-pin-button:not(.thread-pin-button--pinned):hover {
+    opacity: 1;
+  }
+}

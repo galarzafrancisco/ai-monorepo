@@ -1599,6 +1599,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Pin the thread to the top of the caller's thread list */
+        put: operations["ThreadsController_pinThread"];
+        post?: never;
+        /** Unpin the thread from the caller's thread list */
+        delete: operations["ThreadsController_unpinThread"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agents": {
         parameters: {
             query?: never;
@@ -4927,6 +4945,11 @@ export interface components {
              * @example 2
              */
             unreadCount: number;
+            /**
+             * @description The caller pinned this thread. Pinned threads are listed before all others
+             * @example false
+             */
+            pinned: boolean;
         };
         ThreadListResponseDto: {
             /** @description Array of thread list items */
@@ -10865,6 +10888,62 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Thread marked as read */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_pinThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread pinned */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_unpinThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread unpinned */
             204: {
                 headers: {
                     [name: string]: unknown;

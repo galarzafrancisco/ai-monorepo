@@ -68,6 +68,11 @@ Unread messages are built on these rooms:
 - The list is fetched from REST again each time its subscription to the list room is acknowledged: on page load and on every reconnect. Messages posted before the socket joined the room were never sent to it, so the first fetch alone can be out of date.
 - A REST response can arrive after an event that is newer than it. All list fetches go through `apps/ui/src/features/threads/snapshotSync.ts`, which discards a response if the list changed while it was being fetched and fetches again. Call `noteChange()` wherever the list is changed locally.
 
+Pinned threads work the same way, per actor:
+
+- `thread_pins` stores which threads each actor has pinned. Pins are personal: one person's pin never reorders anyone else's list. `GET /threads` lists the caller's pinned threads first (then by `lastActivityAt`, then id) and returns `pinned` per thread, so every pinned thread is on the first page.
+- `PUT /threads/:id/pin` and `DELETE /threads/:id/pin` are idempotent and emit `thread.pinned` (`{ threadId, pinned }`) to the caller's actor room only. `compareThreads` in `threadListOrder.ts` puts pinned threads first, the same as the server.
+
 Reference:
 - `apps/backend/src/threads/threads.gateway.ts`
 

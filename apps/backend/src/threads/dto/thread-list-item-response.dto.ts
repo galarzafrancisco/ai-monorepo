@@ -32,4 +32,11 @@ export class ThreadListItemResponseDto {
     example: 2,
   })
   unreadCount!: number;
+
+  @ApiProperty({
+    description:
+      'The caller pinned this thread. Pinned threads are listed before all others',
+    example: false,
+  })
+  pinned!: boolean;
 }

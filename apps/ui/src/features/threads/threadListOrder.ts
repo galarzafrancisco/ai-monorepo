@@ -1,6 +1,7 @@
 /**
- * Keeps the thread list in the order the server lists it: the thread with the
- * latest message people can see first, and the id to break ties.
+ * Keeps the thread list in the order the server lists it: the user's pinned
+ * threads first, then the thread with the latest message people can see
+ * first, and the id to break ties.
  *
  * Moving a thread up and counting a message as unread are separate decisions.
  * Every visible message moves its thread up, including the user's own and ones
@@ -15,6 +16,8 @@ export type OrderedThread = {
   /** ISO 8601 in UTC, as the API sends it, so plain string comparison orders it. */
   lastActivityAt: string;
   unreadCount: number;
+  /** The user pinned it. Pinned threads come before all others. */
+  pinned?: boolean;
 };
 
 export type ThreadActivity = {
@@ -30,8 +33,14 @@ export type ThreadListViewer = {
   viewingThreadId: string | null;
 };
 
-/** Newest activity first; on a tie, the higher id first. Same as the server. */
+/**
+ * Pinned first; then newest activity first; on a tie, the higher id first.
+ * Same as the server.
+ */
 export const compareThreads = (a: OrderedThread, b: OrderedThread): number => {
+  if (Boolean(a.pinned) !== Boolean(b.pinned)) {
+    return a.pinned ? -1 : 1;
+  }
   if (a.lastActivityAt !== b.lastActivityAt) {
     return a.lastActivityAt < b.lastActivityAt ? 1 : -1;
   }
@@ -70,5 +79,24 @@ export const applyThreadActivity = <T extends OrderedThread>(
 
   return threads
     .map((thread) => (thread.id === updated.id ? updated : thread))
+    .sort(compareThreads);
+};
+
+/**
+ * Pins or unpins one thread and moves it to where the server now lists it.
+ * Returns the list unchanged when it has not loaded the thread.
+ */
+export const applyThreadPinned = <T extends OrderedThread>(
+  threads: T[],
+  threadId: string,
+  pinned: boolean,
+): T[] => {
+  const current = threads.find((thread) => thread.id === threadId);
+  if (!current || Boolean(current.pinned) === pinned) {
+    return threads;
+  }
+
+  return threads
+    .map((thread) => (thread.id === threadId ? { ...thread, pinned } : thread))
     .sort(compareThreads);
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { IosShell } from "../../app/shells/IosShell";
@@ -6,6 +6,9 @@ import { Text } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { UnreadBadge } from "./UnreadBadge";
 import { ThreadListLoadMore } from "./ThreadListLoadMore";
+import { ThreadPinButton } from "./ThreadPinButton";
+import { splitPinnedThreads } from "./splitPinnedThreads";
+import type { ThreadListItem } from "./types";
 import "./ThreadsLayout.css";
 
 export function ThreadsLayout(): React.JSX.Element {
@@ -13,9 +16,33 @@ export function ThreadsLayout(): React.JSX.Element {
   const { id: threadId } = useParams<{ id?: string }>();
   const isThreadDetailRoute = Boolean(threadId);
   const navigate = useNavigate();
-  const { threads, totalThreads, isLoading, error, sectionTitle, navItems, optimisticDraftThread, refreshThreads } = useThreadsCtx();
+  const { threads, totalThreads, isLoading, error, sectionTitle, navItems, optimisticDraftThread, refreshThreads, setThreadPinned } = useThreadsCtx();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const unreadMessageCount = threads.reduce((sum, thread) => sum + thread.unreadCount, 0);
+  const { pinnedThreads, otherThreads } = useMemo(() => splitPinnedThreads(threads), [threads]);
+
+  const renderThread = (thread: ThreadListItem) => {
+    const isSelected = thread.id === threadId;
+    return (
+      <div
+        key={thread.id}
+        className={`threads-layout__thread-item ${isSelected ? "threads-layout__thread-item--active" : ""} ${thread.unreadCount > 0 ? "threads-layout__thread-item--unread" : ""}`}
+      >
+        <button
+          type="button"
+          className="threads-layout__thread-link"
+          onClick={() => navigate(`/threads/${thread.id}`)}
+        >
+          <span className="threads-layout__thread-title">{thread.title}</span>
+          <UnreadBadge count={thread.unreadCount} />
+        </button>
+        <ThreadPinButton
+          pinned={thread.pinned}
+          onToggle={(pinned) => void setThreadPinned(thread.id, pinned)}
+        />
+      </div>
+    );
+  };
 
   // The list outlives this section. Threads created or deleted elsewhere send
   // no event to the list, so catch up each time the user comes back to it.
@@ -78,6 +105,10 @@ export function ThreadsLayout(): React.JSX.Element {
                 <div className="threads-layout__sidebar-status">No threads yet</div>
               ) : (
                 <div className="threads-layout__thread-list">
+                  {pinnedThreads.map(renderThread)}
+                  {pinnedThreads.length > 0 && (otherThreads.length > 0 || optimisticDraftThread) ? (
+                    <div className="threads-layout__pinned-divider" role="separator" />
+                  ) : null}
                   {optimisticDraftThread ? (
                     <button
                       type="button"
@@ -87,20 +118,7 @@ export function ThreadsLayout(): React.JSX.Element {
                       <span className="threads-layout__thread-title">{optimisticDraftThread.title}</span>
                     </button>
                   ) : null}
-                  {threads.map((thread) => {
-                    const isSelected = thread.id === threadId;
-                    return (
-                      <button
-                        key={thread.id}
-                        type="button"
-                        className={`threads-layout__thread-item ${isSelected ? "threads-layout__thread-item--active" : ""} ${thread.unreadCount > 0 ? "threads-layout__thread-item--unread" : ""}`}
-                        onClick={() => navigate(`/threads/${thread.id}`)}
-                      >
-                        <span className="threads-layout__thread-title">{thread.title}</span>
-                        <UnreadBadge count={thread.unreadCount} />
-                      </button>
-                    );
-                  })}
+                  {otherThreads.map(renderThread)}
                   <ThreadListLoadMore />
                 </div>
               )

@@ -36,6 +36,8 @@ import { AiProvidersModule } from '../ai-providers/ai-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
 import { ThreadReadStateEntity } from './read-state/thread-read-state.entity';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadPinEntity } from './pins/thread-pin.entity';
+import { ThreadPinsService } from './pins/thread-pins.service';
 import { ThreadMessageWriterService } from './thread-message-writer.service';
 import { ThreadTimerEntity } from './timers/thread-timer.entity';
 import { ThreadTimerFiringEntity } from './timers/thread-timer-firing.entity';
@@ -53,6 +55,7 @@ import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service
       ThreadTimerEntity,
       ThreadTimerFiringEntity,
       ThreadReadStateEntity,
+      ThreadPinEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
@@ -96,6 +99,7 @@ import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
     ThreadReadStateService,
+    ThreadPinsService,
     ThreadMessageWriterService,
   ],
   exports: [ThreadsService],

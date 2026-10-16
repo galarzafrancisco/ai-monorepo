@@ -5399,6 +5399,72 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/pin": {
+      "put": {
+        "operationId": "ThreadsController_pinThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread pinned"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Pin the thread to the top of the caller's thread list",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "delete": {
+        "operationId": "ThreadsController_unpinThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread unpinned"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Unpin the thread from the caller's thread list",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/agents": {
       "post": {
         "operationId": "AgentsController_createAgent",
@@ -11776,6 +11842,11 @@
             "type": "number",
             "description": "Messages in this thread written by someone else that the caller has not read yet",
             "example": 2
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "The caller pinned this thread. Pinned threads are listed before all others",
+            "example": false
           }
         },
         "required": [
@@ -11783,7 +11854,8 @@
           "title",
           "stateContextBlockId",
           "lastActivityAt",
-          "unreadCount"
+          "unreadCount",
+          "pinned"
         ]
       },
       "ThreadListResponseDto": {

@@ -48,6 +48,8 @@ import {
 import { ThreadAgentService } from './agent/thread-agent.service';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadPinsService } from './pins/thread-pins.service';
+import { ThreadPinEntity } from './pins/thread-pin.entity';
 import { ThreadMessageWriterService } from './thread-message-writer.service';
 import { ThreadTimersService } from './timers/thread-timers.service';
 import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
@@ -92,6 +94,7 @@ export class ThreadsService {
     private readonly threadAgentService: ThreadAgentService,
     private readonly threadTitleService: ThreadTitleService,
     private readonly threadReadStateService: ThreadReadStateService,
+    private readonly threadPinsService: ThreadPinsService,
     private readonly threadMessageWriter: ThreadMessageWriterService,
     private readonly threadTimers: ThreadTimersService,
     private readonly taskSubscriptions: ThreadTaskSubscriptionsService,
@@ -329,20 +332,37 @@ export class ThreadsService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const [threads, total] = await this.threadRepository.findAndCount({
-      skip,
-      take: input.limit,
-      // Latest visible message first. The id breaks ties, so a thread never
-      // lands on two pages or on none.
-      order: { lastActivityAt: 'DESC', id: 'DESC' },
-    });
-
-    const unreadCounts = input.actorId
-      ? await this.threadReadStateService.getUnreadCounts(
-          threads.map((thread) => thread.id),
-          input.actorId,
+    const query = this.threadRepository.createQueryBuilder('thread');
+    if (input.actorId) {
+      // The caller's pinned threads come first. At most one pin row matches
+      // each thread, so the join never repeats a thread.
+      query
+        .leftJoin(
+          ThreadPinEntity,
+          'pin',
+          'pin.thread_id = thread.id AND pin.actor_id = :actorId',
+          { actorId: input.actorId },
         )
-      : new Map<string, number>();
+        .orderBy('CASE WHEN pin.thread_id IS NULL THEN 1 ELSE 0 END', 'ASC')
+        .addOrderBy('thread.lastActivityAt', 'DESC');
+    } else {
+      query.orderBy('thread.lastActivityAt', 'DESC');
+    }
+    // Latest visible message first. The id breaks ties, so a thread never
+    // lands on two pages or on none.
+    const [threads, total] = await query
+      .addOrderBy('thread.id', 'DESC')
+      .offset(skip)
+      .limit(input.limit)
+      .getManyAndCount();
+
+    const threadIds = threads.map((thread) => thread.id);
+    const [unreadCounts, pinnedIds] = input.actorId
+      ? await Promise.all([
+          this.threadReadStateService.getUnreadCounts(threadIds, input.actorId),
+          this.threadPinsService.getPinnedThreadIds(threadIds, input.actorId),
+        ])
+      : [new Map<string, number>(), new Set<string>()];
 
     this.logger.log({
       message: 'Threads listed',
@@ -358,6 +378,7 @@ export class ThreadsService {
         stateContextBlockId: thread.stateContextBlockId,
         lastActivityAt: thread.lastActivityAt,
         unreadCount: unreadCounts.get(thread.id) ?? 0,
+        pinned: pinnedIds.has(thread.id),
       })),
       total,
       page: input.page,
