@@ -1,3 +1,3 @@
 # @taico/events
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/events/0.8.2)](https://badge.socket.dev/npm/package/@taico/events/0.8.2)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/events/0.8.3)](https://badge.socket.dev/npm/package/@taico/events/0.8.3)
