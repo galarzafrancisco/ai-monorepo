@@ -763,6 +763,7 @@ export interface ThreadListItemResponseDto {
   stateContextBlockId: string;
   lastActivityAt: string;
   unreadCount: number;
+  pinned: boolean;
 }
 
 export interface ThreadListResponseDto {

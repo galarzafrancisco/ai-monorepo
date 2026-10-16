@@ -515,4 +515,46 @@ export class ThreadsService {
             },
         });
     }
+    /**
+     * Pin the thread to the top of the caller's thread list
+     * @param id Thread UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerPinThread(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'PUT',
+            url: '/api/v1/threads/{id}/pin',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Unpin the thread from the caller's thread list
+     * @param id Thread UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerUnpinThread(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/threads/{id}/pin',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
 }

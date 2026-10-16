@@ -5,13 +5,14 @@ import type { ThreadListItem, Thread } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
 import {
   ThreadActivityWireEvent,
+  ThreadPinnedWireEvent,
   ThreadReadWireEvent,
   ThreadTitleUpdatedWireEvent,
   ThreadWireEvents,
 } from '@taico/events';
 import { useAuth } from '../../auth';
 import { createSnapshotSync, SnapshotSync } from './snapshotSync';
-import { applyThreadActivity } from './threadListOrder';
+import { applyThreadActivity, applyThreadPinned, compareThreads } from './threadListOrder';
 
 type ThreadsSubscribeAck = {
   ok: boolean;
@@ -33,7 +34,7 @@ type ThreadsSnapshot = {
 };
 
 /**
- * Fetches the first `pageCount` pages, latest message first.
+ * Fetches the first `pageCount` pages: pinned threads, then latest message first.
  *
  * Every refresh fetches everything the list is showing, not just the last
  * page, so the list stays one snapshot: see snapshotSync.ts.
@@ -174,6 +175,25 @@ export const useThreads = () => {
     }
   }, [setUnreadCount, sync]);
 
+  // Moves the thread here straight away; the server tells the user's other tabs and devices.
+  const setThreadPinned = useCallback(async (threadId: string, pinned: boolean) => {
+    sync.noteChange();
+    setThreads((prev) => applyThreadPinned(prev, threadId, pinned));
+    try {
+      if (pinned) {
+        await ThreadsService.ThreadsController_pinThread({ id: threadId });
+      } else {
+        await ThreadsService.ThreadsController_unpinThread({ id: threadId });
+      }
+      // A list fetched before the server recorded this would undo the move.
+      sync.noteChange();
+    } catch (err) {
+      console.error(`Failed to ${pinned ? 'pin' : 'unpin'} thread`, err);
+      sync.noteChange();
+      setThreads((prev) => applyThreadPinned(prev, threadId, !pinned));
+    }
+  }, [sync]);
+
   // Get single thread with full details
   const getThread = useCallback(async (id: string): Promise<Thread> => {
     return await ThreadsService.ThreadsController_getThread({ id });
@@ -183,12 +203,13 @@ export const useThreads = () => {
   const createThread = useCallback(async (title?: string): Promise<Thread> => {
     const thread = await ThreadsService.ThreadsController_createThread({ body: { title } });
     // Add to local state optimistically. A thread with no messages yet is
-    // ordered by when it was created, so the new one goes first.
+    // ordered by when it was created, so the new one goes first after the
+    // pinned threads.
     sync.noteChange();
     setThreads((prev) => [
-      { ...thread, lastActivityAt: thread.createdAt, unreadCount: 0 },
+      { ...thread, lastActivityAt: thread.createdAt, unreadCount: 0, pinned: false },
       ...prev,
-    ]);
+    ].sort(compareThreads));
     setTotalThreads((prev) => prev + 1);
     return thread;
   }, [sync]);
@@ -262,6 +283,19 @@ export const useThreads = () => {
       setUnreadCount(event.payload.threadId, 0);
     });
 
+    newSocket.on(ThreadWireEvents.THREAD_PINNED, (event: ThreadPinnedWireEvent) => {
+      if (!threadIdsRef.current.has(event.payload.threadId)) {
+        // Pinned from another tab while older than every loaded page: the
+        // server now lists it on the first page.
+        if (event.payload.pinned) void refreshThreads();
+        return;
+      }
+      sync.noteChange();
+      setThreads((prev) =>
+        applyThreadPinned(prev, event.payload.threadId, event.payload.pinned),
+      );
+    });
+
     newSocket.on('disconnect', () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
@@ -302,6 +336,7 @@ export const useThreads = () => {
     createThread,
     deleteThread,
     markThreadRead,
+    setThreadPinned,
     setViewingThreadId,
   };
 };

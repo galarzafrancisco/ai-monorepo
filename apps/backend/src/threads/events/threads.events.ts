@@ -112,3 +112,19 @@ export class ThreadReadEvent extends ThreadDomainEvent<ThreadReadPayload> {
     super(actor, payload);
   }
 }
+
+export type ThreadPinnedPayload = {
+  threadId: string;
+  /** Whose list changed. Only this actor's clients are told. */
+  actorId: string;
+  pinned: boolean;
+};
+
+/** An actor pinned or unpinned a thread in their own list. */
+export class ThreadPinnedEvent extends ThreadDomainEvent<ThreadPinnedPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadPinnedEvent');
+
+  constructor(actor: EventActor, payload: ThreadPinnedPayload) {
+    super(actor, payload);
+  }
+}

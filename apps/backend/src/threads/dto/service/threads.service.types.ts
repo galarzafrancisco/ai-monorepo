@@ -87,7 +87,10 @@ export type AddTagInput = {
 export type ListThreadsInput = {
   page: number;
   limit: number;
-  /** Whose unread counts to report. Without it every count is 0. */
+  /**
+   * Whose unread counts and pins to report. Without it every count is 0 and
+   * nothing is pinned.
+   */
   actorId?: string;
 };
 
@@ -117,6 +120,8 @@ export type ThreadListItemResult = {
   stateContextBlockId: string;
   lastActivityAt: Date;
   unreadCount: number;
+  /** The caller pinned this thread to the top of their list. */
+  pinned: boolean;
 };
 
 export type ListThreadsResult = {

@@ -111,3 +111,10 @@
     transform: translateX(0);
   }
 }
+
+/* Separates the user's pinned threads from the rest of the list. */
+.threads-page__pinned-divider {
+  height: 1px;
+  margin: var(--space-3) var(--space-4);
+  background: var(--border);
+}

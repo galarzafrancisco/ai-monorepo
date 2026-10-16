@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -23,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { ThreadsService } from './threads.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadPinsService } from './pins/thread-pins.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 import { AttachTaskDto } from './dto/attach-task.dto';
@@ -60,6 +62,7 @@ export class ThreadsController {
   constructor(
     private readonly threadsService: ThreadsService,
     private readonly threadReadStateService: ThreadReadStateService,
+    private readonly threadPinsService: ThreadPinsService,
     private readonly threadAgentLogService: ThreadAgentLogService,
   ) {}
 
@@ -430,6 +433,35 @@ export class ThreadsController {
     @CurrentUser() user: UserContext,
   ): Promise<void> {
     await this.threadReadStateService.markRead(params.id, user.actorId);
+  }
+
+  // Read scope is enough: a pin only changes the caller's own list.
+  @Put(':id/pin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: "Pin the thread to the top of the caller's thread list",
+  })
+  @ApiNoContentResponse({ description: 'Thread pinned' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async pinThread(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadPinsService.pin(params.id, user.actorId);
+  }
+
+  @Delete(':id/pin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: "Unpin the thread from the caller's thread list",
+  })
+  @ApiNoContentResponse({ description: 'Thread unpinned' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async unpinThread(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadPinsService.unpin(params.id, user.actorId);
   }
 
   @Get(':id/messages')

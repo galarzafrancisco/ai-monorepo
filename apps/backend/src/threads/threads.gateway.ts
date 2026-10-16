@@ -15,6 +15,7 @@ import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
   ThreadAgentResponseDeltaEvent,
+  ThreadPinnedEvent,
   ThreadReadEvent,
   ThreadTitleUpdatedEvent,
   ThreadUpdatedEvent,
@@ -25,6 +26,7 @@ import {
   AgentResponseDeltaWireEvent,
   MessageCreatedWireEvent,
   ThreadActivityWireEvent,
+  ThreadPinnedWireEvent,
   ThreadReadWireEvent,
   ThreadUpdatedWireEvent,
   ThreadTitleUpdatedWireEvent,
@@ -195,6 +197,25 @@ export class ThreadsGateway
     this.server
       .to(getActorRoomName(event.payload.actorId))
       .emit(ThreadWireEvents.THREAD_READ, wireEvent);
+  }
+
+  @OnEvent(ThreadPinnedEvent.INTERNAL)
+  handleThreadPinned(event: ThreadPinnedEvent) {
+    if (!this.server) {
+      return;
+    }
+
+    const wireEvent: ThreadPinnedWireEvent = {
+      payload: {
+        threadId: event.payload.threadId,
+        pinned: event.payload.pinned,
+      },
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(getActorRoomName(event.payload.actorId))
+      .emit(ThreadWireEvents.THREAD_PINNED, wireEvent);
   }
 
   @OnEvent(ThreadAgentActivityEvent.INTERNAL)

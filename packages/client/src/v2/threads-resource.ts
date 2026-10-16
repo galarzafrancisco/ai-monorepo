@@ -111,4 +111,14 @@ export class ThreadsResource extends BaseClient {
     return this.request('POST', `/api/v1/threads/${params.id}/read`, { responseType: 'void', signal: params?.signal });
   }
 
+  /** Pin the thread to the top of the caller's thread list */
+  async ThreadsController_pinThread(params: { id: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('PUT', `/api/v1/threads/${params.id}/pin`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Unpin the thread from the caller's thread list */
+  async ThreadsController_unpinThread(params: { id: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/pin`, { responseType: 'void', signal: params?.signal });
+  }
+
 }
