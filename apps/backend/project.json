@@ -21,6 +21,12 @@
         "{projectRoot}/dist/public"
       ],
       "cache": true
+    },
+    "eval": {
+      "cache": false
+    },
+    "eval:snapshot-mcp": {
+      "cache": false
     }
   }
 }

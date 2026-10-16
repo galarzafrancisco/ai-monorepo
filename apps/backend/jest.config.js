@@ -1,8 +1,11 @@
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '../../',
-  roots: ['<rootDir>/apps/backend/src', '<rootDir>/packages'],
-  testMatch: ['<rootDir>/apps/backend/src/**/*.spec.ts'],
+  roots: ['<rootDir>/apps/backend/src', '<rootDir>/apps/backend/evals', '<rootDir>/packages'],
+  testMatch: [
+    '<rootDir>/apps/backend/src/**/*.spec.ts',
+    '<rootDir>/apps/backend/evals/**/*.spec.ts',
+  ],
   transform: {
     '^.+\\.(t|j)s$': ['ts-jest', {
       tsconfig: {
