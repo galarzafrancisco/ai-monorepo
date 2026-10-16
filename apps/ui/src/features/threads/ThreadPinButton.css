@@ -33,17 +33,33 @@
 
 /* Where there is hover, unpinned rows only show the pin when hovered. */
 @media (hover: hover) {
-  .thread-pin-button:not(.thread-pin-button--pinned) {
+  .thread-pin-button--row:not(.thread-pin-button--pinned) {
     opacity: 0;
   }
 
-  *:hover > .thread-pin-button:not(.thread-pin-button--pinned),
-  .data-row:hover .thread-pin-button:not(.thread-pin-button--pinned),
-  .thread-pin-button:focus-visible {
+  *:hover > .thread-pin-button--row:not(.thread-pin-button--pinned),
+  .data-row:hover .thread-pin-button--row:not(.thread-pin-button--pinned),
+  .thread-pin-button--row:focus-visible {
     opacity: 0.6;
   }
 
-  .thread-pin-button:not(.thread-pin-button--pinned):hover {
+  .thread-pin-button--row:not(.thread-pin-button--pinned):hover {
     opacity: 1;
   }
+}
+
+/* Next to an open thread's title: always visible, finger-sized. */
+.thread-pin-button--header {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-2);
+  opacity: 0.7;
+}
+
+.thread-pin-button--header:hover {
+  background: var(--surface);
+}
+
+.thread-pin-button--header.thread-pin-button--pinned {
+  opacity: 1;
 }
