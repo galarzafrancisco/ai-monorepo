@@ -24,9 +24,6 @@ export const MAIN_NAVEGATION_ITEMS: NavegationItem[] = [
   { path: '/threads', label: 'Threads', icon: MessagesSquare },
   { path: '/tasks', label: 'Tasks', icon: ClipboardCheck },
   { path: '/context', label: 'Context', icon: Layers },
-  // Schedules lives under Context in the sidebar, but its route is still a
-  // view inside Tasks (/tasks/schedule). Active-state highlighting uses the
-  // longest matching path, so ordering does not affect which item is active.
   { path: '/tasks/schedule', label: 'Schedules', icon: CalendarDays },
   { path: '/projects', label: 'Projects', icon: FolderKanban },
   { path: '/tools', label: 'Tools', icon: PocketKnife },
