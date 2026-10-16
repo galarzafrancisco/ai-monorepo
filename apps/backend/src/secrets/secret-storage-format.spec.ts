@@ -1,6 +1,7 @@
 import {
   classifyStoredSecret,
   decryptEnvelope,
+  decryptSecret,
   encryptEnvelope,
   parseKeyHex,
 } from './secret-storage-format';
@@ -13,6 +14,16 @@ describe('secret-storage-format', () => {
     const encrypted = encryptEnvelope('sk-test-value', key);
     expect(encrypted.split(':')).toHaveLength(3);
     expect(decryptEnvelope(encrypted, key)).toBe('sk-test-value');
+  });
+
+  it('decrypts with a hex key, without the service', () => {
+    const encrypted = encryptEnvelope('sk-test-value', key);
+    expect(decryptSecret(encrypted, '11'.repeat(32))).toBe('sk-test-value');
+    expect(() => decryptSecret(encrypted, '22'.repeat(32))).toThrow();
+    expect(() => decryptSecret(encrypted, 'not-hex')).toThrow();
+    expect(() => decryptSecret('no-envelope', '11'.repeat(32))).toThrow(
+      'Invalid encrypted value format',
+    );
   });
 
   it('classifies a freshly encrypted value as encrypted', () => {
