@@ -55,6 +55,7 @@ export function DataRow({
   const animationClass = animation ? `data-row--${animation}` : "";
   const highlightClass = highlight ? "data-row--highlight": "";
   const clickClass = onClick ? "data-row--clickable" : "";
+  const leadingClass = leading ? "" : "data-row--no-leading";
 
   const handleClick = (event: React.MouseEvent) => {
     onClick?.(event);
@@ -62,7 +63,7 @@ export function DataRow({
 
   return (
     <div className={`data-row__wrapper ${animationClass}`} onClick={handleClick}>
-      <div className={`data-row ${highlightClass} ${clickClass} ${className}`} data-component="data-row">
+      <div className={`data-row ${highlightClass} ${clickClass} ${leadingClass} ${className}`} data-component="data-row">
 
         {/* Leading */}
         {leading ? <div className="data-row__leading">{leading}</div> : null}

@@ -32,6 +32,7 @@ import {
   ThreadTaskSubscriptionList,
 } from "./ThreadWaitLists";
 import { ThreadChat } from "./ThreadChat";
+import { ThreadPinControl } from "./ThreadPinControl";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { useThreadTokenUsage } from "./useThreadTokenUsage";
 import { formatTokenCount } from "../../shared/helpers/tokenCount";
@@ -448,10 +449,13 @@ function ThreadDetailPageDesktop({
         <div className="thread-detail-page__content">
           <div className="thread-detail-page__header">
             <div className="thread-detail-page__header-top">
-              <div>
-                <Text size="5" weight="bold">
-                  {thread.title}
-                </Text>
+              <div className="thread-detail-page__header-main">
+                <div className="thread-detail-page__title-row">
+                  <Text size="5" weight="bold" className="thread-detail-page__title">
+                    {thread.title}
+                  </Text>
+                  <ThreadPinControl threadId={thread.id} />
+                </div>
                 <div className="thread-detail-page__meta-row">
                   <Chip color="gray">#{thread.id.slice(0, 6)}</Chip>
                   <Text size="1" tone="muted">
@@ -614,7 +618,7 @@ function ThreadDetailPageMobile({
           ☰
         </button>
         <div className="thread-detail-page__mobile-header-content">
-          <Text size="2" weight="semibold">
+          <Text size="2" weight="semibold" className="thread-detail-page__mobile-title">
             {thread.title}
           </Text>
           <div className="thread-detail-page__mobile-meta">
@@ -630,6 +634,7 @@ function ThreadDetailPageMobile({
             <ThreadTokenUsageLabel usage={tokenUsage} />
           </div>
         </div>
+        <ThreadPinControl threadId={thread.id} />
       </header>
 
       {/* Fixed tab navigation */}
