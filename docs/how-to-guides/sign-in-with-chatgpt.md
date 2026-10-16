@@ -168,7 +168,9 @@ The end-to-end spec runs the whole flow against `FakeOpenAi`, which checks PKCE,
 
 ## Manual check with a real account
 
-1. In your stack's env file set:
+1. Run `npm run dev:chatgpt` and skip to step 3. It starts stack 1 (UI on :2000) with the settings below, on its own `taico_chatgpt` database, and keeps a generated key in `.env.chatgpt-dev` (gitignored). Log in as `dev@test.com` / `dev`.
+
+   Or, by hand, in your stack's env file set:
    ```bash
    SECRETS_ENABLED=true
    SECRETS_ENCRYPTION_KEY=<output of: openssl rand -hex 32>
