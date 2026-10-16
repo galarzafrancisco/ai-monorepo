@@ -5,8 +5,6 @@ import { HomeProvider } from "./HomeProvider";
 import { SettingsPage } from "./SettingsPage";
 import { SettingsAccountPage } from "./SettingsAccountPage";
 import { SettingsAppearancePage } from "./SettingsAppearancePage";
-import { SettingsProjectsPage } from "./SettingsProjectsPage";
-import { SettingsProjectCreatePage } from "./SettingsProjectCreatePage";
 import { SettingsModelsPage } from "./SettingsModelsPage";
 import { SettingsDataPage } from './SettingsDataPage';
 import { SettingsWorkersPage } from './SettingsWorkersPage';
@@ -24,8 +22,9 @@ export function HomeRoutes() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/account" element={<SettingsAccountPage />} />
           <Route path="/settings/appearance" element={<SettingsAppearancePage />} />
-          <Route path="/settings/projects" element={<SettingsProjectsPage />} />
-          <Route path="/settings/projects/new" element={<SettingsProjectCreatePage />} />
+          {/* Projects moved out of Settings into its own section. */}
+          <Route path="/settings/projects" element={<Navigate to="/projects" replace />} />
+          <Route path="/settings/projects/new" element={<Navigate to="/projects/new" replace />} />
           <Route path="/settings/models" element={<SettingsModelsPage />} />
           {/* Old addresses of the two pages above and below. */}
           <Route path="/settings/chat" element={<Navigate to="/settings/models" replace />} />

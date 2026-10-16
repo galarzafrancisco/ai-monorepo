@@ -73,6 +73,13 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       onSelect: () => navigate('/threads'),
     },
     {
+      id: 'nav-projects',
+      label: 'Projects',
+      description: 'Go to projects',
+      aliases: ['project', 'repository', 'repo'],
+      onSelect: () => navigate('/projects'),
+    },
+    {
       id: 'nav-tools',
       label: 'Tools',
       description: 'Go to tools',
