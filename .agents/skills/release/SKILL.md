@@ -28,7 +28,7 @@ git checkout -b feature/release-<NEW>
 npm run release:taico:bump -- --from=<PREV> --to=<NEW>
 ```
 
-Always pass `--from` and `--to`, because the script's defaults are stale. The script updates:
+`--from` must be the current version and `--to` the new one; the script refuses to run otherwise. It updates:
 - the `version` of every `@taico/*` package in `apps/*` and `packages/*`
 - `@taico/*` dependency ranges in those manifests and in `package-lock.json`
 - the Socket badges in the READMEs
@@ -94,4 +94,4 @@ npm run release:taico
 
 It runs `npm login` and `npm run build:dev`, then publishes each package and app in dependency order, asking for confirmation at each step.
 
-`npm run release:taico:all` is the same with a bump step first. Without flags that bump uses the script's stale defaults (`0.3.5` → `0.4.0`), matches nothing, and does nothing, so either command works. Prefer `release:taico`: the bump already happened in the release PR.
+`npm run release:taico:all` is the same with a bump step first, so it needs `--from`/`--to` and refuses to run once the release PR has already bumped the versions. Use `release:taico`.

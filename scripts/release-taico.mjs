@@ -15,8 +15,6 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const defaultFromVersion = "0.3.5";
-const defaultToVersion = "0.4.0";
 
 const packageReleaseOrder = [
   "packages/shared",
@@ -279,7 +277,31 @@ async function runCommand(command, args, options = {}) {
   });
 }
 
+const semverPattern = /^\d+\.\d+\.\d+$/;
+
+/**
+ * The bump rewrites the helper scripts to `toVersion` whatever version they
+ * pin, so it must only run with versions the caller chose on purpose.
+ */
+function requireBumpVersions(fromVersion, toVersion) {
+  if (!fromVersion || !toVersion) {
+    throw new Error("bump needs --from=<current version> and --to=<new version>.");
+  }
+  for (const version of [fromVersion, toVersion]) {
+    if (!semverPattern.test(version)) {
+      throw new Error(`"${version}" is not a version like 1.2.3.`);
+    }
+  }
+  const current = readJson(path.join(repoRoot, "apps/backend/package.json")).version;
+  if (current !== fromVersion) {
+    throw new Error(
+      `--from=${fromVersion} does not match the current version ${current}. Nothing was changed.`,
+    );
+  }
+}
+
 function bump(fromVersion, toVersion) {
+  requireBumpVersions(fromVersion, toVersion);
   const results = workspacePackageJsonPaths().map((filePath) =>
     bumpPackageJson(filePath, fromVersion, toVersion),
   );
@@ -347,10 +369,10 @@ async function release() {
 
 function usage() {
   console.log(`Usage:
-  node scripts/release-taico.mjs bump [--from=${defaultFromVersion}] [--to=${defaultToVersion}]
+  node scripts/release-taico.mjs bump --from=<current> --to=<new>
   node scripts/release-taico.mjs socket-badges
   node scripts/release-taico.mjs release
-  node scripts/release-taico.mjs all [--from=${defaultFromVersion}] [--to=${defaultToVersion}]
+  node scripts/release-taico.mjs all --from=<current> --to=<new>
 
 Commands:
   bump     Update every @taico package version and @taico dependency range.
@@ -361,8 +383,8 @@ Commands:
 `);
 }
 
-const fromVersion = parseFlag("from", defaultFromVersion);
-const toVersion = parseFlag("to", defaultToVersion);
+const fromVersion = parseFlag("from");
+const toVersion = parseFlag("to");
 
 try {
   switch (commandName()) {
