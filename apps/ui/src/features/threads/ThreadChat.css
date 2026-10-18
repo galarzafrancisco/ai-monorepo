@@ -1,10 +1,15 @@
 .thread-chat {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   gap: var(--space-3);
   min-height: 0;
   flex: 1;
+}
+
+.thread-chat__composer {
+  position: relative;
 }
 
 .thread-chat__messages {
@@ -14,25 +19,6 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-3) 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-subtle) transparent;
-}
-
-.thread-chat__messages::-webkit-scrollbar {
-  width: 6px;
-}
-
-.thread-chat__messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.thread-chat__messages::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 3px;
-}
-
-.thread-chat__messages::-webkit-scrollbar-thumb:hover {
-  background: var(--border);
 }
 
 .thread-chat__message {

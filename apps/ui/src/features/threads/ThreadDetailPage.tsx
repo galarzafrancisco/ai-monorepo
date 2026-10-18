@@ -482,7 +482,7 @@ function ThreadDetailPageDesktop({
       {/* Right sidebar with context and tasks */}
       <div className={`thread-detail-page__sidebar ${!isSidebarOpen ? "thread-detail-page__sidebar--collapsed" : ""}`}>
         {isSidebarOpen && (
-          <div className="thread-detail-page__sidebar-scroll">
+          <div className="thread-detail-page__sidebar-scroll thin-scrollbar">
             {thread.participants.length > 0 && (
               <div className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">

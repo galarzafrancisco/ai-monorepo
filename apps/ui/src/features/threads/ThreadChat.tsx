@@ -7,7 +7,7 @@ import { useAuth } from "../../auth";
 import { actorHandle, isDeactivated } from "../actors";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
-import { ChatSetupCallout } from "../ai-models/ChatSetupCallout";
+import { ThreadChatLocked } from "./ThreadChatLocked";
 import Markdown from "marked-react";
 import "./ThreadChat.css";
 
@@ -30,6 +30,8 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
+  const lockedKind = !isChatReadinessLoading && readiness && readiness.kind !== "ready" ? readiness.kind : null;
+  const openModelSettings = () => navigate("/settings/models");
 
   const {
     messages,
@@ -85,7 +87,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || chatIsSending) return;
+    if (!newMessage.trim() || chatIsSending || lockedKind) return;
     try {
       await sendMessage(newMessage);
       clearDraft();
@@ -121,7 +123,15 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
 
   return (
     <div className="thread-chat">
-      <div className="thread-chat__messages" ref={messagesContainerRef}>
+      {/* Nothing to read yet: cover the whole chat. Otherwise cover only the composer. */}
+      {lockedKind && messages.length === 0 && (
+        <ThreadChatLocked kind={lockedKind} variant="full" onOpenSettings={openModelSettings} />
+      )}
+      <div
+        className="thread-chat__messages thin-scrollbar"
+        ref={messagesContainerRef}
+        inert={Boolean(lockedKind && messages.length === 0)}
+      >
         {hasOlderMessages && (
           <div className="thread-chat__older">
             <Button
@@ -216,17 +226,11 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
         </div>
       )}
 
-      {!isChatReadinessLoading && readiness && !readiness.isReady ? (
-        <div className="thread-chat__setup-callout">
-          <ChatSetupCallout
-            title={readiness.title}
-            description={readiness.description}
-            ctaLabel={readiness.ctaLabel}
-            onOpenSettings={() => navigate('/settings/models')}
-          />
-        </div>
-      ) : (
-        <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
+      <div className="thread-chat__composer">
+        {lockedKind && messages.length > 0 && (
+          <ThreadChatLocked kind={lockedKind} variant="composer" onOpenSettings={openModelSettings} />
+        )}
+        <form className="thread-chat__input-form" onSubmit={handleSendMessage} inert={Boolean(lockedKind)}>
           <div className="thread-chat__composer-row">
             <textarea
               ref={messageInputRef}
@@ -235,7 +239,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               onChange={(e) => setDraftState({ ...draftState, content: e.target.value })}
               placeholder="Write a message to this thread..."
               rows={3}
-              disabled={chatIsSending || isChatReadinessLoading}
+              disabled={chatIsSending || isChatReadinessLoading || Boolean(lockedKind)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -247,7 +251,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               type="submit"
               variant="secondary"
               className="thread-chat__send-btn"
-              disabled={!newMessage.trim() || chatIsSending || isChatReadinessLoading}
+              disabled={!newMessage.trim() || chatIsSending || isChatReadinessLoading || Boolean(lockedKind)}
             >
               {chatIsSending ? "sending..." : "send"}
             </Button>
@@ -258,7 +262,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             </div>
           )}
         </form>
-      )}
+      </div>
     </div>
   );
 }

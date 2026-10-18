@@ -111,6 +111,30 @@ ul, ol {
   flex-direction: column;
 }
 
+/* ===== Scrollbars ===== */
+/* Thin, quiet scrollbar for panes that scroll (lists, chat, sidebars). */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+
 /* ===== Terminal Theme Typography ===== */
 [data-theme='terminal'] body,
 [data-theme='terminal'] button,

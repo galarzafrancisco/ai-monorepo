@@ -62,7 +62,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       {isDesktop && (
         <aside className={`beta-shell__desktop__sidebar ${isCollapsed ? 'beta-shell__desktop__sidebar--collapsed' : ''}`}>
-          <nav className='beta-shell__desktop__nav'>
+          <nav className='beta-shell__desktop__nav thin-scrollbar'>
             <div className="beta-shell__desktop__navInner">
               <Stack spacing="1">
                 {navItems.map(item => {
