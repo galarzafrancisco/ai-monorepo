@@ -95,7 +95,7 @@ export function ThreadsLayout(): React.JSX.Element {
             )}
           </div>
 
-          <div className="threads-layout__sidebar-body">
+          <div className="threads-layout__sidebar-body thin-scrollbar">
             {!isSidebarCollapsed ? (
               isLoading ? (
                 <div className="threads-layout__sidebar-status">Loading threads...</div>
