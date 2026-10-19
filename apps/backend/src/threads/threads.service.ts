@@ -45,6 +45,7 @@ import {
   ThreadDeletedEvent,
   ThreadUpdatedEvent,
 } from './events/threads.events';
+import { BlockDeletedEvent } from '../context/events/context.events';
 import { ThreadAgentService } from './agent/thread-agent.service';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
@@ -286,16 +287,44 @@ export class ThreadsService {
       throw new ThreadNotFoundError(threadId);
     }
 
-    await this.threadRepository.softRemove(thread);
+    // A real delete, not a soft one: a soft-deleted row kept pointing at its
+    // state block (RESTRICT foreign key), so the block could never be deleted
+    // and still looked like the state of a thread. Everything that hangs off
+    // the thread (messages, links, timers, pins...) goes with it by cascade.
+    // The state block belongs to the thread and is deleted with it, unless
+    // someone nested blocks under it: then it stays as an ordinary block.
+    const stateBlockId = thread.stateContextBlockId;
+    const stateBlockDeleted = await this.threadRepository.manager.transaction(
+      async (manager) => {
+        await manager.delete(ThreadEntity, { id: threadId });
+
+        const hasChildren = await manager.exists(ContextBlockEntity, {
+          where: { parentId: stateBlockId },
+        });
+        if (hasChildren) {
+          return false;
+        }
+        const result = await manager.delete(ContextBlockEntity, { id: stateBlockId });
+        return (result.affected ?? 0) > 0;
+      },
+    );
 
     this.eventEmitter.emit(
       ThreadDeletedEvent.INTERNAL,
       new ThreadDeletedEvent({ id: actorId }, threadId),
     );
+    if (stateBlockDeleted) {
+      this.eventEmitter.emit(
+        BlockDeletedEvent.INTERNAL,
+        new BlockDeletedEvent(stateBlockId, { id: actorId }),
+      );
+    }
 
     this.logger.log({
       message: 'Thread deleted',
       threadId,
+      stateBlockId,
+      stateBlockDeleted,
     });
   }
 
@@ -731,7 +760,6 @@ export class ThreadsService {
         'tags',
         'participants',
       ],
-      withDeleted: true, // Include soft-deleted threads because FK constraint still applies
     });
 
     return Promise.all(threads.map((thread) => this.buildThreadResult(thread)));
@@ -938,7 +966,6 @@ export class ThreadsService {
       rowVersion: thread.rowVersion,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
-      deletedAt: thread.deletedAt,
     };
   }
 

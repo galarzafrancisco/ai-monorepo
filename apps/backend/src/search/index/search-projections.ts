@@ -90,8 +90,8 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
              '{}'::jsonb AS meta,
              b."updated_at" AS source_updated_at
       FROM "context_blocks" b
-      -- A thread's state memory is indexed as the thread, below. The check includes
-      -- deleted threads on purpose: their state stops being searchable altogether.
+      -- A thread's state memory is indexed as the thread, below. Deleting a thread
+      -- deletes its state block too, so it stops being searchable altogether.
       WHERE b."deleted_at" IS NULL
         AND NOT EXISTS (SELECT 1 FROM "threads" t WHERE t."state_context_block_id" = b."id") {{SCOPE}}`,
   },
@@ -111,7 +111,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
              greatest(t."updated_at", b."updated_at") AS source_updated_at
       FROM "threads" t
       JOIN "context_blocks" b ON b."id" = t."state_context_block_id" AND b."deleted_at" IS NULL
-      WHERE t."deleted_at" IS NULL {{SCOPE}}`,
+      WHERE TRUE {{SCOPE}}`,
   },
   {
     entityType: 'tool',

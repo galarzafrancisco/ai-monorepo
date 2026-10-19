@@ -60,6 +60,8 @@ export function ContextBlockDetailPage() {
     }
 
     let cancelled = false;
+    // Drop the previous block's thread so its link never shows on this one.
+    setThreadId(null);
     setIsCheckingThread(true);
 
     // Use the specific endpoint to find threads by state block ID

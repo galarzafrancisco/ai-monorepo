@@ -39,6 +39,7 @@ import { ThreadTimers1761800000000 } from './migrations/1761800000000-ThreadTime
 import { DedupeArtefacts1761900000000 } from './migrations/1761900000000-DedupeArtefacts';
 import { ThreadPins1762000000000 } from './migrations/1762000000000-ThreadPins';
 import { ThreadMessageTimezone1762100000000 } from './migrations/1762100000000-ThreadMessageTimezone';
+import { ThreadHardDelete1762200000000 } from './migrations/1762200000000-ThreadHardDelete';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -79,6 +80,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         DedupeArtefacts1761900000000,
         ThreadPins1762000000000,
         ThreadMessageTimezone1762100000000,
+        ThreadHardDelete1762200000000,
       ],
     }),
     EventEmitterModule.forRoot(),

@@ -138,7 +138,7 @@ export class ThreadTaskSubscriptionsService {
          UPDATE thread_task_subscriptions s
             SET triggered_status = $2, triggered_task_name = $3, triggered_at = now()
            FROM threads t
-          WHERE s.task_id = $1 AND t.id = s.thread_id AND t.deleted_at IS NULL
+          WHERE s.task_id = $1 AND t.id = s.thread_id
           RETURNING s.thread_id
        )
        SELECT thread_id FROM triggered`,

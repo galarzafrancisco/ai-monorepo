@@ -4,7 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  DeleteDateColumn,
   VersionColumn,
   Index,
   ManyToMany,
@@ -160,6 +159,7 @@ export class ThreadEntity {
   })
   lastActivityAt!: Date;
 
-  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
-  deletedAt?: Date | null;
+  // No `deleted_at`: threads are deleted for real, together with their state
+  // block (see ThreadsService.deleteThread). A soft-deleted row kept the state
+  // block pinned by the RESTRICT foreign key above.
 }

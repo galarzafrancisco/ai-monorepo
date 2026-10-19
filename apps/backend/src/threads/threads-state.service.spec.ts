@@ -18,6 +18,22 @@ import { CreateThreadInput } from './dto/service/threads.service.types';
 import { ActorType } from '../identity-provider/enums';
 import { TaskStatus } from '../tasks/enums';
 
+
+/** Stands in for `threadRepository.manager.transaction` in deleteThread. */
+function mockTransaction(
+  repository: jest.Mocked<Repository<ThreadEntity>>,
+  options: { stateBlockHasChildren?: boolean } = {},
+) {
+  const tx = {
+    delete: jest.fn().mockResolvedValue({ affected: 1, raw: [] }),
+    exists: jest.fn().mockResolvedValue(options.stateBlockHasChildren ?? false),
+  };
+  Object.assign(repository, {
+    manager: { transaction: jest.fn((work: (manager: typeof tx) => unknown) => work(tx)) },
+  });
+  return tx;
+}
+
 describe('ThreadsService - State Context Block', () => {
   let service: ThreadsService;
   let threadRepository: jest.Mocked<Repository<ThreadEntity>>;
@@ -94,7 +110,6 @@ describe('ThreadsService - State Context Block', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     lastActivityAt: new Date(),
-    deletedAt: null,
   } as ThreadEntity;
 
   beforeEach(async () => {
@@ -110,7 +125,6 @@ describe('ThreadsService - State Context Block', () => {
             findBy: jest.fn(),
             find: jest.fn(),
             findAndCount: jest.fn(),
-            softRemove: jest.fn(),
             createQueryBuilder: jest.fn(),
           },
         },
@@ -381,15 +395,24 @@ describe('ThreadsService - State Context Block', () => {
 
   describe('7. Thread Deletion with State Block', () => {
     describe('7.1. Thread Deletion Succeeds', () => {
-      it('should delete thread successfully (state block remains)', async () => {
+      it('should delete the thread and its state block in one transaction', async () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
-        threadRepository.softRemove.mockResolvedValue(mockThread);
+        const tx = mockTransaction(threadRepository);
 
         await service.deleteThread('thread-uuid', 'actor-uuid');
 
-        expect(threadRepository.softRemove).toHaveBeenCalledWith(mockThread);
-        // State block should NOT be deleted automatically
-        expect(contextService.deleteBlock).not.toHaveBeenCalled();
+        expect(tx.delete).toHaveBeenNthCalledWith(1, ThreadEntity, { id: 'thread-uuid' });
+        expect(tx.delete).toHaveBeenNthCalledWith(2, ContextBlockEntity, { id: 'state-block-uuid' });
+      });
+
+      it('should keep the state block when blocks are nested under it', async () => {
+        threadRepository.findOne.mockResolvedValue(mockThread);
+        const tx = mockTransaction(threadRepository, { stateBlockHasChildren: true });
+
+        await service.deleteThread('thread-uuid', 'actor-uuid');
+
+        expect(tx.delete).toHaveBeenCalledTimes(1);
+        expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: 'thread-uuid' });
       });
     });
 
@@ -492,9 +515,9 @@ describe('ThreadsService - State Context Block', () => {
         expect(afterAppend).toContain(appendContent);
 
         // Delete thread
-        threadRepository.softRemove.mockResolvedValue(mockThread);
+        const tx = mockTransaction(threadRepository);
         await service.deleteThread(thread.id, 'actor-uuid');
-        expect(threadRepository.softRemove).toHaveBeenCalled();
+        expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: thread.id });
       });
     });
   });
