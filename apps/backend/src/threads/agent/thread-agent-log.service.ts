@@ -473,7 +473,7 @@ export class ThreadAgentLogService {
          FROM threads t
          LEFT JOIN thread_agent_messages m
            ON m.thread_id = t.id AND jsonb_typeof(m.usage) = 'object'
-        WHERE t.id = $1 AND t.deleted_at IS NULL
+        WHERE t.id = $1
         GROUP BY t.id`,
       [threadId],
     );

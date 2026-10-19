@@ -131,7 +131,7 @@ export class ThreadTimersService {
       `WITH due AS (
          SELECT tt.id
            FROM thread_timers tt
-           JOIN threads t ON t.id = tt.thread_id AND t.deleted_at IS NULL
+           JOIN threads t ON t.id = tt.thread_id
           WHERE tt.fired_count < tt.max_iterations AND tt.next_fire_at <= now()
           ORDER BY tt.next_fire_at ASC
           LIMIT $1

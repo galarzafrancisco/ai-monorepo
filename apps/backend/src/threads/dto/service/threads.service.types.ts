@@ -111,7 +111,6 @@ export type ThreadResult = {
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null | undefined;
 };
 
 export type ThreadListItemResult = {
