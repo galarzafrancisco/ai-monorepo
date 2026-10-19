@@ -33,7 +33,7 @@
     "db:down": "docker compose stop postgres",
     "build:dev": "npm run zero-to-prod",
     "build:packages": "nx run-many -t build -p @taico/shared,@taico/events,@taico/errors,@taico/adk-session-store,@taico/openapi-sdkgen",
-    "build:prod": "nx run-many -t assemble-public,build:prod -p @taico/taico,@taico/worker,@taico/display",
+    "build:prod": "nx run-many -t assemble-public,build:prod -p @taico/taico,@taico/worker,@taico/display,@taico/adk-session-store",
     "nx": "nx",
     "graph": "nx graph",
     "affected:build": "nx affected -t build:prod",
