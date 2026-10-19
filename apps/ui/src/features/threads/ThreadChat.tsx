@@ -8,7 +8,9 @@ import { actorHandle, isDeactivated } from "../actors";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { ThreadChatLocked } from "./ThreadChatLocked";
+import { useChatScrollFollow } from "./useChatScrollFollow";
 import Markdown from "marked-react";
+import { ArrowDown } from "lucide-react";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -70,14 +72,19 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     keepScrollPositionRef.current = true;
   }, [messages, isLoadingOlderMessages]);
 
-  // Auto-scroll to bottom when messages/activity update
-  useEffect(() => {
-    if (keepScrollPositionRef.current) {
-      keepScrollPositionRef.current = false;
-      return;
-    }
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, agentActivity, agentResponseStream?.content]);
+  // Follow new activity only while the reader is at the bottom. When they've
+  // scrolled up, a new message raises a "jump to latest" button instead.
+  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+  const { hasNewMessages, scrollToBottom } = useChatScrollFollow({
+    containerRef: messagesContainerRef,
+    endRef: messagesEndRef,
+    followDeps: [messages, agentActivity, agentResponseStream?.content, chatIsLoading],
+    lastMessageId: lastMessage?.id ?? null,
+    lastMessageIsOwn: Boolean(user?.actorId && lastMessage?.createdByActorId === user.actorId),
+    resetKey: threadId,
+    enabled: !chatIsLoading,
+    skipNextFollowRef: keepScrollPositionRef,
+  });
 
   useEffect(() => {
     if (!chatIsLoading) {
@@ -127,95 +134,111 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
       {lockedKind && messages.length === 0 && (
         <ThreadChatLocked kind={lockedKind} variant="full" onOpenSettings={openModelSettings} />
       )}
-      <div
-        className="thread-chat__messages thin-scrollbar"
-        ref={messagesContainerRef}
-        inert={Boolean(lockedKind && messages.length === 0)}
-      >
-        {hasOlderMessages && (
-          <div className="thread-chat__older">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleLoadOlderMessages}
-              disabled={isLoadingOlderMessages}
-            >
-              {isLoadingOlderMessages ? "loading..." : "load earlier messages"}
-            </Button>
-          </div>
-        )}
-
-        {chatError && (
-          <div className="thread-chat__status thread-chat__status--error">
-            <Text size="2">{chatError}</Text>
-          </div>
-        )}
-
-        {messages.length === 0 ? (
-          <div className="thread-chat__empty-state">
-            <Text size="2" tone="muted">
-              No messages yet. Start the conversation.
-            </Text>
-          </div>
-        ) : (
-          messages.map((message) => {
-            const author = message.createdByActor;
-            const isOwnMessage = Boolean(user?.actorId && user.actorId === message.createdByActorId);
-            const authorName = author?.displayName || "Anonymous";
-            const authorHandle = author ? actorHandle(author) : null;
-
-            return (
-              <div
-                key={message.id}
-                className={`thread-chat__message ${isOwnMessage ? "thread-chat__message--mine" : ""}`}
+      <div className="thread-chat__messages-wrap">
+        <div
+          className="thread-chat__messages thin-scrollbar"
+          ref={messagesContainerRef}
+          inert={Boolean(lockedKind && messages.length === 0)}
+        >
+          {hasOlderMessages && (
+            <div className="thread-chat__older">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleLoadOlderMessages}
+                disabled={isLoadingOlderMessages}
               >
-                <div className="thread-chat__message-header">
-                  <div className="thread-chat__author">
-                    <Avatar name={authorName} inactive={isDeactivated(author)} src={author?.avatarUrl || undefined} size="xs" />
-                    <Text size="1" weight="semibold">
-                      {authorName}
-                    </Text>
-                    {authorHandle && (
-                      <Text size="1" tone="muted">
-                        {authorHandle}
-                      </Text>
-                    )}
-                  </div>
+                {isLoadingOlderMessages ? "loading..." : "load earlier messages"}
+              </Button>
+            </div>
+          )}
 
-                  <Text size="1" tone="muted">
-                    {formatMessageTime(message.createdAt)}
-                  </Text>
-                </div>
+          {chatError && (
+            <div className="thread-chat__status thread-chat__status--error">
+              <Text size="2">{chatError}</Text>
+            </div>
+          )}
 
-                <div className="thread-chat__message-content">
-                  <Markdown>{message.content}</Markdown>
-                </div>
-              </div>
-            );
-          })
-        )}
-
-        {agentResponseStream && (
-          <div className="thread-chat__message thread-chat__message--streaming" role="status" aria-live="polite">
-            <div className="thread-chat__message-header">
-              <div className="thread-chat__author">
-                <Avatar name="Assistant" size="xs" />
-                <Text size="1" weight="semibold">
-                  Assistant
-                </Text>
-              </div>
-              <Text size="1" tone="muted">
-                typing...
+          {messages.length === 0 ? (
+            <div className="thread-chat__empty-state">
+              <Text size="2" tone="muted">
+                No messages yet. Start the conversation.
               </Text>
             </div>
+          ) : (
+            messages.map((message) => {
+              const author = message.createdByActor;
+              const isOwnMessage = Boolean(user?.actorId && user.actorId === message.createdByActorId);
+              const authorName = author?.displayName || "Anonymous";
+              const authorHandle = author ? actorHandle(author) : null;
 
-            <div className="thread-chat__message-content">
-              <Markdown>{agentResponseStream.content}</Markdown>
+              return (
+                <div
+                  key={message.id}
+                  className={`thread-chat__message ${isOwnMessage ? "thread-chat__message--mine" : ""}`}
+                >
+                  <div className="thread-chat__message-header">
+                    <div className="thread-chat__author">
+                      <Avatar name={authorName} inactive={isDeactivated(author)} src={author?.avatarUrl || undefined} size="xs" />
+                      <Text size="1" weight="semibold">
+                        {authorName}
+                      </Text>
+                      {authorHandle && (
+                        <Text size="1" tone="muted">
+                          {authorHandle}
+                        </Text>
+                      )}
+                    </div>
+
+                    <Text size="1" tone="muted">
+                      {formatMessageTime(message.createdAt)}
+                    </Text>
+                  </div>
+
+                  <div className="thread-chat__message-content">
+                    <Markdown>{message.content}</Markdown>
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {agentResponseStream && (
+            <div className="thread-chat__message thread-chat__message--streaming" role="status" aria-live="polite">
+              <div className="thread-chat__message-header">
+                <div className="thread-chat__author">
+                  <Avatar name="Assistant" size="xs" />
+                  <Text size="1" weight="semibold">
+                    Assistant
+                  </Text>
+                </div>
+                <Text size="1" tone="muted">
+                  typing...
+                </Text>
+              </div>
+
+              <div className="thread-chat__message-content">
+                <Markdown>{agentResponseStream.content}</Markdown>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
+
+        {hasNewMessages && (
+          <button
+            type="button"
+            className="thread-chat__jump-latest"
+            onClick={() => scrollToBottom()}
+            aria-label="Jump to the latest message"
+          >
+            <ArrowDown size={14} aria-hidden="true" />
+            <Text as="span" size="1">
+              new messages
+            </Text>
+          </button>
+        )}
       </div>
 
       {isChatReady && agentActivity && (
