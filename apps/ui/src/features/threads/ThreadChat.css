@@ -12,6 +12,14 @@
   position: relative;
 }
 
+.thread-chat__messages-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .thread-chat__messages {
   flex: 1;
   overflow-y: auto;
@@ -321,4 +329,50 @@
 .thread-chat__older {
   display: flex;
   justify-content: center;
+}
+
+/* Shown when a new message arrives while the reader is scrolled up */
+.thread-chat__jump-latest {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-3);
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border-subtle));
+  border-radius: 0;
+  background: var(--card-bg);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text) 12%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  animation: thread-chat-jump-in 160ms ease-out;
+}
+
+.thread-chat__jump-latest:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+
+.thread-chat__jump-latest:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes thread-chat-jump-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-chat__jump-latest {
+    animation: none;
+  }
 }
