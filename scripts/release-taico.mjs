@@ -320,12 +320,6 @@ function bump(fromVersion, toVersion) {
   syncSocketBadges();
 }
 
-function packageNames(workspaces) {
-  return workspaces.map(
-    (workspace) => readJson(path.join(repoRoot, workspace, "package.json")).name,
-  );
-}
-
 function isLoggedInToNpm() {
   return spawnSync("npm", ["whoami"], { cwd: repoRoot, stdio: "ignore" }).status === 0;
 }
@@ -342,7 +336,6 @@ function isPublished(workspace) {
 function printPlan() {
   console.log("Release order:");
   console.log("- npm run build:dev");
-  console.log("- nx build:prod for every package");
   console.log("- npm login (skipped if already logged in)");
   for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
     console.log(`- npm publish -w ${workspace} (skipped if already published)`);
@@ -352,22 +345,12 @@ function printPlan() {
 /**
  * Everything is built before signing in, so the sign-in and the npm 2FA
  * prompt of the first publish come together and the publishes run back to
- * back. build:dev builds the apps (the backend must not be rebuilt outside
- * nx, which assembles its public assets) but not every package, hence the
- * second build; nx serves what build:dev already built from its cache.
+ * back. build:dev builds every workspace published here.
  */
 async function release() {
   printPlan();
 
   await runCommand("npm", ["run", "build:dev"]);
-  await runCommand("npx", [
-    "nx",
-    "run-many",
-    "-t",
-    "build:prod",
-    "-p",
-    packageNames(packageReleaseOrder).join(","),
-  ]);
 
   if (!isLoggedInToNpm()) {
     await runCommand("npm", ["login"]);
