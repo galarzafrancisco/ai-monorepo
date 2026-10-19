@@ -92,6 +92,6 @@ Do not publish to npm yourself. Tell Fran the release is ready and to run:
 npm run release:taico
 ```
 
-It runs `npm login` and `npm run build:dev`, then publishes each package and app in dependency order, asking for confirmation at each step.
+It builds everything first (`npm run build:dev`, plus nx `build:prod` for the packages), then runs `npm login` only if `npm whoami` fails, then publishes each package and app in dependency order with no further prompts. Signing in and npm's 2FA check on the first publish happen back to back; ticking "skip 2FA for 5 minutes" on that check covers the remaining publishes. Packages already on npm at that version are skipped, so after a failure just run it again.
 
 `npm run release:taico:all` is the same with a bump step first, so it needs `--from`/`--to` and refuses to run once the release PR has already bumped the versions. Use `release:taico`.

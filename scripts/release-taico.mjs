@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   readdirSync,
@@ -251,11 +249,6 @@ function commandName() {
   return process.argv[2] ?? "help";
 }
 
-async function confirm(rl, message) {
-  const answer = await rl.question(`${message} [y/N] `);
-  return answer.trim().toLowerCase() === "y";
-}
-
 async function runCommand(command, args, options = {}) {
   console.log(`\n> ${[command, ...args].join(" ")}`);
   await new Promise((resolve, reject) => {
@@ -327,44 +320,67 @@ function bump(fromVersion, toVersion) {
   syncSocketBadges();
 }
 
+function packageNames(workspaces) {
+  return workspaces.map(
+    (workspace) => readJson(path.join(repoRoot, workspace, "package.json")).name,
+  );
+}
+
+function isLoggedInToNpm() {
+  return spawnSync("npm", ["whoami"], { cwd: repoRoot, stdio: "ignore" }).status === 0;
+}
+
+function isPublished(workspace) {
+  const { name, version } = readJson(path.join(repoRoot, workspace, "package.json"));
+  const result = spawnSync("npm", ["view", `${name}@${version}`, "version"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  return result.status === 0 && result.stdout.trim() === version;
+}
+
 function printPlan() {
   console.log("Release order:");
-  console.log("- npm login");
   console.log("- npm run build:dev");
-  for (const workspace of packageReleaseOrder) {
-    console.log(`- npm -w ${workspace} run release`);
-  }
-  for (const workspace of appReleaseOrder) {
-    console.log(`- npm -w ${workspace} run release`);
+  console.log("- nx build:prod for every package");
+  console.log("- npm login (skipped if already logged in)");
+  for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
+    console.log(`- npm publish -w ${workspace} (skipped if already published)`);
   }
 }
 
+/**
+ * Everything is built before signing in, so the sign-in and the npm 2FA
+ * prompt of the first publish come together and the publishes run back to
+ * back. build:dev builds the apps (the backend must not be rebuilt outside
+ * nx, which assembles its public assets) but not every package, hence the
+ * second build; nx serves what build:dev already built from its cache.
+ */
 async function release() {
   printPlan();
 
-  const rl = createInterface({ input, output });
-  try {
-    if (!(await confirm(rl, "Run npm login now?"))) {
-      throw new Error("Release cancelled before npm login.");
-    }
+  await runCommand("npm", ["run", "build:dev"]);
+  await runCommand("npx", [
+    "nx",
+    "run-many",
+    "-t",
+    "build:prod",
+    "-p",
+    packageNames(packageReleaseOrder).join(","),
+  ]);
+
+  if (!isLoggedInToNpm()) {
     await runCommand("npm", ["login"]);
-
-    if (!(await confirm(rl, "Build everything with npm run build:dev?"))) {
-      throw new Error("Release cancelled before build.");
-    }
-    await runCommand("npm", ["run", "build:dev"]);
-
-    for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
-      if (!(await confirm(rl, `Release ${workspace}?`))) {
-        throw new Error(`Release cancelled before ${workspace}.`);
-      }
-      await runCommand("npm", ["-w", workspace, "run", "release"]);
-    }
-
-    console.log("\nRelease complete.");
-  } finally {
-    rl.close();
   }
+  for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
+    if (isPublished(workspace)) {
+      console.log(`\n${workspace} is already published at this version, skipping.`);
+      continue;
+    }
+    await runCommand("npm", ["publish", "-w", workspace, "--access", "public"]);
+  }
+
+  console.log("\nRelease complete.");
 }
 
 function usage() {
@@ -378,7 +394,7 @@ Commands:
   bump     Update every @taico package version and @taico dependency range.
   socket-badges
            Update Socket badge URLs from release target package manifests.
-  release  Login, build, then publish packages followed by backend and worker.
+  release  Build, log in, then publish packages followed by the apps.
   all      Run bump and then release.
 `);
 }
