@@ -1,6 +1,6 @@
 {
   "name": "@taico/display",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "type": "module",
   "private": false,
   "license": "PolyForm-Small-Business-1.0.0",
@@ -32,9 +32,9 @@
   },
   "dependencies": {
     "@stoprocent/noble": "^2.8.0",
-    "@taico/client": "^0.8.5",
-    "@taico/events": "^0.8.5",
-    "@taico/shared": "^0.8.5",
+    "@taico/client": "^0.8.6",
+    "@taico/events": "^0.8.6",
+    "@taico/shared": "^0.8.6",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
