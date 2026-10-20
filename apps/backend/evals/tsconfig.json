@@ -1,0 +1,12 @@
+{
+  // Typecheck-only config for the evals. The backend's own tsconfig.json is
+  // what `nest build` compiles, so adding evals there would emit them into
+  // dist (and move src output to dist/src). Keep evals here instead.
+  "extends": "../tsconfig.json",
+  "include": ["../src/**/*", "./**/*"],
+  "compilerOptions": {
+    "baseUrl": "../",
+    "noEmit": true,
+    "incremental": false
+  }
+}
