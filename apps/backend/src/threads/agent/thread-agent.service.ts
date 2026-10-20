@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
-import { hasToolCall, isStepCount, ModelMessage, streamText, ToolSet } from 'ai';
+import { ModelMessage, streamText, ToolSet } from 'ai';
 import { AgentsService } from 'src/agents/agents.service';
 import { THREAD_AGENT_SLUG } from 'src/agents/protected-agents';
 import { AiModelJob } from 'src/ai-providers/enums';
@@ -23,14 +23,17 @@ import { ChatModelFactory, ResolvedChatModel } from './chat-model.factory';
 import { TaicoMcpToolsFactory } from './taico-mcp-tools.factory';
 import { AgentMessageDraft, ThreadAgentLogService } from './thread-agent-log.service';
 import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
-import { buildThreadScopedInstructions, STAY_SILENT_TOOL } from './thread-agent.prompts';
+import { buildThreadScopedInstructions } from './thread-agent.prompts';
 import { ThreadAgentToolsFactory } from './thread-agent-tools.factory';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
-import { findRepeatedToolCall, isRepeatedToolCall } from './repeated-tool-call';
+import { findRepeatedToolCall } from './repeated-tool-call';
+import {
+  buildThreadAgentStreamOptions,
+  THREAD_AGENT_MAX_STEPS,
+} from './thread-agent.stream-options';
 
-export { THREAD_AGENT_SLUG };
-export const THREAD_AGENT_MAX_STEPS = 25;
+export { THREAD_AGENT_SLUG, THREAD_AGENT_MAX_STEPS };
 
 type StepOutput = {
   messages: ModelMessage[];
@@ -245,16 +248,12 @@ export class ThreadAgentService {
     let lastInputTokens: number | null = null;
 
     const result = streamText({
-      model: resolved.model,
-      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId, input.threadSecret),
-      messages: input.messages,
-      tools: input.tools,
-      providerOptions: resolved.providerOptions,
-      stopWhen: [
-        isStepCount(THREAD_AGENT_MAX_STEPS),
-        hasToolCall(STAY_SILENT_TOOL),
-        isRepeatedToolCall(),
-      ],
+      ...buildThreadAgentStreamOptions({
+        resolved,
+        instructions: buildThreadScopedInstructions(self.systemPrompt, threadId, input.threadSecret),
+        messages: input.messages,
+        tools: input.tools,
+      }),
       // Errors arrive as stream parts and are handled below.
       onError: () => undefined,
       onStepEnd: (step) => {

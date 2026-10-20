@@ -47,8 +47,11 @@ export class ThreadAgentToolsFactory {
     agentActorId: string;
     /** Who the turn is answering. */
     forActorId: string;
+    /** The clock `remind`, `schedule` and the waits list read. Evals pass a fixed one. */
+    now?: () => Date;
   }): ToolSet {
     const { threadId, agentActorId, forActorId } = input;
+    const clock = input.now ?? (() => new Date());
 
     const cancelTimer = async (id: string, noun: 'schedule' | 'reminder') => {
       const cancelled = await this.timers.cancel({ threadId, timerId: id, actorId: agentActorId });
@@ -125,7 +128,7 @@ export class ThreadAgentToolsFactory {
             reason,
             periodSeconds: periodSeconds.value,
             maxIterations: iterations.value,
-            firstFireAt: new Date(Date.now() + periodSeconds.value * 1000),
+            firstFireAt: new Date(clock().getTime() + periodSeconds.value * 1000),
             forActorId,
           });
 
@@ -174,7 +177,7 @@ export class ThreadAgentToolsFactory {
             return { error: 'reason must not be empty.' };
           }
 
-          const now = new Date();
+          const now = clock();
           let fireAt: Date;
           if (delay !== undefined) {
             const seconds = parseDuration(delay);
@@ -228,7 +231,7 @@ export class ThreadAgentToolsFactory {
             this.subscriptions.listForThread(threadId),
           ]);
           return {
-            now: new Date().toISOString(),
+            now: clock().toISOString(),
             reminders: timers
               .filter((timer) => timer.kind === ThreadTimerKind.REMINDER)
               .map((timer) => ({
