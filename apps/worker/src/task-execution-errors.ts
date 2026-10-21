@@ -9,7 +9,7 @@ const QUOTA_MESSAGE_PATTERNS: RegExp[] = [
   /rate\s*limit/i,
   /credit/i,
   /billing/i,
-  /you\s*(?:have|'ve)?\s*hit\s*(?:your\s*)?limit/i,
+  /you\s*(?:have|'ve)?\s*hit\s*(?:your\s*)?(?:session\s*)?limit/i,
   /usage\s*limit/i,
 ];
 
@@ -117,6 +117,10 @@ export function classifyRunnerError(error: unknown): TaskExecutionError {
 
     if (isOverloadedErrorMessage(error.message)) {
       return new AgentOverloadedError(error.message, error);
+    }
+
+    if (QUOTA_MESSAGE_PATTERNS.some((pattern) => pattern.test(error.message))) {
+      return new AgentQuotaExceededError(error.message, error);
     }
   }
 
