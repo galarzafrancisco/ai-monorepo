@@ -1,6 +1,6 @@
 // ClaudeAgentRunner.ts
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { query, type SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import {
@@ -12,6 +12,7 @@ import {
 import { DEFAULT_AGENT_ALLOWED_TOOLS } from '@taico/shared';
 import {
   AgentOverloadedError,
+  classifyAgentError,
   isOverloadedErrorMessage,
 } from "../task-execution-errors.js";
 
@@ -134,17 +135,17 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
           const text = formatter.format(msg);
           if (text) await emit(text);
 
-          if (msg.type === 'result' && msg.subtype === 'success') {
-            // Check if this is an error result (e.g., quota limit)
-            if (msg.is_error === true) {
+          if (msg.type === 'result') {
+            const message = getClaudeResultError(msg);
+            if (message !== null) {
               if (onError) {
-                await onError({
-                  message: typeof msg.result === 'string' ? msg.result : 'Unknown error',
-                  rawMessage: msg,
-                });
+                await onError({ message, rawMessage: msg });
+              } else {
+                throw classifyAgentError({ message, rawMessage: msg });
               }
+            } else if (msg.subtype === 'success') {
+              finalResult = msg.result;
             }
-            finalResult = msg.result;
           }
         }
 
@@ -169,6 +170,14 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
       }
     }
   }
+}
+
+export function getClaudeResultError(result: SDKResultMessage): string | null {
+  if (result.subtype === 'success') {
+    return result.is_error ? result.result : null;
+  }
+
+  return result.errors.join('\n') || `Claude execution failed: ${result.subtype}`;
 }
 
 type ClaudeUsage = {
