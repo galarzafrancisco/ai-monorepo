@@ -58,6 +58,8 @@ const auth = createResourceServer({
 
 Then use `@taico/auth/nest`, `/express` or `/hono` as shown in the package README. Register the app's URL as an MCP server in Taico so tokens are minted with that audience.
 
+A 401 on any route of the app points at the metadata of `https://newapp.example.com/mcp`, which `protectedResourceMetadata` serves. If the app is an MCP server built on `@modelcontextprotocol/sdk`, put `requireAuth` in front of the transport: the `AuthContext` on `req.auth` is the SDK's `AuthInfo`. A CLI for the app only needs its URL: `new TokenManager({ resource: 'https://newapp.example.com/mcp', ... })` from `@taico/auth/client` finds Taico from the 401.
+
 The revocable, long-lived agent tokens are first-party tokens (their audience is Taico itself), so an app that accepts only its own resource URL never sees them. What it receives are the short-lived tokens of the OAuth flow, which are not individually revocable; keep their lifetime short.
 
 ## Tests

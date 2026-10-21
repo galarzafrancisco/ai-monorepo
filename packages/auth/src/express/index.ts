@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { buildChallenge } from '../core/challenge.js';
+import { buildChallenge, type Challenge } from '../core/challenge.js';
 import { AuthError } from '../core/errors.js';
 import { createNodeAuthHandler, type AuthHttpOptions } from '../core/http.js';
 import type { OAuthServer } from '../core/oauth-server.js';
@@ -33,14 +33,14 @@ const originOf = (request: Request) =>
 
 const pathOf = (request: Request) => request.originalUrl ?? request.url ?? '/';
 
+/** Metadata URL `requireAuth` worked out, for the 403s `requireScopes` sends */
+const metadataUrls = new WeakMap<object, string>();
+
 function sendAuthError(
-  auth: ResourceServer,
-  request: Request,
   response: Response,
   error: AuthError,
+  challenge: Challenge | null,
 ): boolean {
-  const metadataUrl = `${auth.requestUrl(PROTECTED_RESOURCE_METADATA_PATH, originOf(request))}${pathOf(request).split('?')[0]}`;
-  const challenge = auth.challenge(error, metadataUrl);
   if (!challenge) {
     return false;
   }
@@ -62,13 +62,18 @@ function sendAuthError(
  */
 export function requireAuth(auth: ResourceServer): Middleware {
   return (request, response, next) => {
+    const requestUrl = auth.requestUrl(pathOf(request), originOf(request));
+    const metadataUrl = auth.resourceMetadataUrl(requestUrl);
+    if (metadataUrl) {
+      metadataUrls.set(request, metadataUrl);
+    }
     auth
       .authenticate(
         {
           authorization: request.headers.authorization,
           cookie: request.headers.cookie,
         },
-        auth.requestUrl(pathOf(request), originOf(request)),
+        requestUrl,
       )
       .then((context) => {
         request.auth = context;
@@ -78,7 +83,10 @@ export function requireAuth(auth: ResourceServer): Middleware {
         next();
       })
       .catch((error: unknown) => {
-        if (!(error instanceof AuthError) || !sendAuthError(auth, request, response, error)) {
+        if (
+          !(error instanceof AuthError) ||
+          !sendAuthError(response, error, auth.challenge(error, metadataUrl))
+        ) {
           next(error);
         }
       });
@@ -101,22 +109,16 @@ export function requireScopes(
       assertScopes(request.auth, required);
       next();
     } catch (error) {
-      if (!(error instanceof AuthError)) {
-        return next(error);
+      if (
+        !(error instanceof AuthError) ||
+        !sendAuthError(
+          response,
+          error,
+          buildChallenge(error, { resourceMetadataUrl: metadataUrls.get(request) }),
+        )
+      ) {
+        next(error);
       }
-      const challenge = buildChallenge(error);
-      if (!challenge) {
-        return next(error);
-      }
-      response.statusCode = challenge.status;
-      response.setHeader('www-authenticate', challenge.header);
-      response.setHeader('content-type', 'application/json; charset=utf-8');
-      response.end(
-        JSON.stringify({
-          error: error.code.toLowerCase(),
-          error_description: error.message,
-        }),
-      );
     }
   };
 }

@@ -18,6 +18,9 @@ import {
 import { toRequiredScopes, type RequiredScopes } from '../core/scopes.js';
 import type { AuthContext } from '../core/types.js';
 
+/** Metadata URL `bearerAuth` worked out, for the 403s `requireScopes` sends */
+const metadataUrls = new WeakMap<Request, string>();
+
 /** Hono variables set by `bearerAuth`: read with `c.get('auth')` */
 export type AuthVariables = { auth: AuthContext };
 
@@ -43,6 +46,11 @@ export function bearerAuth(auth: ResourceServer): MiddlewareHandler<{
 }> {
   return async (c, next) => {
     const url = new URL(c.req.url);
+    const requestUrl = auth.requestUrl(url.pathname, url.origin);
+    const metadataUrl = auth.resourceMetadataUrl(requestUrl);
+    if (metadataUrl) {
+      metadataUrls.set(c.req.raw, metadataUrl);
+    }
     try {
       c.set(
         'auth',
@@ -51,14 +59,11 @@ export function bearerAuth(auth: ResourceServer): MiddlewareHandler<{
             authorization: c.req.header('authorization'),
             cookie: c.req.header('cookie'),
           },
-          auth.requestUrl(url.pathname, url.origin),
+          requestUrl,
         ),
       );
     } catch (error) {
-      const challenge = auth.challenge(
-        error,
-        `${auth.requestUrl(PROTECTED_RESOURCE_METADATA_PATH, url.origin)}${url.pathname}`,
-      );
+      const challenge = auth.challenge(error, metadataUrl);
       if (!(error instanceof AuthError) || !challenge) {
         throw error;
       }
@@ -77,7 +82,10 @@ export function requireScopes(
     try {
       assertScopes(c.get('auth'), required);
     } catch (error) {
-      const challenge = error instanceof AuthError ? buildChallenge(error) : null;
+      const challenge =
+        error instanceof AuthError
+          ? buildChallenge(error, { resourceMetadataUrl: metadataUrls.get(c.req.raw) })
+          : null;
       if (!(error instanceof AuthError) || !challenge) {
         throw error;
       }

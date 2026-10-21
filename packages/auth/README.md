@@ -76,7 +76,28 @@ export class NotesController {
 }
 ```
 
+With `forRoot({ server, resource })`, pass `resource` (the URL of the protected resource your routes make up) so the challenge points at its metadata. `forResourceServer` takes it from the `exactResource` policy.
+
 The guards throw `AuthError`s. `AuthExceptionFilter` answers them with a status and a Bearer challenge; an app with its own error format can map them itself (each error has a stable `code`) and build the header with `buildChallenge`.
+
+### Where a 401 sends the client
+
+Each 401 and 403 carries `WWW-Authenticate: Bearer resource_metadata="..."`, the RFC 9728 pointer a client follows to find the authorization server. It names the metadata of the **resource** the request falls under, not the request path, so `/mcp/notes/1` and `/api/notes` both point at `/.well-known/oauth-protected-resource/mcp` when the resource is `https://notes.example.com/mcp`.
+
+The resource comes from the `exactResource` policy, or from the `resource` option when the audience policy names none (`resource: 'https://notes.example.com/mcp'`, or a list; the longest URL a request falls under wins, otherwise the first). With neither, as with `requestUrlAudience()`, the request URL is taken to be the resource.
+
+### The MCP TypeScript SDK
+
+`AuthContext` is also a valid `AuthInfo` of `@modelcontextprotocol/sdk` (`token`, `clientId`, `scopes`, `expiresAt`, `resource`, `extra`). Both libraries use `req.auth`, so put `requireAuth` in front of a `StreamableHTTPServerTransport` and tools receive `extra.authInfo` with no conversion:
+
+```ts
+app.post('/mcp', requireAuth(auth), async (req, res) => {
+  await mcpServer.connect(transport);
+  await transport.handleRequest(req, res, req.body); // reads req.auth
+});
+```
+
+`resource` is only set when the token was minted for the resource the request falls under. `extra` holds `subject` and the full `claims`.
 
 ### What is checked
 
@@ -206,21 +227,23 @@ new DataSource({
 
 ## Client
 
-For CLIs, workers and tests:
+For CLIs, workers and tests. The resource URL is enough: the client calls it, follows `resource_metadata` in the 401 (or the well-known locations) and reads the authorization server from the metadata, the way MCP clients do.
 
 ```ts
-import { fileCredentialStore, OAuthClient, TokenManager } from '@taico/auth/client';
+import { fileCredentialStore, TokenManager } from '@taico/auth/client';
 
 const tokens = new TokenManager({
-  client: new OAuthClient({ issuer }),
-  issuer,
+  resource: 'https://notes.example.com/mcp',
   store: fileCredentialStore('~/.myapp/credentials.json'),
   clientName: 'My CLI',
-  scope: 'notes:read',
-  resource: 'https://notes.example.com/mcp',
+  // scope defaults to what the resource's challenge or metadata asks for
 });
-const accessToken = await tokens.getAccessToken(); // registers, opens the browser flow, refreshes
+const accessToken = await tokens.getAccessToken(); // discovers, registers, opens the browser flow, refreshes
 ```
+
+Pass `issuer` (or a `client`) to skip discovery. `discoverResource(url)` runs the discovery step on its own. It refuses metadata whose `resource` the URL does not fall under, so a resource cannot send your tokens somewhere else.
+
+Credentials are stored **per issuer and resource**, so two apps behind the same authorization server each keep their own tokens and never receive the other's. A custom `CredentialStore` gets `read(issuer, resource)`; `credentialKey(issuer, resource)` builds the key the built-in stores use.
 
 ## Differences from Taico's built-in authorization server
 

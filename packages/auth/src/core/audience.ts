@@ -4,6 +4,11 @@
  */
 export interface AudiencePolicy {
   accepts(audience: string[], requestUrl: string): boolean;
+  /**
+   * The resource URLs the policy accepts tokens for, when it has a fixed list
+   * (possibly empty). Undefined when it is open-ended or unknown.
+   */
+  readonly resourceUrls?: readonly string[];
 }
 
 export function toAudienceList(
@@ -32,6 +37,7 @@ export function isSameResource(a: string, b: string): boolean {
 /** Accepts tokens minted for one of these resource URLs, on any route */
 export function exactResource(...resourceUrls: string[]): AudiencePolicy {
   return {
+    resourceUrls,
     accepts: (audience) =>
       audience.some((aud) =>
         resourceUrls.some((resource) => isSameResource(resource, aud)),
@@ -41,7 +47,11 @@ export function exactResource(...resourceUrls: string[]): AudiencePolicy {
 
 /** Accepts tokens whose audience is one of these literal values (not URLs) */
 export function literalAudience(...values: string[]): AudiencePolicy {
-  return { accepts: (audience) => audience.some((aud) => values.includes(aud)) };
+  return {
+    // Literal audiences name no resource URL
+    resourceUrls: [],
+    accepts: (audience) => audience.some((aud) => values.includes(aud)),
+  };
 }
 
 /**
@@ -64,7 +74,11 @@ export function requestUrlAudience(): AudiencePolicy {
 
 /** Accepts a token when any of the given policies does */
 export function anyAudience(...policies: AudiencePolicy[]): AudiencePolicy {
+  // A fixed list only if every policy has one: a policy that accepts any
+  // request URL (requestUrlAudience) makes the set of resources open
+  const fixed = policies.every((policy) => policy.resourceUrls !== undefined);
   return {
+    resourceUrls: fixed ? policies.flatMap((policy) => policy.resourceUrls ?? []) : undefined,
     accepts: (audience, requestUrl) =>
       policies.some((policy) => policy.accepts(audience, requestUrl)),
   };

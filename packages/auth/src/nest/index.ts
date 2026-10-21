@@ -69,6 +69,12 @@ type HttpRequest = {
 };
 type HttpResponse = { locals?: Record<string, unknown> };
 
+/** Public URL of a request, as the resource server checks it */
+function requestUrlOf(auth: ResourceServer, request: HttpRequest): string {
+  const origin = `${request.protocol ?? 'http'}://${String(request.headers.host ?? 'localhost')}`;
+  return auth.requestUrl(request.originalUrl ?? request.url ?? '/', origin);
+}
+
 /** The `AuthContext` of a request `AccessTokenGuard` accepted */
 export function authContextOf(context: ExecutionContext): AuthContext | undefined {
   const http = context.switchToHttp();
@@ -110,14 +116,12 @@ export class AccessTokenGuard implements CanActivate {
     const http = context.switchToHttp();
     const request = http.getRequest<HttpRequest>();
     const response = http.getResponse<HttpResponse>();
-    const origin = `${request.protocol ?? 'http'}://${String(request.headers.host ?? 'localhost')}`;
-
     const authContext = await this.auth.authenticate(
       {
         authorization: request.headers.authorization,
         cookie: request.headers.cookie,
       },
-      this.auth.requestUrl(request.originalUrl ?? request.url ?? '/', origin),
+      requestUrlOf(this.auth, request),
     );
     request.auth = authContext;
     if (response.locals) {
@@ -157,12 +161,24 @@ export class ScopesGuard implements CanActivate {
 @Catch(AuthError)
 @Injectable()
 export class AuthExceptionFilter implements ExceptionFilter<AuthError> {
-  constructor(private readonly adapterHost: HttpAdapterHost) {}
+  constructor(
+    private readonly adapterHost: HttpAdapterHost,
+    @Optional()
+    @Inject(AUTH_RESOURCE_SERVER)
+    private readonly auth?: ResourceServer | null,
+  ) {}
 
   catch(error: AuthError, host: ArgumentsHost): void {
     const { httpAdapter } = this.adapterHost;
-    const response = host.switchToHttp().getResponse<unknown>();
-    const result = errorResponse(error);
+    const http = host.switchToHttp();
+    const response = http.getResponse<unknown>();
+    // Points the client at the metadata of the resource, so it can find the
+    // authorization server from a 401 on any route (RFC 9728 section 5.1)
+    const resourceMetadataUrl =
+      this.auth && host.getType() === 'http'
+        ? this.auth.resourceMetadataUrl(requestUrlOf(this.auth, http.getRequest<HttpRequest>()))
+        : undefined;
+    const result = errorResponse(error, { resourceMetadataUrl });
     for (const [name, value] of Object.entries(result.headers)) {
       httpAdapter.setHeader(response, name, value);
     }
@@ -178,6 +194,11 @@ export type AuthModuleOptions = {
    * required when there is no `server`.
    */
   resourceServer?: ResourceServer | ResourceServerOptions;
+  /**
+   * With the default resource server: the URL of the protected resource the
+   * app's routes make up, so a 401 on any route points at its metadata.
+   */
+  resource?: string | string[];
   /** Options of the authorization server's HTTP endpoints */
   http?: AuthHttpOptions;
 };
@@ -208,7 +229,7 @@ function resourceServerOf(
   if (!server) {
     throw new Error('AuthModule needs a server or a resourceServer');
   }
-  return server.resourceServer();
+  return server.resourceServer({ resource: options.resource });
 }
 
 /**

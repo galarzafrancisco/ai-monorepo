@@ -235,3 +235,26 @@ test('legacy array-form scope claims are still understood', async () => {
   const auth = new ResourceServer({ verifier, audience: literalAudience(ISSUER) });
   assert.deepEqual((await auth.authenticateToken(token, ISSUER)).scopes, ['a', 'b']);
 });
+
+test('ResourceServer finds the resource a request URL belongs to', () => {
+  const jwks = remoteJwks(`${ISSUER}/.well-known/jwks.json`);
+  const server = (options) => new ResourceServer({ issuer: ISSUER, jwks, ...options });
+
+  // From an exactResource policy; the longest match wins, on path segments only
+  const two = server({ audience: exactResource('https://x/mcp', 'https://x/mcp/admin/') });
+  assert.equal(two.resourceFor('https://x/mcp/notes/1?a=b'), 'https://x/mcp');
+  assert.equal(two.resourceFor('https://x/mcp/admin/users'), 'https://x/mcp/admin');
+  assert.equal(two.resourceFor('https://x/mcpx'), 'https://x/mcp', 'not under it: the first one');
+  assert.equal(two.resourceMetadataUrl('https://x/api/notes'), 'https://x/.well-known/oauth-protected-resource/mcp');
+
+  // Given explicitly, it overrides the policy
+  const explicit = server({ audience: literalAudience('api'), resource: 'https://x/' });
+  assert.equal(explicit.resourceMetadataUrl('https://x/a/b'), 'https://x/.well-known/oauth-protected-resource');
+
+  // Nothing known: the request URL is the resource, as with requestUrlAudience
+  const perUrl = server({ audience: requestUrlAudience() });
+  assert.equal(perUrl.resourceMetadataUrl('https://x/mcp/a'), 'https://x/.well-known/oauth-protected-resource/mcp/a');
+  // Combined with an open-ended policy, the list is no longer fixed
+  assert.equal(anyAudience(exactResource('https://x/a'), requestUrlAudience()).resourceUrls, undefined);
+  assert.deepEqual(anyAudience(literalAudience('api'), exactResource('https://x/a')).resourceUrls, ['https://x/a']);
+});

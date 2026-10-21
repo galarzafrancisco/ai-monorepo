@@ -4,7 +4,17 @@ import { after, before, test } from 'node:test';
 import express from 'express';
 import { Hono } from 'hono';
 import { exactResource, OAuthServer, remoteJwks, ResourceServer, ScopeRegistry } from '@taico/auth';
-import { OAuthClient, OAuthClientError } from '@taico/auth/client';
+import { Client as McpClient } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import {
+  discoverResource,
+  memoryCredentialStore,
+  OAuthClient,
+  OAuthClientError,
+  TokenManager,
+} from '@taico/auth/client';
 import { authRouter, protectedResourceMetadata, requireAuth, requireScopes } from '@taico/auth/express';
 import { authRoutes, bearerAuth, requireScopes as honoRequireScopes } from '@taico/auth/hono';
 import { localIdp } from '@taico/auth/idp-local';
@@ -26,6 +36,7 @@ let authHttp;
 let apiHttp;
 let issuer;
 let apiUrl;
+let otherApiUrl;
 let oauth;
 const scopes = [
   { id: 'notes:read', description: 'Read notes' },
@@ -37,7 +48,10 @@ before(async () => {
   const api = express();
   apiHttp = await listen(api);
   apiUrl = `${apiHttp.url}/mcp`;
+  otherApiUrl = `${apiHttp.url}/tasks`;
   const resource = { id: 'r1', identifier: 'notes', resourceUrl: apiUrl, name: 'Notes', scopes };
+  // A second app behind the same authorization server
+  const otherResource = { id: 'r2', identifier: 'tasks', resourceUrl: otherApiUrl, name: 'Tasks', scopes };
 
   const authApp = express();
   authHttp = await listen(authApp);
@@ -48,7 +62,7 @@ before(async () => {
   oauth = new OAuthServer({
     config: { issuer },
     stores: memoryStores(),
-    resources: staticResources([resource]),
+    resources: staticResources([resource, otherResource]),
     identity,
     scopes: new ScopeRegistry(scopes),
   });
@@ -63,11 +77,38 @@ before(async () => {
     audience: exactResource(apiUrl),
     baseUrl: apiHttp.url,
   });
-  api.use(protectedResourceMetadata([resource], { authorizationServers: [issuer] }));
+  api.use(protectedResourceMetadata([resource, otherResource], { authorizationServers: [issuer] }));
+  api.use(express.json());
   api.get('/mcp', requireAuth(auth), requireScopes('notes:read'), (req, res) =>
     res.json({ subject: req.auth.subject, viaLocals: res.locals.auth.subject }),
   );
   api.post('/mcp', requireAuth(auth), requireScopes('notes:write'), (_req, res) => res.json({ ok: true }));
+  // Routes below the resource, and one outside it, behind the same check
+  api.get('/mcp/notes/:id', requireAuth(auth), (_req, res) => res.json({ ok: true }));
+  api.get('/api/notes', requireAuth(auth), (_req, res) => res.json({ ok: true }));
+
+  // The official MCP SDK, reading the AuthContext requireAuth put on req.auth
+  api.post('/mcp/sdk', requireAuth(auth), async (req, res) => {
+    const mcp = new McpServer({ name: 'notes', version: '1.0.0' });
+    mcp.registerTool('whoami', { description: 'Who is calling' }, async (extra) => ({
+      content: [{ type: 'text', text: JSON.stringify({ ...extra.authInfo, resource: extra.authInfo?.resource?.href }) }],
+    }));
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    res.on('close', () => {
+      void transport.close();
+      void mcp.close();
+    });
+    await mcp.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  });
+
+  const otherAuth = new ResourceServer({
+    issuer,
+    jwks: remoteJwks(`${issuer}/.well-known/jwks.json`),
+    audience: exactResource(otherApiUrl),
+    baseUrl: apiHttp.url,
+  });
+  api.get('/tasks', requireAuth(otherAuth), (req, res) => res.json({ subject: req.auth.subject }));
 });
 
 after(() => {
@@ -156,7 +197,10 @@ test('end to end: a client gets a token and calls a separate resource server', a
   // Valid token, missing scope
   const forbidden = await fetch(apiUrl, { method: 'POST', headers: { authorization: `Bearer ${tokens.accessToken}` } });
   assert.equal(forbidden.status, 403);
-  assert.equal(forbidden.headers.get('www-authenticate'), 'Bearer error="insufficient_scope", scope="notes:write"');
+  assert.equal(
+    forbidden.headers.get('www-authenticate'),
+    `Bearer resource_metadata="${apiHttp.url}/.well-known/oauth-protected-resource/mcp", error="insufficient_scope", scope="notes:write"`,
+  );
 
   const refreshed = await client.refresh(tokens);
   assert.notEqual(refreshed.accessToken, tokens.accessToken);
@@ -184,6 +228,109 @@ test('requests without a usable token get a challenge pointing at the metadata',
   const firstParty = await oauth.issueToken({ subject: { id: 'x' }, scopes: ['notes:read'], ttlSeconds: 60 });
   const wrongAudience = await fetch(apiUrl, { headers: { authorization: `Bearer ${firstParty.token}` } });
   assert.equal(wrongAudience.status, 401);
+});
+
+test('a 401 on any route points at metadata that exists', async () => {
+  const metadataUrl = `${apiHttp.url}/.well-known/oauth-protected-resource/mcp`;
+  for (const path of ['/mcp/notes/1', '/mcp/notes/1?x=y', '/api/notes']) {
+    const response = await fetch(`${apiHttp.url}${path}`);
+    assert.equal(response.status, 401, path);
+    assert.equal(response.headers.get('www-authenticate'), `Bearer resource_metadata="${metadataUrl}"`, path);
+  }
+  const metadata = await fetch(metadataUrl);
+  assert.equal(metadata.status, 200);
+  assert.equal((await metadata.json()).resource, apiUrl);
+});
+
+test('the MCP SDK receives the AuthContext as its AuthInfo, unconverted', async () => {
+  const { tokens } = await obtainTokens();
+  const mcp = new McpClient({ name: 'test', version: '1.0.0' });
+  await mcp.connect(
+    new StreamableHTTPClientTransport(new URL(`${apiUrl}/sdk`), {
+      requestInit: { headers: { authorization: `Bearer ${tokens.accessToken}` } },
+    }),
+  );
+  try {
+    const result = await mcp.callTool({ name: 'whoami', arguments: {} });
+    const info = JSON.parse(result.content[0].text);
+    const claims = JSON.parse(Buffer.from(tokens.accessToken.split('.')[1], 'base64url').toString());
+    assert.equal(info.token, tokens.accessToken);
+    assert.equal(info.clientId, claims.client_id);
+    assert.deepEqual(info.scopes, ['notes:read']);
+    assert.equal(info.expiresAt, claims.exp);
+    assert.equal(info.resource, apiUrl);
+    assert.equal(info.extra.subject, claims.sub);
+    assert.equal(info.subject, claims.sub);
+  } finally {
+    await mcp.close();
+  }
+});
+
+/** A TokenManager whose browser step is played by the test, as the logged-in user */
+function managerFor(options, store) {
+  let browserRuns = 0;
+  const manager = new TokenManager({
+    store,
+    clientName: 'Test CLI',
+    ...options,
+    onAuthorizationUrl: async (url) => {
+      browserRuns += 1;
+      const cookie = await login();
+      void (async () => {
+        const { consent } = await approveInBrowser(url, cookie);
+        await fetch((await consent.json()).redirect_to);
+      })();
+    },
+  });
+  return { manager, browserRuns: () => browserRuns };
+}
+
+test('the client finds the authorization server from the resource URL alone', async () => {
+  // From a route below the resource: the 401 leads to the resource's metadata
+  const discovered = await discoverResource(`${apiUrl}/notes/1`);
+  assert.equal(discovered.resource, apiUrl);
+  assert.deepEqual(discovered.authorizationServers, [issuer]);
+  assert.deepEqual(discovered.scopesSupported, ['notes:read', 'notes:write']);
+
+  const { manager } = managerFor({ resource: apiUrl, scope: 'notes:read' }, memoryCredentialStore());
+  const token = await manager.getAccessToken();
+  assert.equal((await fetch(apiUrl, { headers: { authorization: `Bearer ${token}` } })).status, 200);
+});
+
+test('the client refuses metadata that describes another resource', async () => {
+  const liar = await listen((_req, res) => {
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ resource: 'https://evil.example.com/mcp', authorization_servers: ['https://evil.example.com'] }));
+  });
+  try {
+    await assert.rejects(discoverResource(`${liar.url}/mcp`), /describes another resource/);
+  } finally {
+    liar.server.close();
+    liar.server.closeAllConnections();
+  }
+});
+
+test('the client keeps separate tokens for two resources behind one issuer', async () => {
+  const store = memoryCredentialStore();
+  const notes = managerFor({ issuer, resource: apiUrl, scope: 'notes:read' }, store);
+  const tasks = managerFor({ resource: otherApiUrl, scope: 'notes:read' }, store);
+  const notesToken = await notes.manager.getAccessToken();
+  const tasksToken = await tasks.manager.getAccessToken();
+  assert.notEqual(notesToken, tasksToken);
+  assert.equal((await store.read(issuer, apiUrl)).accessToken, notesToken);
+  assert.equal((await store.read(issuer, otherApiUrl)).accessToken, tasksToken);
+
+  // Each app accepts its own token and refuses the other one
+  const call = (url, token) => fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  assert.equal((await call(apiUrl, notesToken)).status, 200);
+  assert.equal((await call(otherApiUrl, tasksToken)).status, 200);
+  assert.equal((await call(otherApiUrl, notesToken)).status, 401);
+  assert.equal((await call(apiUrl, tasksToken)).status, 401);
+
+  // A new process reuses the stored tokens without going through the browser again
+  const again = managerFor({ resource: otherApiUrl, scope: 'notes:read' }, store);
+  assert.equal(await again.manager.getAccessToken(), tasksToken);
+  assert.equal(again.browserRuns(), 0);
 });
 
 test('consent needs a logged-in user and a trusted origin', async () => {
@@ -345,6 +492,11 @@ test('Hono: the same server and the same checks', async () => {
     c.json({ subject: c.get('auth').subject }),
   );
   app.post('/mcp', bearerAuth(auth), honoRequireScopes('notes:write'), (c) => c.json({ ok: true }));
+  app.get('/mcp/notes/:id', bearerAuth(auth), (c) => c.json({ ok: true }));
+  app.get('/mcp/whoami', bearerAuth(auth), (c) => {
+    const { clientId, resource } = c.get('auth');
+    return c.json({ clientId, resource: resource?.href });
+  });
   // Addressed as if it were served at the resource URL
   const request = (path, init) => app.request(`${apiHttp.url}${path}`, init);
 
@@ -355,13 +507,24 @@ test('Hono: the same server and the same checks', async () => {
   const headers = { authorization: `Bearer ${tokens.accessToken}` };
   assert.equal((await request('/mcp', { headers })).status, 200);
 
+  const metadataUrl = `${apiHttp.url}/.well-known/oauth-protected-resource/mcp`;
   const forbidden = await request('/mcp', { method: 'POST', headers });
   assert.equal(forbidden.status, 403);
-  assert.match(forbidden.headers.get('www-authenticate'), /insufficient_scope/);
+  assert.equal(
+    forbidden.headers.get('www-authenticate'),
+    `Bearer resource_metadata="${metadataUrl}", error="insufficient_scope", scope="notes:write"`,
+  );
 
   const missing = await request('/mcp');
   assert.equal(missing.status, 401);
-  assert.match(missing.headers.get('www-authenticate'), /resource_metadata=/);
+  assert.equal(missing.headers.get('www-authenticate'), `Bearer resource_metadata="${metadataUrl}"`);
+  // A route below the resource points at the same metadata
+  const below = await request('/mcp/notes/1');
+  assert.equal(below.headers.get('www-authenticate'), `Bearer resource_metadata="${metadataUrl}"`);
+  const context = await (await request('/mcp/whoami', { headers })).json();
+  assert.equal(context.resource, apiUrl);
+  assert.equal(typeof context.clientId, 'string');
+  assert.ok(context.clientId.length > 0);
 
   const token = await request('/oauth/token', {
     method: 'POST',

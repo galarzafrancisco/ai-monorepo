@@ -28,6 +28,8 @@ export type TokenSet = {
 
 export type Credentials = TokenSet & {
   issuer: string;
+  /** The resource (RFC 8707) the tokens were issued for */
+  resource?: string;
   clientId: string;
   redirectUri: string;
 };
@@ -72,6 +74,11 @@ export class OAuthClient {
 
   constructor(private readonly options: OAuthClientOptions) {
     this.clientId = options.clientId;
+  }
+
+  /** The issuer this client talks to */
+  get issuer(): string {
+    return this.options.issuer;
   }
 
   private get fetch(): typeof fetch {
@@ -269,6 +276,122 @@ export function isExpiringSoon(tokens: Pick<TokenSet, 'expiresAt'>, skewMs = 60_
   return Number.isNaN(expiresAt) || expiresAt - Date.now() <= skewMs;
 }
 
+// ---------------------------------------------------------------- resource discovery
+
+/** What a protected resource says about itself (RFC 9728) */
+export type DiscoveredResource = {
+  /** The resource identifier to request tokens for, from its metadata */
+  resource: string;
+  /** Authorization servers that issue tokens for it; the first is used */
+  authorizationServers: string[];
+  scopesSupported: string[];
+  /** Scopes the resource's 401 challenge asked for, if any */
+  challengeScope?: string;
+  /** Where the metadata was read from */
+  metadataUrl: string;
+};
+
+const WELL_KNOWN_RESOURCE = '/.well-known/oauth-protected-resource';
+
+/** A parameter of a `WWW-Authenticate: Bearer` header, or undefined */
+function challengeParam(header: string | null, name: string): string | undefined {
+  if (!header) return undefined;
+  const match = new RegExp(`(?:^|[\\s,])${name}="((?:[^"\\\\]|\\\\.)*)"`, 'i').exec(header);
+  return match ? match[1].replace(/\\(.)/g, '$1') : undefined;
+}
+
+/** True when `url` is `resource` or a path below it, on the same origin */
+function isUnderResource(url: URL, resource: URL): boolean {
+  if (url.origin !== resource.origin) return false;
+  const base = resource.pathname.replace(/\/$/, '');
+  const path = url.pathname.replace(/\/$/, '');
+  return path === base || path.startsWith(`${base}/`);
+}
+
+/**
+ * Finds a resource's authorization server from nothing but its URL, the way
+ * MCP clients do: call it without a token, follow `resource_metadata` in the
+ * 401 (RFC 9728 section 5), else try the well-known locations (section 3).
+ * The metadata must describe `resourceUrl` or a URL it falls under.
+ */
+export async function discoverResource(
+  resourceUrl: string,
+  options: { fetch?: typeof fetch } = {},
+): Promise<DiscoveredResource> {
+  const doFetch = options.fetch ?? fetch;
+  const target = new URL(resourceUrl);
+  target.hash = '';
+
+  const candidates: string[] = [];
+  let challengeScope: string | undefined;
+  const probe = await doFetch(target, { headers: { accept: 'application/json' } }).catch(
+    () => null,
+  );
+  if (probe?.status === 401) {
+    const header = probe.headers.get('www-authenticate');
+    const fromChallenge = challengeParam(header, 'resource_metadata');
+    challengeScope = challengeParam(header, 'scope');
+    if (fromChallenge) {
+      candidates.push(new URL(fromChallenge, target).href);
+    }
+  }
+  await probe?.body?.cancel().catch(() => undefined);
+  const path = target.pathname === '/' ? '' : target.pathname.replace(/\/$/, '');
+  candidates.push(`${target.origin}${WELL_KNOWN_RESOURCE}${path}`);
+  candidates.push(`${target.origin}${WELL_KNOWN_RESOURCE}`);
+
+  const failures: string[] = [];
+  for (const metadataUrl of [...new Set(candidates)]) {
+    const response = await doFetch(metadataUrl, { headers: { accept: 'application/json' } }).catch(
+      (error: unknown) => {
+        failures.push(`${metadataUrl}: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+      },
+    );
+    if (!response) continue;
+    if (!response.ok) {
+      failures.push(`${metadataUrl}: HTTP ${response.status}`);
+      continue;
+    }
+    const metadata = (await response.json().catch(() => null)) as {
+      resource?: unknown;
+      authorization_servers?: unknown;
+      scopes_supported?: unknown;
+    } | null;
+    let resource: URL | null = null;
+    try {
+      resource = typeof metadata?.resource === 'string' ? new URL(metadata.resource) : null;
+    } catch {
+      resource = null;
+    }
+    // Metadata for another resource must not redirect our tokens (RFC 9728 section 7.3)
+    if (!resource || !isUnderResource(target, resource)) {
+      failures.push(`${metadataUrl}: describes another resource`);
+      continue;
+    }
+    const servers = Array.isArray(metadata?.authorization_servers)
+      ? metadata.authorization_servers.filter((value): value is string => typeof value === 'string')
+      : [];
+    if (servers.length === 0) {
+      failures.push(`${metadataUrl}: names no authorization server`);
+      continue;
+    }
+    return {
+      resource: metadata!.resource as string,
+      authorizationServers: servers,
+      scopesSupported: Array.isArray(metadata?.scopes_supported)
+        ? metadata.scopes_supported.filter((value): value is string => typeof value === 'string')
+        : [],
+      challengeScope,
+      metadataUrl,
+    };
+  }
+  throw new OAuthClientError(
+    `No protected resource metadata for ${target.href} (${failures.join('; ')})`,
+    404,
+  );
+}
+
 // ---------------------------------------------------------------- loopback callback
 
 export type CallbackServer = {
@@ -288,6 +411,8 @@ export async function createCallbackServer(
   const path = options.path ?? '/callback';
   const server = createServer();
   let settle: ((result: URLSearchParams) => void) | null = null;
+  // Responses that arrive before waitForCode() is called are kept for it
+  const early: URLSearchParams[] = [];
 
   server.on('request', (request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
@@ -302,7 +427,11 @@ export async function createCallbackServer(
       options.successHtml ??
         '<!doctype html><title>Authorized</title><p>You can close this window.</p>',
     );
-    settle?.(url.searchParams);
+    if (settle) {
+      settle(url.searchParams);
+    } else {
+      early.push(url.searchParams);
+    }
   });
 
   await new Promise<void>((resolve, reject) => {
@@ -351,6 +480,9 @@ export async function createCallbackServer(
             );
           }
         };
+        for (const params of early.splice(0)) {
+          settle(params);
+        }
       });
     },
   };
@@ -358,12 +490,21 @@ export async function createCallbackServer(
 
 // ---------------------------------------------------------------- credential store
 
+/**
+ * Where a `TokenManager` keeps credentials, per issuer and resource: two
+ * resources behind one authorization server each get their own tokens.
+ */
 export interface CredentialStore {
-  read(issuer: string): Promise<Credentials | null>;
+  read(issuer: string, resource?: string): Promise<Credentials | null>;
   write(credentials: Credentials): Promise<void>;
 }
 
-/** Credentials in a JSON file, keyed by issuer, readable only by the owner */
+/** Key credentials are filed under. A space appears in neither URL. */
+export function credentialKey(issuer: string, resource?: string): string {
+  return resource ? `${issuer} ${resource}` : issuer;
+}
+
+/** Credentials in a JSON file, keyed by issuer and resource, readable only by the owner */
 export function fileCredentialStore(filePath: string): CredentialStore {
   const readAll = async (): Promise<Record<string, Credentials>> => {
     try {
@@ -377,11 +518,14 @@ export function fileCredentialStore(filePath: string): CredentialStore {
     }
   };
   return {
-    async read(issuer) {
-      return (await readAll())[issuer] ?? null;
+    async read(issuer, resource) {
+      return (await readAll())[credentialKey(issuer, resource)] ?? null;
     },
     async write(credentials) {
-      const servers = { ...(await readAll()), [credentials.issuer]: credentials };
+      const servers = {
+        ...(await readAll()),
+        [credentialKey(credentials.issuer, credentials.resource)]: credentials,
+      };
       await mkdir(dirname(filePath), { recursive: true });
       await writeFile(filePath, `${JSON.stringify({ servers }, null, 2)}\n`, {
         mode: 0o600,
@@ -393,9 +537,9 @@ export function fileCredentialStore(filePath: string): CredentialStore {
 export function memoryCredentialStore(): CredentialStore {
   const servers = new Map<string, Credentials>();
   return {
-    read: async (issuer) => servers.get(issuer) ?? null,
+    read: async (issuer, resource) => servers.get(credentialKey(issuer, resource)) ?? null,
     write: async (credentials) => {
-      servers.set(credentials.issuer, credentials);
+      servers.set(credentialKey(credentials.issuer, credentials.resource), credentials);
     },
   };
 }
@@ -403,26 +547,49 @@ export function memoryCredentialStore(): CredentialStore {
 // ---------------------------------------------------------------- token manager
 
 export type TokenManagerOptions = {
-  client: OAuthClient;
-  issuer: string;
   store: CredentialStore;
   clientName: string;
+  /** Scopes to ask for. With discovery, defaults to what the resource asks for. */
   scope?: string;
+  /**
+   * The resource the tokens are for (RFC 8707). Credentials are kept per
+   * issuer and resource. On its own it is enough: the issuer is discovered
+   * from the resource's metadata.
+   */
   resource?: string;
+  /** The authorization server. Discovered from `resource` when omitted. */
+  issuer?: string;
+  /** The client to use. Created for the issuer when omitted. */
+  client?: OAuthClient;
+  fetch?: typeof fetch;
   /** Shows the user the URL to open. Defaults to printing it. */
   onAuthorizationUrl?: (url: string) => void | Promise<void>;
+};
+
+type ResolvedTarget = {
+  client: OAuthClient;
+  issuer: string;
+  resource?: string;
+  scope?: string;
 };
 
 /**
  * Keeps a working access token: loads stored credentials, refreshes them
  * before they expire, and runs the browser flow when there are none or they
  * were refused.
+ *
+ * new TokenManager({ resource: 'https://notes.example.com/mcp', store, clientName })
  */
 export class TokenManager {
   private credentials: Credentials | null = null;
   private pending: Promise<Credentials> | null = null;
+  private target: Promise<ResolvedTarget> | null = null;
 
-  constructor(private readonly options: TokenManagerOptions) {}
+  constructor(private readonly options: TokenManagerOptions) {
+    if (!options.issuer && !options.client && !options.resource) {
+      throw new Error('TokenManager needs an issuer, a client or a resource');
+    }
+  }
 
   async getAccessToken(options: { forceRefresh?: boolean } = {}): Promise<string> {
     this.pending ??= this.ensure(options.forceRefresh ?? false).finally(() => {
@@ -431,9 +598,42 @@ export class TokenManager {
     return (await this.pending).accessToken;
   }
 
+  /** Issuer, resource and scope, discovering what was not given. Done once. */
+  resolve(): Promise<ResolvedTarget> {
+    this.target ??= (async () => {
+      const { resource, scope, fetch: doFetch } = this.options;
+      const issuer = this.options.issuer ?? this.options.client?.issuer;
+      if (issuer) {
+        return {
+          client: this.options.client ?? new OAuthClient({ issuer, fetch: doFetch }),
+          issuer,
+          resource,
+          scope,
+        };
+      }
+      const discovered = await discoverResource(resource!, { fetch: doFetch });
+      const found = discovered.authorizationServers[0];
+      return {
+        client: new OAuthClient({ issuer: found, fetch: doFetch }),
+        issuer: found,
+        resource: discovered.resource,
+        scope:
+          scope ??
+          discovered.challengeScope ??
+          (discovered.scopesSupported.length > 0
+            ? discovered.scopesSupported.join(' ')
+            : undefined),
+      };
+    })();
+    this.target.catch(() => {
+      this.target = null;
+    });
+    return this.target;
+  }
+
   private async ensure(forceRefresh: boolean): Promise<Credentials> {
-    const { client, issuer, store } = this.options;
-    this.credentials ??= await store.read(issuer);
+    const { client, issuer, resource } = await this.resolve();
+    this.credentials ??= await this.options.store.read(issuer, resource);
 
     if (this.credentials) {
       client.clientId = this.credentials.clientId;
@@ -456,11 +656,11 @@ export class TokenManager {
   }
 
   private async authorize(): Promise<Credentials> {
-    const { client, issuer, clientName, scope, resource } = this.options;
+    const { client, issuer, resource, scope } = await this.resolve();
     const callback = await createCallbackServer();
     try {
       const clientId = await client.register({
-        clientName,
+        clientName: this.options.clientName,
         redirectUris: [callback.redirectUri],
         scope,
       });
@@ -480,6 +680,7 @@ export class TokenManager {
       return await this.save({
         ...tokens,
         issuer,
+        resource,
         clientId,
         redirectUri: callback.redirectUri,
       });

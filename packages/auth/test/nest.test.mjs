@@ -86,6 +86,7 @@ before(async () => {
             identity,
             scopes: new ScopeRegistry(scopes),
           },
+          resource: `${issuer}/notes`,
         }),
       }),
     ],
@@ -130,9 +131,16 @@ test('AuthModule provides the server and mounts its endpoints', async () => {
 test('guards: public routes, missing token, scopes', async () => {
   assert.equal((await get('/notes/health')).status, 200);
 
+  const metadataUrl = `${url}/.well-known/oauth-protected-resource/notes`;
   const missing = await get('/notes');
   assert.equal(missing.status, 401);
-  assert.match(missing.headers.get('www-authenticate'), /^Bearer/);
+  assert.equal(missing.headers.get('www-authenticate'), `Bearer resource_metadata="${metadataUrl}"`);
+  // Any route below the resource points at the same metadata, which exists
+  const below = await get('/notes/write');
+  assert.equal(below.headers.get('www-authenticate'), `Bearer resource_metadata="${metadataUrl}"`);
+  const metadata = await fetch(metadataUrl);
+  assert.equal(metadata.status, 200);
+  assert.equal((await metadata.json()).resource, `${url}/notes`);
 
   const { token } = await server.issueToken({ subject: user.id, scopes: ['notes:read'], ttlSeconds: 60 });
   const ok = await get('/notes', token);
@@ -141,7 +149,10 @@ test('guards: public routes, missing token, scopes', async () => {
 
   const forbidden = await get('/notes/write', token);
   assert.equal(forbidden.status, 403);
-  assert.equal(forbidden.headers.get('www-authenticate'), 'Bearer error="insufficient_scope", scope="notes:write"');
+  assert.equal(
+    forbidden.headers.get('www-authenticate'),
+    `Bearer resource_metadata="${metadataUrl}", error="insufficient_scope", scope="notes:write"`,
+  );
 
   assert.equal((await get('/notes', 'garbage')).status, 401);
 });

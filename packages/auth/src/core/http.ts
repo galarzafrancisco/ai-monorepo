@@ -1,5 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { bearerTokenFrom, buildChallenge, parseCookies } from './challenge.js';
+import {
+  bearerTokenFrom,
+  buildChallenge,
+  parseCookies,
+  type ChallengeOptions,
+} from './challenge.js';
 import {
   AuthError,
   AuthErrorCodes,
@@ -286,7 +291,10 @@ export function createAuthHttpHandler(
 }
 
 /** Maps this package's errors to responses. Anything else is rethrown. */
-export function errorResponse(error: unknown): HttpResponse {
+export function errorResponse(
+  error: unknown,
+  challengeOptions: ChallengeOptions = {},
+): HttpResponse {
   if (error instanceof OAuthError) {
     const headers: Record<string, string> =
       error.status === 401 ? { 'www-authenticate': 'Basic realm="oauth"' } : {};
@@ -296,7 +304,7 @@ export function errorResponse(error: unknown): HttpResponse {
     if (error.code === AuthErrorCodes.INVALID_CREDENTIALS) {
       return json({ error: 'invalid_credentials', error_description: error.message }, 401);
     }
-    const challenge = buildChallenge(error);
+    const challenge = buildChallenge(error, challengeOptions);
     if (challenge) {
       return json(
         { error: error.code.toLowerCase(), error_description: error.message },

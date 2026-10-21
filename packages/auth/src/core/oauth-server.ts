@@ -273,6 +273,8 @@ export class OAuthServer {
   resourceServer(
     options: {
       audience?: AudiencePolicy;
+      /** See `ResourceServerOptions.resource` */
+      resource?: string | string[];
       cookieName?: string;
       realm?: string;
     } = {},

@@ -1,4 +1,8 @@
-import { toAudienceList, type AudiencePolicy } from './audience.js';
+import {
+  isSameResource,
+  toAudienceList,
+  type AudiencePolicy,
+} from './audience.js';
 import {
   bearerTokenFrom,
   buildChallenge,
@@ -32,6 +36,15 @@ export type ResourceServerOptions = {
    * are built from it, so a proxy in front does not change what is checked.
    */
   baseUrl?: string;
+  /**
+   * URL of the protected resource this server is, or of each one it serves.
+   * A 401 points the client at the metadata of the resource the request URL
+   * falls under (the longest matching URL, else the first), so a client
+   * calling any route can find the authorization server. Defaults to the
+   * URLs of an `exactResource` audience policy. Without either, the request
+   * URL itself is taken as the resource, which fits `requestUrlAudience`.
+   */
+  resource?: string | string[];
   /** Also accept the access token from this cookie. Off by default. */
   cookieName?: string;
   realm?: string;
@@ -55,6 +68,7 @@ export type RequestCredentials = {
 export class ResourceServer {
   readonly verifier: TokenVerifier;
   private readonly logger: Logger;
+  private readonly resources: string[];
 
   constructor(private readonly options: ResourceServerOptions) {
     this.verifier =
@@ -66,6 +80,37 @@ export class ResourceServer {
             revocation: options.revocation,
           });
     this.logger = options.logger ?? silentLogger;
+    const configured: string | readonly string[] =
+      options.resource ?? options.audience.resourceUrls ?? [];
+    this.resources = (typeof configured === 'string' ? [configured] : [...configured]).map(
+      (url) => url.replace(/\/$/, ''),
+    );
+  }
+
+  /**
+   * The protected resource a request URL belongs to: the configured resource
+   * whose URL is the longest prefix of it, else the first one configured.
+   * With none configured, the request URL itself.
+   */
+  resourceFor(requestUrl: string): string {
+    const url = requestUrl.split('?')[0].replace(/\/$/, '');
+    let best: string | null = null;
+    for (const resource of this.resources) {
+      const under = url === resource || url.startsWith(`${resource}/`);
+      if (under && (best === null || resource.length > best.length)) {
+        best = resource;
+      }
+    }
+    return best ?? this.resources[0] ?? url;
+  }
+
+  /** URL of the RFC 9728 metadata a 401 on `requestUrl` points to */
+  resourceMetadataUrl(requestUrl: string): string | undefined {
+    try {
+      return resourceMetadataUrlFor(this.resourceFor(requestUrl));
+    } catch {
+      return undefined;
+    }
   }
 
   /** Public URL of a request, from its path (query string is dropped) */
@@ -124,11 +169,24 @@ export class ResourceServer {
       throw new InvalidAccessTokenError('Token was not issued for this resource');
     }
 
+    const audience = toAudienceList(claims.aud);
+    const resource = this.resourceFor(requestUrl);
+    const record = claims as Record<string, unknown>;
+    const clientId = [record.client_id, record.azp].find(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
     return {
       token,
       claims,
       scopes: parseScope(claims.scope),
       subject: claims.sub,
+      clientId: clientId ?? '',
+      expiresAt: typeof claims.exp === 'number' ? claims.exp : undefined,
+      // Only named when the token was minted for it, so it is never a guess
+      resource: audience.some((aud) => isSameResource(aud, resource))
+        ? new URL(resource)
+        : undefined,
+      extra: { subject: claims.sub, claims },
     };
   }
 
@@ -138,6 +196,14 @@ export class ResourceServer {
     required: RequiredScopes,
   ): void {
     assertScopes(auth, required);
+  }
+
+  /**
+   * The Bearer challenge that answers `error` on `requestUrl`, pointing at the
+   * metadata of the resource it belongs to. Null if the error is not ours.
+   */
+  challengeFor(error: unknown, requestUrl: string): Challenge | null {
+    return this.challenge(error, this.resourceMetadataUrl(requestUrl));
   }
 
   /** The Bearer challenge that answers `error`, or null if it is not ours */

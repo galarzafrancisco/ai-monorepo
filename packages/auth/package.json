@@ -123,6 +123,7 @@
     }
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@nestjs/common": "^11.1.17",
     "@nestjs/core": "^11.1.17",
     "@nestjs/platform-express": "^11.1.17",
