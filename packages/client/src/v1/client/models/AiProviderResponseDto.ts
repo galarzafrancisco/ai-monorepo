@@ -59,6 +59,7 @@ export namespace AiProviderResponseDto {
         GOOGLE_VERTEX = 'google_vertex',
         XAI = 'xai',
         OPENAI_COMPATIBLE = 'openai_compatible',
+        CHATGPT_SUBSCRIPTION = 'chatgpt_subscription',
     }
 }
 

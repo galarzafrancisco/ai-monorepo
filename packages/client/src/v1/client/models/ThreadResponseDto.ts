@@ -7,6 +7,7 @@ import type { ContextBlockSummaryResponseDto } from './ContextBlockSummaryRespon
 import type { MetaTagResponseDto } from './MetaTagResponseDto.js';
 import type { TaskSubscriptionResponseDto } from './TaskSubscriptionResponseDto.js';
 import type { TaskSummaryResponseDto } from './TaskSummaryResponseDto.js';
+import type { ThreadTimerResponseDto } from './ThreadTimerResponseDto.js';
 export type ThreadResponseDto = {
     /**
      * Thread ID
@@ -48,6 +49,10 @@ export type ThreadResponseDto = {
      * Tasks the threads agent will be notified about when they go to review or are done
      */
     taskSubscriptions: Array<TaskSubscriptionResponseDto>;
+    /**
+     * Reminders and recurring schedules of the threads agent that will still fire, soonest first
+     */
+    timers: Array<ThreadTimerResponseDto>;
     /**
      * Row version for optimistic locking
      */

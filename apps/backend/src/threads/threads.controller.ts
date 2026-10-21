@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -22,6 +23,8 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { ThreadsService } from './threads.service';
+import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadPinsService } from './pins/thread-pins.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 import { AttachTaskDto } from './dto/attach-task.dto';
@@ -45,6 +48,10 @@ import { CreateThreadMessageDto } from './dto/create-thread-message.dto';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
 import { ListThreadMessagesQueryDto } from './dto/list-thread-messages-query.dto';
 import { ListThreadMessagesResponseDto } from './dto/list-thread-messages-response.dto';
+import { ThreadTokenUsageResponseDto } from './dto/thread-token-usage-response.dto';
+import { ThreadAgentLogService } from './agent/thread-agent-log.service';
+import { ThreadTimerParamsDto } from './dto/thread-timer-params.dto';
+import { ThreadTaskSubscriptionParamsDto } from './dto/thread-task-subscription-params.dto';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
@@ -52,7 +59,12 @@ import { ListThreadMessagesResponseDto } from './dto/list-thread-messages-respon
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(ThreadsScopes.READ.id)
 export class ThreadsController {
-  constructor(private readonly threadsService: ThreadsService) {}
+  constructor(
+    private readonly threadsService: ThreadsService,
+    private readonly threadReadStateService: ThreadReadStateService,
+    private readonly threadPinsService: ThreadPinsService,
+    private readonly threadAgentLogService: ThreadAgentLogService,
+  ) {}
 
   @Post()
   @RequireScopes(ThreadsScopes.WRITE.id)
@@ -112,14 +124,19 @@ export class ThreadsController {
   })
   async listThreads(
     @Query() query: ListThreadsQueryDto,
+    @CurrentUser() user: UserContext,
   ): Promise<ThreadListResponseDto> {
     const result = await this.threadsService.listThreads({
       page: query.page ?? 1,
       limit: query.limit ?? 20,
+      actorId: user.actorId,
     });
 
     return {
-      items: result.items,
+      items: result.items.map((item) => ({
+        ...item,
+        lastActivityAt: item.lastActivityAt.toISOString(),
+      })),
       total: result.total,
       page: result.page,
       limit: result.limit,
@@ -194,6 +211,38 @@ export class ThreadsController {
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.attachTask(params.id, dto.taskId);
     return ThreadResponseDto.fromResult(result);
+  }
+
+  @Delete(':id/timers/:timerId')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Cancel a reminder or schedule of the threads agent',
+    description: 'Idempotent: cancelling a timer that already finished or was cancelled succeeds.',
+  })
+  @ApiNoContentResponse({ description: 'Timer cancelled, or already gone' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async cancelTimer(
+    @Param() params: ThreadTimerParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadsService.cancelTimer(params.id, params.timerId, user.actorId);
+  }
+
+  @Delete(':id/task-subscriptions/:taskId')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Stop the threads agent watching a task',
+    description: 'Idempotent: removing a watch that does not exist succeeds.',
+  })
+  @ApiNoContentResponse({ description: 'Watch removed, or already gone' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async removeTaskSubscription(
+    @Param() params: ThreadTaskSubscriptionParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadsService.removeTaskSubscription(params.id, params.taskId, user.actorId);
   }
 
   @Post(':id/context-blocks')
@@ -293,6 +342,22 @@ export class ThreadsController {
     return { content };
   }
 
+  @Get(':id/token-usage')
+  @ApiOperation({
+    summary: 'Get the token usage the model provider reported for a thread (debug)',
+  })
+  @ApiOkResponse({
+    type: ThreadTokenUsageResponseDto,
+    description: 'Token usage retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async getThreadTokenUsage(
+    @Param() params: ThreadParamsDto,
+  ): Promise<ThreadTokenUsageResponseDto> {
+    const result = await this.threadAgentLogService.getTokenUsage(params.id);
+    return ThreadTokenUsageResponseDto.fromResult(result);
+  }
+
   @Patch(':id/state')
   @RequireScopes(ThreadsScopes.WRITE.id)
   @ApiOperation({ summary: 'Update the state of a thread' })
@@ -351,12 +416,57 @@ export class ThreadsController {
       threadId: params.id,
       content: dto.content,
       createdByActorId: user.actorId,
+      timezone: dto.timezone?.trim() || null,
     });
     return ThreadMessageResponseDto.fromResult(result);
   }
 
+  // Read scope is enough: this only moves the caller's own read position.
+  @Post(':id/read')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Mark every message in the thread as read by the caller',
+  })
+  @ApiNoContentResponse({ description: 'Thread marked as read' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async markThreadRead(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadReadStateService.markRead(params.id, user.actorId);
+  }
+
+  // Read scope is enough: a pin only changes the caller's own list.
+  @Put(':id/pin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: "Pin the thread to the top of the caller's thread list",
+  })
+  @ApiNoContentResponse({ description: 'Thread pinned' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async pinThread(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadPinsService.pin(params.id, user.actorId);
+  }
+
+  @Delete(':id/pin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: "Unpin the thread from the caller's thread list",
+  })
+  @ApiNoContentResponse({ description: 'Thread unpinned' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async unpinThread(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadPinsService.unpin(params.id, user.actorId);
+  }
+
   @Get(':id/messages')
-  @ApiOperation({ summary: 'List messages in a thread' })
+  @ApiOperation({ summary: 'List messages in a thread, newest first' })
   @ApiOkResponse({
     type: ListThreadMessagesResponseDto,
     description: 'Paginated list of thread messages',

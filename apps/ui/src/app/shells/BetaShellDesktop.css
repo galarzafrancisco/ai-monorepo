@@ -103,6 +103,7 @@
 } */
 
 .beta-shell__desktop__nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -151,6 +152,24 @@
   overflow: hidden;
 }
 
+.beta-shell__desktop__nav-badge {
+  margin-left: auto;
+}
+
+/* Collapsed → no room beside the icon, so the badge sits on its corner */
+.beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__nav-badge {
+  position: absolute;
+  top: 0;
+  left: calc(50% + var(--space-1));
+  margin-left: 0;
+}
+
+/* The active item is already accent-coloured; swap so the badge stays visible */
+.beta-shell__desktop__nav-item--active .beta-shell__desktop__nav-badge {
+  background: var(--accent-contrast);
+  color: var(--accent);
+}
+
 .beta-shell__desktop__nav-item:hover {
   background-color: var(--surface);
   text-decoration: none;
@@ -166,6 +185,40 @@
   background-color: var(--accent-hover);
 }
 
+
+/* Subtle command palette shortcut legend, sits right above the collapse toggle */
+.beta-shell__desktop__search-hint {
+  margin-top: auto;
+  margin-bottom: calc(-1 * var(--space-4)); /* cancel sidebar gap so it hugs the toggle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  white-space: nowrap;
+  opacity: 0.8;
+  user-select: none;
+}
+
+.beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__search-hint {
+  padding-left: var(--space-1);
+  padding-right: var(--space-1);
+}
+
+/* The hint already pushes itself + the toggle to the bottom */
+.beta-shell__desktop__search-hint + .beta-shell__desktop__sidebar--toggle {
+  margin-top: 0;
+}
+
+.beta-shell__desktop__search-hint-keys {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-1);
+}
 
 .beta-shell__desktop__sidebar--toggle {
   margin-top: auto;

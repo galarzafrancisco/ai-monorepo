@@ -1,4 +1,9 @@
-import { AiModelJob, AiModelKind, AiProviderType } from '../../enums';
+import {
+  AiModelJob,
+  AiModelKind,
+  AiProviderConnectionStatus,
+  AiProviderType,
+} from '../../enums';
 
 export type CreateAiProviderInput = {
   name: string;
@@ -72,4 +77,54 @@ export type AiModelSelectionResult = {
 export type ResolvedAiModelSelection = {
   provider: AiProviderConfigResult;
   modelId: string;
+};
+
+/** Who a request that runs on a person's own plan is for. */
+export type OnBehalfOf = {
+  /** Actor whose message started the turn, or who the automated turn is for. */
+  actorId: string;
+  /** True when nobody typed a message: the turn was started by a task update. */
+  automated: boolean;
+  /** Who the actor is, for error messages, e.g. "the person who created this thread". */
+  description?: string;
+};
+
+export type AiProviderConnectionResult = {
+  aiProviderId: string;
+  status: AiProviderConnectionStatus;
+  /** Email of the connected account, to tell accounts apart. Null when not connected. */
+  accountEmail: string | null;
+  /** True when requests can run on this person's plan right now. */
+  canUsePlan: boolean;
+  automatedTurnsAllowed: boolean;
+  /** True while a sign-in was started and not finished. */
+  isAuthorizationPending: boolean;
+  /** The provider's code for the last failed request, e.g. a usage limit. */
+  lastErrorCode: string | null;
+  lastErrorAt: Date | null;
+  manageUsageUrl: string;
+};
+
+export type StartAiProviderAuthorizationResult = {
+  /** Where to send the browser. */
+  authorizationUrl: string;
+  expiresAt: Date;
+};
+
+export type CompleteAiProviderAuthorizationInput = {
+  state: string;
+  /**
+   * Scheme, host, port and path of a pasted redirect address, without its
+   * query. Checked against the redirect the sign-in was started with.
+   */
+  redirectAddress?: string | null;
+  code?: string | null;
+  clientId?: string | null;
+  error?: string | null;
+  errorDescription?: string | null;
+};
+
+export type DisconnectAiProviderResult = {
+  /** False when the provider could not be told; the local tokens are gone either way. */
+  revokedAtProvider: boolean;
 };

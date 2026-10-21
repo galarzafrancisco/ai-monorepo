@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   readdirSync,
@@ -15,8 +13,6 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const defaultFromVersion = "0.3.5";
-const defaultToVersion = "0.4.0";
 
 const packageReleaseOrder = [
   "packages/shared",
@@ -254,11 +250,6 @@ function commandName() {
   return process.argv[2] ?? "help";
 }
 
-async function confirm(rl, message) {
-  const answer = await rl.question(`${message} [y/N] `);
-  return answer.trim().toLowerCase() === "y";
-}
-
 async function runCommand(command, args, options = {}) {
   console.log(`\n> ${[command, ...args].join(" ")}`);
   await new Promise((resolve, reject) => {
@@ -280,7 +271,31 @@ async function runCommand(command, args, options = {}) {
   });
 }
 
+const semverPattern = /^\d+\.\d+\.\d+$/;
+
+/**
+ * The bump rewrites the helper scripts to `toVersion` whatever version they
+ * pin, so it must only run with versions the caller chose on purpose.
+ */
+function requireBumpVersions(fromVersion, toVersion) {
+  if (!fromVersion || !toVersion) {
+    throw new Error("bump needs --from=<current version> and --to=<new version>.");
+  }
+  for (const version of [fromVersion, toVersion]) {
+    if (!semverPattern.test(version)) {
+      throw new Error(`"${version}" is not a version like 1.2.3.`);
+    }
+  }
+  const current = readJson(path.join(repoRoot, "apps/backend/package.json")).version;
+  if (current !== fromVersion) {
+    throw new Error(
+      `--from=${fromVersion} does not match the current version ${current}. Nothing was changed.`,
+    );
+  }
+}
+
 function bump(fromVersion, toVersion) {
+  requireBumpVersions(fromVersion, toVersion);
   const results = workspacePackageJsonPaths().map((filePath) =>
     bumpPackageJson(filePath, fromVersion, toVersion),
   );
@@ -306,64 +321,70 @@ function bump(fromVersion, toVersion) {
   syncSocketBadges();
 }
 
+function isLoggedInToNpm() {
+  return spawnSync("npm", ["whoami"], { cwd: repoRoot, stdio: "ignore" }).status === 0;
+}
+
+function isPublished(workspace) {
+  const { name, version } = readJson(path.join(repoRoot, workspace, "package.json"));
+  const result = spawnSync("npm", ["view", `${name}@${version}`, "version"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  return result.status === 0 && result.stdout.trim() === version;
+}
+
 function printPlan() {
   console.log("Release order:");
-  console.log("- npm login");
   console.log("- npm run build:dev");
-  for (const workspace of packageReleaseOrder) {
-    console.log(`- npm -w ${workspace} run release`);
-  }
-  for (const workspace of appReleaseOrder) {
-    console.log(`- npm -w ${workspace} run release`);
+  console.log("- npm login (skipped if already logged in)");
+  for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
+    console.log(`- npm publish -w ${workspace} (skipped if already published)`);
   }
 }
 
+/**
+ * Everything is built before signing in, so the sign-in and the npm 2FA
+ * prompt of the first publish come together and the publishes run back to
+ * back. build:dev builds every workspace published here.
+ */
 async function release() {
   printPlan();
 
-  const rl = createInterface({ input, output });
-  try {
-    if (!(await confirm(rl, "Run npm login now?"))) {
-      throw new Error("Release cancelled before npm login.");
-    }
+  await runCommand("npm", ["run", "build:dev"]);
+
+  if (!isLoggedInToNpm()) {
     await runCommand("npm", ["login"]);
-
-    if (!(await confirm(rl, "Build everything with npm run build:dev?"))) {
-      throw new Error("Release cancelled before build.");
-    }
-    await runCommand("npm", ["run", "build:dev"]);
-
-    for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
-      if (!(await confirm(rl, `Release ${workspace}?`))) {
-        throw new Error(`Release cancelled before ${workspace}.`);
-      }
-      await runCommand("npm", ["-w", workspace, "run", "release"]);
-    }
-
-    console.log("\nRelease complete.");
-  } finally {
-    rl.close();
   }
+  for (const workspace of [...packageReleaseOrder, ...appReleaseOrder]) {
+    if (isPublished(workspace)) {
+      console.log(`\n${workspace} is already published at this version, skipping.`);
+      continue;
+    }
+    await runCommand("npm", ["publish", "-w", workspace, "--access", "public"]);
+  }
+
+  console.log("\nRelease complete.");
 }
 
 function usage() {
   console.log(`Usage:
-  node scripts/release-taico.mjs bump [--from=${defaultFromVersion}] [--to=${defaultToVersion}]
+  node scripts/release-taico.mjs bump --from=<current> --to=<new>
   node scripts/release-taico.mjs socket-badges
   node scripts/release-taico.mjs release
-  node scripts/release-taico.mjs all [--from=${defaultFromVersion}] [--to=${defaultToVersion}]
+  node scripts/release-taico.mjs all --from=<current> --to=<new>
 
 Commands:
   bump     Update every @taico package version and @taico dependency range.
   socket-badges
            Update Socket badge URLs from release target package manifests.
-  release  Login, build, then publish packages followed by backend and worker.
+  release  Build, log in, then publish packages followed by the apps.
   all      Run bump and then release.
 `);
 }
 
-const fromVersion = parseFlag("from", defaultFromVersion);
-const toVersion = parseFlag("to", defaultToVersion);
+const fromVersion = parseFlag("from");
+const toVersion = parseFlag("to");
 
 try {
   switch (commandName()) {

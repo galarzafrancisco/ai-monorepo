@@ -34,6 +34,16 @@ import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { AiProvidersModule } from '../ai-providers/ai-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
+import { ThreadReadStateEntity } from './read-state/thread-read-state.entity';
+import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadPinEntity } from './pins/thread-pin.entity';
+import { ThreadPinsService } from './pins/thread-pins.service';
+import { ThreadMessageWriterService } from './thread-message-writer.service';
+import { ThreadTimerEntity } from './timers/thread-timer.entity';
+import { ThreadTimerFiringEntity } from './timers/thread-timer-firing.entity';
+import { ThreadTimersService } from './timers/thread-timers.service';
+import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service';
+import { ThreadTimeService } from './time/thread-time.service';
 
 @Module({
   imports: [
@@ -43,6 +53,10 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
       ThreadAgentMessageEntity,
       ThreadTurnEntity,
       ThreadTaskSubscriptionEntity,
+      ThreadTimerEntity,
+      ThreadTimerFiringEntity,
+      ThreadReadStateEntity,
+      ThreadPinEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
@@ -68,6 +82,9 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ThreadAgentToolsFactory,
     ThreadTaskSubscriptionsService,
     ThreadTaskSubscriptionNotifierService,
+    ThreadTimersService,
+    ThreadTimerSweeperService,
+    ThreadTimeService,
     ThreadAgentHooksRunner,
     EasterEggHook,
     CompactionHook,
@@ -83,6 +100,9 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ThreadTitleService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
+    ThreadReadStateService,
+    ThreadPinsService,
+    ThreadMessageWriterService,
   ],
   exports: [ThreadsService],
 })

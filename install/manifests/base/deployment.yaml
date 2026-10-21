@@ -24,11 +24,20 @@ spec:
             - containerPort: 3000
               name: http
               protocol: TCP
+          # Enable Sign in with ChatGPT for this Taico deployment.
+          env:
+            - name: CHATGPT_SUBSCRIPTION_ENABLED
+              value: "true"
           envFrom:
             - configMapRef:
                 name: taico-config
             - secretRef:
                 name: taico-database
+            # SECRETS_ENCRYPTION_KEY. Restored from the host key file by
+            # bootstrap/taico-secrets-key.sh; never committed. Not optional: a
+            # missing key must stop the pod, not fall back to plaintext.
+            - secretRef:
+                name: taico-secrets-encryption
           volumeMounts:
             - name: data
               mountPath: /app/data

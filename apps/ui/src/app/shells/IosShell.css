@@ -266,3 +266,13 @@
 .ios-shell__drawer-label {
   font-size: var(--fs-2);
 }
+
+.ios-shell__drawer-badge {
+  margin-left: auto;
+}
+
+/* The active item is already accent-coloured; swap so the badge stays visible */
+.ios-shell__drawer-item--active .ios-shell__drawer-badge {
+  background: var(--accent-contrast);
+  color: var(--accent);
+}

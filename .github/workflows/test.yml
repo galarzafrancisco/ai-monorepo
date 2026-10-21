@@ -72,6 +72,9 @@ jobs:
       - name: Run auth package tests
         run: npx nx run @taico/auth:test
 
+      - name: Run worker unit tests
+        run: npm -w apps/worker run test:unit
+
       - name: Run E2E tests
         id: tests
         run: npm -w apps/backend run test:e2e

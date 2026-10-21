@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { IosShell } from "../../app/shells/IosShell";
 import { Text } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
+import { UnreadBadge } from "./UnreadBadge";
+import { ThreadListLoadMore } from "./ThreadListLoadMore";
+import { ThreadPinButton } from "./ThreadPinButton";
+import { splitPinnedThreads } from "./splitPinnedThreads";
+import type { ThreadListItem } from "./types";
 import "./ThreadsLayout.css";
 
 export function ThreadsLayout(): React.JSX.Element {
@@ -11,8 +16,39 @@ export function ThreadsLayout(): React.JSX.Element {
   const { id: threadId } = useParams<{ id?: string }>();
   const isThreadDetailRoute = Boolean(threadId);
   const navigate = useNavigate();
-  const { threads, isLoading, error, sectionTitle, navItems, optimisticDraftThread } = useThreadsCtx();
+  const { threads, totalThreads, isLoading, error, sectionTitle, navItems, optimisticDraftThread, refreshThreads, setThreadPinned } = useThreadsCtx();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const unreadMessageCount = threads.reduce((sum, thread) => sum + thread.unreadCount, 0);
+  const { pinnedThreads, otherThreads } = useMemo(() => splitPinnedThreads(threads), [threads]);
+
+  const renderThread = (thread: ThreadListItem) => {
+    const isSelected = thread.id === threadId;
+    return (
+      <div
+        key={thread.id}
+        className={`threads-layout__thread-item ${isSelected ? "threads-layout__thread-item--active" : ""} ${thread.unreadCount > 0 ? "threads-layout__thread-item--unread" : ""}`}
+      >
+        <button
+          type="button"
+          className="threads-layout__thread-link"
+          onClick={() => navigate(`/threads/${thread.id}`)}
+        >
+          <span className="threads-layout__thread-title">{thread.title}</span>
+          <UnreadBadge count={thread.unreadCount} />
+        </button>
+        <ThreadPinButton
+          pinned={thread.pinned}
+          onToggle={(pinned) => void setThreadPinned(thread.id, pinned)}
+        />
+      </div>
+    );
+  };
+
+  // The list outlives this section. Threads created or deleted elsewhere send
+  // no event to the list, so catch up each time the user comes back to it.
+  useEffect(() => {
+    void refreshThreads();
+  }, [refreshThreads]);
 
   useEffect(() => {
     if (!isDesktop) return;
@@ -40,7 +76,7 @@ export function ThreadsLayout(): React.JSX.Element {
                   <Text as="span" size="2" weight="semibold">Threads</Text>
                 </button>
                 <div className="threads-layout__sidebar-header-actions">
-                  <Text as="div" size="1" tone="muted">{threads.length}</Text>
+                  <Text as="div" size="1" tone="muted">{totalThreads}</Text>
                   <button
                     type="button"
                     className="threads-layout__sidebar-new"
@@ -52,12 +88,14 @@ export function ThreadsLayout(): React.JSX.Element {
                   </button>
                 </div>
               </>
+            ) : unreadMessageCount > 0 ? (
+              <UnreadBadge count={unreadMessageCount} />
             ) : (
-              <Text as="div" size="1" tone="muted">{threads.length}</Text>
+              <Text as="div" size="1" tone="muted">{totalThreads}</Text>
             )}
           </div>
 
-          <div className="threads-layout__sidebar-body">
+          <div className="threads-layout__sidebar-body thin-scrollbar">
             {!isSidebarCollapsed ? (
               isLoading ? (
                 <div className="threads-layout__sidebar-status">Loading threads...</div>
@@ -67,6 +105,10 @@ export function ThreadsLayout(): React.JSX.Element {
                 <div className="threads-layout__sidebar-status">No threads yet</div>
               ) : (
                 <div className="threads-layout__thread-list">
+                  {pinnedThreads.map(renderThread)}
+                  {pinnedThreads.length > 0 && (otherThreads.length > 0 || optimisticDraftThread) ? (
+                    <div className="threads-layout__pinned-divider" role="separator" />
+                  ) : null}
                   {optimisticDraftThread ? (
                     <button
                       type="button"
@@ -76,19 +118,8 @@ export function ThreadsLayout(): React.JSX.Element {
                       <span className="threads-layout__thread-title">{optimisticDraftThread.title}</span>
                     </button>
                   ) : null}
-                  {threads.map((thread) => {
-                    const isSelected = thread.id === threadId;
-                    return (
-                      <button
-                        key={thread.id}
-                        type="button"
-                        className={`threads-layout__thread-item ${isSelected ? "threads-layout__thread-item--active" : ""}`}
-                        onClick={() => navigate(`/threads/${thread.id}`)}
-                      >
-                        <span className="threads-layout__thread-title">{thread.title}</span>
-                      </button>
-                    );
-                  })}
+                  {otherThreads.map(renderThread)}
+                  <ThreadListLoadMore />
                 </div>
               )
             ) : null}

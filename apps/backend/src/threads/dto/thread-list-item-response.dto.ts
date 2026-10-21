@@ -18,4 +18,25 @@ export class ThreadListItemResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   stateContextBlockId!: string;
+
+  @ApiProperty({
+    description:
+      'When the latest message people can see was posted, or when the thread was created if it has none. The list is ordered by this, newest first',
+    example: '2026-01-01T00:00:00.000Z',
+  })
+  lastActivityAt!: string;
+
+  @ApiProperty({
+    description:
+      'Messages in this thread written by someone else that the caller has not read yet',
+    example: 2,
+  })
+  unreadCount!: number;
+
+  @ApiProperty({
+    description:
+      'The caller pinned this thread. Pinned threads are listed before all others',
+    example: false,
+  })
+  pinned!: boolean;
 }

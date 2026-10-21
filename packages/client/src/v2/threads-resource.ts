@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
+import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, ThreadTokenUsageResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
 
 export class ThreadsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -46,6 +46,16 @@ export class ThreadsResource extends BaseClient {
     return this.request('POST', `/api/v1/threads/${params.id}/tasks`, { body: params.body, signal: params?.signal });
   }
 
+  /** Cancel a reminder or schedule of the threads agent */
+  async ThreadsController_cancelTimer(params: { id: string; timerId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/timers/${params.timerId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Stop the threads agent watching a task */
+  async ThreadsController_removeTaskSubscription(params: { id: string; taskId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/task-subscriptions/${params.taskId}`, { responseType: 'void', signal: params?.signal });
+  }
+
   /** Reference a context block in the thread */
   async ThreadsController_referenceContextBlock(params: { id: string; body: ReferenceContextBlockDto; signal?: AbortSignal }): Promise<ThreadResponseDto> {
     return this.request('POST', `/api/v1/threads/${params.id}/context-blocks`, { body: params.body, signal: params?.signal });
@@ -76,6 +86,11 @@ export class ThreadsResource extends BaseClient {
     return this.request('PATCH', `/api/v1/threads/${params.id}/state`, { body: params.body, signal: params?.signal });
   }
 
+  /** Get the token usage the model provider reported for a thread (debug) */
+  async ThreadsController_getThreadTokenUsage(params: { id: string; signal?: AbortSignal }): Promise<ThreadTokenUsageResponseDto> {
+    return this.request('GET', `/api/v1/threads/${params.id}/token-usage`, { signal: params?.signal });
+  }
+
   /** Append content to the state of a thread */
   async ThreadsController_appendThreadState(params: { id: string; body: AppendThreadStateDto; signal?: AbortSignal }): Promise<ThreadStateResponseDto> {
     return this.request('POST', `/api/v1/threads/${params.id}/state/append`, { body: params.body, signal: params?.signal });
@@ -86,9 +101,24 @@ export class ThreadsResource extends BaseClient {
     return this.request('POST', `/api/v1/threads/${params.id}/messages`, { body: params.body, signal: params?.signal });
   }
 
-  /** List messages in a thread */
+  /** List messages in a thread, newest first */
   async ThreadsController_listMessages(params: { id: string; page?: number; limit?: number; signal?: AbortSignal }): Promise<ListThreadMessagesResponseDto> {
     return this.request('GET', `/api/v1/threads/${params.id}/messages`, { params: { page: params.page, limit: params.limit }, signal: params?.signal });
+  }
+
+  /** Mark every message in the thread as read by the caller */
+  async ThreadsController_markThreadRead(params: { id: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('POST', `/api/v1/threads/${params.id}/read`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Pin the thread to the top of the caller's thread list */
+  async ThreadsController_pinThread(params: { id: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('PUT', `/api/v1/threads/${params.id}/pin`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Unpin the thread from the caller's thread list */
+  async ThreadsController_unpinThread(params: { id: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/pin`, { responseType: 'void', signal: params?.signal });
   }
 
 }

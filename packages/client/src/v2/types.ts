@@ -414,7 +414,7 @@ export interface JwksResponseDto {
 
 export interface CreateAiProviderDto {
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible' | 'chatgpt_subscription';
   secretId?: string;
   baseUrl?: string | null;
   project?: string | null;
@@ -424,7 +424,7 @@ export interface CreateAiProviderDto {
 export interface AiProviderResponseDto {
   id: string;
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'xai' | 'openai_compatible' | 'chatgpt_subscription';
   secretId?: string | null;
   baseUrl?: string | null;
   project?: string | null;
@@ -451,7 +451,7 @@ export interface AiProviderModelResponseDto {
 }
 
 export interface AiModelSelectionResponseDto {
-  job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings';
+  job: 'conversation' | 'user_small_tasks' | 'system_small_tasks' | 'middle_manager' | 'embeddings';
   aiProviderId?: string | null;
   modelId?: string | null;
   followsConversation: boolean;
@@ -463,6 +463,40 @@ export interface AiModelSelectionResponseDto {
 export interface SetAiModelSelectionDto {
   aiProviderId: string;
   modelId: string;
+}
+
+export interface AiProviderConnectionResponseDto {
+  aiProviderId: string;
+  status: 'connected' | 'plan_access_not_granted' | 'needs_reauthorization' | 'disconnected';
+  accountEmail?: string | null;
+  canUsePlan: boolean;
+  automatedTurnsAllowed: boolean;
+  isAuthorizationPending: boolean;
+  lastErrorCode?: string | null;
+  lastErrorAt?: string | null;
+  manageUsageUrl: string;
+}
+
+export interface StartAiProviderAuthorizationResponseDto {
+  authorizationUrl: string;
+  expiresAt: string;
+}
+
+export interface CompleteAiProviderAuthorizationDto {
+  callbackUrl?: string;
+  state?: string;
+  code?: string;
+  clientId?: string;
+  error?: string;
+  errorDescription?: string;
+}
+
+export interface UpdateAiProviderConnectionDto {
+  automatedTurnsAllowed: boolean;
+}
+
+export interface DisconnectAiProviderResponseDto {
+  revokedAtProvider: boolean;
 }
 
 export interface CreateSecretDto {
@@ -689,6 +723,19 @@ export interface TaskSubscriptionResponseDto {
   createdAt: string;
 }
 
+export type ThreadTimerKind = 'reminder' | 'schedule';
+
+export interface ThreadTimerResponseDto {
+  id: string;
+  kind: ThreadTimerKind;
+  reason: string;
+  periodSeconds: number | null;
+  maxIterations: number;
+  firedCount: number;
+  nextFireAt: string;
+  createdAt: string;
+}
+
 export interface ThreadResponseDto {
   id: string;
   title: string;
@@ -700,6 +747,7 @@ export interface ThreadResponseDto {
   tags: MetaTagResponseDto[];
   participants: ActorResponseDto[];
   taskSubscriptions: TaskSubscriptionResponseDto[];
+  timers: ThreadTimerResponseDto[];
   rowVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -713,6 +761,9 @@ export interface ThreadListItemResponseDto {
   id: string;
   title: string;
   stateContextBlockId: string;
+  lastActivityAt: string;
+  unreadCount: number;
+  pinned: boolean;
 }
 
 export interface ThreadListResponseDto {
@@ -739,6 +790,13 @@ export interface ThreadStateResponseDto {
   content: string;
 }
 
+export interface ThreadTokenUsageResponseDto {
+  contextTokens: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  steps: number;
+}
+
 export interface UpdateThreadStateDto {
   content: string;
 }
@@ -749,6 +807,7 @@ export interface AppendThreadStateDto {
 
 export interface CreateThreadMessageDto {
   content: string;
+  timezone?: string;
 }
 
 export interface ThreadMessageResponseDto {

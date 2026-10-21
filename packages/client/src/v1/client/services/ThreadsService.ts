@@ -14,6 +14,7 @@ import type { ThreadListResponseDto } from '../models/ThreadListResponseDto.js';
 import type { ThreadMessageResponseDto } from '../models/ThreadMessageResponseDto.js';
 import type { ThreadResponseDto } from '../models/ThreadResponseDto.js';
 import type { ThreadStateResponseDto } from '../models/ThreadStateResponseDto.js';
+import type { ThreadTokenUsageResponseDto } from '../models/ThreadTokenUsageResponseDto.js';
 import type { UpdateThreadDto } from '../models/UpdateThreadDto.js';
 import type { UpdateThreadStateDto } from '../models/UpdateThreadStateDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -193,6 +194,56 @@ export class ThreadsService {
         });
     }
     /**
+     * Cancel a reminder or schedule of the threads agent
+     * Idempotent: cancelling a timer that already finished or was cancelled succeeds.
+     * @param id Thread UUID
+     * @param timerId Timer UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerCancelTimer(
+        id: string,
+        timerId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/threads/{id}/timers/{timerId}',
+            path: {
+                'id': id,
+                'timerId': timerId,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Stop the threads agent watching a task
+     * Idempotent: removing a watch that does not exist succeeds.
+     * @param id Thread UUID
+     * @param taskId UUID of the watched task
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerRemoveTaskSubscription(
+        id: string,
+        taskId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/threads/{id}/task-subscriptions/{taskId}',
+            path: {
+                'id': id,
+                'taskId': taskId,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
      * Reference a context block in the thread
      * @param id Thread UUID
      * @param requestBody
@@ -342,6 +393,27 @@ export class ThreadsService {
         });
     }
     /**
+     * Get the token usage the model provider reported for a thread (debug)
+     * @param id Thread UUID
+     * @returns ThreadTokenUsageResponseDto Token usage retrieved successfully
+     * @throws ApiError
+     */
+    public static threadsControllerGetThreadTokenUsage(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ThreadTokenUsageResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/threads/{id}/token-usage',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
      * Append content to the state of a thread
      * @param id Thread UUID
      * @param requestBody
@@ -394,7 +466,7 @@ export class ThreadsService {
         });
     }
     /**
-     * List messages in a thread
+     * List messages in a thread, newest first
      * @param id Thread UUID
      * @param page Page number
      * @param limit Number of items per page
@@ -416,6 +488,69 @@ export class ThreadsService {
             query: {
                 'page': page,
                 'limit': limit,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Mark every message in the thread as read by the caller
+     * @param id Thread UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerMarkThreadRead(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/threads/{id}/read',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Pin the thread to the top of the caller's thread list
+     * @param id Thread UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerPinThread(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'PUT',
+            url: '/api/v1/threads/{id}/pin',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Unpin the thread from the caller's thread list
+     * @param id Thread UUID
+     * @returns void
+     * @throws ApiError
+     */
+    public static threadsControllerUnpinThread(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/threads/{id}/pin',
+            path: {
+                'id': id,
             },
             errors: {
                 404: `Thread not found`,

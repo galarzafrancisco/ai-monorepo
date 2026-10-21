@@ -2789,7 +2789,8 @@
               "type": "string",
               "enum": [
                 "conversation",
-                "quick_tasks",
+                "user_small_tasks",
+                "system_small_tasks",
                 "middle_manager",
                 "embeddings"
               ]
@@ -2844,7 +2845,8 @@
               "type": "string",
               "enum": [
                 "conversation",
-                "quick_tasks",
+                "user_small_tasks",
+                "system_small_tasks",
                 "middle_manager",
                 "embeddings"
               ]
@@ -2864,6 +2866,215 @@
         "summary": "Clear a job's selection",
         "tags": [
           "AI Model Selections"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}/connection": {
+      "get": {
+        "operationId": "AiProviderConnectionsController_getConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get your own connection to the provider",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      },
+      "patch": {
+        "operationId": "AiProviderConnectionsController_updateConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAiProviderConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Change what your connection may be used for",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      },
+      "delete": {
+        "operationId": "AiProviderConnectionsController_disconnect",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisconnectAiProviderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Disconnect your account and revoke its grant at the provider",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}/connection/authorize": {
+      "post": {
+        "operationId": "AiProviderConnectionsController_startAuthorization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartAiProviderAuthorizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Start signing in to the provider with your own account",
+        "tags": [
+          "AI Provider Connections"
+        ]
+      }
+    },
+    "/api/v1/ai-providers/{id}/connection/callback": {
+      "post": {
+        "operationId": "AiProviderConnectionsController_completeAuthorization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "AI provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteAiProviderAuthorizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Finish the sign-in you started with what the provider sent back",
+        "tags": [
+          "AI Provider Connections"
         ]
       }
     },
@@ -4549,6 +4760,96 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/timers/{timerId}": {
+      "delete": {
+        "description": "Idempotent: cancelling a timer that already finished or was cancelled succeeds.",
+        "operationId": "ThreadsController_cancelTimer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timerId",
+            "required": true,
+            "in": "path",
+            "description": "Timer UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Timer cancelled, or already gone"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Cancel a reminder or schedule of the threads agent",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
+      "delete": {
+        "description": "Idempotent: removing a watch that does not exist succeeds.",
+        "operationId": "ThreadsController_removeTaskSubscription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "required": true,
+            "in": "path",
+            "description": "UUID of the watched task",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Watch removed, or already gone"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Stop the threads agent watching a task",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/context-blocks": {
       "post": {
         "operationId": "ThreadsController_referenceContextBlock",
@@ -4851,6 +5152,47 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/token-usage": {
+      "get": {
+        "operationId": "ThreadsController_getThreadTokenUsage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token usage retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadTokenUsageResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get the token usage the model provider reported for a thread (debug)",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/state/append": {
       "post": {
         "operationId": "ThreadsController_appendThreadState",
@@ -5017,7 +5359,107 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "List messages in a thread",
+        "summary": "List messages in a thread, newest first",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/read": {
+      "post": {
+        "operationId": "ThreadsController_markThreadRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread marked as read"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Mark every message in the thread as read by the caller",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/pin": {
+      "put": {
+        "operationId": "ThreadsController_pinThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread pinned"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Pin the thread to the top of the caller's thread list",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "delete": {
+        "operationId": "ThreadsController_unpinThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread unpinned"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Unpin the thread from the caller's thread list",
         "tags": [
           "Threads"
         ]
@@ -9671,7 +10113,8 @@
               "google",
               "google_vertex",
               "xai",
-              "openai_compatible"
+              "openai_compatible",
+              "chatgpt_subscription"
             ],
             "example": "openai"
           },
@@ -9726,7 +10169,8 @@
               "google",
               "google_vertex",
               "xai",
-              "openai_compatible"
+              "openai_compatible",
+              "chatgpt_subscription"
             ],
             "example": "openai"
           },
@@ -9860,7 +10304,8 @@
             "description": "The job the model is selected for",
             "enum": [
               "conversation",
-              "quick_tasks",
+              "user_small_tasks",
+              "system_small_tasks",
               "middle_manager",
               "embeddings"
             ],
@@ -9924,6 +10369,137 @@
         "required": [
           "aiProviderId",
           "modelId"
+        ]
+      },
+      "AiProviderConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "aiProviderId": {
+            "type": "string",
+            "description": "AI provider identifier"
+          },
+          "status": {
+            "type": "string",
+            "description": "State of your own connection to the provider",
+            "enum": [
+              "connected",
+              "plan_access_not_granted",
+              "needs_reauthorization",
+              "disconnected"
+            ],
+            "example": "connected"
+          },
+          "accountEmail": {
+            "type": "string",
+            "description": "Email of the connected account",
+            "nullable": true
+          },
+          "canUsePlan": {
+            "type": "boolean",
+            "description": "Whether requests can run on your plan right now"
+          },
+          "automatedTurnsAllowed": {
+            "type": "boolean",
+            "description": "Whether turns nobody typed (task updates) may run on your plan"
+          },
+          "isAuthorizationPending": {
+            "type": "boolean",
+            "description": "Whether a sign-in was started and not finished"
+          },
+          "lastErrorCode": {
+            "type": "string",
+            "description": "The provider's code for the last failed request, cleared by the next success",
+            "example": "subscription_sharing_usage_limit_exceeded",
+            "nullable": true
+          },
+          "lastErrorAt": {
+            "type": "string",
+            "description": "ISO timestamp of the last failed request",
+            "nullable": true
+          },
+          "manageUsageUrl": {
+            "type": "string",
+            "description": "Where you see and manage your plan usage"
+          }
+        },
+        "required": [
+          "aiProviderId",
+          "status",
+          "canUsePlan",
+          "automatedTurnsAllowed",
+          "isAuthorizationPending",
+          "manageUsageUrl"
+        ]
+      },
+      "StartAiProviderAuthorizationResponseDto": {
+        "type": "object",
+        "properties": {
+          "authorizationUrl": {
+            "type": "string",
+            "description": "Address to open in the browser to sign in at the provider"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO timestamp after which this sign-in can no longer be finished"
+          }
+        },
+        "required": [
+          "authorizationUrl",
+          "expiresAt"
+        ]
+      },
+      "CompleteAiProviderAuthorizationDto": {
+        "type": "object",
+        "properties": {
+          "callbackUrl": {
+            "type": "string",
+            "description": "The full address the browser was sent back to, pasted as is",
+            "example": "http://127.0.0.1:1456/auth/callback?code=...&state=..."
+          },
+          "state": {
+            "type": "string",
+            "description": "The `state` query parameter"
+          },
+          "code": {
+            "type": "string",
+            "description": "The `code` query parameter"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The `client_id` query parameter"
+          },
+          "error": {
+            "type": "string",
+            "description": "The `error` query parameter"
+          },
+          "errorDescription": {
+            "type": "string",
+            "description": "The `error_description` query parameter"
+          }
+        }
+      },
+      "UpdateAiProviderConnectionDto": {
+        "type": "object",
+        "properties": {
+          "automatedTurnsAllowed": {
+            "type": "boolean",
+            "description": "Allow turns nobody typed (task updates in threads you subscribed to) to run on your plan"
+          }
+        },
+        "required": [
+          "automatedTurnsAllowed"
+        ]
+      },
+      "DisconnectAiProviderResponseDto": {
+        "type": "object",
+        "properties": {
+          "revokedAtProvider": {
+            "type": "boolean",
+            "description": "False when the provider could not be told. The tokens stored in Taico are removed either way."
+          }
+        },
+        "required": [
+          "revokedAtProvider"
         ]
       },
       "CreateSecretDto": {
@@ -11055,6 +11631,74 @@
           "createdAt"
         ]
       },
+      "ThreadTimerKind": {
+        "type": "string",
+        "enum": [
+          "reminder",
+          "schedule"
+        ],
+        "description": "reminder fires once; schedule fires every period, up to maxIterations times"
+      },
+      "ThreadTimerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Timer ID; use it to cancel the timer",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "kind": {
+            "description": "reminder fires once; schedule fires every period, up to maxIterations times",
+            "example": "schedule",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadTimerKind"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "What the threads agent wants to be reminded of",
+            "example": "Check task #123 for new comments"
+          },
+          "periodSeconds": {
+            "type": "number",
+            "description": "Seconds between firings (null for a reminder)",
+            "example": 300,
+            "nullable": true
+          },
+          "maxIterations": {
+            "type": "number",
+            "description": "Most times the timer fires",
+            "example": 5
+          },
+          "firedCount": {
+            "type": "number",
+            "description": "Times the timer has fired so far",
+            "example": 1
+          },
+          "nextFireAt": {
+            "type": "string",
+            "description": "When the timer fires next (UTC)",
+            "example": "2024-01-15T10:35:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the timer was set (UTC)",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reason",
+          "periodSeconds",
+          "maxIterations",
+          "firedCount",
+          "nextFireAt",
+          "createdAt"
+        ]
+      },
       "ThreadResponseDto": {
         "type": "object",
         "properties": {
@@ -11122,6 +11766,13 @@
               "$ref": "#/components/schemas/TaskSubscriptionResponseDto"
             }
           },
+          "timers": {
+            "description": "Reminders and recurring schedules of the threads agent that will still fire, soonest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadTimerResponseDto"
+            }
+          },
           "rowVersion": {
             "type": "number",
             "description": "Row version for optimistic locking",
@@ -11148,6 +11799,7 @@
           "tags",
           "participants",
           "taskSubscriptions",
+          "timers",
           "rowVersion",
           "createdAt",
           "updatedAt"
@@ -11180,12 +11832,30 @@
             "type": "string",
             "description": "State context block ID that tracks the evolving state of this thread",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "description": "When the latest message people can see was posted, or when the thread was created if it has none. The list is ordered by this, newest first",
+            "example": "2026-01-01T00:00:00.000Z"
+          },
+          "unreadCount": {
+            "type": "number",
+            "description": "Messages in this thread written by someone else that the caller has not read yet",
+            "example": 2
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "The caller pinned this thread. Pinned threads are listed before all others",
+            "example": false
           }
         },
         "required": [
           "id",
           "title",
-          "stateContextBlockId"
+          "stateContextBlockId",
+          "lastActivityAt",
+          "unreadCount",
+          "pinned"
         ]
       },
       "ThreadListResponseDto": {
@@ -11279,6 +11949,40 @@
           "content"
         ]
       },
+      "ThreadTokenUsageResponseDto": {
+        "type": "object",
+        "properties": {
+          "contextTokens": {
+            "type": "number",
+            "description": "Input tokens of the most recent model step: roughly the size of the conversation the model reads now. Null when the provider reported no figure.",
+            "example": 42351,
+            "nullable": true
+          },
+          "inputTokens": {
+            "type": "number",
+            "description": "Input tokens summed over every model step in the thread. Null when no step reported a figure.",
+            "example": 423512,
+            "nullable": true
+          },
+          "outputTokens": {
+            "type": "number",
+            "description": "Output tokens summed over every model step in the thread. Null when no step reported a figure.",
+            "example": 8123,
+            "nullable": true
+          },
+          "steps": {
+            "type": "number",
+            "description": "Number of model steps that reported token usage",
+            "example": 12
+          }
+        },
+        "required": [
+          "contextTokens",
+          "inputTokens",
+          "outputTokens",
+          "steps"
+        ]
+      },
       "UpdateThreadStateDto": {
         "type": "object",
         "properties": {
@@ -11312,6 +12016,11 @@
             "type": "string",
             "description": "Content of the message",
             "example": "What is the status of this feature?"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone of the person writing, as their client reports it. Lets the threads agent read relative times such as \"tomorrow at 5pm\". Raw offsets are rejected.",
+            "example": "Australia/Sydney"
           }
         },
         "required": [

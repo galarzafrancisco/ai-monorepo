@@ -9,7 +9,6 @@ import { useCommandPalette } from '../../ui/components';
 import { AiModelSelectionsService, MetaService } from '@taico/client';
 import { useTheme } from '../../app/providers/ThemeProvider';
 import type { Theme } from '../../app/providers/ThemeProvider';
-import { ProjectsService } from '../projects/api';
 import { useWorkers } from '../workers/useWorkers';
 import { SettingsThemeVisual } from './SettingsThemeVisual';
 import { SETTINGS_THEME_OPTIONS } from './settingsThemes';
@@ -20,7 +19,6 @@ import {
   ChevronRight,
   Database,
   ExternalLink,
-  FolderKanban,
   KeyRound,
   LayoutDashboard,
   LockKeyhole,
@@ -33,7 +31,6 @@ import {
 import './SettingsPage.css';
 
 type SettingsMetric = {
-  projects: number | null;
   /** The model answering in threads, or null when none is usable yet. */
   conversationModel: string | null;
 };
@@ -47,7 +44,6 @@ export function SettingsPage() {
   const { workers, isLoading: areWorkersLoading } = useWorkers();
   const [version, setVersion] = useState<{ backend: string; ui: string } | null>(null);
   const [metrics, setMetrics] = useState<SettingsMetric>({
-    projects: null,
     conversationModel: null,
   });
 
@@ -70,19 +66,16 @@ export function SettingsPage() {
   };
 
   const loadMetrics = async () => {
-    const [projectsResult, selectionsResult] = await Promise.allSettled([
-      ProjectsService.projectsControllerGetAllProjects(),
-      AiModelSelectionsService.aiModelSelectionsControllerListAiModelSelections(),
-    ]);
-
-    setMetrics({
-      projects: projectsResult.status === 'fulfilled' ? projectsResult.value.length : null,
-      conversationModel: selectionsResult.status === 'fulfilled'
-        ? selectionsResult.value.find(
-            (selection) => selection.job === 'conversation' && selection.isReady,
-          )?.effectiveModelId ?? null
-        : null,
-    });
+    try {
+      const selections = await AiModelSelectionsService.aiModelSelectionsControllerListAiModelSelections();
+      setMetrics({
+        conversationModel: selections.find(
+          (selection) => selection.job === 'conversation' && selection.isReady,
+        )?.effectiveModelId ?? null,
+      });
+    } catch {
+      setMetrics({ conversationModel: null });
+    }
   };
 
   // Register page-specific commands
@@ -101,13 +94,6 @@ export function SettingsPage() {
         description: 'Choose your preferred color theme',
         aliases: ['theme', 'appearance', 'dark mode', 'light mode'],
         onSelect: () => navigate('/settings/appearance'),
-      },
-      {
-        id: 'settings-projects',
-        label: 'Projects Settings',
-        description: 'Manage your projects',
-        aliases: ['projects', 'manage projects'],
-        onSelect: () => navigate('/settings/projects'),
       },
       {
         id: 'settings-models',
@@ -177,15 +163,6 @@ export function SettingsPage() {
           onSelect={(nextTheme) => setTheme(nextTheme)}
         />
       ),
-    },
-    {
-      title: 'Projects',
-      description: 'Project metadata and repository links.',
-      icon: FolderKanban,
-      iconTone: 'accent',
-      path: '/settings/projects',
-      action: 'Manage',
-      detail: { label: 'Projects', value: metrics.projects === null ? 'Unavailable' : String(metrics.projects), tone: 'default' },
     },
     {
       title: 'AI models',
@@ -340,12 +317,6 @@ export function SettingsPage() {
                 label="Worker connection"
                 value={areWorkersLoading ? 'Checking' : connectedWorkers > 0 ? `${connectedWorkers} online` : 'No workers online'}
                 isReady={connectedWorkers > 0}
-              />
-              <StatusRow
-                icon={<FolderKanban size={16} strokeWidth={1.8} />}
-                label="Projects"
-                value={metrics.projects === null ? 'Checking' : `${metrics.projects} available`}
-                isReady={(metrics.projects ?? 0) > 0}
               />
             </Stack>
           </Card>

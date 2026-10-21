@@ -1,5 +1,6 @@
 import { ActorType } from '../../../identity-provider/enums';
 import { TaskStatus } from '../../../tasks/enums';
+import { ThreadTimerKind } from '../../timers/thread-timer.enums';
 
 /**
  * Service layer types - transport agnostic
@@ -44,6 +45,21 @@ export type TaskSubscriptionResult = {
   createdAt: Date;
 };
 
+/** A reminder or recurring schedule of the threads agent that will still fire. */
+export type ThreadTimerResult = {
+  id: string;
+  kind: ThreadTimerKind;
+  /** What the agent wants to be reminded of. */
+  reason: string;
+  /** Seconds between firings; null for a reminder. */
+  periodSeconds: number | null;
+  maxIterations: number;
+  /** Firings so far. */
+  firedCount: number;
+  nextFireAt: Date;
+  createdAt: Date;
+};
+
 export type ContextBlockSummaryResult = {
   id: string;
   title: string;
@@ -71,6 +87,11 @@ export type AddTagInput = {
 export type ListThreadsInput = {
   page: number;
   limit: number;
+  /**
+   * Whose unread counts and pins to report. Without it every count is 0 and
+   * nothing is pinned.
+   */
+  actorId?: string;
 };
 
 // Result types (from service methods)
@@ -85,16 +106,21 @@ export type ThreadResult = {
   tags: TagResult[];
   participants: ActorResult[];
   taskSubscriptions: TaskSubscriptionResult[];
+  /** Reminders and schedules that will still fire, soonest first. */
+  timers: ThreadTimerResult[];
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null | undefined;
 };
 
 export type ThreadListItemResult = {
   id: string;
   title: string;
   stateContextBlockId: string;
+  lastActivityAt: Date;
+  unreadCount: number;
+  /** The caller pinned this thread to the top of their list. */
+  pinned: boolean;
 };
 
 export type ListThreadsResult = {
@@ -109,6 +135,8 @@ export type CreateThreadMessageInput = {
   threadId: string;
   content: string;
   createdByActorId: string;
+  /** IANA timezone the writer's client reported, if any. */
+  timezone?: string | null;
 };
 
 export type ThreadMessageResult = {
@@ -131,4 +159,16 @@ export type ListThreadMessagesResult = {
   total: number;
   page: number;
   limit: number;
+};
+
+/** Token figures the model provider reported for a thread. Null where it reported none. */
+export type ThreadTokenUsageResult = {
+  /** Input tokens of the most recent model step. */
+  contextTokens: number | null;
+  /** Input tokens summed over every model step. */
+  inputTokens: number | null;
+  /** Output tokens summed over every model step. */
+  outputTokens: number | null;
+  /** Model steps that reported usage. */
+  steps: number;
 };

@@ -18,6 +18,22 @@ import {
 import { CreateThreadInput } from './dto/service/threads.service.types';
 import { ActorType } from '../identity-provider/enums';
 
+
+/** Stands in for `threadRepository.manager.transaction` in deleteThread. */
+function mockTransaction(
+  repository: jest.Mocked<Repository<ThreadEntity>>,
+  options: { stateBlockHasChildren?: boolean } = {},
+) {
+  const tx = {
+    delete: jest.fn().mockResolvedValue({ affected: 1, raw: [] }),
+    exists: jest.fn().mockResolvedValue(options.stateBlockHasChildren ?? false),
+  };
+  Object.assign(repository, {
+    manager: { transaction: jest.fn((work: (manager: typeof tx) => unknown) => work(tx)) },
+  });
+  return tx;
+}
+
 describe('ThreadsService - Parent Task ID', () => {
   let service: ThreadsService;
   let threadRepository: jest.Mocked<Repository<ThreadEntity>>;
@@ -79,7 +95,7 @@ describe('ThreadsService - Parent Task ID', () => {
     rowVersion: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
-    deletedAt: null,
+    lastActivityAt: new Date(),
   } as ThreadEntity;
 
   beforeEach(async () => {
@@ -94,7 +110,6 @@ describe('ThreadsService - Parent Task ID', () => {
             findOne: jest.fn(),
             findBy: jest.fn(),
             findAndCount: jest.fn(),
-            softRemove: jest.fn(),
             createQueryBuilder: jest.fn(),
           },
         },
@@ -414,22 +429,23 @@ describe('ThreadsService - Parent Task ID', () => {
 
   describe('Thread Deletion Tests', () => {
     describe('2.2. Can Delete Thread Without Affecting Parent Task', () => {
-      it('should soft-delete thread successfully', async () => {
+      it('should delete the thread for real, not soft-delete it', async () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
-        threadRepository.softRemove.mockResolvedValue(mockThread);
+        const tx = mockTransaction(threadRepository);
 
         await service.deleteThread('thread-uuid', 'actor-uuid');
 
-        expect(threadRepository.softRemove).toHaveBeenCalledWith(mockThread);
+        expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: 'thread-uuid' });
       });
 
       it('should throw ThreadNotFoundError when deleting non-existent thread', async () => {
         threadRepository.findOne.mockResolvedValue(null);
+        const tx = mockTransaction(threadRepository);
 
         await expect(
           service.deleteThread('non-existent-uuid', 'actor-uuid'),
         ).rejects.toThrow(ThreadNotFoundError);
-        expect(threadRepository.softRemove).not.toHaveBeenCalled();
+        expect(tx.delete).not.toHaveBeenCalled();
       });
     });
   });

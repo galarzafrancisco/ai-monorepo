@@ -42,6 +42,6 @@ function urlFor(result: IndexSearchResult): string {
     case SearchResultType.AGENT:
       return `/agents/agent/${String(result.meta.slug ?? '')}`;
     case SearchResultType.PROJECT:
-      return `/settings/projects`;
+      return `/projects`;
   }
 }

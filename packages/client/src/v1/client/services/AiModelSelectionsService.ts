@@ -28,7 +28,7 @@ export class AiModelSelectionsService {
      * @throws ApiError
      */
     public static aiModelSelectionsControllerSetAiModelSelection(
-        job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings',
+        job: 'conversation' | 'user_small_tasks' | 'system_small_tasks' | 'middle_manager' | 'embeddings',
         requestBody: SetAiModelSelectionDto,
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AiModelSelectionResponseDto> {
@@ -52,7 +52,7 @@ export class AiModelSelectionsService {
      * @throws ApiError
      */
     public static aiModelSelectionsControllerClearAiModelSelection(
-        job: 'conversation' | 'quick_tasks' | 'middle_manager' | 'embeddings',
+        job: 'conversation' | 'user_small_tasks' | 'system_small_tasks' | 'middle_manager' | 'embeddings',
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
         return __request(config, {

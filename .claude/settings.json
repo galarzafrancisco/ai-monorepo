@@ -11,6 +11,8 @@
       "Read",
       "Write",
       "Edit",
+      "WebSearch",
+      "WebFetch",
       "mcp__tasks__*",
       "mcp__context__*"
     ],

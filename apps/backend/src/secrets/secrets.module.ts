@@ -13,6 +13,6 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
   ],
   controllers: [SecretsController],
   providers: [SecretsService, SecretsEncryptionService],
-  exports: [SecretsService],
+  exports: [SecretsService, SecretsEncryptionService],
 })
 export class SecretsModule {}

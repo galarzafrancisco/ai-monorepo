@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
@@ -10,6 +11,7 @@ import { ThreadEntity } from './thread.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { ThreadAgentMessageEntity } from './agent/thread-agent-message.entity';
 
+@Index('IDX_thread_messages_thread_created', ['threadId', 'createdAt'])
 @Entity({ name: 'thread_messages' })
 export class ThreadMessageEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -39,6 +41,14 @@ export class ThreadMessageEntity {
   @ManyToOne(() => ThreadAgentMessageEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'agent_message_id' })
   agentMessage?: ThreadAgentMessageEntity | null;
+
+  /**
+   * IANA timezone of the person who wrote the message, as their client
+   * reported it (e.g. "Australia/Sydney"). Null for agent messages and for
+   * clients that did not send one. Only the `get_time` tool reads it.
+   */
+  @Column({ type: 'text', nullable: true })
+  timezone!: string | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;

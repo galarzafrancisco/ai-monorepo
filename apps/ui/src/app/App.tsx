@@ -13,7 +13,9 @@ import { LogoutPage } from './routes/LogoutPage';
 import { ContextRoutes } from '../features/context/ContextRoutes';
 import { AgentsRoutes } from '../features/agents/AgentsRoutes';
 import { ThreadsRoutes } from '../features/threads/ThreadsRoutes';
+import { ThreadsProvider } from '../features/threads/ThreadsProvider';
 import { ToolsRoutes } from '../features/tools/ToolsRoutes';
+import { ProjectsRoutes } from '../features/projects/ProjectsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 import { ExecutionsRoutes } from '../features/executions/ExecutionsRoutes';
 import { ActorsProvider } from '../features/actors';
@@ -64,6 +66,7 @@ function BetaAppRoutes() {
       <Route path="/context/*" element={<ContextRoutes />} />
       <Route path="/agents/*" element={<AgentsRoutes />} />
       <Route path="/threads/*" element={<ThreadsRoutes />} />
+      <Route path="/projects/*" element={<ProjectsRoutes />} />
       <Route path="/tools/*" element={<ToolsRoutes />} />
       <Route path="/runs/*" element={<ExecutionsRoutes />} />
       <Route path="/executions/*" element={<Navigate to="/runs" replace />} />
@@ -92,9 +95,11 @@ export function App() {
                     <ProtectedRoute>
                       <CommandPaletteProvider>
                         <WalkthroughGate>
-                          <BetaShell>
-                            <BetaAppRoutes />
-                          </BetaShell>
+                          <ThreadsProvider>
+                            <BetaShell>
+                              <BetaAppRoutes />
+                            </BetaShell>
+                          </ThreadsProvider>
                         </WalkthroughGate>
                       </CommandPaletteProvider>
                     </ProtectedRoute>

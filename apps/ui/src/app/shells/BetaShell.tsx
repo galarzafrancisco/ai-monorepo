@@ -10,12 +10,16 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useAuth } from "../../auth/AuthContext";
 import { Footprints } from "lucide-react";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
+import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
+import { UnreadBadge } from "../../features/threads/UnreadBadge";
+import { modifierKeyLabel } from "../../shared/helpers/platform";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
 
   const { user } = useAuth();
   const location = useLocation();
+  const { unreadThreadCount } = useThreadsCtx();
   useDocumentTitle();
 
   const navItems = useMemo(() => {
@@ -47,7 +51,10 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
     setIsCollapsed(!isCollapsed);
   };
 
-  const activeNavPath = getActiveNavigationPath(location.pathname, navItems);
+  // Platform-aware command palette shortcut hint ("⌘ /" on Apple, "Ctrl /" elsewhere)
+  const searchShortcut = useMemo(() => `${modifierKeyLabel()} /`, []);
+
+  const activeNavPath =getActiveNavigationPath(location.pathname, navItems);
 
   return (
     <div className={`${isDesktop ? 'beta-shell__desktop' : 'beta-shell__mobile'}`} data-shell={`${isDesktop ? 'desktop' : 'mobile'}`}>
@@ -55,7 +62,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       {isDesktop && (
         <aside className={`beta-shell__desktop__sidebar ${isCollapsed ? 'beta-shell__desktop__sidebar--collapsed' : ''}`}>
-          <nav className='beta-shell__desktop__nav'>
+          <nav className='beta-shell__desktop__nav thin-scrollbar'>
             <div className="beta-shell__desktop__navInner">
               <Stack spacing="1">
                 {navItems.map(item => {
@@ -69,12 +76,26 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
                     >
                       <NavigationIcon icon={item.icon} className="beta-shell__desktop__nav-icon" />
                       {!isCollapsed && <span className="beta-shell__desktop__nav-label">{item.label}</span>}
+                      {item.path === '/threads' && (
+                        <UnreadBadge
+                          count={unreadThreadCount}
+                          unit="thread"
+                          className="beta-shell__desktop__nav-badge"
+                        />
+                      )}
                     </Link>
                   )
                 })}
               </Stack>
             </div>
           </nav>
+          <div
+            className="beta-shell__desktop__search-hint"
+            title={`Press ${searchShortcut} to search`}
+          >
+            <kbd className="beta-shell__desktop__search-hint-keys">{searchShortcut}</kbd>
+            {!isCollapsed && <span>to search</span>}
+          </div>
           <button
             className="beta-shell__desktop__sidebar--toggle"
             onClick={toggleSidebar}

@@ -59,7 +59,7 @@
   padding: 0 var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--r-2);
-  font-size: var(--fs-2);
+  font-size: var(--fs-input-mobile-safe); /* Prevent iOS zoom on focus */
   font-family: var(--font-sans);
   color: var(--text);
   background-color: var(--card-bg);
@@ -135,6 +135,10 @@
 
 .settings-models__job-note {
   grid-column: 2;
+}
+
+.settings-models__job-note--warning {
+  color: var(--warning);
 }
 
 .settings-models__status {

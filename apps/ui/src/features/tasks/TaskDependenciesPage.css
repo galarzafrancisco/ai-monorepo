@@ -535,3 +535,10 @@
     max-height: min(320px, 55vh);
   }
 }
+
+/* Touch devices: keep the compact desktop size, but prevent iOS zoom on focus */
+@media (pointer: coarse) {
+  .task-dependencies-tag-picker__input {
+    font-size: var(--fs-input-mobile-safe);
+  }
+}

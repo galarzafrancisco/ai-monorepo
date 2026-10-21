@@ -6,6 +6,8 @@ import { NavegationItem } from "../../shared/types/NavegationItem";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
+import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
+import { UnreadBadge } from "../../features/threads/UnreadBadge";
 
 export interface NavItem {
   label: string;
@@ -63,6 +65,7 @@ function BottomNavContent({
 export function IosShell(props: IosShellProps): React.JSX.Element {
 
   const location = useLocation();
+  const { unreadThreadCount } = useThreadsCtx();
   console.log('Mounting iOS shell')
 
   // Side bar
@@ -211,6 +214,13 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
               >
                 <NavigationIcon icon={item.icon} className="ios-shell__drawer-icon" />
                 <span className="ios-shell__drawer-label">{item.label}</span>
+                {item.path === '/threads' && (
+                  <UnreadBadge
+                    count={unreadThreadCount}
+                    unit="thread"
+                    className="ios-shell__drawer-badge"
+                  />
+                )}
               </Link>
             );
           })}

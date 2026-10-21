@@ -40,7 +40,7 @@ It does not try to document every workspace in the monorepo.
 
 Builds are orchestrated by [nx](https://nx.dev). The dependency graph below is what nx walks; you don't run these steps manually.
 
-`npm run build:prod` is `nx run-many -t assemble-public,build:prod -p @taico/taico,@taico/worker`. nx pulls every transitive dep and runs them in the correct order, in parallel where possible, with content-hash caching.
+`npm run build:prod` is `nx run-many -t assemble-public,build:prod -p @taico/taico,@taico/worker,@taico/display,@taico/adk-session-store`. nx pulls every transitive dep and runs them in the correct order, in parallel where possible, with content-hash caching.
 
 Order nx executes:
 

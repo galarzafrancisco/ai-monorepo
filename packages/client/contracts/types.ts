@@ -942,6 +942,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-providers/{id}/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get your own connection to the provider */
+        get: operations["AiProviderConnectionsController_getConnection"];
+        put?: never;
+        post?: never;
+        /** Disconnect your account and revoke its grant at the provider */
+        delete: operations["AiProviderConnectionsController_disconnect"];
+        options?: never;
+        head?: never;
+        /** Change what your connection may be used for */
+        patch: operations["AiProviderConnectionsController_updateConnection"];
+        trace?: never;
+    };
+    "/api/v1/ai-providers/{id}/connection/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start signing in to the provider with your own account */
+        post: operations["AiProviderConnectionsController_startAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-providers/{id}/connection/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish the sign-in you started with what the provider sent back */
+        post: operations["AiProviderConnectionsController_completeAuthorization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/secrets": {
         parameters: {
             query?: never;
@@ -1351,6 +1404,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/timers/{timerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel a reminder or schedule of the threads agent
+         * @description Idempotent: cancelling a timer that already finished or was cancelled succeeds.
+         */
+        delete: operations["ThreadsController_cancelTimer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Stop the threads agent watching a task
+         * @description Idempotent: removing a watch that does not exist succeeds.
+         */
+        delete: operations["ThreadsController_removeTaskSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/context-blocks": {
         parameters: {
             query?: never;
@@ -1437,6 +1530,23 @@ export interface paths {
         patch: operations["ThreadsController_updateThreadState"];
         trace?: never;
     };
+    "/api/v1/threads/{id}/token-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the token usage the model provider reported for a thread (debug) */
+        get: operations["ThreadsController_getThreadTokenUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/state/append": {
         parameters: {
             query?: never;
@@ -1461,12 +1571,47 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List messages in a thread */
+        /** List messages in a thread, newest first */
         get: operations["ThreadsController_listMessages"];
         put?: never;
         /** Create a message in the thread */
         post: operations["ThreadsController_createMessage"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every message in the thread as read by the caller */
+        post: operations["ThreadsController_markThreadRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Pin the thread to the top of the caller's thread list */
+        put: operations["ThreadsController_pinThread"];
+        post?: never;
+        /** Unpin the thread from the caller's thread list */
+        delete: operations["ThreadsController_unpinThread"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3695,7 +3840,7 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible" | "chatgpt_subscription";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3733,7 +3878,7 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible";
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "xai" | "openai_compatible" | "chatgpt_subscription";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3831,7 +3976,7 @@ export interface components {
              * @example conversation
              * @enum {string}
              */
-            job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            job: "conversation" | "user_small_tasks" | "system_small_tasks" | "middle_manager" | "embeddings";
             /**
              * @description Provider of the job's own selection. Null when nothing is selected for it.
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3874,6 +4019,64 @@ export interface components {
              * @example claude-haiku-5-5
              */
             modelId: string;
+        };
+        AiProviderConnectionResponseDto: {
+            /** @description AI provider identifier */
+            aiProviderId: string;
+            /**
+             * @description State of your own connection to the provider
+             * @example connected
+             * @enum {string}
+             */
+            status: "connected" | "plan_access_not_granted" | "needs_reauthorization" | "disconnected";
+            /** @description Email of the connected account */
+            accountEmail?: string | null;
+            /** @description Whether requests can run on your plan right now */
+            canUsePlan: boolean;
+            /** @description Whether turns nobody typed (task updates) may run on your plan */
+            automatedTurnsAllowed: boolean;
+            /** @description Whether a sign-in was started and not finished */
+            isAuthorizationPending: boolean;
+            /**
+             * @description The provider's code for the last failed request, cleared by the next success
+             * @example subscription_sharing_usage_limit_exceeded
+             */
+            lastErrorCode?: string | null;
+            /** @description ISO timestamp of the last failed request */
+            lastErrorAt?: string | null;
+            /** @description Where you see and manage your plan usage */
+            manageUsageUrl: string;
+        };
+        StartAiProviderAuthorizationResponseDto: {
+            /** @description Address to open in the browser to sign in at the provider */
+            authorizationUrl: string;
+            /** @description ISO timestamp after which this sign-in can no longer be finished */
+            expiresAt: string;
+        };
+        CompleteAiProviderAuthorizationDto: {
+            /**
+             * @description The full address the browser was sent back to, pasted as is
+             * @example http://127.0.0.1:1456/auth/callback?code=...&state=...
+             */
+            callbackUrl?: string;
+            /** @description The `state` query parameter */
+            state?: string;
+            /** @description The `code` query parameter */
+            code?: string;
+            /** @description The `client_id` query parameter */
+            clientId?: string;
+            /** @description The `error` query parameter */
+            error?: string;
+            /** @description The `error_description` query parameter */
+            errorDescription?: string;
+        };
+        UpdateAiProviderConnectionDto: {
+            /** @description Allow turns nobody typed (task updates in threads you subscribed to) to run on your plan */
+            automatedTurnsAllowed: boolean;
+        };
+        DisconnectAiProviderResponseDto: {
+            /** @description False when the provider could not be told. The tokens stored in Taico are removed either way. */
+            revokedAtProvider: boolean;
         };
         CreateSecretDto: {
             /**
@@ -4611,6 +4814,53 @@ export interface components {
              */
             createdAt: string;
         };
+        /**
+         * @description reminder fires once; schedule fires every period, up to maxIterations times
+         * @enum {string}
+         */
+        ThreadTimerKind: "reminder" | "schedule";
+        ThreadTimerResponseDto: {
+            /**
+             * @description Timer ID; use it to cancel the timer
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description reminder fires once; schedule fires every period, up to maxIterations times
+             * @example schedule
+             */
+            kind: components["schemas"]["ThreadTimerKind"];
+            /**
+             * @description What the threads agent wants to be reminded of
+             * @example Check task #123 for new comments
+             */
+            reason: string;
+            /**
+             * @description Seconds between firings (null for a reminder)
+             * @example 300
+             */
+            periodSeconds: number | null;
+            /**
+             * @description Most times the timer fires
+             * @example 5
+             */
+            maxIterations: number;
+            /**
+             * @description Times the timer has fired so far
+             * @example 1
+             */
+            firedCount: number;
+            /**
+             * @description When the timer fires next (UTC)
+             * @example 2024-01-15T10:35:00.000Z
+             */
+            nextFireAt: string;
+            /**
+             * @description When the timer was set (UTC)
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            createdAt: string;
+        };
         ThreadResponseDto: {
             /**
              * @description Thread ID
@@ -4644,6 +4894,8 @@ export interface components {
             participants: components["schemas"]["ActorResponseDto"][];
             /** @description Tasks the threads agent will be notified about when they go to review or are done */
             taskSubscriptions: components["schemas"]["TaskSubscriptionResponseDto"][];
+            /** @description Reminders and recurring schedules of the threads agent that will still fire, soonest first */
+            timers: components["schemas"]["ThreadTimerResponseDto"][];
             /**
              * @description Row version for optimistic locking
              * @example 1
@@ -4683,6 +4935,21 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             stateContextBlockId: string;
+            /**
+             * @description When the latest message people can see was posted, or when the thread was created if it has none. The list is ordered by this, newest first
+             * @example 2026-01-01T00:00:00.000Z
+             */
+            lastActivityAt: string;
+            /**
+             * @description Messages in this thread written by someone else that the caller has not read yet
+             * @example 2
+             */
+            unreadCount: number;
+            /**
+             * @description The caller pinned this thread. Pinned threads are listed before all others
+             * @example false
+             */
+            pinned: boolean;
         };
         ThreadListResponseDto: {
             /** @description Array of thread list items */
@@ -4737,6 +5004,28 @@ export interface components {
              */
             content: string;
         };
+        ThreadTokenUsageResponseDto: {
+            /**
+             * @description Input tokens of the most recent model step: roughly the size of the conversation the model reads now. Null when the provider reported no figure.
+             * @example 42351
+             */
+            contextTokens: number | null;
+            /**
+             * @description Input tokens summed over every model step in the thread. Null when no step reported a figure.
+             * @example 423512
+             */
+            inputTokens: number | null;
+            /**
+             * @description Output tokens summed over every model step in the thread. Null when no step reported a figure.
+             * @example 8123
+             */
+            outputTokens: number | null;
+            /**
+             * @description Number of model steps that reported token usage
+             * @example 12
+             */
+            steps: number;
+        };
         UpdateThreadStateDto: {
             /**
              * @description New content for the thread state
@@ -4757,6 +5046,11 @@ export interface components {
              * @example What is the status of this feature?
              */
             content: string;
+            /**
+             * @description IANA timezone of the person writing, as their client reports it. Lets the threads agent read relative times such as "tomorrow at 5pm". Raw offsets are rejected.
+             * @example Australia/Sydney
+             */
+            timezone?: string;
         };
         ThreadMessageResponseDto: {
             /**
@@ -8792,7 +9086,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The job the model is selected for */
-                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+                job: "conversation" | "user_small_tasks" | "system_small_tasks" | "middle_manager" | "embeddings";
             };
             cookie?: never;
         };
@@ -8826,7 +9120,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The job the model is selected for */
-                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+                job: "conversation" | "user_small_tasks" | "system_small_tasks" | "middle_manager" | "embeddings";
             };
             cookie?: never;
         };
@@ -8838,6 +9132,131 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AiProviderConnectionsController_getConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderConnectionResponseDto"];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiProviderConnectionsController_disconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisconnectAiProviderResponseDto"];
+                };
+            };
+        };
+    };
+    AiProviderConnectionsController_updateConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAiProviderConnectionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    AiProviderConnectionsController_startAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartAiProviderAuthorizationResponseDto"];
+                };
+            };
+        };
+    };
+    AiProviderConnectionsController_completeAuthorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteAiProviderAuthorizationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderConnectionResponseDto"];
+                };
             };
         };
     };
@@ -10030,6 +10449,66 @@ export interface operations {
             };
         };
     };
+    ThreadsController_cancelTimer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+                /** @description Timer UUID */
+                timerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Timer cancelled, or already gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_removeTaskSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+                /** @description UUID of the watched task */
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Watch removed, or already gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ThreadsController_referenceContextBlock: {
         parameters: {
             query?: never;
@@ -10254,6 +10733,36 @@ export interface operations {
             };
         };
     };
+    ThreadsController_getThreadTokenUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token usage retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadTokenUsageResponseDto"];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ThreadsController_appendThreadState: {
         parameters: {
             query?: never;
@@ -10357,6 +10866,90 @@ export interface operations {
             };
             /** @description Invalid input data */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_markThreadRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread marked as read */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_pinThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread pinned */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_unpinThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread unpinned */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

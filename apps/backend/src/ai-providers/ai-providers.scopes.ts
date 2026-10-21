@@ -13,6 +13,10 @@ export const AiProvidersScopes = {
     id: 'ai_provider:delete',
     description: 'Allows deleting AI providers.',
   },
+  CONNECT: {
+    id: 'ai_provider:connect',
+    description: 'Allows connecting and disconnecting your own account at an AI provider.',
+  },
   CONFIGURE: {
     id: 'ai_provider:configure',
     description: 'Allows choosing which model each job uses.',

@@ -45,13 +45,13 @@ This document outlines the comprehensive test strategy for the `parentTaskId` co
 
 #### 2.2. Can Delete Thread Without Affecting Parent Task
 **Test:** Create a thread, then delete the thread
-**Expected Behavior:** Thread is soft-deleted successfully, parent task remains unchanged
+**Expected Behavior:** Thread is deleted (hard delete, with its state block), parent task remains unchanged
 **Justification:** Validates that thread deletion is independent and doesn't cascade to parent task.
 
 #### 2.3. Can Delete Parent Task After Thread is Deleted
-**Test:** Create thread, soft-delete thread, then delete parent task
+**Test:** Create thread, delete thread, then delete parent task
 **Expected Behavior:** Both deletions succeed
-**Justification:** Validates that soft-deleted threads don't block task deletion (important for cleanup).
+**Justification:** Validates that deleted threads leave nothing behind that blocks task deletion (important for cleanup).
 
 ---
 

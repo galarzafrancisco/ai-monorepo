@@ -7,6 +7,7 @@ interface RouteData {
   tool?: { name?: string };
   thread?: { title?: string };
   contextBlock?: { title?: string };
+  project?: { name?: string };
 }
 
 /**
@@ -62,6 +63,12 @@ export function useDocumentTitle(routeData?: RouteData) {
     }
     else if (path.startsWith('/threads')) {
       title = 'threads';
+    }
+    else if (path.match(/\/projects\/project\/.+/) && routeData?.project?.name) {
+      title = routeData.project.name;
+    }
+    else if (path.startsWith('/projects')) {
+      title = 'projects';
     }
     else if (path.startsWith('/runs') || path.startsWith('/executions')) {
       title = 'runs';

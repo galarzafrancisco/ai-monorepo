@@ -46,6 +46,23 @@
   gap: var(--space-3);
 }
 
+.thread-detail-page__header-main {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Title with the pin control right after it. */
+.thread-detail-page__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.thread-detail-page__title {
+  min-width: 0;
+}
+
 .thread-detail-page__meta-row {
   margin-top: var(--space-2);
   display: flex;
@@ -235,6 +252,12 @@
   gap: var(--space-1);
   min-width: 0;
   flex: 1;
+}
+
+.thread-detail-page__mobile-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Mobile tabs */
@@ -434,6 +457,25 @@
   align-items: center;
   gap: var(--space-1);
   color: var(--text-muted);
+}
+
+.thread-detail-page__model-link {
+  color: var(--accent);
+  font-size: var(--fs-1);
+  text-decoration: none;
+}
+
+.thread-detail-page__model-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.thread-detail-page__token-usage {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  cursor: help;
 }
 
 .thread-detail-page__mobile-meta {

@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ThreadAgentLogService } from '../thread-agent-log.service';
+import { formatHookContext } from '../thread-agent.prompts';
 import {
   ThreadAgentMessageKind,
   ThreadAgentMessageRole,
@@ -62,7 +63,7 @@ export class ThreadAgentHooksRunner {
             turnId: context.turnId,
             message: {
               role: 'user',
-              content: `<context source="${hook.name}">\n${text.trim()}\n</context>`,
+              content: formatHookContext(hook.name, text.trim()),
             },
           },
         ]);

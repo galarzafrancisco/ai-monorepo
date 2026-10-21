@@ -106,8 +106,8 @@ This document outlines the test strategy for the thread state context block feat
 
 #### 7.1. Thread Deletion Succeeds
 - **What**: Deleting a thread should work normally
-- **Why**: State block should not prevent thread deletion
-- **Expected**: Thread is soft-deleted successfully (state block remains)
+- **Why**: State block should not prevent thread deletion, and must not outlive the thread pinned to it
+- **Expected**: Thread row is deleted for real, and its state block with it, in one transaction. If blocks are nested under the state block, it stays as an ordinary, deletable block. Covered end to end by `test/thread-deletion.e2e-spec.ts`
 
 #### 7.2. Multiple Threads Cannot Share State Block
 - **What**: Each thread should have its own unique state block

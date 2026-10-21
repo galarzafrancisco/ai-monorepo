@@ -24,6 +24,7 @@ import {
   TagResult,
   TaskSummaryResult,
   TaskSubscriptionResult,
+  ThreadTimerResult,
   ContextBlockSummaryResult,
   CreateThreadMessageInput,
   ThreadMessageResult,
@@ -44,9 +45,15 @@ import {
   ThreadDeletedEvent,
   ThreadUpdatedEvent,
 } from './events/threads.events';
+import { BlockDeletedEvent } from '../context/events/context.events';
 import { ThreadAgentService } from './agent/thread-agent.service';
-import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
+import { ThreadReadStateService } from './read-state/thread-read-state.service';
+import { ThreadPinsService } from './pins/thread-pins.service';
+import { ThreadPinEntity } from './pins/thread-pin.entity';
+import { ThreadMessageWriterService } from './thread-message-writer.service';
+import { ThreadTimersService } from './timers/thread-timers.service';
+import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -87,6 +94,11 @@ export class ThreadsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly threadAgentService: ThreadAgentService,
     private readonly threadTitleService: ThreadTitleService,
+    private readonly threadReadStateService: ThreadReadStateService,
+    private readonly threadPinsService: ThreadPinsService,
+    private readonly threadMessageWriter: ThreadMessageWriterService,
+    private readonly threadTimers: ThreadTimersService,
+    private readonly taskSubscriptions: ThreadTaskSubscriptionsService,
   ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -118,7 +130,10 @@ export class ThreadsService {
     // Generate title based on available context
     const title = input.title
       || (parentTask
-        ? ((await this.threadTitleService.generateFromParentTask(parentTask))
+        ? ((await this.threadTitleService.generateFromParentTask(parentTask, {
+            id: createdByActor.id,
+            type: createdByActor.type,
+          }))
           || ThreadsService.DEFAULT_THREAD_TITLE)
         : ThreadsService.DEFAULT_THREAD_TITLE);
 
@@ -272,17 +287,64 @@ export class ThreadsService {
       throw new ThreadNotFoundError(threadId);
     }
 
-    await this.threadRepository.softRemove(thread);
+    // A real delete, not a soft one: a soft-deleted row kept pointing at its
+    // state block (RESTRICT foreign key), so the block could never be deleted
+    // and still looked like the state of a thread. Everything that hangs off
+    // the thread (messages, links, timers, pins...) goes with it by cascade.
+    // The state block belongs to the thread and is deleted with it, unless
+    // someone nested blocks under it: then it stays as an ordinary block.
+    const stateBlockId = thread.stateContextBlockId;
+    const stateBlockDeleted = await this.threadRepository.manager.transaction(
+      async (manager) => {
+        await manager.delete(ThreadEntity, { id: threadId });
+
+        const hasChildren = await manager.exists(ContextBlockEntity, {
+          where: { parentId: stateBlockId },
+        });
+        if (hasChildren) {
+          return false;
+        }
+        const result = await manager.delete(ContextBlockEntity, { id: stateBlockId });
+        return (result.affected ?? 0) > 0;
+      },
+    );
 
     this.eventEmitter.emit(
       ThreadDeletedEvent.INTERNAL,
       new ThreadDeletedEvent({ id: actorId }, threadId),
     );
+    if (stateBlockDeleted) {
+      this.eventEmitter.emit(
+        BlockDeletedEvent.INTERNAL,
+        new BlockDeletedEvent(stateBlockId, { id: actorId }),
+      );
+    }
 
     this.logger.log({
       message: 'Thread deleted',
       threadId,
+      stateBlockId,
+      stateBlockDeleted,
     });
+  }
+
+  /** Cancels a reminder or schedule. Cancelling one that is already gone is harmless. */
+  async cancelTimer(threadId: string, timerId: string, actorId: string): Promise<void> {
+    await this.assertThreadExists(threadId);
+    await this.threadTimers.cancel({ threadId, timerId, actorId });
+  }
+
+  /** Stops the agent watching a task. Removing a watch that does not exist is harmless. */
+  async removeTaskSubscription(threadId: string, taskId: string, actorId: string): Promise<void> {
+    await this.assertThreadExists(threadId);
+    await this.taskSubscriptions.unsubscribe({ threadId, taskId, actorId });
+  }
+
+  private async assertThreadExists(threadId: string): Promise<void> {
+    const exists = await this.threadRepository.exists({ where: { id: threadId } });
+    if (!exists) {
+      throw new ThreadNotFoundError(threadId);
+    }
   }
 
   async getThreadById(threadId: string): Promise<ThreadResult> {
@@ -299,11 +361,37 @@ export class ThreadsService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const [threads, total] = await this.threadRepository.findAndCount({
-      skip,
-      take: input.limit,
-      order: { updatedAt: 'DESC' },
-    });
+    const query = this.threadRepository.createQueryBuilder('thread');
+    if (input.actorId) {
+      // The caller's pinned threads come first. At most one pin row matches
+      // each thread, so the join never repeats a thread.
+      query
+        .leftJoin(
+          ThreadPinEntity,
+          'pin',
+          'pin.thread_id = thread.id AND pin.actor_id = :actorId',
+          { actorId: input.actorId },
+        )
+        .orderBy('CASE WHEN pin.thread_id IS NULL THEN 1 ELSE 0 END', 'ASC')
+        .addOrderBy('thread.lastActivityAt', 'DESC');
+    } else {
+      query.orderBy('thread.lastActivityAt', 'DESC');
+    }
+    // Latest visible message first. The id breaks ties, so a thread never
+    // lands on two pages or on none.
+    const [threads, total] = await query
+      .addOrderBy('thread.id', 'DESC')
+      .offset(skip)
+      .limit(input.limit)
+      .getManyAndCount();
+
+    const threadIds = threads.map((thread) => thread.id);
+    const [unreadCounts, pinnedIds] = input.actorId
+      ? await Promise.all([
+          this.threadReadStateService.getUnreadCounts(threadIds, input.actorId),
+          this.threadPinsService.getPinnedThreadIds(threadIds, input.actorId),
+        ])
+      : [new Map<string, number>(), new Set<string>()];
 
     this.logger.log({
       message: 'Threads listed',
@@ -317,6 +405,9 @@ export class ThreadsService {
         id: thread.id,
         title: thread.title,
         stateContextBlockId: thread.stateContextBlockId,
+        lastActivityAt: thread.lastActivityAt,
+        unreadCount: unreadCounts.get(thread.id) ?? 0,
+        pinned: pinnedIds.has(thread.id),
       })),
       total,
       page: input.page,
@@ -669,7 +760,6 @@ export class ThreadsService {
         'tags',
         'participants',
       ],
-      withDeleted: true, // Include soft-deleted threads because FK constraint still applies
     });
 
     return Promise.all(threads.map((thread) => this.buildThreadResult(thread)));
@@ -789,9 +879,6 @@ export class ThreadsService {
   private async maybeGenerateTitleFromFirstMessage(
     input: GenerateTitleFromFirstMessageInput,
   ): Promise<void> {
-    if (input.actor.type !== ActorType.HUMAN) {
-      return;
-    }
     if (input.existingMessageCount > 0) {
       return;
     }
@@ -804,7 +891,11 @@ export class ThreadsService {
       return;
     }
 
-    const generatedTitle = await this.threadTitleService.generateFromMessage(content);
+    // A person's message is named on user small tasks, an agent's on system small tasks.
+    const generatedTitle = await this.threadTitleService.generateFromMessage(content, {
+      id: input.actor.id,
+      type: input.actor.type,
+    });
     if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
       return;
     }
@@ -840,12 +931,17 @@ export class ThreadsService {
   }
 
   private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {
-    return this.mapThreadToResult(thread, await this.loadTaskSubscriptions(thread.id));
+    const [taskSubscriptions, timers] = await Promise.all([
+      this.loadTaskSubscriptions(thread.id),
+      this.threadTimers.listActive(thread.id),
+    ]);
+    return this.mapThreadToResult(thread, taskSubscriptions, timers);
   }
 
   private mapThreadToResult(
     thread: ThreadEntity,
     taskSubscriptions: TaskSubscriptionResult[],
+    timers: ThreadTimerResult[],
   ): ThreadResult {
     if (!thread.createdByActor) {
       throw new Error(`Thread ${thread.id} is missing createdByActor relation`);
@@ -866,10 +962,10 @@ export class ThreadsService {
         this.mapActorToResult(actor),
       ),
       taskSubscriptions,
+      timers,
       rowVersion: thread.rowVersion,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
-      deletedAt: thread.deletedAt,
     };
   }
 
@@ -1041,27 +1137,16 @@ export class ThreadsService {
       where: { threadId: input.threadId },
     });
 
-    const message = this.threadMessageRepository.create({
+    const messageWithRelations = await this.threadMessageWriter.write({
       threadId: input.threadId,
       content: input.content,
       createdByActorId: input.createdByActorId,
+      timezone: input.timezone ?? null,
     });
-
-    const savedMessage = await this.threadMessageRepository.save(message);
-
-    // Reload with relations
-    const messageWithRelations = await this.threadMessageRepository.findOne({
-      where: { id: savedMessage.id },
-      relations: ['createdByActor'],
-    });
-
-    if (!messageWithRelations) {
-      throw new Error('Failed to reload message after creation');
-    }
 
     this.logger.log({
       message: 'Thread message created',
-      messageId: savedMessage.id,
+      messageId: messageWithRelations.id,
       threadId: input.threadId,
     });
 
@@ -1110,7 +1195,9 @@ export class ThreadsService {
     const [messages, total] = await this.threadMessageRepository.findAndCount({
       where: { threadId: input.threadId },
       relations: ['createdByActor'],
-      order: { createdAt: 'ASC' },
+      // Newest first, so page 1 is always the latest messages however long
+      // the thread gets. The id breaks ties so pages never overlap or skip.
+      order: { createdAt: 'DESC', id: 'DESC' },
       skip,
       take: input.limit,
     });

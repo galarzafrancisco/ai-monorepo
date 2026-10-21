@@ -1,6 +1,6 @@
 {
   "name": "@taico/auth",
-  "version": "0.6.0",
+  "version": "0.8.6",
   "description": "OAuth 2.1 resource server and authorization server building blocks, with adapters for NestJS, Express, Hono and TypeORM.",
   "type": "module",
   "private": false,

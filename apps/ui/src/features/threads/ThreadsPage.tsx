@@ -4,6 +4,8 @@ import { Button, DataRowContainer, Text } from "../../ui/primitives";
 import { Avatar, Chip } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { ThreadRow } from "./ThreadRow";
+import { splitPinnedThreads } from "./splitPinnedThreads";
+import { ThreadListLoadMore } from "./ThreadListLoadMore";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useToast } from "../../shared/context/ToastContext";
@@ -11,6 +13,7 @@ import { useCommandPalette } from "../../ui/components";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { ChatSetupCallout } from "../ai-models/ChatSetupCallout";
 import { useDraftState } from "../../shared/hooks/useDraftState";
+import { browserTimeZone } from "../../shared/helpers/browserTimeZone";
 import { ThreadsService } from "./api";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { useAuth } from "../../auth";
@@ -18,7 +21,8 @@ import { useActorsCtx } from "../actors";
 import './ThreadsPage.css';
 
 export function ThreadsPage() {
-  const { threads, setSectionTitle, createThread } = useThreadsCtx();
+  const { threads, setSectionTitle, createThread, setThreadPinned } = useThreadsCtx();
+  const { pinnedThreads, otherThreads } = splitPinnedThreads(threads);
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const { showError, showToast } = useToast();
@@ -90,15 +94,34 @@ export function ThreadsPage() {
           />
         ) : null}
 
+        {pinnedThreads.length > 0 ? (
+          <>
+            <DataRowContainer>
+              {pinnedThreads.map((thread) => (
+                <ThreadRow
+                  key={thread.id}
+                  thread={thread}
+                  onClick={() => handleThreadClick(thread.id)}
+                  onTogglePin={(pinned) => void setThreadPinned(thread.id, pinned)}
+                />
+              ))}
+            </DataRowContainer>
+            {otherThreads.length > 0 ? (
+              <div className="threads-page__pinned-divider" role="separator" />
+            ) : null}
+          </>
+        ) : null}
         <DataRowContainer>
-          {threads.map((thread) => (
+          {otherThreads.map((thread) => (
             <ThreadRow
               key={thread.id}
               thread={thread}
               onClick={() => handleThreadClick(thread.id)}
+              onTogglePin={(pinned) => void setThreadPinned(thread.id, pinned)}
             />
           ))}
         </DataRowContainer>
+        <ThreadListLoadMore />
 
         <button
           className={`threads-fab ${isDesktop ? 'threads-fab--desktop' : ''}`}
@@ -158,7 +181,7 @@ function DesktopNewThreadPage() {
       const thread = await createThread();
       await ThreadsService.ThreadsController_createMessage({
         id: thread.id,
-        body: { content },
+        body: { content, timezone: browserTimeZone() },
       });
       clearDraft();
       setOptimisticDraftThread(null);

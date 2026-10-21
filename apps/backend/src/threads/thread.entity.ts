@@ -4,8 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  DeleteDateColumn,
   VersionColumn,
+  Index,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -18,6 +18,8 @@ import { ContextBlockEntity } from '../context/block.entity';
 import { TagEntity } from '../meta/tag.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
 
+// Serves the thread list: newest activity first, id as the tie-break.
+@Index('IDX_threads_last_activity', ['lastActivityAt', 'id'])
 @Entity({ name: 'threads' })
 export class ThreadEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -54,6 +56,22 @@ export class ThreadEntity {
 
   @Column({ type: 'text', nullable: true, name: 'model_id', update: false })
   modelId!: string | null;
+
+  /**
+   * Secret the threads agent uses to tell Taico-written tags from typed ones.
+   * Read and written only by ThreadAgentLogService, with its own SQL.
+   * `select: false`: it is never loaded with the thread, so it cannot end up in
+   * an API response or an event.
+   */
+  @Column({
+    type: 'text',
+    nullable: true,
+    name: 'secret',
+    select: false,
+    insert: false,
+    update: false,
+  })
+  secret?: string | null;
 
   @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
   createdByActorId!: string;
@@ -120,6 +138,28 @@ export class ThreadEntity {
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
-  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
-  deletedAt?: Date | null;
+  /**
+   * When the latest message people can see was posted; the creation time until
+   * there is one. The thread list is ordered by it.
+   *
+   * Unlike `updatedAt`, renaming or tagging a thread does not move it, and
+   * neither does anything the agent does that people are not shown.
+   * `update: false`: only ThreadMessageWriterService moves it, with its own SQL.
+   *
+   * Whole milliseconds, cut off rather than rounded. The API and the live
+   * events send milliseconds, so the browser sorts by the same value as the
+   * database and ties fall to the id on both sides.
+   */
+  @Column({
+    type: 'timestamptz',
+    precision: 3,
+    name: 'last_activity_at',
+    default: () => "date_trunc('milliseconds', now())",
+    update: false,
+  })
+  lastActivityAt!: Date;
+
+  // No `deleted_at`: threads are deleted for real, together with their state
+  // block (see ThreadsService.deleteThread). A soft-deleted row kept the state
+  // block pinned by the RESTRICT foreign key above.
 }

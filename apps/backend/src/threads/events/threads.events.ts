@@ -98,3 +98,33 @@ export class ThreadTitleUpdatedEvent extends ThreadDomainEvent<ThreadTitleUpdate
     super(actor, payload);
   }
 }
+
+export type ThreadReadPayload = {
+  threadId: string;
+  /** Whose read position moved. Only this actor's clients are told. */
+  actorId: string;
+};
+
+export class ThreadReadEvent extends ThreadDomainEvent<ThreadReadPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadReadEvent');
+
+  constructor(actor: EventActor, payload: ThreadReadPayload) {
+    super(actor, payload);
+  }
+}
+
+export type ThreadPinnedPayload = {
+  threadId: string;
+  /** Whose list changed. Only this actor's clients are told. */
+  actorId: string;
+  pinned: boolean;
+};
+
+/** An actor pinned or unpinned a thread in their own list. */
+export class ThreadPinnedEvent extends ThreadDomainEvent<ThreadPinnedPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadPinnedEvent');
+
+  constructor(actor: EventActor, payload: ThreadPinnedPayload) {
+    super(actor, payload);
+  }
+}

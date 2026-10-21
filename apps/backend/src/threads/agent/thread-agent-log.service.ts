@@ -5,8 +5,16 @@ import { randomUUID } from 'node:crypto';
 import { ModelMessage } from 'ai';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadNotFoundError } from '../errors/threads.errors';
-import { formatMessage, formatTaskNotification } from './thread-agent.prompts';
+import {
+  formatMessage,
+  formatReminderFiring,
+  formatScheduleFiring,
+  formatTaskNotification,
+  generateThreadSecret,
+} from './thread-agent.prompts';
+import { ThreadTimerKind } from '../timers/thread-timer.enums';
 import { TaskStatus } from '../../tasks/enums';
+import { ThreadTokenUsageResult } from '../dto/service/threads.service.types';
 import { AgentContextRow } from './agent-context.utils';
 import { ThreadAgentMessageEntity } from './thread-agent-message.entity';
 import {
@@ -16,6 +24,8 @@ import {
 
 /** `source` of the agent-log rows that carry a task notification. */
 export const TASK_NOTIFICATION_SOURCE = 'subscription:task';
+/** `source` of the agent-log rows that carry a reminder or schedule firing. */
+export const TIMER_FIRING_SOURCE = 'timer';
 
 export type AgentMessageDraft = {
   role: ThreadAgentMessageRole;
@@ -55,6 +65,27 @@ type PendingTaskNotificationRow = {
   triggered_status: TaskStatus;
   triggered_task_name: string;
   waiting_for: string | null;
+  actor_id: string;
+  actor_slug: string;
+  actor_type: ActorType;
+  actor_display_name: string;
+};
+
+export type IngestTimerFiringsResult = {
+  /** Who the agent was answering when it set the timer, or null when nothing was waiting. */
+  triggerActor: TriggerActor | null;
+  /** Timers the agent has just been told about, oldest firing first. */
+  firedTimerIds: string[];
+};
+
+type PendingTimerFiringRow = {
+  firing_id: string;
+  id: string;
+  kind: ThreadTimerKind;
+  reason: string;
+  iteration: number;
+  max_iterations: number;
+  fired_count: number;
   actor_id: string;
   actor_slug: string;
   actor_type: ActorType;
@@ -284,12 +315,107 @@ export class ThreadAgentLogService {
   }
 
   /**
+   * Tells the agent about reminders and schedules that fired, as messages the
+   * user never sees: one per queued firing, oldest first. A timer with no
+   * firings left is removed once its last firing is delivered.
+   *
+   * One transaction, with the queued firings locked: a firing is delivered
+   * exactly once, however many processes try. Firings queued after the read
+   * wait for the next turn.
+   */
+  async ingestTimerFirings(input: {
+    threadId: string;
+    turnId: string;
+  }): Promise<IngestTimerFiringsResult> {
+    return this.dataSource.transaction(async (manager) => {
+      // Same lock order as every other writer to the log: the thread first.
+      await this.lockHead(manager, input.threadId);
+
+      const pending: PendingTimerFiringRow[] = await manager.query(
+        `SELECT f.id AS firing_id, tt.id, tt.kind, tt.reason, f.iteration, tt.max_iterations, tt.fired_count,
+                a.id AS actor_id, a.slug AS actor_slug, a.type AS actor_type,
+                a.display_name AS actor_display_name
+           FROM thread_timer_firings f
+           JOIN thread_timers tt ON tt.id = f.timer_id
+           JOIN actors a ON a.id = tt.created_for_actor_id
+          WHERE f.thread_id = $1
+          ORDER BY f.fired_at ASC, f.iteration ASC, f.id ASC
+            FOR UPDATE OF f`,
+        [input.threadId],
+      );
+
+      if (pending.length === 0) {
+        return { triggerActor: null, firedTimerIds: [] };
+      }
+
+      await this.appendWithManager(
+        manager,
+        input.threadId,
+        pending.map((row): AgentMessageDraft => ({
+          role: ThreadAgentMessageRole.USER,
+          kind: ThreadAgentMessageKind.INJECTION,
+          source: TIMER_FIRING_SOURCE,
+          turnId: input.turnId,
+          message: {
+            role: 'user',
+            content:
+              row.kind === ThreadTimerKind.REMINDER
+                ? formatReminderFiring({ id: row.id, reason: row.reason })
+                : formatScheduleFiring({
+                    id: row.id,
+                    reason: row.reason,
+                    iteration: row.iteration,
+                    maxIterations: row.max_iterations,
+                  }),
+          },
+        })),
+      );
+
+      const timerIds = [...new Set(pending.map((row) => row.id))];
+
+      await manager.query(
+        `DELETE FROM thread_timer_firings WHERE id = ANY($1::uuid[])`,
+        [pending.map((row) => row.firing_id)],
+      );
+      // A finished timer cannot queue more firings, so once none are left it is done.
+      await manager.query(
+        `DELETE FROM thread_timers tt
+          WHERE tt.thread_id = $1 AND tt.id = ANY($2::uuid[])
+            AND tt.fired_count >= tt.max_iterations
+            AND NOT EXISTS (SELECT 1 FROM thread_timer_firings f WHERE f.timer_id = tt.id)`,
+        [input.threadId, timerIds],
+      );
+
+      const last = pending[pending.length - 1];
+      return {
+        triggerActor: {
+          id: last.actor_id,
+          slug: last.actor_slug,
+          type: last.actor_type,
+          displayName: last.actor_display_name,
+        },
+        firedTimerIds: timerIds,
+      };
+    });
+  }
+
+  /** True when a reminder or schedule fired and the agent has not been told yet. */
+  async hasPendingTimerFirings(threadId: string): Promise<boolean> {
+    const rows: unknown[] = await this.dataSource.query(
+      `SELECT 1 FROM thread_timer_firings WHERE thread_id = $1 LIMIT 1`,
+      [threadId],
+    );
+    return rows.length > 0;
+  }
+
+  /**
    * Loads the active branch, oldest first: from the thread head back to the
    * root, or back to the most recent summary.
    */
   async loadContext(threadId: string): Promise<AgentContextRow[]> {
     const rows: Array<{
       id: string;
+      kind: ThreadAgentMessageKind;
       source: string;
       message: unknown;
       format_version: number;
@@ -307,18 +433,88 @@ export class ThreadAgentLogService {
            JOIN chain c ON p.id = c.parent_id
           WHERE c.kind <> $2
        )
-       SELECT id, source, message, format_version, provider_type, model_id FROM chain ORDER BY depth DESC`,
+       SELECT id, kind, source, message, format_version, provider_type, model_id FROM chain ORDER BY depth DESC`,
       [threadId, ThreadAgentMessageKind.SUMMARY],
     );
 
     return rows.map((row) => ({
       id: row.id,
+      kind: row.kind,
       source: row.source,
       message: row.message,
       formatVersion: row.format_version,
       providerType: row.provider_type,
       modelId: row.model_id,
     }));
+  }
+
+  /**
+   * Token figures for a thread, read from the usage the AI SDK reported for
+   * each model step. Steps on branches a compaction left behind still count:
+   * the totals are what the thread has spent, not what the model reads now.
+   */
+  async getTokenUsage(threadId: string): Promise<ThreadTokenUsageResult> {
+    // A step with no assistant message, or a provider that reports nothing,
+    // leaves no figure: the sums skip those rows.
+    const rows: Array<{
+      context_tokens: string | null;
+      input_tokens: string | null;
+      output_tokens: string | null;
+      steps: string;
+    }> = await this.dataSource.query(
+      `SELECT (SELECT l.usage->>'inputTokens'
+                 FROM thread_agent_messages l
+                WHERE l.thread_id = t.id AND jsonb_typeof(l.usage) = 'object'
+                ORDER BY l.created_at DESC, l.id DESC
+                LIMIT 1) AS context_tokens,
+              SUM((m.usage->>'inputTokens')::numeric) AS input_tokens,
+              SUM((m.usage->>'outputTokens')::numeric) AS output_tokens,
+              COUNT(m.id) AS steps
+         FROM threads t
+         LEFT JOIN thread_agent_messages m
+           ON m.thread_id = t.id AND jsonb_typeof(m.usage) = 'object'
+        WHERE t.id = $1
+        GROUP BY t.id`,
+      [threadId],
+    );
+
+    if (rows.length === 0) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    const toNumber = (value: string | null): number | null =>
+      value === null ? null : Number(value);
+
+    return {
+      contextTokens: toNumber(rows[0].context_tokens),
+      inputTokens: toNumber(rows[0].input_tokens),
+      outputTokens: toNumber(rows[0].output_tokens),
+      steps: Number(rows[0].steps),
+    };
+  }
+
+  /**
+   * The thread's secret key for Taico-written tags, created the first time the
+   * agent runs on the thread. It is only ever sent to the model: never return
+   * it from the API or put it in an event.
+   */
+  async getOrCreateThreadSecret(threadId: string): Promise<string> {
+    // One statement, so two processes starting a thread agree on the key.
+    // Raw update: it must not bump the thread's row version.
+    // TypeORM's Postgres query runner answers a raw UPDATE with
+    // [rows, affected count], unlike SELECT and INSERT which answer rows only.
+    // thread-agent.e2e-spec.ts runs this against a real database.
+    const [rows]: [Array<{ secret: string }>, number] = await this.dataSource.query(
+      `UPDATE threads SET secret = COALESCE(secret, $2)
+        WHERE id = $1 RETURNING secret`,
+      [threadId, generateThreadSecret()],
+    );
+
+    if (rows.length === 0) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    return rows[0].secret;
   }
 
   private async lockHead(

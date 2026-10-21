@@ -30,6 +30,16 @@ import { ActorSoftDelete1760900000000 } from './migrations/1760900000000-ActorSo
 import { ThreadTaskSubscriptions1761000000000 } from './migrations/1761000000000-ThreadTaskSubscriptions';
 import { ThreadTaskSubscriptionWaitingFor1761100000000 } from './migrations/1761100000000-ThreadTaskSubscriptionWaitingFor';
 import { SearchIndex1761200000000 } from './migrations/1761200000000-SearchIndex';
+import { ThreadSecret1761300000000 } from './migrations/1761300000000-ThreadSecret';
+import { ThreadReadStates1761400000000 } from './migrations/1761400000000-ThreadReadStates';
+import { ThreadLastActivity1761500000000 } from './migrations/1761500000000-ThreadLastActivity';
+import { AiProviderConnections1761600000000 } from './migrations/1761600000000-AiProviderConnections';
+import { SplitSmallTasksSelection1761700000000 } from './migrations/1761700000000-SplitSmallTasksSelection';
+import { ThreadTimers1761800000000 } from './migrations/1761800000000-ThreadTimers';
+import { DedupeArtefacts1761900000000 } from './migrations/1761900000000-DedupeArtefacts';
+import { ThreadPins1762000000000 } from './migrations/1762000000000-ThreadPins';
+import { ThreadMessageTimezone1762100000000 } from './migrations/1762100000000-ThreadMessageTimezone';
+import { ThreadHardDelete1762200000000 } from './migrations/1762200000000-ThreadHardDelete';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -61,6 +71,16 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadTaskSubscriptions1761000000000,
         ThreadTaskSubscriptionWaitingFor1761100000000,
         SearchIndex1761200000000,
+        ThreadSecret1761300000000,
+        ThreadReadStates1761400000000,
+        ThreadLastActivity1761500000000,
+        AiProviderConnections1761600000000,
+        SplitSmallTasksSelection1761700000000,
+        ThreadTimers1761800000000,
+        DedupeArtefacts1761900000000,
+        ThreadPins1762000000000,
+        ThreadMessageTimezone1762100000000,
+        ThreadHardDelete1762200000000,
       ],
     }),
     EventEmitterModule.forRoot(),

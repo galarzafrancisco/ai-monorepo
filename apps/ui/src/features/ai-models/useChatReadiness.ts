@@ -6,7 +6,11 @@ import {
   type AiProviderResponseDto,
 } from '@taico/client';
 
+/** What, if anything, stands between threads and a model that answers. */
+export type ChatReadinessKind = 'ready' | 'needs-credentials' | 'needs-model' | 'needs-provider';
+
 export type ChatReadiness = {
+  kind: ChatReadinessKind;
   isReady: boolean;
   title: string;
   description: string;
@@ -21,6 +25,7 @@ const getChatReadiness = (
 
   if (conversation?.isReady) {
     return {
+      kind: 'ready',
       isReady: true,
       title: 'Thread chat is ready',
       description: 'Your conversation tools are online.',
@@ -30,6 +35,7 @@ const getChatReadiness = (
 
   if (conversation?.modelId) {
     return {
+      kind: 'needs-credentials',
       isReady: false,
       title: 'Thread chat needs one more step',
       description:
@@ -40,6 +46,7 @@ const getChatReadiness = (
 
   if (providers.some((provider) => provider.isConfigured)) {
     return {
+      kind: 'needs-model',
       isReady: false,
       title: 'Your next level is one pick away',
       description:
@@ -49,6 +56,7 @@ const getChatReadiness = (
   }
 
   return {
+    kind: 'needs-provider',
     isReady: false,
     title: 'Thread chat is waiting at the gate',
     description:
@@ -61,6 +69,8 @@ const getChatReadiness = (
 export type ConversationModel = {
   providerName: string;
   modelId: string;
+  /** True when each person's own ChatGPT plan answers, not a shared API key. */
+  usesChatgptPlan: boolean;
 };
 
 const getConversationModel = (
@@ -71,7 +81,11 @@ const getConversationModel = (
   const provider = providers.find((p) => p.id === conversation?.effectiveAiProviderId);
 
   return conversation?.isReady && conversation.effectiveModelId && provider
-    ? { providerName: provider.name, modelId: conversation.effectiveModelId }
+    ? {
+        providerName: provider.name,
+        modelId: conversation.effectiveModelId,
+        usesChatgptPlan: provider.type === 'chatgpt_subscription',
+      }
     : null;
 };
 

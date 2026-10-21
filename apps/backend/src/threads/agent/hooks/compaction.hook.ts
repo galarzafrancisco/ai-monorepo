@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { generateText, ModelMessage } from 'ai';
+import { generateText, ModelMessage, streamText } from 'ai';
 import { getConfig } from 'src/config/env.config';
 import { buildModelMessages } from '../agent-context.utils';
 import { ThreadAgentLogService } from '../thread-agent-log.service';
+import { formatConversationSummary } from '../thread-agent.prompts';
 import {
   ThreadAgentMessageKind,
   ThreadAgentMessageRole,
@@ -77,14 +78,7 @@ export class CompactionHook implements ThreadAgentHook {
       return;
     }
 
-    const result = await generateText({
-      model: context.model.model,
-      instructions: SUMMARY_INSTRUCTIONS,
-      prompt: transcript,
-      providerOptions: context.model.providerOptions,
-    });
-
-    const summary = result.text.trim();
+    const summary = (await this.summarize(context, transcript)).trim();
     if (!summary) {
       return;
     }
@@ -97,7 +91,7 @@ export class CompactionHook implements ThreadAgentHook {
         turnId: context.turnId,
         message: {
           role: 'user',
-          content: `<conversation-summary>\n${summary}\n</conversation-summary>`,
+          content: formatConversationSummary(summary),
         },
       },
     ]);
@@ -108,5 +102,43 @@ export class CompactionHook implements ThreadAgentHook {
       inputTokens: context.lastInputTokens,
       summarizedMessages: rows.length,
     });
+  }
+
+  /**
+   * Same request either way. A model that only accepts streamed requests is
+   * streamed and read to the end; a stream that fails throws, so a partial
+   * summary is never stored.
+   */
+  private async summarize(context: AfterTurnContext, transcript: string): Promise<string> {
+    const request = {
+      model: context.model.model,
+      instructions: SUMMARY_INSTRUCTIONS,
+      prompt: transcript,
+      providerOptions: context.model.providerOptions,
+    };
+
+    if (!context.model.requiresStreaming) {
+      return (await generateText(request)).text;
+    }
+
+    // The stream reports a failure through onError; reading the text may or may not reject too.
+    const failures: unknown[] = [];
+    const result = streamText({
+      ...request,
+      onError: ({ error }) => {
+        failures.push(error);
+      },
+    });
+    let text = '';
+    try {
+      text = await result.text;
+    } catch (error) {
+      failures.push(error);
+    }
+    if (failures.length > 0) {
+      const [first] = failures;
+      throw first instanceof Error ? first : new Error(String(first));
+    }
+    return text;
   }
 }

@@ -10,7 +10,7 @@ import { AiModelJob } from 'src/ai-providers/enums';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { ActorType } from 'src/identity-provider/enums';
 import { ThreadEntity } from '../thread.entity';
-import { ThreadMessageEntity } from '../thread-message.entity';
+import { ThreadMessageWriterService } from '../thread-message-writer.service';
 import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
@@ -18,7 +18,7 @@ import {
   ThreadAgentResponseDeltaEvent,
   ThreadUpdatedEvent,
 } from '../events/threads.events';
-import { buildModelMessages } from './agent-context.utils';
+import { buildModelMessages, withThreadSecret } from './agent-context.utils';
 import { ChatModelFactory, ResolvedChatModel } from './chat-model.factory';
 import { TaicoMcpToolsFactory } from './taico-mcp-tools.factory';
 import { AgentMessageDraft, ThreadAgentLogService } from './thread-agent-log.service';
@@ -27,6 +27,7 @@ import { buildThreadScopedInstructions, STAY_SILENT_TOOL } from './thread-agent.
 import { ThreadAgentToolsFactory } from './thread-agent-tools.factory';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
+import { findRepeatedToolCall, isRepeatedToolCall } from './repeated-tool-call';
 
 export { THREAD_AGENT_SLUG };
 export const THREAD_AGENT_MAX_STEPS = 25;
@@ -54,8 +55,7 @@ export class ThreadAgentService {
   constructor(
     @InjectRepository(ThreadEntity)
     private readonly threadRepository: Repository<ThreadEntity>,
-    @InjectRepository(ThreadMessageEntity)
-    private readonly threadMessageRepository: Repository<ThreadMessageEntity>,
+    private readonly messageWriter: ThreadMessageWriterService,
     private readonly agentsService: AgentsService,
     private readonly agentLog: ThreadAgentLogService,
     private readonly turns: ThreadTurnsService,
@@ -125,7 +125,8 @@ export class ThreadAgentService {
       // turn was finishing is never left without an owner.
       if (
         !(await this.agentLog.hasPending(threadId, self.actorId)) &&
-        !(await this.agentLog.hasPendingTaskNotifications(threadId))
+        !(await this.agentLog.hasPendingTaskNotifications(threadId)) &&
+        !(await this.agentLog.hasPendingTimerFirings(threadId))
       ) {
         return;
       }
@@ -145,15 +146,24 @@ export class ThreadAgentService {
       threadId,
       turnId: turn.id,
     });
-    // A turn started by a task notification acts for whoever the agent subscribed for.
-    const triggerActor = author ?? notifications.triggerActor;
+    const firings = await this.agentLog.ingestTimerFirings({
+      threadId,
+      turnId: turn.id,
+    });
+    // A turn started by a task notification or a timer acts for whoever the
+    // agent subscribed or set the timer for.
+    const triggerActor = author ?? notifications.triggerActor ?? firings.triggerActor;
     if (!triggerActor) {
       return null;
     }
 
     const thread = await this.threadRepository.findOne({ where: { id: threadId } });
-    if (thread && notifications.notifiedTaskIds.length > 0) {
-      // A done task ended its subscription; viewers of the thread see the list change.
+    if (
+      thread &&
+      (notifications.notifiedTaskIds.length > 0 || firings.firedTimerIds.length > 0)
+    ) {
+      // A done task ended its subscription and a finished timer is gone;
+      // viewers of the thread see the lists change.
       this.eventEmitter.emit(
         ThreadUpdatedEvent.INTERNAL,
         new ThreadUpdatedEvent({ id: self.actorId }, thread),
@@ -163,6 +173,9 @@ export class ThreadAgentService {
       job: AiModelJob.CONVERSATION,
       aiProviderId: thread?.aiProviderId,
       modelId: thread?.modelId,
+      // Whose plan a personal-plan provider may use: the author of the newest
+      // message, or for a task update or timer, whoever the agent did it for.
+      onBehalfOf: { actorId: triggerActor.id, automated: !author },
     });
 
     let rows = await this.agentLog.loadContext(threadId);
@@ -175,7 +188,8 @@ export class ThreadAgentService {
     if (injected) {
       rows = await this.agentLog.loadContext(threadId);
     }
-    const messages = buildModelMessages(rows, resolved, (row) => {
+    const threadSecret = await this.agentLog.getOrCreateThreadSecret(threadId);
+    const messages = buildModelMessages(withThreadSecret(rows, threadSecret), resolved, (row) => {
       this.logger.warn({
         message: 'Skipping agent log row that does not match the message schema',
         threadId,
@@ -198,6 +212,7 @@ export class ThreadAgentService {
         turn,
         self,
         resolved,
+        threadSecret,
         messages,
         tools: {
           ...mcp.tools,
@@ -218,6 +233,7 @@ export class ThreadAgentService {
     turn: ClaimedTurn;
     self: AgentResult;
     resolved: ResolvedChatModel;
+    threadSecret: string;
     messages: ModelMessage[];
     tools: ToolSet;
   }): Promise<number | null> {
@@ -230,11 +246,15 @@ export class ThreadAgentService {
 
     const result = streamText({
       model: resolved.model,
-      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId),
+      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId, input.threadSecret),
       messages: input.messages,
       tools: input.tools,
       providerOptions: resolved.providerOptions,
-      stopWhen: [isStepCount(THREAD_AGENT_MAX_STEPS), hasToolCall(STAY_SILENT_TOOL)],
+      stopWhen: [
+        isStepCount(THREAD_AGENT_MAX_STEPS),
+        hasToolCall(STAY_SILENT_TOOL),
+        isRepeatedToolCall(),
+      ],
       // Errors arrive as stream parts and are handled below.
       onError: () => undefined,
       onStepEnd: (step) => {
@@ -277,6 +297,22 @@ export class ThreadAgentService {
     }
 
     await persisted;
+
+    const repeated = findRepeatedToolCall(await result.steps);
+    if (repeated) {
+      this.logger.warn({
+        message: 'Thread agent turn stopped: the model kept making the same tool call',
+        threadId,
+        turnId: turn.id,
+        toolNames: repeated.toolNames,
+      });
+      await this.saveDisplayMessage({
+        threadId,
+        actorId: self.actorId,
+        content: `I stopped because I called ${repeated.toolNames.map((name) => `\`${name}\``).join(', ')} ${repeated.times} times in a row with the same input. That was probably the wrong tool.`,
+        agentMessageId: null,
+      });
+    }
     return lastInputTokens;
   }
 
@@ -326,22 +362,12 @@ export class ThreadAgentService {
     agentMessageId: string | null;
   }): Promise<void> {
     try {
-      const saved = await this.threadMessageRepository.save(
-        this.threadMessageRepository.create({
-          threadId: input.threadId,
-          content: input.content,
-          createdByActorId: input.actorId,
-          agentMessageId: input.agentMessageId,
-        }),
-      );
-
-      const withRelations = await this.threadMessageRepository.findOne({
-        where: { id: saved.id },
-        relations: ['createdByActor'],
+      const withRelations = await this.messageWriter.write({
+        threadId: input.threadId,
+        content: input.content,
+        createdByActorId: input.actorId,
+        agentMessageId: input.agentMessageId,
       });
-      if (!withRelations) {
-        return;
-      }
 
       this.eventEmitter.emit(
         MessageCreatedEvent.INTERNAL,

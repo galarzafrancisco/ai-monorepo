@@ -53,23 +53,23 @@ export function useWalkthrough() {
             id: 'project-create',
             label: 'Create a project',
             description:
-              'Projects are created automatically when you add a tag in the format project:<name> to any task. Go to Tasks, open or create a task, and add a tag like project:my-app. Taico will create the project entry for you.',
-            href: '/tasks',
+              'Projects group related tasks under a project:<name> tag. Open Projects in the sidebar and choose New project, or add a tag like project:my-app to any task and Taico creates the project for you.',
+            href: '/projects',
             completed: data.projectCreated,
           },
           {
             id: 'project-configure',
             label: 'Configure a project',
             description:
-              'Link your project to a code repository. Go to Settings → Projects, find your project, and add a repository URL. Taico will automatically clone that repo for any task tagged with this project — no need to specify it per-task.',
-            href: '/settings/projects',
+              'Link your project to a code repository. Open Projects in the sidebar, pick your project, choose Edit and add a repository URL. Taico will automatically clone that repo for any task tagged with this project — no need to specify it per-task.',
+            href: '/projects',
             completed: data.projectConfigured,
           },
           {
             id: 'task-with-project',
             label: 'Assign a task to an agent with a project',
             description:
-              'Tag a task with a project tag and assign it to an agent. Taico will clone the linked repository and make it available in the agent\'s working directory automatically.',
+              'Open your project and choose Open in Tasks, or tag any task with the project tag, then assign it to an agent. Taico will clone the linked repository and make it available in the agent\'s working directory automatically.',
             href: '/tasks',
             completed: data.taskWithProjectCreated,
           },

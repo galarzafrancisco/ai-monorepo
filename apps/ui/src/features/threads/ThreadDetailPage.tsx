@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import { Bot } from "lucide-react";
+import type { ThreadTokenUsageResponseDto } from "@taico/client/v2";
 import {
+  MessageCreatedWireEvent,
   TaskAssignedWireEvent,
   TaskDeletedWireEvent,
   TaskStatusChangedWireEvent,
@@ -22,9 +24,18 @@ import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
 import { ThreadTaskRow } from "./ThreadTaskRow";
-import { ThreadTaskSubscriptionList } from "./ThreadTaskSubscriptionList";
+import {
+  isReminder,
+  isSchedule,
+  ThreadReminderList,
+  ThreadScheduleList,
+  ThreadTaskSubscriptionList,
+} from "./ThreadWaitLists";
 import { ThreadChat } from "./ThreadChat";
+import { ThreadPinControl } from "./ThreadPinControl";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
+import { useThreadTokenUsage } from "./useThreadTokenUsage";
+import { formatTokenCount } from "../../shared/helpers/tokenCount";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
@@ -50,6 +61,38 @@ const STATUS_ORDER = [
   TaskStatus.IN_PROGRESS,
   TaskStatus.NOT_STARTED,
 ] as const;
+
+/**
+ * Reminders, schedules and watched tasks, in that order, leaving out empty
+ * ones. Shown near the top of the thread's details (below participants on
+ * desktop).
+ */
+const waitSections = (thread: Thread) => {
+  const reminders = thread.timers.filter(isReminder);
+  const schedules = thread.timers.filter(isSchedule);
+  return [
+    {
+      key: "reminders",
+      title: "Reminders",
+      count: reminders.length,
+      list: <ThreadReminderList threadId={thread.id} reminders={reminders} />,
+    },
+    {
+      key: "schedules",
+      title: "Schedules",
+      count: schedules.length,
+      list: <ThreadScheduleList threadId={thread.id} schedules={schedules} />,
+    },
+    {
+      key: "watching",
+      title: "Watching for completion",
+      count: thread.taskSubscriptions.length,
+      list: (
+        <ThreadTaskSubscriptionList threadId={thread.id} subscriptions={thread.taskSubscriptions} />
+      ),
+    },
+  ].filter((section) => section.count > 0);
+};
 
 // Group tasks by status, with parent task first
 const groupTasksByStatus = (thread: Thread) => {
@@ -138,6 +181,7 @@ export function ThreadDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const threadTaskIdsRef = useRef<Set<string>>(new Set());
+  const { usage: tokenUsage, refresh: refreshTokenUsage } = useThreadTokenUsage(threadId);
 
   const { setNavItems } = useThreadsCtx();
 
@@ -197,6 +241,14 @@ export function ThreadDetailPage() {
       void refreshThread();
     });
 
+    // Each agent reply is saved after its usage, so the figures are current by now.
+    threadSocket.on(ThreadWireEvents.MESSAGE_CREATED, (event: MessageCreatedWireEvent) => {
+      if (event.payload.threadId !== threadId) {
+        return;
+      }
+      void refreshTokenUsage();
+    });
+
     threadSocket.on(ThreadWireEvents.THREAD_TITLE_UPDATED, (event: ThreadTitleUpdatedWireEvent) => {
       if (event.payload.threadId !== threadId) {
         return;
@@ -243,7 +295,7 @@ export function ThreadDetailPage() {
       taskSocket.emit('tasks.unsubscribe', {});
       taskSocket.close();
     };
-  }, [threadId, refreshThread]);
+  }, [threadId, refreshThread, refreshTokenUsage]);
 
   // Set section title
   useEffect(() => {
@@ -287,19 +339,90 @@ export function ThreadDetailPage() {
   };
 
   if (isDesktop) {
-    return <ThreadDetailPageDesktop thread={thread} onDelete={handleDelete} />;
+    return <ThreadDetailPageDesktop thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
   } else {
-    return <ThreadDetailPageMobile thread={thread} onDelete={handleDelete} />;
+    return <ThreadDetailPageMobile thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
   }
 }
 
+/** Where a person sees how much of their ChatGPT plan they have used. */
+const CHATGPT_MANAGE_USAGE_URL = 'https://chatgpt.com/settings/usage';
+
 /** The model answering in this thread, marked with an icon so it reads as a model id. */
-function ThreadModelLabel({ label }: { label: string }) {
+function ThreadModelLabel({ label, usesChatgptPlan }: { label: string; usesChatgptPlan: boolean }) {
   return (
-    <span className="thread-detail-page__model" title="Model answering in this thread">
-      <Bot size={14} strokeWidth={1.8} aria-hidden="true" />
+    <>
+      <span className="thread-detail-page__model" title="Model answering in this thread">
+        <Bot size={14} strokeWidth={1.8} aria-hidden="true" />
+        <Text size="1" tone="muted">
+          {label}
+        </Text>
+      </span>
+      {usesChatgptPlan ? (
+        <span
+          className="thread-detail-page__model"
+          title="Your own ChatGPT plan answers the messages you write here"
+        >
+          <Text size="1" tone="muted">
+            Using ChatGPT plan ·
+          </Text>
+          <a
+            className="thread-detail-page__model-link"
+            href={CHATGPT_MANAGE_USAGE_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Manage usage
+          </a>
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Debug indicator: how many tokens the thread uses, as the model provider
+ * reported them. Renders nothing until the figures have loaded.
+ */
+function ThreadTokenUsageLabel({ usage }: { usage: ThreadTokenUsageResponseDto | null }) {
+  if (!usage) {
+    return null;
+  }
+
+  const { contextTokens, inputTokens, outputTokens, steps } = usage;
+  if (contextTokens === null && inputTokens === null && outputTokens === null) {
+    return (
+      <span
+        className="thread-detail-page__token-usage"
+        title={
+          steps > 0
+            ? "The model provider reported no token figures for this thread"
+            : "No model step has reported token usage in this thread yet"
+        }
+      >
+        <Text size="1" tone="muted">
+          tokens n/a
+        </Text>
+      </span>
+    );
+  }
+
+  const exact = (count: number | null) => (count === null ? "n/a" : count.toLocaleString("en-US"));
+  const short = (count: number | null) => (count === null ? "n/a" : formatTokenCount(count));
+  const total = inputTokens === null && outputTokens === null ? null : (inputTokens ?? 0) + (outputTokens ?? 0);
+
+  return (
+    <span
+      className="thread-detail-page__token-usage"
+      title={[
+        "Token usage (debug)",
+        `Context, input of the last model step: ${exact(contextTokens)}`,
+        `Input, all ${steps} steps: ${exact(inputTokens)}`,
+        `Output, all ${steps} steps: ${exact(outputTokens)}`,
+      ].join("\n")}
+    >
       <Text size="1" tone="muted">
-        {label}
+        {short(contextTokens)} ctx · {short(total)} total
       </Text>
     </span>
   );
@@ -307,9 +430,11 @@ function ThreadModelLabel({ label }: { label: string }) {
 
 function ThreadDetailPageDesktop({
   thread,
+  tokenUsage,
   onDelete,
 }: {
   thread: Thread;
+  tokenUsage: ThreadTokenUsageResponseDto | null;
   onDelete: () => Promise<void>;
 }) {
   const { conversationModel } = useChatReadiness();
@@ -324,10 +449,13 @@ function ThreadDetailPageDesktop({
         <div className="thread-detail-page__content">
           <div className="thread-detail-page__header">
             <div className="thread-detail-page__header-top">
-              <div>
-                <Text size="5" weight="bold">
-                  {thread.title}
-                </Text>
+              <div className="thread-detail-page__header-main">
+                <div className="thread-detail-page__title-row">
+                  <Text size="5" weight="bold" className="thread-detail-page__title">
+                    {thread.title}
+                  </Text>
+                  <ThreadPinControl threadId={thread.id} />
+                </div>
                 <div className="thread-detail-page__meta-row">
                   <Chip color="gray">#{thread.id.slice(0, 6)}</Chip>
                   <Text size="1" tone="muted">
@@ -336,8 +464,10 @@ function ThreadDetailPageDesktop({
                   {conversationModel && (
                     <ThreadModelLabel
                       label={`${conversationModel.modelId} via ${conversationModel.providerName}`}
+                      usesChatgptPlan={conversationModel.usesChatgptPlan}
                     />
                   )}
+                  <ThreadTokenUsageLabel usage={tokenUsage} />
                 </div>
               </div>
             </div>
@@ -352,7 +482,7 @@ function ThreadDetailPageDesktop({
       {/* Right sidebar with context and tasks */}
       <div className={`thread-detail-page__sidebar ${!isSidebarOpen ? "thread-detail-page__sidebar--collapsed" : ""}`}>
         {isSidebarOpen && (
-          <div className="thread-detail-page__sidebar-scroll">
+          <div className="thread-detail-page__sidebar-scroll thin-scrollbar">
             {thread.participants.length > 0 && (
               <div className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
@@ -381,6 +511,16 @@ function ThreadDetailPageDesktop({
               </div>
             )}
 
+            {/* What will wake the agent up: right after participants, so it is never missed */}
+            {waitSections(thread).map((section) => (
+              <div key={section.key} className="thread-detail-page__sidebar-section">
+                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+                  {section.title} ({section.count})
+                </Text>
+                {section.list}
+              </div>
+            ))}
+
             {/* Tasks grouped by status */}
             {taskGroups.map((group) => (
               <div key={group.status} className="thread-detail-page__sidebar-section">
@@ -394,16 +534,6 @@ function ThreadDetailPageDesktop({
                 </div>
               </div>
             ))}
-
-            {/* Tasks the agent is waiting to hear about */}
-            {thread.taskSubscriptions.length > 0 && (
-              <div className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  Watching ({thread.taskSubscriptions.length})
-                </Text>
-                <ThreadTaskSubscriptionList subscriptions={thread.taskSubscriptions} />
-              </div>
-            )}
 
             {/* Context section */}
             {contextBlocks.length > 0 && (
@@ -459,9 +589,11 @@ function ThreadDetailPageDesktop({
 
 function ThreadDetailPageMobile({
   thread,
+  tokenUsage,
   onDelete,
 }: {
   thread: Thread;
+  tokenUsage: ThreadTokenUsageResponseDto | null;
   onDelete: () => Promise<void>;
 }) {
   const { conversationModel } = useChatReadiness();
@@ -486,16 +618,23 @@ function ThreadDetailPageMobile({
           ☰
         </button>
         <div className="thread-detail-page__mobile-header-content">
-          <Text size="2" weight="semibold">
+          <Text size="2" weight="semibold" className="thread-detail-page__mobile-title">
             {thread.title}
           </Text>
           <div className="thread-detail-page__mobile-meta">
             <Text size="1" tone="muted">
               #{thread.id.slice(0, 6)} · {thread.participants.length} participants
             </Text>
-            {conversationModel && <ThreadModelLabel label={conversationModel.modelId} />}
+            {conversationModel && (
+              <ThreadModelLabel
+                label={conversationModel.modelId}
+                usesChatgptPlan={conversationModel.usesChatgptPlan}
+              />
+            )}
+            <ThreadTokenUsageLabel usage={tokenUsage} />
           </div>
         </div>
+        <ThreadPinControl threadId={thread.id} />
       </header>
 
       {/* Fixed tab navigation */}
@@ -548,13 +687,11 @@ function ThreadDetailPageMobile({
 
         {mobileView === "tasks" && (
           <div className="thread-detail-page__mobile-scrollable">
-            {thread.taskSubscriptions.length > 0 && (
-              <div className="thread-detail-page__mobile-section">
-                <DataRowContainer title="Watching">
-                  <ThreadTaskSubscriptionList subscriptions={thread.taskSubscriptions} />
-                </DataRowContainer>
+            {waitSections(thread).map((section) => (
+              <div key={section.key} className="thread-detail-page__mobile-section">
+                <DataRowContainer title={section.title}>{section.list}</DataRowContainer>
               </div>
-            )}
+            ))}
             {taskGroups.length > 0 ? (
               taskGroups.map((group) => (
                 <div key={group.status} className="thread-detail-page__mobile-section">
