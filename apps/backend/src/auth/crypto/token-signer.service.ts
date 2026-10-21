@@ -1,29 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { JwksService } from './jwks.service';
+import { Injectable } from '@nestjs/common';
+import { TokenSigner } from '@taico/auth';
+import { getConfig } from 'src/config/env.config';
 import { AccessTokenClaims } from '../core/types/access-token-claims.type';
-import { importPKCS8, SignJWT } from 'jose';
+import { JwksService } from './jwks.service';
 
+/** The one place tokens are signed */
 @Injectable()
 export class TokenSignerService {
-  private logger = new Logger(TokenSignerService.name);
+  private readonly signer: TokenSigner;
 
-  constructor(private readonly jwksService: JwksService) {}
+  constructor(jwksService: JwksService) {
+    this.signer = new TokenSigner(jwksService.keys, getConfig().issuerUrl);
+  }
 
-  async signToken(claims: AccessTokenClaims): Promise<string> {
-    const signingKey = await this.jwksService.getActiveSigningKey();
-    const privateKey = await importPKCS8(
-      signingKey.privateKeyPem,
-      signingKey.algorithm,
-    );
-
-    const jwt = await new SignJWT(claims as any)
-      .setProtectedHeader({
-        alg: signingKey.algorithm,
-        kid: signingKey.kid,
-        typ: 'JWT',
-      })
-      .sign(privateKey);
-
-    return jwt;
+  signToken(claims: AccessTokenClaims): Promise<string> {
+    return this.signer.sign({ ...claims });
   }
 }

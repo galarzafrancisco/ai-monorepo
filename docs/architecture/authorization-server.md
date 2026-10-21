@@ -52,10 +52,10 @@ The authorization server enables MCP clients to access resources from downstream
 - Initializes authorization journey for registered clients
 
 #### 3. JwksController
-**Location**: `/apps/backend/src/authorization-server/jwks.controller.ts`
+**Location**: `/apps/backend/src/auth/crypto/jwks.controller.ts`
 
 **JWKS Endpoints**:
-- `GET /auth/.well-known/jwks.json` - Public key set for JWT verification
+- `GET /.well-known/jwks.json` - Public key set for JWT verification
 
 **Responsibilities**:
 - Exposes public keys in JWK format
@@ -135,25 +135,28 @@ Each MCP server has its own authorization server URL, because the server a clien
 - **Validation**: every route behind `AccessTokenGuard` checks the audience. A token is accepted if it is first-party (browser session, system-issued, or the internal worker / display target, which cover the whole API), or if its audience is exactly the URL being requested, which is how an MCP server token is accepted on its own endpoint and nowhere else. WebSocket gateways accept first-party tokens only. Endpoints that read the session cookie directly accept web session tokens only. Introspection and token exchange at a server's URL only accept tokens minted for that server.
 
 #### 3. JwksService
-**Location**: `/apps/backend/src/authorization-server/jwks.service.ts`
+**Location**: `/apps/backend/src/auth/crypto/jwks.service.ts`
 
 **Cryptographic Key Management**:
 
+Key creation, rotation, signing and the in-memory key cache are implemented by `KeyManager` in `@taico/auth` (`packages/auth`). `JwksService` configures it for Taico: the `jwks_keys` table is exposed to it through `JwksKeyStore`, and the TTLs come from the environment.
+
 **Responsibilities**:
-- Generates RSA key pairs (2048-bit)
-- Manages key lifecycle with TTL-based rotation
-- Computes key IDs (kid) from public key thumbprint
-- Exports public keys in JWK format for JWKS endpoint
+- Generates RSA key pairs (2048-bit) and computes key IDs (kid) from the public key thumbprint
+- Rotates the signing key when it expires
+- Exports public keys in JWK format for the JWKS endpoint (`GET /.well-known/jwks.json`)
+- Caches loaded keys in memory, so verifying or signing a token does not query the database
 
 **Key Methods**:
-- `getActiveSigningKey()` - Returns current active key for signing
-- `getJwks()` - Exports all active keys as JWKS
-- `rotateKeys()` - Creates new key pair, deactivates old ones
-- `initializeKeys()` - Generates initial key pair on startup
+- `getPublicKeys()` - Public keys that may still verify a token
+- `rotateKey()` - Creates a new key pair and retires the current one
+- `cleanupExpiredKeys()` - Soft-deletes keys long past their verifying window
+
+Tokens are signed in one place, `TokenSignerService`, and verified in one place, `TokenVerifierService`. Verification checks signature, issuer, expiry and **revocation**: a token whose `jti` is marked revoked in `issued_access_tokens` is refused on its next request.
 
 **Key Rotation Strategy**:
-- TTL: 24 hours (default)
-- Grace period: Old keys kept active for ongoing verifications
+- A key signs for `JWKS_KEY_SIGNING_TTL_HOURS` (default 72 hours)
+- It keeps verifying for `JWKS_KEY_VERIFYING_TTL_HOURS` after that, so tokens signed just before a rotation stay valid
 - Automatic rotation on expiration
 
 #### 4. ClientRegistrationService
@@ -1148,7 +1151,7 @@ WHERE scope_id IN ('read:tasks', 'write:tasks')
 - `POST /auth/introspect/mcp/:serverIdentifier/:version` - Introspect JWT
 
 ### Key Management
-- `GET /auth/.well-known/jwks.json` - Public key set (JWKS)
+- `GET /.well-known/jwks.json` - Public key set (JWKS)
 
 ## File Structure Summary
 

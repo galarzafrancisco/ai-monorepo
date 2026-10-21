@@ -1,156 +1,47 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, LessThan } from 'typeorm';
-import { JwksKeyEntity } from './jwks-key.entity';
-import {
-  generateKeyPair,
-  exportJWK,
-  exportPKCS8,
-  exportSPKI,
-  calculateJwkThumbprint,
-  importSPKI,
-  JWK,
-} from 'jose';
+import { KeyManager } from '@taico/auth';
+import type { JWK } from 'jose';
+import { LessThan, Repository } from 'typeorm';
 import { getConfig } from 'src/config/env.config';
+import { JwksKeyEntity } from './jwks-key.entity';
+import { JwksKeyStore } from './jwks-key.store';
 
-/* -------- algorithm -------- */
-const ALG = 'RS256' as const; // keep the string literal
-
+/**
+ * The issuer's signing keys. Creation, rotation and the in-memory key cache
+ * live in `@taico/auth`'s KeyManager; this service configures it for Taico.
+ */
 @Injectable()
 export class JwksService {
-  private logger = new Logger(JwksService.name);
+  private readonly logger = new Logger(JwksService.name);
+  readonly keys: KeyManager;
 
   constructor(
+    store: JwksKeyStore,
     @InjectRepository(JwksKeyEntity)
     private readonly keyRepository: Repository<JwksKeyEntity>,
-  ) {}
-
-  /**
-   * Get the current active key, or create a new one if none exists or current is expired
-   */
-  async getOrCreateActiveKey(): Promise<JwksKeyEntity> {
-    // Try to find an active, non-expired key
-    const now = new Date();
-    const activeKey = await this.keyRepository.findOne({
-      where: {
-        isActive: true,
-        expiresAt: MoreThan(now),
-      },
-      order: {
-        createdAt: 'DESC',
-      },
+  ) {
+    const config = getConfig();
+    this.keys = new KeyManager({
+      store,
+      signingTtlHours: config.jwksKeySigningTtlHours,
+      verifyingTtlHours: config.jwksKeyVerifyingTtlHours,
+      logger: this.logger,
     });
-
-    if (activeKey) {
-      this.logger.debug(`Using existing active key: ${activeKey.kid}`);
-      return activeKey;
-    }
-
-    // No active key found, create a new one
-    this.logger.log('No active key found, creating new key');
-    return this.rotateKey();
   }
 
   /**
-   * Create a new key and mark the old active key as inactive
+   * Public keys that may still verify a token: the active key and recently
+   * rotated ones. Cached, so this does not query the database per token.
    */
-  async rotateKey(): Promise<JwksKeyEntity> {
+  getPublicKeys(options?: { forceRefresh?: boolean }): Promise<JWK[]> {
+    return this.keys.getKeys(options);
+  }
+
+  /** Create a new signing key and retire the current one */
+  async rotateKey(): Promise<void> {
     this.logger.log('Rotating JWKS key');
-
-    // Mark all currently active keys as inactive
-    await this.keyRepository.update({ isActive: true }, { isActive: false });
-
-    // Generate new RSA key pair
-    const { publicKey, privateKey } = await generateKeyPair(ALG, {
-      modulusLength: 2048,
-      extractable: true, // Required to export keys to PEM format
-    });
-
-    // Export keys to PEM format for storage
-    const publicKeyPem = await exportSPKI(publicKey);
-    const privateKeyPem = await exportPKCS8(privateKey);
-
-    // Generate a unique key ID
-    const publicJwk = await exportJWK(publicKey);
-    const kid = await calculateJwkThumbprint(publicJwk);
-
-    // Calculate expiration date based on signing TTL
-    const config = getConfig();
-
-    // expiresAt: when the key stops being used for signing
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + config.jwksKeySigningTtlHours);
-
-    // Create and save the new key
-    const newKey = this.keyRepository.create({
-      kid,
-      publicKeyPem: publicKeyPem,
-      privateKeyPem: privateKeyPem,
-      algorithm: ALG,
-      isActive: true,
-      expiresAt,
-    });
-
-    const savedKey = await this.keyRepository.save(newKey);
-    this.logger.log(
-      `Created new key: ${savedKey.kid}, expires at: ${savedKey.expiresAt.toISOString()}`,
-    );
-
-    return savedKey;
-  }
-
-  /**
-   * Get all valid keys (not expired, not soft-deleted) for the JWKS endpoint
-   * This includes both active and inactive keys to allow validation of tokens
-   * signed with recently rotated keys
-   */
-  async getPublicKeys(): Promise<JWK[]> {
-    const config = getConfig();
-    const now = new Date();
-
-    // Calculate the cutoff date for verification
-    // Keys are valid for verification if: expiresAt + verifyingTtl > now
-    // Which can be rewritten as: expiresAt > now - verifyingTtl
-    const cutoffDate = new Date(now);
-    cutoffDate.setHours(
-      cutoffDate.getHours() - config.jwksKeyVerifyingTtlHours,
-    );
-
-    // Fetch keys that are still valid for verification (filtered at DB level)
-    const validKeys = await this.keyRepository.find({
-      where: {
-        expiresAt: MoreThan(cutoffDate),
-      },
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-
-    this.logger.debug(`Found ${validKeys.length} valid keys for JWKS endpoint`);
-
-    // Convert stored keys to JWK format
-    const jwks: JWK[] = await Promise.all(
-      validKeys.map(async (key) => {
-        const publicKey = await importSPKI(key.publicKeyPem, key.algorithm);
-
-        // Export as JWK
-        const publicJwk = await exportJWK(publicKey);
-        publicJwk.use = 'sig';
-        publicJwk.alg = key.algorithm;
-        publicJwk.kid = key.kid;
-
-        return publicJwk;
-      }),
-    );
-
-    return jwks;
-  }
-
-  /**
-   * Get the active signing key (for signing JWTs)
-   */
-  async getActiveSigningKey(): Promise<JwksKeyEntity> {
-    return this.getOrCreateActiveKey();
+    await this.keys.rotate();
   }
 
   /**

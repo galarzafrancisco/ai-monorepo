@@ -3,17 +3,15 @@ import { AccessTokenClaims } from '../../core/types/access-token-claims.type';
 import { TokenVerifierService } from '../../crypto/token-verifier.service';
 
 /**
- * Placeholder interface/service.
- * Implement with JWKS, iss/aud checks, exp, etc.
+ * Validates an access token outside the guards (socket handshakes).
+ * Checks signature, issuer, expiry and revocation; the caller checks the
+ * audience and scopes.
  */
 @Injectable()
 export class AccessTokenValidationService {
   constructor(private readonly tokenVerifierService: TokenVerifierService) {}
 
-  async validateAccessToken(token: string): Promise<AccessTokenClaims> {
-    // Decode token (verifies signature, expiry and issuer)
-    const jwt = this.tokenVerifierService.verifyAndDecode(token);
-    // If any additional validation, do it here.
-    return jwt;
+  validateAccessToken(token: string): Promise<AccessTokenClaims> {
+    return this.tokenVerifierService.verifyAndDecode(token);
   }
 }

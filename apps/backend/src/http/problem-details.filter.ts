@@ -8,6 +8,7 @@ import {
 import { Response } from 'express';
 import { mapDomainError } from '../errors/http/domain-to-problem.mapper';
 import { toProblem } from '../errors/http/problem-details';
+import { buildChallenge } from '@taico/auth';
 import { ErrorCodes } from '@taico/errors';
 import { getConfig } from 'src/config/env.config';
 
@@ -42,26 +43,13 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         url: instance,
       });
 
-      const resourceMetadataUrl = `${this.config.issuerUrl}/.well-known/oauth-protected-resource${instance}`;
-      if (exception.code == ErrorCodes.MISSING_ACCESS_TOKEN) {
-        // TODO: this realm MCP feels wrong to throw system wide
-        response.setHeaders(
-          new Headers({
-            'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}" realm="mcp"`,
-          }),
-        );
-      } else if (exception.code == ErrorCodes.INVALID_ACCESS_TOKEN) {
-        response.setHeaders(
-          new Headers({
-            'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="The access token is invalid or has expired"`,
-          }),
-        );
-      } else if (exception.code == ErrorCodes.INSUFFICIENT_SCOPE) {
-        response.setHeaders(
-          new Headers({
-            'WWW-Authenticate': `WWW-Authenticate: Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="insufficient_scope", scope="<REQUIRED_SCOPES>"`,
-          }),
-        );
+      // Authentication errors are answered with a Bearer challenge
+      // (RFC 6750) that points at the protected resource metadata.
+      const challenge = buildChallenge(exception, {
+        resourceMetadataUrl: `${this.config.issuerUrl}/.well-known/oauth-protected-resource${String(instance).split('?')[0]}`,
+      });
+      if (challenge) {
+        response.setHeader('WWW-Authenticate', challenge.header);
       }
 
       response.status(problem.status).json(problem);

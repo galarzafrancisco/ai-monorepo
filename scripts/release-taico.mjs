@@ -18,6 +18,7 @@ const packageReleaseOrder = [
   "packages/shared",
   "packages/events",
   "packages/errors",
+  "packages/auth",
   "packages/adk-session-store",
   "packages/openapi-sdkgen",
   "packages/client",

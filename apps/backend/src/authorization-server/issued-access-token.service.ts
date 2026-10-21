@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
+import { formatScope } from '@taico/auth';
 import { IssuedAccessTokenEntity } from './entities/issued-access-token.entity';
 import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
@@ -218,7 +219,7 @@ export class IssuedAccessTokenService {
       iat: nowSeconds,
       jti,
       client_id: 'issued-token',
-      scope: input.scopes,
+      scope: formatScope(input.scopes),
       resource: config.issuerUrl,
       version: '1.0.0',
       issued_by: input.issuedByActor.id,
