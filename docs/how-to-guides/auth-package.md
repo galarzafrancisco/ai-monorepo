@@ -60,6 +60,12 @@ Then use `@taico/auth/nest`, `/express` or `/hono` as shown in the package READM
 
 A 401 on any route of the app points at the metadata of `https://newapp.example.com/mcp`, which `protectedResourceMetadata` serves. If the app is an MCP server built on `@modelcontextprotocol/sdk`, put `requireAuth` in front of the transport: the `AuthContext` on `req.auth` is the SDK's `AuthInfo`. A CLI for the app only needs its URL: `new TokenManager({ resource: 'https://newapp.example.com/mcp', ... })` from `@taico/auth/client` finds Taico from the 401.
 
+Things a third-party app should know about Taico's tokens:
+
+- **Claims.** Read them typed with `authenticate<TaicoClaims>(...)`: `actor_id`, `actor_slug`, `actor_type`, `email`, `displayName`. Scopes record what the user approved for the client, not what the user is allowed to do. Any user who logs in is granted the requested scopes that the server defines. Per-user permissions are the app's job.
+- **Authorization servers.** Taico has one authorization server per MCP server. When an app serves the metadata itself, pass `authorizationServers` as a function of the resource.
+- **Several resources in one app.** Use `resourceAudience(a, b)`, or in Nest, named resource servers with `@UseResourceServer`. Then a token for one resource is refused on the other.
+
 The revocable, long-lived agent tokens are first-party tokens (their audience is Taico itself), so an app that accepts only its own resource URL never sees them. What it receives are the short-lived tokens of the OAuth flow, which are not individually revocable; keep their lifetime short.
 
 ## Tests
@@ -68,4 +74,4 @@ The revocable, long-lived agent tokens are first-party tokens (their audience is
 npm -w packages/auth test
 ```
 
-The suite builds the package and runs it as a consumer would: the full authorization code flow in memory and on SQLite through TypeORM, an Express authorization server with a separate resource server driven by the package's own client, the same checks on Hono, and a real Nest application with the module, guards and filter.
+The suite builds the package and runs it as a consumer would: the full authorization code flow in memory and on SQLite through TypeORM, an Express authorization server with a separate resource server driven by the package's own client, the same checks on Hono, a real Nest application with the module, guards and filter, and a second Nest application that serves two resources with named resource servers. It also drives the built-in login and consent pages the way a browser would, with HTML form posts.

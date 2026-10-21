@@ -25,6 +25,39 @@ export interface StandardClaims {
   sid?: string;
 }
 
+/**
+ * Identity claims with their OpenID Connect names, for a `ClaimsProvider`
+ * that describes the user. All optional: none are added by default.
+ *
+ * resourceServer.authenticate<IdentityClaims>(...)
+ */
+export interface IdentityClaims {
+  name?: string;
+  email?: string;
+  preferred_username?: string;
+}
+
+/**
+ * The claims a Taico server puts in its access tokens, beyond the standard
+ * ones. Read them with `authenticate<TaicoClaims>(...)`. They describe who
+ * the user is, not what they may do: scopes record what the user approved.
+ */
+export interface TaicoClaims {
+  /** UUID of the Taico actor (also `sub`) */
+  actor_id: string;
+  actor_slug: string;
+  actor_type: 'human' | 'agent';
+  email?: string;
+  displayName?: string;
+  /** The MCP server the token was issued for, on MCP tokens */
+  mcp_server_identifier?: string;
+  /** The resource URL the token was issued for (also `aud`) */
+  resource?: string;
+  version?: string;
+  /** Actor that issued the token by hand, on manually issued tokens */
+  issued_by?: string;
+}
+
 /** Standard claims plus whatever the host's ClaimsProvider adds */
 export type AccessTokenClaims<Extra extends object = Record<string, unknown>> =
   StandardClaims & Extra;

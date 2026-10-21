@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 /*
  * The other side of the flow: an OAuth client for CLIs, workers and tests.
@@ -270,6 +271,16 @@ export class OAuthClient {
   }
 }
 
+/** True for an http:// redirect URI on the loopback interface */
+function isLoopbackUri(uri: string | undefined): boolean {
+  try {
+    const url = new URL(uri ?? '');
+    return url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** True when a token set expires within `skewMs` (default one minute) */
 export function isExpiringSoon(tokens: Pick<TokenSet, 'expiresAt'>, skewMs = 60_000): boolean {
   const expiresAt = Date.parse(tokens.expiresAt);
@@ -504,8 +515,18 @@ export function credentialKey(issuer: string, resource?: string): string {
   return resource ? `${issuer} ${resource}` : issuer;
 }
 
-/** Credentials in a JSON file, keyed by issuer and resource, readable only by the owner */
-export function fileCredentialStore(filePath: string): CredentialStore {
+/** Expands a leading `~` to the user's home directory, as a shell would */
+export function expandHome(filePath: string): string {
+  if (filePath === '~') return homedir();
+  return /^~[/\\]/.test(filePath) ? join(homedir(), filePath.slice(2)) : filePath;
+}
+
+/**
+ * Credentials in a JSON file, keyed by issuer and resource, readable only by
+ * the owner. A leading `~` is the user's home directory.
+ */
+export function fileCredentialStore(path: string): CredentialStore {
+  const filePath = expandHome(path);
   const readAll = async (): Promise<Record<string, Credentials>> => {
     try {
       const parsed: unknown = JSON.parse(await readFile(filePath, 'utf8'));
@@ -649,21 +670,35 @@ export class TokenManager {
         if (!(error instanceof OAuthClientError) || !error.isAuthFailure) {
           throw error;
         }
+        // The grant is gone, but the client registration is kept unless the
+        // server says the client itself is unknown
+        const keepClient = error.error !== 'invalid_client';
+        const reusable = keepClient ? this.credentials : null;
         this.credentials = null;
+        return this.authorize(reusable);
       }
     }
-    return this.authorize();
+    return this.authorize(null);
   }
 
-  private async authorize(): Promise<Credentials> {
+  /**
+   * Runs the browser flow. Reuses the client registered for `previous`: its
+   * loopback redirect URI matches on any port (RFC 8252 section 7.3), so a
+   * re-authorization does not leave another registered client behind.
+   */
+  private async authorize(previous: Credentials | null): Promise<Credentials> {
     const { client, issuer, resource, scope } = await this.resolve();
     const callback = await createCallbackServer();
     try {
-      const clientId = await client.register({
-        clientName: this.options.clientName,
-        redirectUris: [callback.redirectUri],
-        scope,
-      });
+      const clientId =
+        previous?.clientId && isLoopbackUri(previous.redirectUri)
+          ? previous.clientId
+          : await client.register({
+              clientName: this.options.clientName,
+              redirectUris: [callback.redirectUri],
+              scope,
+            });
+      client.clientId = clientId;
       const request = await client.createAuthorizationRequest({
         redirectUri: callback.redirectUri,
         scope,

@@ -13,7 +13,13 @@ import {
   OAuthError,
 } from './errors.js';
 import type { OAuthServer, SessionTokens } from './oauth-server.js';
-import { PROTECTED_RESOURCE_METADATA_PATH } from './resource-server.js';
+import { consentPage, loginPage, messagePage, PAGE_HEADERS } from './pages.js';
+import type { ProtectedResource, ResourceRegistry } from './ports.js';
+import {
+  PROTECTED_RESOURCE_METADATA_PATH,
+  protectedResourceMetadataFor,
+  type ProtectedResourceMetadataOptions,
+} from './resource-server.js';
 
 /*
  * The authorization server's HTTP surface, written once against plain request
@@ -38,6 +44,8 @@ export type HttpResponse = {
   cookies?: string[];
   /** Sent as JSON */
   body?: unknown;
+  /** Sent as an HTML page instead of `body` */
+  html?: string;
 };
 
 export type AuthHttpOptions = {
@@ -51,6 +59,12 @@ export type AuthHttpOptions = {
    * their `Referer` when there is no `Origin`, names one of these origins.
    */
   trustedOrigins?: string[];
+  /**
+   * Serve the built-in login and consent pages: `GET {basePath}/login` and
+   * `GET {basePath}/consent`, the default `consentUrl`. Default true. Turn
+   * them off when `consentUrl` points at the host's own UI.
+   */
+  pages?: boolean;
 };
 
 export type AuthHttpHandler = {
@@ -73,6 +87,15 @@ const redirect = (location: string): HttpResponse => ({
 
 const text = (value: unknown): string | undefined =>
   typeof value === 'string' ? value : undefined;
+
+const htmlPage = (html: string, status = 200): HttpResponse => ({
+  status,
+  headers: { ...PAGE_HEADERS },
+  html,
+});
+
+/** A JSON request, as opposed to an HTML form post */
+const isJson = (request: HttpRequest) => /json/i.test(request.headers['content-type'] ?? '');
 
 /**
  * Builds the handler for every endpoint of an `OAuthServer`. It returns null
@@ -153,6 +176,33 @@ export function createAuthHttpHandler(
     }
   };
 
+  const issuerOrigin = new URL(issuer).origin;
+  const loginPath = `${basePath}/login`;
+  const consentPath = `${basePath}/consent`;
+
+  /**
+   * Where to go after signing in: a path on the issuer's own origin, never
+   * another site, so the login form cannot be used as an open redirect.
+   */
+  const safeReturnTo = (value: unknown): string => {
+    const candidate = text(value);
+    if (!candidate || !candidate.startsWith('/') || /^\/[/\\]/.test(candidate)) {
+      return '/';
+    }
+    try {
+      const url = new URL(candidate, issuerOrigin);
+      return url.origin === issuerOrigin ? `${url.pathname}${url.search}` : '/';
+    } catch {
+      return '/';
+    }
+  };
+
+  const loginRedirect = (returnTo: string, error = false) =>
+    `${loginPath}?${new URLSearchParams({
+      return_to: returnTo,
+      ...(error ? { error: '1' } : {}),
+    })}`;
+
   const sessionBody = (session: SessionTokens) => ({
     subject: session.subject,
     expires_in: session.expiresInSeconds,
@@ -189,6 +239,49 @@ export function createAuthHttpHandler(
   route('GET', `${basePath}/consent/:param`, async (_request, grantId) =>
     json(await server.getConsent(grantId)),
   );
+
+  // ---- built-in pages
+  if (options.pages !== false) {
+    route('GET', loginPath, async (request) =>
+      htmlPage(
+        loginPage({
+          action: loginPath,
+          returnTo: safeReturnTo(request.query.return_to),
+          error: request.query.error !== undefined,
+        }),
+      ),
+    );
+    route('GET', consentPath, async (request) => {
+      const grantId = request.query.grant_id;
+      if (!grantId) {
+        return htmlPage(messagePage('Invalid request', 'grant_id is missing.'), 400);
+      }
+      try {
+        await currentSubject(request);
+      } catch {
+        return redirect(loginRedirect(`${consentPath}?${new URLSearchParams({ grant_id: grantId })}`));
+      }
+      let consent;
+      try {
+        consent = await server.getConsent(grantId);
+      } catch (error) {
+        if (error instanceof OAuthError) {
+          return htmlPage(
+            messagePage('Request not found', 'This authorization request is unknown or has expired.'),
+            404,
+          );
+        }
+        throw error;
+      }
+      if (consent.status !== 'pending') {
+        return htmlPage(
+          messagePage('Already answered', 'This authorization request has already been answered.'),
+          409,
+        );
+      }
+      return htmlPage(consentPage({ action: consentPath, consent }));
+    });
+  }
   route('POST', `${basePath}/consent`, async (request) => {
     // A bearer header is not sent by the browser on its own, so a request
     // that authenticates with one cannot be forged; the cookie is then unused.
@@ -238,13 +331,27 @@ export function createAuthHttpHandler(
   });
 
   // ---- browser session
-  route('POST', `${basePath}/login`, async (request) => {
+  route('POST', loginPath, async (request) => {
     assertTrustedOrigin(request);
-    const session = await server.login({
+    const credentials = {
       email: text(request.body?.email) ?? '',
       password: text(request.body?.password) ?? '',
-    });
-    return { ...json(sessionBody(session)), cookies: sessionCookies(session) };
+    };
+    if (isJson(request)) {
+      const session = await server.login(credentials);
+      return { ...json(sessionBody(session)), cookies: sessionCookies(session) };
+    }
+    // A form post, from the built-in page: answer with a page, not JSON
+    const returnTo = safeReturnTo(request.body?.return_to);
+    try {
+      const session = await server.login(credentials);
+      return { ...redirect(returnTo), status: 303, cookies: sessionCookies(session) };
+    } catch (error) {
+      if (error instanceof AuthError && error.code === AuthErrorCodes.INVALID_CREDENTIALS) {
+        return { ...redirect(loginRedirect(returnTo, true)), status: 303 };
+      }
+      throw error;
+    }
   });
   route('POST', `${basePath}/session/refresh`, async (request) => {
     assertTrustedOrigin(request);
@@ -409,6 +516,46 @@ export function createNodeAuthHandler(
   };
 }
 
+/**
+ * Serves RFC 9728 protected resource metadata as a Node `(req, res, next)`
+ * function, for a resource server whose authorization server is elsewhere.
+ * Requests for anything else are passed on.
+ */
+export function createNodeProtectedResourceMetadata(
+  resources: ResourceRegistry | readonly ProtectedResource[],
+  options: ProtectedResourceMetadataOptions,
+): (
+  request: NodeRequest,
+  response: ServerResponse,
+  next?: (error?: unknown) => void,
+) => Promise<void> {
+  return async (request, response, next) => {
+    const pass = () => {
+      if (next) return next();
+      response.statusCode = 404;
+      response.end();
+    };
+    try {
+      const path = new URL(request.originalUrl ?? request.url ?? '/', 'http://localhost').pathname;
+      const metadata =
+        request.method === 'GET'
+          ? await protectedResourceMetadataFor(resources, options, path)
+          : null;
+      if (!metadata) {
+        return pass();
+      }
+      writeNodeResponse(
+        response,
+        json(metadata, 200, { 'cache-control': 'public, max-age=300' }),
+      );
+    } catch (error) {
+      if (next) return next(error);
+      response.statusCode = 500;
+      response.end();
+    }
+  };
+}
+
 function writeNodeResponse(response: ServerResponse, result: HttpResponse): void {
   response.statusCode = result.status;
   for (const [name, value] of Object.entries(result.headers)) {
@@ -416,6 +563,11 @@ function writeNodeResponse(response: ServerResponse, result: HttpResponse): void
   }
   if (result.cookies?.length) {
     response.setHeader('set-cookie', result.cookies);
+  }
+  if (result.html !== undefined) {
+    response.setHeader('content-type', 'text/html; charset=utf-8');
+    response.end(result.html);
+    return;
   }
   if (result.body === undefined) {
     response.end();

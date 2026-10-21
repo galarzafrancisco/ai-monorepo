@@ -1,6 +1,7 @@
 import {
   Inject,
   Injectable,
+  Optional,
   type CanActivate,
   type ExecutionContext,
 } from '@nestjs/common';
@@ -9,7 +10,13 @@ import { bearerTokenFrom, parseCookies } from '../core/challenge.js';
 import type { ResourceServer } from '../core/resource-server.js';
 import { hasScopes, type RequiredScopes } from '../core/scopes.js';
 import type { AuthContext } from '../core/types.js';
-import { AUTH_RESOURCE_SERVER, REQUIRED_SCOPES_KEY } from '../nest/index.js';
+import {
+  AUTH_RESOURCE_SERVER,
+  AUTH_RESOURCE_SERVERS,
+  pickResourceServer,
+  REQUIRED_SCOPES_KEY,
+  RESOURCE_SERVER_KEY,
+} from '../nest/index.js';
 
 /*
  * Guards for socket.io gateways. Kept apart from `@taico/auth/nest` so an
@@ -39,7 +46,11 @@ export type AuthSocket = {
 @Injectable()
 export class WsAccessTokenGuard implements CanActivate {
   constructor(
-    @Inject(AUTH_RESOURCE_SERVER) private readonly auth: ResourceServer,
+    @Optional() @Inject(AUTH_RESOURCE_SERVER) private readonly auth: ResourceServer | null,
+    @Optional() private readonly reflector?: Reflector,
+    @Optional()
+    @Inject(AUTH_RESOURCE_SERVERS)
+    private readonly named?: Record<string, ResourceServer> | null,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -47,8 +58,17 @@ export class WsAccessTokenGuard implements CanActivate {
     if (socket.data.auth) {
       return true;
     }
+    // A misconfiguration is thrown, not taken for a bad token
+    const auth = pickResourceServer(
+      this.reflector?.getAllAndOverride<string | undefined>(RESOURCE_SERVER_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]),
+      this.auth,
+      this.named,
+    );
     try {
-      socket.data.auth = await authenticateSocket(this.auth, socket);
+      socket.data.auth = await authenticateSocket(auth, socket);
       return true;
     } catch {
       socket.disconnect(true);

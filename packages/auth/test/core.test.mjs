@@ -15,6 +15,7 @@ import {
   parseScope,
   remoteJwks,
   requestUrlAudience,
+  resourceAudience,
   ResourceServer,
   TokenExpiredError,
   TokenRevokedError,
@@ -77,6 +78,30 @@ test('audience policies', () => {
   const either = anyAudience(literalAudience('first-party'), perUrl);
   assert.equal(either.accepts(['first-party'], 'https://x/anything'), true);
   assert.equal(either.accepts(['https://x/a'], 'https://x/b'), false);
+});
+
+test('resourceAudience binds a token to the resource its request falls under', () => {
+  const notes = 'https://x.example.com/mcp/notes';
+  const files = 'https://x.example.com/mcp/files';
+  const policy = resourceAudience(notes, files, 'https://x.example.com/mcp');
+  assert.deepEqual(policy.resourceUrls, [notes, files, 'https://x.example.com/mcp']);
+  assert.equal(policy.accepts([notes], notes), true);
+  assert.equal(policy.accepts([notes], `${notes}/`), true);
+  assert.equal(policy.accepts([notes], `${notes}/items/1?x=1`), true);
+  // The other resource's token is refused, though the same server accepts it elsewhere
+  assert.equal(policy.accepts([files], notes), false);
+  assert.equal(policy.accepts([notes], files), false);
+  // The longest matching resource decides, so the parent's token is no key to its children
+  assert.equal(policy.accepts(['https://x.example.com/mcp'], notes), false);
+  assert.equal(policy.accepts(['https://x.example.com/mcp'], 'https://x.example.com/mcp/other'), true);
+  // A prefix of a path segment is not "under" it
+  assert.equal(policy.accepts([notes], 'https://x.example.com/mcp/notesy'), false);
+  // Paths a router could resolve elsewhere are refused outright
+  assert.equal(policy.accepts([notes], `${notes}/../files`), false);
+  assert.equal(policy.accepts([notes], `${notes}/%2e%2e/files`), false);
+  assert.equal(policy.accepts([notes], `${notes}/a%2Fb`), false);
+  // Under none of them
+  assert.equal(policy.accepts([notes], 'https://x.example.com/api'), false);
 });
 
 test('challenges follow RFC 6750', () => {

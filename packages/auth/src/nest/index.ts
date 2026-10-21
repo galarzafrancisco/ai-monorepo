@@ -22,13 +22,16 @@ import { HttpAdapterHost, Reflector } from '@nestjs/core';
 import { AuthError } from '../core/errors.js';
 import {
   createNodeAuthHandler,
+  createNodeProtectedResourceMetadata,
   errorResponse,
   type AuthHttpOptions,
 } from '../core/http.js';
 import { OAuthServer, type OAuthServerOptions } from '../core/oauth-server.js';
+import type { ProtectedResource, ResourceRegistry } from '../core/ports.js';
 import {
   assertScopes,
   ResourceServer,
+  type ProtectedResourceMetadataOptions,
   type ResourceServerOptions,
 } from '../core/resource-server.js';
 import { toRequiredScopes, type RequiredScopes } from '../core/scopes.js';
@@ -38,7 +41,14 @@ import type { AuthContext } from '../core/types.js';
 export const AUTH_RESOURCE_SERVER = Symbol.for('@taico/auth:resource-server');
 /** Injection token of the `OAuthServer`, when the app is an authorization server */
 export const AUTH_SERVER = Symbol.for('@taico/auth:server');
+/**
+ * Injection token of the named resource servers, a
+ * `Record<string, ResourceServer>`, picked with `@UseResourceServer(name)`
+ */
+export const AUTH_RESOURCE_SERVERS = Symbol.for('@taico/auth:resource-servers');
 const AUTH_HTTP_OPTIONS = Symbol.for('@taico/auth:http-options');
+const AUTH_METADATA = Symbol.for('@taico/auth:metadata');
+export const RESOURCE_SERVER_KEY = 'auth:resource_server';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const REQUIRED_SCOPES_KEY = 'auth:required_scopes';
@@ -56,6 +66,39 @@ export function RequireScopes(
   ...scopes: string[] | [Partial<RequiredScopes>]
 ): MethodDecorator & ClassDecorator {
   return SetMetadata(REQUIRED_SCOPES_KEY, toRequiredScopes(scopes));
+}
+
+/**
+ * Verifies a route or controller against one of the named resource servers
+ * of `AuthModule` (`resourceServers`) instead of the default one. For an app
+ * that serves several protected resources, each with its own audience.
+ *
+ * @UseResourceServer('files')
+ */
+export const UseResourceServer = (name: string) => SetMetadata(RESOURCE_SERVER_KEY, name);
+
+/** The resource server each request was checked against, for the exception filter */
+const usedResourceServers = new WeakMap<object, ResourceServer>();
+
+/** Picks the default or a named resource server */
+export function pickResourceServer(
+  name: string | undefined,
+  fallback: ResourceServer | null | undefined,
+  named: Record<string, ResourceServer> | null | undefined,
+): ResourceServer {
+  if (name !== undefined) {
+    const found = named?.[name];
+    if (!found) {
+      throw new Error(`No resource server named "${name}" in AuthModule resourceServers`);
+    }
+    return found;
+  }
+  if (!fallback) {
+    throw new Error(
+      'No default resource server: configure resourceServer, or name one with @UseResourceServer',
+    );
+  }
+  return fallback;
 }
 
 type HttpRequest = {
@@ -99,29 +142,34 @@ export const CurrentAuth = createParamDecorator(
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   constructor(
-    @Inject(AUTH_RESOURCE_SERVER) private readonly auth: ResourceServer,
+    @Optional() @Inject(AUTH_RESOURCE_SERVER) private readonly auth: ResourceServer | null,
     private readonly reflector: Reflector,
+    @Optional()
+    @Inject(AUTH_RESOURCE_SERVERS)
+    private readonly named?: Record<string, ResourceServer> | null,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (
-      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ])
-    ) {
+    const targets = [context.getHandler(), context.getClass()];
+    if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, targets)) {
       return true;
     }
+    const auth = pickResourceServer(
+      this.reflector.getAllAndOverride<string | undefined>(RESOURCE_SERVER_KEY, targets),
+      this.auth,
+      this.named,
+    );
 
     const http = context.switchToHttp();
     const request = http.getRequest<HttpRequest>();
     const response = http.getResponse<HttpResponse>();
-    const authContext = await this.auth.authenticate(
+    usedResourceServers.set(request, auth);
+    const authContext = await auth.authenticate(
       {
         authorization: request.headers.authorization,
         cookie: request.headers.cookie,
       },
-      requestUrlOf(this.auth, request),
+      requestUrlOf(auth, request),
     );
     request.auth = authContext;
     if (response.locals) {
@@ -174,10 +222,12 @@ export class AuthExceptionFilter implements ExceptionFilter<AuthError> {
     const response = http.getResponse<unknown>();
     // Points the client at the metadata of the resource, so it can find the
     // authorization server from a 401 on any route (RFC 9728 section 5.1)
-    const resourceMetadataUrl =
-      this.auth && host.getType() === 'http'
-        ? this.auth.resourceMetadataUrl(requestUrlOf(this.auth, http.getRequest<HttpRequest>()))
-        : undefined;
+    let resourceMetadataUrl: string | undefined;
+    if (host.getType() === 'http') {
+      const request = http.getRequest<HttpRequest>();
+      const auth = usedResourceServers.get(request) ?? this.auth;
+      resourceMetadataUrl = auth?.resourceMetadataUrl(requestUrlOf(auth, request));
+    }
     const result = errorResponse(error, { resourceMetadataUrl });
     for (const [name, value] of Object.entries(result.headers)) {
       httpAdapter.setHeader(response, name, value);
@@ -199,6 +249,21 @@ export type AuthModuleOptions = {
    * app's routes make up, so a 401 on any route points at its metadata.
    */
   resource?: string | string[];
+  /**
+   * More resource servers, by name, for routes marked
+   * `@UseResourceServer(name)`: an app that serves several resources with
+   * different audiences or issuers. Alternatively, one resource server with a
+   * `resourceAudience(a, b)` policy binds each token to its own URL.
+   */
+  resourceServers?: Record<string, ResourceServer | ResourceServerOptions>;
+  /**
+   * Serves RFC 9728 protected resource metadata for these resources, for an
+   * app whose authorization server is elsewhere. Mounted as middleware at
+   * `/.well-known/oauth-protected-resource`, outside any global prefix.
+   */
+  metadata?: ProtectedResourceMetadataOptions & {
+    resources: ResourceRegistry | readonly ProtectedResource[];
+  };
   /** Options of the authorization server's HTTP endpoints */
   http?: AuthHttpOptions;
 };
@@ -217,19 +282,33 @@ function serverOf(options: AuthModuleOptions): OAuthServer | null {
     : new OAuthServer(options.server);
 }
 
+const toResourceServer = (value: ResourceServer | ResourceServerOptions) =>
+  value instanceof ResourceServer ? value : new ResourceServer(value);
+
 function resourceServerOf(
   options: AuthModuleOptions,
   server: OAuthServer | null,
-): ResourceServer {
+): ResourceServer | null {
   if (options.resourceServer) {
-    return options.resourceServer instanceof ResourceServer
-      ? options.resourceServer
-      : new ResourceServer(options.resourceServer);
+    return toResourceServer(options.resourceServer);
   }
-  if (!server) {
-    throw new Error('AuthModule needs a server or a resourceServer');
+  if (server) {
+    return server.resourceServer({ resource: options.resource });
   }
-  return server.resourceServer({ resource: options.resource });
+  if (options.resourceServers && Object.keys(options.resourceServers).length > 0) {
+    // Every protected route names its resource server
+    return null;
+  }
+  throw new Error('AuthModule needs a server, a resourceServer or resourceServers');
+}
+
+function namedResourceServersOf(options: AuthModuleOptions): Record<string, ResourceServer> {
+  return Object.fromEntries(
+    Object.entries(options.resourceServers ?? {}).map(([name, value]) => [
+      name,
+      toResourceServer(value),
+    ]),
+  );
 }
 
 /**
@@ -237,6 +316,7 @@ function resourceServerOf(
  * any module without importing anything.
  *
  * AuthModule.forResourceServer({ issuer, jwks: remoteJwks(url), audience })
+ * AuthModule.forRoot({ resourceServers: { notes, files }, metadata: { resources, authorizationServers } })
  * AuthModule.forRoot({ server: { config, stores, resources, identity } })
  * AuthModule.forRootAsync({ inject: [DataSource], useFactory: (ds) => ({ ... }) })
  *
@@ -249,6 +329,9 @@ export class AuthModule implements NestModule {
   constructor(
     @Optional() @Inject(AUTH_SERVER) private readonly server: OAuthServer | null,
     @Optional() @Inject(AUTH_HTTP_OPTIONS) private readonly http?: AuthHttpOptions,
+    @Optional()
+    @Inject(AUTH_METADATA)
+    private readonly metadata?: AuthModuleOptions['metadata'] | null,
   ) {}
 
   static forResourceServer(
@@ -283,6 +366,16 @@ export class AuthModule implements NestModule {
           inject: [AUTH_MODULE_OPTIONS, AUTH_SERVER],
         },
         {
+          provide: AUTH_RESOURCE_SERVERS,
+          useFactory: (resolved: AuthModuleOptions) => namedResourceServersOf(resolved),
+          inject: [AUTH_MODULE_OPTIONS],
+        },
+        {
+          provide: AUTH_METADATA,
+          useFactory: (resolved: AuthModuleOptions) => resolved.metadata ?? null,
+          inject: [AUTH_MODULE_OPTIONS],
+        },
+        {
           provide: AUTH_HTTP_OPTIONS,
           useFactory: (resolved: AuthModuleOptions) => resolved.http ?? {},
           inject: [AUTH_MODULE_OPTIONS],
@@ -290,11 +383,21 @@ export class AuthModule implements NestModule {
         AccessTokenGuard,
         ScopesGuard,
       ],
-      exports: [AUTH_SERVER, AUTH_RESOURCE_SERVER, AccessTokenGuard, ScopesGuard],
+      exports: [
+        AUTH_SERVER,
+        AUTH_RESOURCE_SERVER,
+        AUTH_RESOURCE_SERVERS,
+        AccessTokenGuard,
+        ScopesGuard,
+      ],
     };
   }
 
   configure(consumer: MiddlewareConsumer): void {
+    if (this.metadata) {
+      const { resources, ...options } = this.metadata;
+      consumer.apply(createNodeProtectedResourceMetadata(resources, options)).forRoutes('*');
+    }
     if (this.server) {
       consumer.apply(createNodeAuthHandler(this.server, this.http)).forRoutes('*');
     }

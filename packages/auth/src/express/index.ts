@@ -1,14 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buildChallenge, type Challenge } from '../core/challenge.js';
 import { AuthError } from '../core/errors.js';
-import { createNodeAuthHandler, type AuthHttpOptions } from '../core/http.js';
+import {
+  createNodeAuthHandler,
+  createNodeProtectedResourceMetadata,
+  type AuthHttpOptions,
+} from '../core/http.js';
 import type { OAuthServer } from '../core/oauth-server.js';
 import type { ProtectedResource, ResourceRegistry } from '../core/ports.js';
 import {
   assertScopes,
-  buildProtectedResourceMetadata,
-  findResourceByPath,
-  PROTECTED_RESOURCE_METADATA_PATH,
+  type ProtectedResourceMetadataOptions,
   type ResourceServer,
 } from '../core/resource-server.js';
 import { toRequiredScopes, type RequiredScopes } from '../core/scopes.js';
@@ -126,34 +128,16 @@ export function requireScopes(
 /**
  * Serves RFC 9728 protected resource metadata for a resource server that is
  * not itself the authorization server. Mount it at the root of the app.
+ * `authorizationServers` may be a function of the resource, when each
+ * resource has its own authorization server.
  */
 export function protectedResourceMetadata(
-  resources: ResourceRegistry | ProtectedResource[],
-  options: { authorizationServers: string[] },
+  resources: ResourceRegistry | readonly ProtectedResource[],
+  options: ProtectedResourceMetadataOptions,
 ): Middleware {
+  const handle = createNodeProtectedResourceMetadata(resources, options);
   return (request, response, next) => {
-    const path = pathOf(request).split('?')[0];
-    if (request.method !== 'GET' || !path.startsWith(PROTECTED_RESOURCE_METADATA_PATH)) {
-      return next();
-    }
-    findResourceByPath(
-      resources,
-      path.slice(PROTECTED_RESOURCE_METADATA_PATH.length) || '/',
-    )
-      .then((resource) => {
-        if (!resource) {
-          return next();
-        }
-        response.statusCode = 200;
-        response.setHeader('content-type', 'application/json; charset=utf-8');
-        response.setHeader('cache-control', 'public, max-age=300');
-        response.end(
-          JSON.stringify(
-            buildProtectedResourceMetadata(resource, options.authorizationServers),
-          ),
-        );
-      })
-      .catch(next);
+    void handle(request, response, next);
   };
 }
 

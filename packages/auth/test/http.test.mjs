@@ -16,7 +16,12 @@ import {
   TokenManager,
 } from '@taico/auth/client';
 import { authRouter, protectedResourceMetadata, requireAuth, requireScopes } from '@taico/auth/express';
-import { authRoutes, bearerAuth, requireScopes as honoRequireScopes } from '@taico/auth/hono';
+import {
+  authRoutes,
+  bearerAuth,
+  protectedResourceMetadata as honoProtectedResourceMetadata,
+  requireScopes as honoRequireScopes,
+} from '@taico/auth/hono';
 import { localIdp } from '@taico/auth/idp-local';
 import { MemoryUserStore, memoryStores, staticResources } from '@taico/auth/memory';
 
@@ -533,4 +538,217 @@ test('Hono: the same server and the same checks', async () => {
   });
   assert.equal(token.status, 400);
   assert.equal((await token.json()).error, 'unsupported_grant_type');
+});
+
+// ---------------------------------------------------------------- built-in pages
+
+/** Cookie header from a response's Set-Cookie headers */
+const cookieFrom = (response) =>
+  response.headers.getSetCookie().map((value) => value.split(';')[0]).join('; ');
+
+test('out of the box, the browser is sent to a login page and a consent page that exist', async () => {
+  const client = new OAuthClient({ issuer });
+  const redirectUri = 'http://127.0.0.1:9/callback';
+  // The client names itself; the page must show the name, not run it
+  await client.register({ clientName: '<script>alert(1)</script>', redirectUris: [redirectUri] });
+  const request = await client.createAuthorizationRequest({ redirectUri, scope: 'notes:read', resource: apiUrl });
+
+  const authorize = await fetch(request.url, { redirect: 'manual' });
+  const consentUrl = new URL(authorize.headers.get('location'));
+  assert.equal(consentUrl.origin + consentUrl.pathname, `${issuer}/oauth/consent`);
+
+  // Not logged in: sent to the login page, which comes back here
+  const anonymous = await fetch(consentUrl, { redirect: 'manual' });
+  assert.equal(anonymous.status, 302);
+  const loginUrl = new URL(anonymous.headers.get('location'), issuer);
+  assert.equal(loginUrl.pathname, '/oauth/login');
+  const returnTo = loginUrl.searchParams.get('return_to');
+  assert.equal(returnTo, `${consentUrl.pathname}${consentUrl.search}`);
+
+  const loginPage = await fetch(loginUrl);
+  assert.equal(loginPage.status, 200);
+  assert.match(loginPage.headers.get('content-type'), /text\/html/);
+  assert.match(loginPage.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  assert.match(loginPage.headers.get('content-security-policy'), /default-src 'none'/);
+  assert.equal(loginPage.headers.get('x-frame-options'), 'DENY');
+  const loginHtml = await loginPage.text();
+  assert.match(loginHtml, /<form method="post" action="\/oauth\/login">/);
+  assert.ok(loginHtml.includes(`value="${returnTo.replace(/&/g, '&amp;')}"`));
+
+  // A wrong password sends the browser back to the form, with no cookies
+  const form = (fields) => ({
+    method: 'POST',
+    redirect: 'manual',
+    headers: { 'content-type': 'application/x-www-form-urlencoded', origin: issuer },
+    body: new URLSearchParams(fields).toString(),
+  });
+  const wrong = await fetch(`${issuer}/oauth/login`, form({ email: 'ada@example.com', password: 'nope', return_to: returnTo }));
+  assert.equal(wrong.status, 303);
+  assert.equal(wrong.headers.getSetCookie().length, 0);
+  const retry = new URL(wrong.headers.get('location'), issuer);
+  assert.equal(retry.pathname, '/oauth/login');
+  assert.equal(retry.searchParams.get('return_to'), returnTo);
+  assert.match(await (await fetch(retry)).text(), /Wrong email or password/);
+
+  // The form post still needs a trusted origin
+  const forged = await fetch(`${issuer}/oauth/login`, {
+    ...form({ email: 'ada@example.com', password: 'correct horse', return_to: returnTo }),
+    headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'https://evil.example.com' },
+  });
+  assert.equal(forged.status, 403);
+
+  const signedIn = await fetch(`${issuer}/oauth/login`, form({ email: 'ada@example.com', password: 'correct horse', return_to: returnTo }));
+  assert.equal(signedIn.status, 303);
+  assert.equal(signedIn.headers.get('location'), returnTo);
+  const cookie = cookieFrom(signedIn);
+
+  const consentPage = await fetch(consentUrl, { headers: { cookie } });
+  assert.equal(consentPage.status, 200);
+  assert.match(consentPage.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  const html = await consentPage.text();
+  assert.ok(!html.includes('<script>'), 'client-supplied text is escaped');
+  assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+  assert.match(html, /notes:read/);
+  assert.match(html, /Notes/);
+  assert.match(html, /127\.0\.0\.1:9/);
+  assert.match(html, /<form method="post" action="\/oauth\/consent">/);
+
+  // The page's form: approving redirects to the client with a code
+  const grantId = consentUrl.searchParams.get('grant_id');
+  const approved = await fetch(`${issuer}/oauth/consent`, {
+    ...form({ grant_id: grantId, approved: 'true' }),
+    headers: { 'content-type': 'application/x-www-form-urlencoded', origin: issuer, cookie },
+  });
+  assert.equal(approved.status, 303);
+  const callback = new URL(approved.headers.get('location'));
+  assert.equal(`${callback.origin}${callback.pathname}`, redirectUri);
+  assert.equal(callback.searchParams.get('state'), request.state);
+  const tokens = await client.exchangeCode({
+    code: callback.searchParams.get('code'),
+    codeVerifier: request.codeVerifier,
+    redirectUri,
+    resource: apiUrl,
+  });
+  assert.equal((await fetch(apiUrl, { headers: { authorization: `Bearer ${tokens.accessToken}` } })).status, 200);
+
+  // An answered request is not offered again
+  assert.equal((await fetch(consentUrl, { headers: { cookie } })).status, 409);
+  assert.equal((await fetch(`${issuer}/oauth/consent?grant_id=nope`, { headers: { cookie } })).status, 404);
+  assert.equal((await fetch(`${issuer}/oauth/consent`, { headers: { cookie } })).status, 400);
+});
+
+test('the login form only returns to a path on the issuer', async () => {
+  const signIn = async (returnTo) => {
+    const response = await fetch(`${issuer}/oauth/login`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', origin: issuer },
+      body: new URLSearchParams({ email: 'ada@example.com', password: 'correct horse', return_to: returnTo }).toString(),
+    });
+    assert.equal(response.status, 303);
+    return response.headers.get('location');
+  };
+  for (const hostile of ['https://evil.example.com/', '//evil.example.com/x', '/\\evil.example.com', 'javascript:alert(1)', '']) {
+    assert.equal(await signIn(hostile), '/', `return_to ${JSON.stringify(hostile)}`);
+  }
+  assert.equal(await signIn('/oauth/consent?grant_id=a&b=c'), '/oauth/consent?grant_id=a&b=c');
+});
+
+test('the pages can be turned off', async () => {
+  const app = new Hono();
+  app.use('*', authRoutes(oauth, { pages: false }));
+  app.all('*', (c) => c.text('host', 404));
+  assert.equal(await (await app.request(`${issuer}/oauth/login`)).text(), 'host');
+  assert.equal(await (await app.request(`${issuer}/oauth/consent?grant_id=x`)).text(), 'host');
+
+  // On Hono the pages are served too, as HTML
+  const withPages = new Hono();
+  withPages.use('*', authRoutes(oauth));
+  const page = await withPages.request(`${issuer}/oauth/login`);
+  assert.equal(page.status, 200);
+  assert.match(page.headers.get('content-type'), /text\/html/);
+});
+
+// ---------------------------------------------------------------- metadata, client
+
+test('protected resource metadata can name a different authorization server per resource', async () => {
+  const resources = [
+    { id: 'a', identifier: 'a', resourceUrl: 'https://h.example.com/mcp/a', name: 'A', scopes: [] },
+    { id: 'b', identifier: 'b', resourceUrl: 'https://h.example.com/mcp/b', name: 'B', scopes: [] },
+  ];
+  const options = {
+    authorizationServers: async (resource) => [`https://taico.example.com/auth/mcp/${resource.identifier}`],
+  };
+  const app = express();
+  app.use(protectedResourceMetadata(resources, options));
+  app.use((_req, res) => res.status(404).json({ fallthrough: true }));
+  const http = await listen(app);
+  const honoApp = new Hono();
+  honoApp.use('*', honoProtectedResourceMetadata(resources, options));
+  try {
+    for (const [name, get] of [
+      ['express', (path) => fetch(`${http.url}${path}`)],
+      ['hono', (path) => honoApp.request(`http://h.example.com${path}`)],
+    ]) {
+      const a = await (await get('/.well-known/oauth-protected-resource/mcp/a')).json();
+      assert.deepEqual(a.authorization_servers, ['https://taico.example.com/auth/mcp/a'], name);
+      const b = await (await get('/.well-known/oauth-protected-resource/mcp/b')).json();
+      assert.deepEqual(b.authorization_servers, ['https://taico.example.com/auth/mcp/b'], name);
+      assert.equal((await get('/.well-known/oauth-protected-resource/mcp/c')).status, 404, name);
+      // Only the well-known path itself, not look-alikes
+      assert.equal((await get('/.well-known/oauth-protected-resourcexyz/mcp/a')).status, 404, name);
+    }
+  } finally {
+    http.server.close();
+    http.server.closeAllConnections();
+  }
+});
+
+test('re-authorizing reuses the registered client instead of registering another', async () => {
+  const registered = [];
+  const original = oauth.register.bind(oauth);
+  oauth.register = async (request) => {
+    const client = await original(request);
+    registered.push(client.clientId);
+    return client;
+  };
+  try {
+    const store = memoryCredentialStore();
+    const { manager, browserRuns } = managerFor({ issuer, resource: apiUrl, scope: 'notes:read' }, store);
+    await manager.getAccessToken();
+    const first = await store.read(issuer, apiUrl);
+    assert.equal(registered.length, 1);
+
+    // The grant ends: the refresh token is refused, so the browser flow runs again
+    await oauth.revoke({ token: first.refreshToken });
+    const token = await manager.getAccessToken({ forceRefresh: true });
+    assert.equal(browserRuns(), 2);
+    assert.equal(registered.length, 1, 'no second client');
+    const second = await store.read(issuer, apiUrl);
+    assert.equal(second.clientId, first.clientId);
+    assert.notEqual(second.refreshToken, first.refreshToken);
+    assert.equal((await fetch(apiUrl, { headers: { authorization: `Bearer ${token}` } })).status, 200);
+  } finally {
+    oauth.register = original;
+  }
+});
+
+test('fileCredentialStore expands ~ to the home directory', async () => {
+  const { mkdtemp, readFile: read, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { fileCredentialStore } = await import('@taico/auth/client');
+  const home = await mkdtemp(join(tmpdir(), 'taico-auth-home-'));
+  const previous = process.env.HOME;
+  process.env.HOME = home;
+  try {
+    const store = fileCredentialStore('~/.myapp/credentials.json');
+    await store.write({ issuer, resource: apiUrl, clientId: 'c', redirectUri: 'r', accessToken: 'a', scope: '', expiresAt: new Date().toISOString() });
+    const saved = JSON.parse(await read(join(home, '.myapp', 'credentials.json'), 'utf8'));
+    assert.ok(saved.servers);
+    assert.equal((await store.read(issuer, apiUrl)).accessToken, 'a');
+  } finally {
+    process.env.HOME = previous;
+    await rm(home, { recursive: true, force: true });
+  }
 });

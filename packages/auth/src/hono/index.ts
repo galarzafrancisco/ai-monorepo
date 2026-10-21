@@ -10,9 +10,8 @@ import type { OAuthServer } from '../core/oauth-server.js';
 import type { ProtectedResource, ResourceRegistry } from '../core/ports.js';
 import {
   assertScopes,
-  buildProtectedResourceMetadata,
-  findResourceByPath,
-  PROTECTED_RESOURCE_METADATA_PATH,
+  protectedResourceMetadataFor,
+  type ProtectedResourceMetadataOptions,
   type ResourceServer,
 } from '../core/resource-server.js';
 import { toRequiredScopes, type RequiredScopes } from '../core/scopes.js';
@@ -95,27 +94,24 @@ export function requireScopes(
   };
 }
 
-/** Serves RFC 9728 protected resource metadata. Mount at the root of the app. */
+/**
+ * Serves RFC 9728 protected resource metadata. Mount at the root of the app.
+ * `authorizationServers` may be a function of the resource.
+ */
 export function protectedResourceMetadata(
-  resources: ResourceRegistry | ProtectedResource[],
-  options: { authorizationServers: string[] },
+  resources: ResourceRegistry | readonly ProtectedResource[],
+  options: ProtectedResourceMetadataOptions,
 ): MiddlewareHandler {
   return async (c, next) => {
-    const path = new URL(c.req.url).pathname;
-    if (c.req.method !== 'GET' || !path.startsWith(PROTECTED_RESOURCE_METADATA_PATH)) {
-      return next();
-    }
-    const resource = await findResourceByPath(
-      resources,
-      path.slice(PROTECTED_RESOURCE_METADATA_PATH.length) || '/',
-    );
-    if (!resource) {
+    const metadata =
+      c.req.method === 'GET'
+        ? await protectedResourceMetadataFor(resources, options, new URL(c.req.url).pathname)
+        : null;
+    if (!metadata) {
       return next();
     }
     c.header('cache-control', 'public, max-age=300');
-    return c.json(
-      buildProtectedResourceMetadata(resource, options.authorizationServers),
-    );
+    return c.json(metadata);
   };
 }
 
@@ -123,6 +119,10 @@ function toResponse(result: HttpResponse): Response {
   const headers = new Headers(result.headers);
   for (const cookie of result.cookies ?? []) {
     headers.append('set-cookie', cookie);
+  }
+  if (result.html !== undefined) {
+    headers.set('content-type', 'text/html; charset=utf-8');
+    return new Response(result.html, { status: result.status, headers });
   }
   if (result.body === undefined) {
     return new Response(null, { status: result.status, headers });

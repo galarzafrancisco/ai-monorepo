@@ -45,6 +45,47 @@ export function exactResource(...resourceUrls: string[]): AudiencePolicy {
   };
 }
 
+/**
+ * The resource URL a request URL falls under: the longest of `resourceUrls`
+ * that is the request URL or a path prefix of it. Null when none is, or when
+ * the request path has dot segments or encoded slashes or dots, which a
+ * router could resolve to a path outside the prefix that was checked.
+ */
+export function resourceUnder(
+  resourceUrls: readonly string[],
+  requestUrl: string,
+): string | null {
+  const url = requestUrl.split(/[?#]/)[0].replace(/\/$/, '');
+  if (/\/\.{1,2}(\/|$)|%2e|%2f|%5c|\\/i.test(url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, ''))) {
+    return null;
+  }
+  let best: string | null = null;
+  for (const resource of resourceUrls) {
+    const base = resource.replace(/\/$/, '');
+    const under = url === base || url.startsWith(`${base}/`);
+    if (under && (best === null || base.length > best.replace(/\/$/, '').length)) {
+      best = resource;
+    }
+  }
+  return best;
+}
+
+/**
+ * Accepts a token only under the resource it was minted for: on a request
+ * to that resource's URL or a path below it. For one server that hosts
+ * several resources (`/mcp/notes`, `/mcp/files`), so that a token for one
+ * is refused on the other. A request under none of them is refused.
+ */
+export function resourceAudience(...resourceUrls: string[]): AudiencePolicy {
+  return {
+    resourceUrls,
+    accepts: (audience, requestUrl) => {
+      const resource = resourceUnder(resourceUrls, requestUrl);
+      return resource !== null && audience.some((aud) => isSameResource(resource, aud));
+    },
+  };
+}
+
 /** Accepts tokens whose audience is one of these literal values (not URLs) */
 export function literalAudience(...values: string[]): AudiencePolicy {
   return {

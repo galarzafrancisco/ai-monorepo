@@ -274,6 +274,50 @@ export function resourceMetadataUrlFor(resourceUrl: string): string {
   return `${url.origin}${PROTECTED_RESOURCE_METADATA_PATH}${path}`;
 }
 
+/**
+ * The authorization servers a resource's metadata names: one list for every
+ * resource, or a function of the resource for hosts where each resource has
+ * its own (Taico runs one authorization server per MCP server).
+ */
+export type AuthorizationServersOption =
+  | string[]
+  | ((resource: ProtectedResource) => string[] | Promise<string[]>);
+
+export type ProtectedResourceMetadataOptions = {
+  authorizationServers: AuthorizationServersOption;
+};
+
+/**
+ * The RFC 9728 metadata a request for `metadataPath` (a path that starts
+ * with `/.well-known/oauth-protected-resource`) should get, or null when it
+ * is not such a path or names no known resource.
+ */
+export async function protectedResourceMetadataFor(
+  resources: ResourceRegistry | readonly ProtectedResource[],
+  options: ProtectedResourceMetadataOptions,
+  metadataPath: string,
+): Promise<ProtectedResourceMetadata | null> {
+  const path = metadataPath.split('?')[0];
+  if (
+    path !== PROTECTED_RESOURCE_METADATA_PATH &&
+    !path.startsWith(`${PROTECTED_RESOURCE_METADATA_PATH}/`)
+  ) {
+    return null;
+  }
+  const resource = await findResourceByPath(
+    resources,
+    path.slice(PROTECTED_RESOURCE_METADATA_PATH.length) || '/',
+  );
+  if (!resource) {
+    return null;
+  }
+  const servers =
+    typeof options.authorizationServers === 'function'
+      ? await options.authorizationServers(resource)
+      : options.authorizationServers;
+  return buildProtectedResourceMetadata(resource, servers);
+}
+
 const pathKey = (path: string) => path.replace(/\/$/, '') || '/';
 
 /** The resource served at a URL path, from a registry or a plain list */

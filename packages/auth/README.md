@@ -10,7 +10,7 @@ The core is framework-free and depends only on [`jose`](https://github.com/panva
 | Import | Contents | Needs |
 |---|---|---|
 | `@taico/auth` | Core: verifier, key manager, signer, `ResourceServer`, `OAuthServer`, ports, errors | `jose` |
-| `@taico/auth/nest` | `AuthModule`, `AccessTokenGuard`, `ScopesGuard`, `@RequireScopes`, `@Public`, `@CurrentAuth` | `@nestjs/common`, `@nestjs/core` |
+| `@taico/auth/nest` | `AuthModule`, `AccessTokenGuard`, `ScopesGuard`, `@RequireScopes`, `@Public`, `@CurrentAuth`, `@UseResourceServer` | `@nestjs/common`, `@nestjs/core` |
 | `@taico/auth/nest-ws` | `WsAccessTokenGuard`, `WsScopesGuard` for socket.io gateways | `@nestjs/common`, `@nestjs/core` |
 | `@taico/auth/express` | `requireAuth`, `requireScopes`, `protectedResourceMetadata`, `authRouter` | nothing (typed against Node's HTTP) |
 | `@taico/auth/hono` | `bearerAuth`, `requireScopes`, `protectedResourceMetadata`, `authRoutes`, `authApp` | `hono` |
@@ -42,6 +42,8 @@ const auth = createResourceServer({
 import { protectedResourceMetadata, requireAuth, requireScopes } from '@taico/auth/express';
 
 app.use(protectedResourceMetadata(resources, { authorizationServers: ['https://taico.example.com'] }));
+// or one authorization server per resource, as with Taico's per-MCP-server URLs:
+// { authorizationServers: (resource) => [`https://taico.example.com/auth/mcp/${resource.identifier}`] }
 app.get('/mcp', requireAuth(auth), requireScopes('notes:read'), (req, res) => {
   res.json({ subject: req.auth.subject });
 });
@@ -76,6 +78,33 @@ export class NotesController {
 }
 ```
 
+An app whose authorization server is elsewhere serves its RFC 9728 metadata with the `metadata` option, mounted as middleware outside any global prefix:
+
+```ts
+AuthModule.forRoot({
+  resourceServer: auth,
+  metadata: { resources, authorizationServers: ['https://taico.example.com'] },
+})
+```
+
+#### Several resources in one Nest app
+
+Two ways, depending on whether the resources share an issuer:
+
+- **One resource server, path-bound audience.** `audience: resourceAudience(notesUrl, filesUrl)` accepts a token only on the resource URL it was minted for and the paths below it, so a token for `/mcp/notes` is refused on `/mcp/files`. Works in every framework, not only Nest.
+- **Named resource servers.** For resources with different issuers or settings:
+
+  ```ts
+  AuthModule.forRoot({ resourceServers: { notes: notesAuth, files: filesAuth }, metadata: { ... } })
+
+  @Controller('mcp/files')
+  @UseResourceServer('files')
+  @UseGuards(AccessTokenGuard, ScopesGuard)
+  export class FilesController {}
+  ```
+
+  `resourceServer` stays the default for routes that name none; without one, such a route fails with a 500 rather than guessing. The exception filter points the challenge at the metadata of the resource server the route used. The websocket guard honours `@UseResourceServer` too.
+
 With `forRoot({ server, resource })`, pass `resource` (the URL of the protected resource your routes make up) so the challenge points at its metadata. `forResourceServer` takes it from the `exactResource` policy.
 
 The guards throw `AuthError`s. `AuthExceptionFilter` answers them with a status and a Bearer challenge; an app with its own error format can map them itself (each error has a stable `code`) and build the header with `buildChallenge`.
@@ -106,10 +135,15 @@ app.post('/mcp', requireAuth(auth), async (req, res) => {
 - **Revocation**, when a `revocation` checker is configured: a token fails on the next request, not when it expires, if its `jti` was revoked or if the grant or browser session it was issued under (its `sid` claim) was. `server.resourceServer()` is always configured this way. A resource server in another process that only fetches the issuer's keys is not: give it a `revocation` checker that reads the issuer's store, or have it call the introspection endpoint, or rely on the access token lifetime (10 minutes by default).
 - **Audience**, through an `AudiencePolicy`:
   - `exactResource(url)`: tokens minted for this resource URL.
-  - `requestUrlAudience()`: a token is only good on the URL it names. For a host serving several resources.
+  - `resourceAudience(a, b)`: a token is only good under the resource URL it was minted for (that URL and the paths below it; the longest match decides). For a host serving several resources. Requests under none of them, or whose path has dot segments or encoded slashes, are refused.
+  - `requestUrlAudience()`: a token is only good on the exact URL it names.
   - `literalAudience('value')`: non-URL audiences.
   - `anyAudience(a, b)`: any of the above.
 - Scopes, per route.
+
+### Claims
+
+`AuthContext.claims` holds the standard claims plus what the issuer added. Name the extra ones with the type parameter: `auth.authenticate<TaicoClaims>(...)` for tokens from Taico (`actor_id`, `actor_slug`, `actor_type`, `email`, `displayName`, ...), or `IdentityClaims` (`name`, `email`, `preferred_username`, the OpenID Connect names) for a `ClaimsProvider` that follows them. These describe who the user is. Scopes record what the user approved for the client, not what the user may do: per-user permissions are the resource server's job.
 
 ### Scope claim format
 
@@ -125,7 +159,7 @@ import { authEntities, typeormStores, typeormUserStore } from '@taico/auth/typeo
 const server = new OAuthServer({
   config: {
     issuer: 'https://auth.example.com',
-    consentUrl: 'https://auth.example.com/consent', // a page of your UI
+    // consentUrl: 'https://app.example.com/consent', // your own page; defaults to the built-in one
   },
   stores: typeormStores(dataSource),
   resources,                                         // ResourceRegistry: what tokens are for
@@ -152,12 +186,20 @@ Endpoints (under `config.basePath`, default `/oauth`):
 | `GET /.well-known/jwks.json` | Public signing keys |
 | `GET /.well-known/oauth-protected-resource/<path>` | RFC 9728 metadata for a registered resource |
 | `GET /oauth/authorize` | Starts a grant, redirects to `consentUrl?grant_id=...` |
-| `GET /oauth/consent/:grantId` | What the consent screen shows |
+| `GET /oauth/consent?grant_id=` | Built-in consent page (the default `consentUrl`); sends the user to the login page first |
+| `GET /oauth/login?return_to=` | Built-in login page |
+| `GET /oauth/consent/:grantId` | What the consent screen shows, as JSON, for your own page |
 | `POST /oauth/consent` | The user's decision (`grant_id`, `approved`); needs a session |
 | `POST /oauth/token` | `authorization_code` and `refresh_token` grants |
 | `POST /oauth/register` | Dynamic client registration (RFC 7591), public clients only |
 | `POST /oauth/introspect`, `POST /oauth/revoke` | RFC 7662, RFC 7009 |
 | `POST /oauth/login`, `/oauth/session/refresh`, `/oauth/logout`, `GET /oauth/session` | Browser session in HttpOnly cookies |
+
+`POST /oauth/login` answers JSON to a JSON request. A form post (from the built-in page) is answered with a redirect to `return_to`, which must be a path on the issuer; anything else goes to `/`.
+
+### Built-in pages
+
+So that the flow works with no UI of your own, the login and consent pages are served by default: plain HTML forms with no script, an escaped rendering of everything the client registered (its name is its own claim, and the page says so), and a `Content-Security-Policy` with `frame-ancestors 'none'` so the consent buttons cannot be clickjacked. Point `consentUrl` at your own page and pass `pages: false` (`authRouter(server, { pages: false })`) to turn them off.
 
 Every method on `OAuthServer` takes and returns plain data, so you can build your own routes on it instead (`server.authorize()`, `server.decide()`, `server.token()`, ...).
 
@@ -243,6 +285,8 @@ const accessToken = await tokens.getAccessToken(); // discovers, registers, open
 
 Pass `issuer` (or a `client`) to skip discovery. `discoverResource(url)` runs the discovery step on its own. It refuses metadata whose `resource` the URL does not fall under, so a resource cannot send your tokens somewhere else.
 
+`fileCredentialStore` expands a leading `~` to the home directory. When a refresh token is refused, `TokenManager` runs the browser flow again with the client it already registered (its loopback redirect URI matches on any port), so re-authorizing does not leave another client on the server; it registers again only if the server answers `invalid_client`.
+
 Credentials are stored **per issuer and resource**, so two apps behind the same authorization server each keep their own tokens and never receive the other's. A custom `CredentialStore` gets `read(issuer, resource)`; `credentialKey(issuer, resource)` builds the key the built-in stores use.
 
 ## Differences from Taico's built-in authorization server
@@ -251,6 +295,7 @@ Taico's backend uses this package for verification, keys, signing and guards. It
 
 - Taico exposes one authorization server per MCP server, at path-shaped URLs (`/auth/authorize/mcp/:id/:version`). This package has **one issuer**, and the resource is chosen with the RFC 8707 `resource` parameter (or `config.defaultResource`).
 - Taico's brokering of downstream connections stays in Taico. Here it is the `afterConsent` hook.
+- Taico's per-MCP-server authorize endpoint does not yet require the `resource` parameter; a client that leaves it out gets a token for the server the URL names. The package's client and the MCP SDK always send it and check the resource metadata, so they are not affected.
 
 ## Development
 
