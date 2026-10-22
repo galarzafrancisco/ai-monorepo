@@ -8,4 +8,4 @@ export GOOGLE_CLOUD_PROJECT=""
 export GOOGLE_CLOUD_LOCATION=""
 export GOOGLE_GENAI_USE_VERTEXAI="True"
 
-npx @taico/worker@0.8.6 --serverurl http://localhost:$PORT
+npx @taico/worker@0.8.7 --serverurl http://localhost:$PORT
