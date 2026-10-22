@@ -355,7 +355,8 @@ function OptimisticDesktopThread({
         <div className="thread-detail-page__sidebar-scroll">
           <div className="thread-detail-page__sidebar-section">
             <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-              Context (1)
+              Context
+              <Text as="span" size="2" tone="muted" weight="normal"> · 1 block</Text>
             </Text>
             <div className="thread-detail-page__sidebar-content">
               <ThreadContextCard

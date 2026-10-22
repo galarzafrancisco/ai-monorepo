@@ -94,6 +94,15 @@ const waitSections = (thread: Thread) => {
   ].filter((section) => section.count > 0);
 };
 
+const participantsSummary = (participants: Thread["participants"]) => {
+  const agents = participants.filter((p) => String(p.type) === "agent").length;
+  const humans = participants.length - agents;
+  const parts: string[] = [];
+  if (agents > 0) parts.push(`${agents} ${agents === 1 ? "agent" : "agents"}`);
+  if (humans > 0) parts.push(`${humans} ${humans === 1 ? "human" : "humans"}`);
+  return parts.join(" and ");
+};
+
 // Group tasks by status, with parent task first
 const groupTasksByStatus = (thread: Thread) => {
   const parentTaskId = thread.parentTaskId;
@@ -439,6 +448,18 @@ function ThreadDetailPageDesktop({
 }) {
   const { conversationModel } = useChatReadiness();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Status groups collapsed in the sidebar; Done starts collapsed like past days on the board
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    () => new Set<string>([TaskStatus.DONE]),
+  );
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
 
@@ -486,7 +507,8 @@ function ThreadDetailPageDesktop({
             {thread.participants.length > 0 && (
               <div className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  Participants ({thread.participants.length})
+                  Participants
+                  <Text as="span" size="2" tone="muted" weight="normal"> · {participantsSummary(thread.participants)}</Text>
                 </Text>
                 <div className="thread-detail-page__participants">
                   {thread.participants.map((participant) => (
@@ -515,31 +537,49 @@ function ThreadDetailPageDesktop({
             {waitSections(thread).map((section) => (
               <div key={section.key} className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  {section.title} ({section.count})
+                  {section.title}
+                  <Text as="span" size="2" tone="muted" weight="normal"> · {section.count}</Text>
                 </Text>
                 {section.list}
               </div>
             ))}
 
             {/* Tasks grouped by status */}
-            {taskGroups.map((group) => (
-              <div key={group.status} className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  {group.label} ({group.tasks.length})
-                </Text>
-                <div className="thread-detail-page__sidebar-content">
-                  {group.tasks.map((task) => (
-                    <ThreadTaskCard key={task.id} task={task} />
-                  ))}
+            {taskGroups.map((group) => {
+              const isCollapsed = collapsedGroups.has(group.status);
+              return (
+                <div key={group.status} className="thread-detail-page__sidebar-section">
+                  <button
+                    type="button"
+                    className="thread-detail-page__group-toggle"
+                    aria-expanded={!isCollapsed}
+                    onClick={() => toggleGroup(group.status)}
+                  >
+                    <span className="thread-detail-page__group-chevron">{isCollapsed ? "▶" : "▼"}</span>
+                    <Text as="span" size="2" weight="semibold">
+                      {group.label}
+                    </Text>
+                    <Text as="span" size="2" tone="muted">
+                      · {group.tasks.length} {group.tasks.length === 1 ? "task" : "tasks"}
+                    </Text>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="thread-detail-page__sidebar-content">
+                      {group.tasks.map((task) => (
+                        <ThreadTaskCard key={task.id} task={task} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Context section */}
             {contextBlocks.length > 0 && (
               <div className="thread-detail-page__sidebar-section">
                 <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  Context ({contextBlocks.length})
+                  Context
+                  <Text as="span" size="2" tone="muted" weight="normal"> · {contextBlocks.length} {contextBlocks.length === 1 ? "block" : "blocks"}</Text>
                 </Text>
                 <div className="thread-detail-page__sidebar-content">
                   {contextBlocks.map((contextBlock) => (
