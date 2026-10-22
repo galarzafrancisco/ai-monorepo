@@ -545,7 +545,7 @@ function ThreadDetailPageDesktop({
                     onClick={() => toggleGroup(group.status)}
                   >
                     <span className="thread-detail-page__group-chevron">{isCollapsed ? "▶" : "▼"}</span>
-                    <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+                    <Text as="span" size="2" weight="semibold" className="thread-detail-page__sidebar-header">
                       {group.label} ({group.tasks.length})
                     </Text>
                   </button>
