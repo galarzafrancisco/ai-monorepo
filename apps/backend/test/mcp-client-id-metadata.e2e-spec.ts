@@ -343,6 +343,24 @@ describe('MCP clients identified by a Client ID Metadata Document (e2e)', () => 
       expect(await clients.countBy({ clientId })).toBe(1);
     });
 
+    it('keeps working from the cached copy when the document cannot be fetched again', async () => {
+      const clientId = publishDocument({ client_name: 'Before' });
+      const client = newClient(clientId);
+      await client.connect(tasksMcpUrl);
+
+      metadataHost.respond(new URL(clientId).pathname, {
+        status: 404,
+        body: 'not found',
+      });
+      await clients.update({ clientId }, { metadataExpiresAt: new Date(0) });
+      await client.authorize();
+
+      expect(metadataHost.requestCount(clientId)).toBe(3);
+      expect((await clients.findOneByOrFail({ clientId })).clientName).toBe(
+        'Before',
+      );
+    });
+
     it('can use the same client_id on another MCP server', async () => {
       const clientId = publishDocument();
       const contextMcpUrl = `${issuerUrl}${CONTEXT_MCP_PATH}`;

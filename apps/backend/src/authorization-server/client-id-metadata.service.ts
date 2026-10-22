@@ -74,9 +74,19 @@ export class ClientIdMetadataService {
 
     let document: Awaited<ReturnType<ClientMetadataDocumentFetcher['fetch']>>;
     try {
-      document = await this.fetcher.fetch(url);
+      document = await this.fetchWithRetry(url);
     } catch (error) {
       if (error instanceof ClientMetadataFetchError) {
+        // The client's host having a bad moment must not lock out a client we
+        // already validated once (ChatGPT has been seen answering 404 for a
+        // document it served fine before and after). Keep using the last
+        // good copy and try again on the next request.
+        if (cached) {
+          this.logger.warn(
+            `Could not refresh the metadata document of ${clientId} (${error.message}); using the cached copy`,
+          );
+          return cached;
+        }
         throw new InvalidClientMetadataError(clientId, error.message);
       }
       throw error;
@@ -108,6 +118,22 @@ export class ClientIdMetadataService {
         return winner;
       }
       throw error;
+    }
+  }
+
+  /** One retry, since a failure is often a blip on the client's side */
+  private async fetchWithRetry(url: URL) {
+    try {
+      return await this.fetcher.fetch(url);
+    } catch (error) {
+      if (!(error instanceof ClientMetadataFetchError)) {
+        throw error;
+      }
+      this.logger.warn(
+        `Fetching ${url.href} failed (${error.message}); retrying once`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      return this.fetcher.fetch(url);
     }
   }
 
