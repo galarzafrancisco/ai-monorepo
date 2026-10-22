@@ -439,6 +439,18 @@ function ThreadDetailPageDesktop({
 }) {
   const { conversationModel } = useChatReadiness();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Status groups collapsed in the sidebar; Done starts collapsed like past days on the board
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    () => new Set<string>([TaskStatus.DONE]),
+  );
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
 
@@ -522,18 +534,31 @@ function ThreadDetailPageDesktop({
             ))}
 
             {/* Tasks grouped by status */}
-            {taskGroups.map((group) => (
-              <div key={group.status} className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  {group.label} ({group.tasks.length})
-                </Text>
-                <div className="thread-detail-page__sidebar-content">
-                  {group.tasks.map((task) => (
-                    <ThreadTaskCard key={task.id} task={task} />
-                  ))}
+            {taskGroups.map((group) => {
+              const isCollapsed = collapsedGroups.has(group.status);
+              return (
+                <div key={group.status} className="thread-detail-page__sidebar-section">
+                  <button
+                    type="button"
+                    className="thread-detail-page__group-toggle"
+                    aria-expanded={!isCollapsed}
+                    onClick={() => toggleGroup(group.status)}
+                  >
+                    <span className="thread-detail-page__group-chevron">{isCollapsed ? "▶" : "▼"}</span>
+                    <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+                      {group.label} ({group.tasks.length})
+                    </Text>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="thread-detail-page__sidebar-content">
+                      {group.tasks.map((task) => (
+                        <ThreadTaskCard key={task.id} task={task} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Context section */}
             {contextBlocks.length > 0 && (
