@@ -126,8 +126,6 @@
 .thread-detail-page__sidebar-header {
   padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
   color: var(--text);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 
 .thread-detail-page__sidebar-content {
@@ -488,9 +486,9 @@
 .thread-detail-page__group-toggle {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   width: 100%;
-  padding: 0;
+  padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
   background: none;
   border: none;
   color: var(--text);
@@ -505,4 +503,6 @@
 .thread-detail-page__group-chevron {
   font-size: var(--fs-1);
   color: var(--text-muted);
+  width: 16px;
+  display: inline-block;
 }
