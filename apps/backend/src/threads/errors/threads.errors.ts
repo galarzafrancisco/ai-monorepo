@@ -1,4 +1,5 @@
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { ErrorCodes } from '@taico/errors';
 
 export class ThreadNotFoundError extends NotFoundException {
   constructor(threadId: string) {
@@ -32,5 +33,14 @@ export class ParentTaskThreadAlreadyExistsError extends ConflictException {
   constructor(parentTaskId: string) {
     super(`A thread already exists for parent task ID ${parentTaskId}`);
     this.name = 'ParentTaskThreadAlreadyExistsError';
+  }
+}
+
+export class InvalidThreadTitleError extends Error {
+  readonly code = ErrorCodes.INVALID_THREAD_TITLE;
+
+  constructor() {
+    super('Thread title must not be empty');
+    this.name = 'InvalidThreadTitleError';
   }
 }

@@ -399,6 +399,12 @@ export const ErrorCatalog: Record<
     type: '/errors/secrets/not-found',
     retryable: false,
   },
+  [ErrorCodes.INVALID_THREAD_TITLE]: {
+    status: 400,
+    title: 'Invalid thread title',
+    type: '/errors/threads/invalid-title',
+    retryable: false,
+  },
   [ErrorCodes.SECRET_NAME_CONFLICT]: {
     status: 409,
     title: 'Secret name conflict',

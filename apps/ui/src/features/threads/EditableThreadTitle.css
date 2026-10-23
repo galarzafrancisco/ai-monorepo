@@ -1,0 +1,55 @@
+.editable-thread-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0 var(--space-1);
+  margin: 0 calc(var(--space-1) * -1);
+  border: 0;
+  border-radius: var(--radius-2, 6px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+}
+
+.editable-thread-title:hover {
+  background: var(--color-surface-hover, rgba(127, 127, 127, 0.15));
+}
+
+.editable-thread-title__icon {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.editable-thread-title:hover .editable-thread-title__icon,
+.editable-thread-title:focus-visible .editable-thread-title__icon {
+  opacity: 0.6;
+}
+
+.editable-thread-title--editing {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  cursor: auto;
+}
+
+.editable-thread-title--editing:hover {
+  background: transparent;
+}
+
+.editable-thread-title__input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 var(--space-1);
+  font: inherit;
+  font-size: var(--font-size-5, 1.25rem);
+  font-weight: 700;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--color-border-focus, currentColor);
+  border-radius: var(--radius-2, 6px);
+  outline: none;
+}

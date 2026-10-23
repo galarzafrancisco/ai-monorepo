@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
+import { ThreadRenameService } from './thread-rename.service';
 import { ThreadsService } from './threads.service';
 import { ThreadsController } from './threads.controller';
 import { ThreadsGateway } from './threads.gateway';
@@ -98,6 +99,7 @@ import { ThreadTimeService } from './time/thread-time.service';
       inject: [EasterEggHook, CompactionHook],
     },
     ThreadTitleService,
+    ThreadRenameService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
     ThreadReadStateService,

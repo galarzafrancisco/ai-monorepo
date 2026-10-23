@@ -31,6 +31,7 @@ import {
   ThreadScheduleList,
   ThreadTaskSubscriptionList,
 } from "./ThreadWaitLists";
+import { EditableThreadTitle } from "./EditableThreadTitle";
 import { ThreadChat } from "./ThreadChat";
 import { ThreadPinControl } from "./ThreadPinControl";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
@@ -348,7 +349,7 @@ export function ThreadDetailPage() {
   };
 
   if (isDesktop) {
-    return <ThreadDetailPageDesktop thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
+    return <ThreadDetailPageDesktop thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} onRenamed={(title) => setThread((prev) => (prev ? { ...prev, title } : prev))} />;
   } else {
     return <ThreadDetailPageMobile thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
   }
@@ -441,10 +442,12 @@ function ThreadDetailPageDesktop({
   thread,
   tokenUsage,
   onDelete,
+  onRenamed,
 }: {
   thread: Thread;
   tokenUsage: ThreadTokenUsageResponseDto | null;
   onDelete: () => Promise<void>;
+  onRenamed: (title: string) => void;
 }) {
   const { conversationModel } = useChatReadiness();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -472,9 +475,11 @@ function ThreadDetailPageDesktop({
             <div className="thread-detail-page__header-top">
               <div className="thread-detail-page__header-main">
                 <div className="thread-detail-page__title-row">
-                  <Text size="5" weight="bold" className="thread-detail-page__title">
-                    {thread.title}
-                  </Text>
+                  <EditableThreadTitle
+                    threadId={thread.id}
+                    title={thread.title}
+                    onRenamed={onRenamed}
+                  />
                   <ThreadPinControl threadId={thread.id} />
                 </div>
                 <div className="thread-detail-page__meta-row">
