@@ -48,6 +48,7 @@ import {
 import { BlockDeletedEvent } from '../context/events/context.events';
 import { ThreadAgentService } from './agent/thread-agent.service';
 import { ThreadTitleService } from './thread-title.service';
+import { ThreadRenameService } from './thread-rename.service';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadPinsService } from './pins/thread-pins.service';
 import { ThreadPinEntity } from './pins/thread-pin.entity';
@@ -94,6 +95,7 @@ export class ThreadsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly threadAgentService: ThreadAgentService,
     private readonly threadTitleService: ThreadTitleService,
+    private readonly threadRename: ThreadRenameService,
     private readonly threadReadStateService: ThreadReadStateService,
     private readonly threadPinsService: ThreadPinsService,
     private readonly threadMessageWriter: ThreadMessageWriterService,
@@ -257,10 +259,8 @@ export class ThreadsService {
     const thread = await this.getThreadWithRelations(threadId);
 
     if (input.title !== undefined) {
-      thread.title = input.title;
+      await this.threadRename.rename(threadId, input.title, actorId);
     }
-
-    await this.threadRepository.save(thread);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
 

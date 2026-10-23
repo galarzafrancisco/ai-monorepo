@@ -4,6 +4,7 @@ import { z } from 'zod/v3';
 import { ThreadTaskSubscriptionsService } from '../task-subscriptions/thread-task-subscriptions.service';
 import { ThreadTimersService } from '../timers/thread-timers.service';
 import { ThreadTimerKind } from '../timers/thread-timer.enums';
+import { ThreadRenameService } from '../thread-rename.service';
 import { ThreadTimeService } from '../time/thread-time.service';
 import {
   describeDuration,
@@ -18,6 +19,7 @@ import {
   GET_TIME_TOOL,
   LIST_WAITS_TOOL,
   REMIND_TOOL,
+  RENAME_THREAD_TOOL,
   SCHEDULE_TOOL,
   STAY_SILENT_TOOL,
   SUBSCRIBE_TO_TASK_TOOL,
@@ -40,6 +42,7 @@ export class ThreadAgentToolsFactory {
     private readonly subscriptions: ThreadTaskSubscriptionsService,
     private readonly timers: ThreadTimersService,
     private readonly time: ThreadTimeService,
+    private readonly renamer: ThreadRenameService,
   ) {}
 
   build(input: {
@@ -263,6 +266,17 @@ export class ThreadAgentToolsFactory {
           "Get the current date and time and the user's timezone. Call it whenever the user asks what time or date it is, or before working out a local time for a reminder.",
         inputSchema: z.object({}),
         execute: async () => this.time.getTimeContext(threadId),
+      }),
+      [RENAME_THREAD_TOOL]: tool({
+        description: 'Rename this thread.',
+        inputSchema: z.object({ title: z.string() }),
+        execute: async ({ title }) => {
+          if (!title.trim()) {
+            return { error: 'title must not be empty.' };
+          }
+          const renamed = await this.renamer.rename(threadId, title, agentActorId);
+          return `Thread renamed to "${renamed}".`;
+        },
       }),
       [STAY_SILENT_TOOL]: tool({
         description:
