@@ -1,4 +1,4 @@
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 
 export class ThreadNotFoundError extends NotFoundException {
   constructor(threadId: string) {
@@ -32,5 +32,12 @@ export class ParentTaskThreadAlreadyExistsError extends ConflictException {
   constructor(parentTaskId: string) {
     super(`A thread already exists for parent task ID ${parentTaskId}`);
     this.name = 'ParentTaskThreadAlreadyExistsError';
+  }
+}
+
+export class InvalidThreadTitleError extends BadRequestException {
+  constructor() {
+    super('Thread title must not be empty');
+    this.name = 'InvalidThreadTitleError';
   }
 }

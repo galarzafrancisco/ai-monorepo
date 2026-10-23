@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContextService } from '../context/context.service';
 import { ThreadEntity } from './thread.entity';
-import { ThreadNotFoundError } from './errors/threads.errors';
+import { InvalidThreadTitleError, ThreadNotFoundError } from './errors/threads.errors';
 import { ThreadTitleUpdatedEvent } from './events/threads.events';
 
 /**
@@ -26,7 +26,7 @@ export class ThreadRenameService {
   async rename(threadId: string, title: string, actorId: string): Promise<string> {
     const trimmed = title.trim();
     if (!trimmed) {
-      throw new Error('Thread title must not be empty');
+      throw new InvalidThreadTitleError();
     }
     const thread = await this.threadRepository.findOne({ where: { id: threadId } });
     if (!thread) {
