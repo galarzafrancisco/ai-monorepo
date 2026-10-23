@@ -12,6 +12,7 @@ import { Footprints } from "lucide-react";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
 import { UnreadBadge } from "../../features/threads/UnreadBadge";
+import { useActiveRunCount } from "../../features/executions/useActiveRunCount";
 import { modifierKeyLabel } from "../../shared/helpers/platform";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
   const { unreadThreadCount } = useThreadsCtx();
+  const activeRunCount = useActiveRunCount(useIsDesktop());
   useDocumentTitle();
 
   const navItems = useMemo(() => {
@@ -82,6 +84,15 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
                           unit="thread"
                           className="beta-shell__desktop__nav-badge"
                         />
+                      )}
+                      {item.path === '/runs' && activeRunCount > 0 && (
+                        <span
+                          className="beta-shell__desktop__nav-runs"
+                          aria-label={`${activeRunCount} active ${activeRunCount === 1 ? 'run' : 'runs'}`}
+                          title={`${activeRunCount} active ${activeRunCount === 1 ? 'run' : 'runs'}`}
+                        >
+                          {activeRunCount > 99 ? '99+' : activeRunCount}
+                        </span>
                       )}
                     </Link>
                   )

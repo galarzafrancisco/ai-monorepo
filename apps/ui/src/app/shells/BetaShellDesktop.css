@@ -243,3 +243,20 @@
 div.full-height {
   height: 100%;
 }
+
+/* Active runs: informational, deliberately muted (unlike the threads badge) */
+.beta-shell__desktop__nav-runs {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--fs-1);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, var(--text-secondary));
+  line-height: 1;
+}
+
+.beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__nav-runs {
+  position: absolute;
+  top: 2px;
+  left: calc(50% + var(--space-1));
+  margin-left: 0;
+}
