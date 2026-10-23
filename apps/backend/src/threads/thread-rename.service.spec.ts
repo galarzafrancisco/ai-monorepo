@@ -1,3 +1,7 @@
+// The errors package is ESM, which this Jest setup does not load. Codes equal their names.
+jest.mock('@taico/errors', () => ({
+  ErrorCodes: new Proxy({}, { get: (_target, name) => name }),
+}));
 jest.mock('../context/context.service', () => ({ ContextService: class {} }));
 import { ThreadRenameService } from './thread-rename.service';
 import { InvalidThreadTitleError, ThreadNotFoundError } from './errors/threads.errors';
@@ -37,7 +41,7 @@ describe('ThreadRenameService', () => {
   });
 
   it('rejects a blank title', async () => {
-    await expect(service.rename('t1', '   ', 'a1')).rejects.toBeInstanceOf(InvalidThreadTitleError);
+    await expect(service.rename('t1', '   ', 'a1')).rejects.toMatchObject({ code: 'INVALID_THREAD_TITLE' });
     expect(repo.save).not.toHaveBeenCalled();
     expect(emitter.emit).not.toHaveBeenCalled();
   });

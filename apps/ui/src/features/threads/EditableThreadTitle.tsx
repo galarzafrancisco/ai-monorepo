@@ -18,6 +18,7 @@ export function EditableThreadTitle({ threadId, title, onRenamed }: EditableThre
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (editing) {
@@ -38,11 +39,13 @@ export function EditableThreadTitle({ threadId, title, onRenamed }: EditableThre
   };
 
   const save = async () => {
+    if (savingRef.current) return;
     const next = draft.trim();
     if (!next || next === title) {
       cancel();
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     try {
       await ThreadsService.ThreadsController_updateThread({ id: threadId, body: { title: next } });
@@ -52,6 +55,7 @@ export function EditableThreadTitle({ threadId, title, onRenamed }: EditableThre
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to rename thread");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
