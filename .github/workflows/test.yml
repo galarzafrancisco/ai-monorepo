@@ -185,6 +185,10 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs: docker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Serialize deploys so two runs never mutate spark-ops at the same time.
+    concurrency:
+      group: deploy-spark-ops
+      cancel-in-progress: false
     permissions:
       contents: read
 
@@ -247,8 +251,22 @@ jobs:
           # Use kustomize to set image tag
           kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
 
-      - name: Create Pull Request
+      - name: Re-check this commit is still the latest on main (right before publishing)
+        id: final
         if: steps.current.outputs.latest == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$LATEST" = "$GITHUB_SHA" ]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping spark-ops PR: main moved to ${LATEST} (this run is ${GITHUB_SHA})"
+          fi
+
+      - name: Create Pull Request
+        if: steps.current.outputs.latest == 'true' && steps.final.outputs.latest == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.SPARK_OPS_TOKEN }}
