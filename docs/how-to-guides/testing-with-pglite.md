@@ -20,6 +20,6 @@ run as usual. The full suite takes ~25s.
   in production; the env var is only an optional pool cap.
 - Because of the single connection, code that opens a second connection while a
   transaction is held will deadlock. Tests do not currently do this.
-- One run in five showed a flaky `thread-read-state` failure; not seen on isolated reruns.
+- PGlite's database clock is coarse. A test that compares `now()` timestamps written back to back (e.g. mark read, then post a message, expecting unread) can see equal values; add a short pause between them. This was the cause of a former `thread-read-state` flake.
 - CI still uses the real `pgvector/pgvector` Postgres 16 service, which is the
   authoritative target. PGlite is a fast local option.

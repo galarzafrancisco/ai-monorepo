@@ -183,6 +183,10 @@ describe('Thread read state E2E', () => {
       .set('Cookie', authCookies)
       .expect(204);
 
+    // Unread means created_at > last_read_at, both stamped by the database
+    // clock. PGlite's WASM clock is coarse, so without a pause the message can
+    // get the very same timestamp as the read marker and not count as unread.
+    await new Promise((resolve) => setTimeout(resolve, 50));
     await postMessage(threadId, agentActorId);
     expect(await unreadCount(threadId)).toBe(1);
   });
