@@ -37,6 +37,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:should-be-e2e": "node test/run-e2e.mjs",
     "test:e2e": "node test/run-e2e.mjs tasks.e2e-spec.ts context-blocks.e2e-spec.ts search.e2e-spec.ts mcp-oauth-resource-binding.e2e-spec.ts mcp-client-id-metadata.e2e-spec.ts thread-read-state.e2e-spec.ts thread-ordering.e2e-spec.ts thread-pins.e2e-spec.ts thread-deletion.e2e-spec.ts chatgpt-subscription.e2e-spec.ts",
+    "test:e2e:pglite": "TEST_DB=pglite npm run test:e2e",
     "test:e2e:worker-auth": "node test/run-e2e.mjs worker-auth.e2e-spec.ts",
     "test:e2e:threads-agent": "node test/run-e2e.mjs thread-agent.e2e-spec.ts thread-task-subscriptions.e2e-spec.ts thread-timers.e2e-spec.ts ai-model-selection.e2e-spec.ts",
     "test:e2e:chatgpt-subscription": "node test/run-e2e.mjs chatgpt-subscription.e2e-spec.ts",
@@ -97,6 +98,9 @@
     "typeorm": "^0.3.27"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
+    "@electric-sql/pglite-pgvector": "^0.0.12",
+    "@electric-sql/pglite-socket": "^0.2.14",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",

@@ -54,6 +54,9 @@ import { ServerLifecycleService } from './server-lifecycle.service';
       type: 'postgres',
       url: getConfig().databaseUrl,
       uuidExtension: 'pgcrypto',
+      extra: getConfig().databasePoolMax
+        ? { max: getConfig().databasePoolMax }
+        : undefined,
       ssl: getConfig().databaseSsl ? { rejectUnauthorized: true } : false,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: isTypeormSchemaSyncEnabled(),
@@ -108,4 +111,4 @@ import { ServerLifecycleService } from './server-lifecycle.service';
   controllers: [AppController],
   providers: [AppService, ServerLifecycleService],
 })
-export class AppModule { }
+export class AppModule {}
