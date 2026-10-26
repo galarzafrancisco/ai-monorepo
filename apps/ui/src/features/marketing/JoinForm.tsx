@@ -49,7 +49,7 @@ export function JoinForm({ initialEmail = '' }: { initialEmail?: string }) {
   if (done) {
     return (
       <div className="pub-form-done" role="status">
-        <strong>Request received.</strong>
+        <strong>You’re on the waitlist.</strong>
         <p>
           We’ve saved your interest for {email.trim()}. If you’d already sent one, we’ve updated it, so there’s no
           need to send it again. Access isn’t automatic: someone on the Taico team reviews requests and will be in
@@ -108,7 +108,7 @@ export function JoinForm({ initialEmail = '' }: { initialEmail?: string }) {
 
       {failure && <p className="pub-err" role="alert">{failure}</p>}
 
-      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Request early access'}</button>
+      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Join the waitlist'}</button>
       <p className="pub-sub pub-privacy">
         We store your email and answers only so the Taico team can review your request. This doesn’t create an
         account, and we won’t add you to a mailing list. Want it deleted? Just ask and we’ll remove it.

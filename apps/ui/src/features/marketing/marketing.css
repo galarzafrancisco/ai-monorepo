@@ -124,8 +124,7 @@
 .pub-ticks { list-style: none; display: flex; flex-direction: column; gap: var(--space-3); }
 .pub-ticks li { position: relative; padding-left: var(--space-6); color: var(--text); }
 .pub-ticks li::before { content: '✓'; position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: var(--fw-bold); color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); margin-top: 2px; }
-.pub-join__form h2 { font-size: var(--fs-5); letter-spacing: -0.01em; }
-.pub-join__form > .pub-sub { margin: var(--space-1) 0 var(--space-3); }
+.pub-join__form h2 { font-size: var(--fs-5); letter-spacing: -0.01em; margin-bottom: var(--space-3); }
 
 /* Form */
 .pub-card { width: 100%; border: 1px solid var(--border); border-radius: var(--r-4); padding: var(--space-6); background: var(--surface); box-shadow: var(--shadow-3); }

@@ -6,15 +6,16 @@
 import { TaskStatus } from '../../shared/const/taskStatus';
 
 export { TaskStatus };
-export type ActorId = 'fran' | 'claude-dev' | 'code-reviewer' | 'docs' | 'qa' | 'taico';
+export type ActorId = 'jane' | 'claude-dev' | 'code-reviewer' | 'planner' | 'qa' | 'taico';
 
-export const ACTORS: Record<ActorId, { name: string; handle: string; kind: 'human' | 'agent' }> = {
-  fran: { name: 'Fran', handle: 'fran', kind: 'human' },
-  'claude-dev': { name: 'Claude developer', handle: 'claude-dev', kind: 'agent' },
-  'code-reviewer': { name: 'Code reviewer', handle: 'code-reviewer', kind: 'agent' },
-  docs: { name: 'Docs writer', handle: 'docs', kind: 'agent' },
-  qa: { name: 'QA agent', handle: 'qa', kind: 'agent' },
-  taico: { name: 'Taico', handle: 'taico', kind: 'agent' },
+/** Avatars are the bundled ones agents can pick in the app (apps/ui/public/avatar). */
+export const ACTORS: Record<ActorId, { name: string; handle: string; kind: 'human' | 'agent'; avatar?: string }> = {
+  jane: { name: 'Jane', handle: 'jane', kind: 'human' },
+  'claude-dev': { name: 'Claude developer', handle: 'claude-dev', kind: 'agent', avatar: '/avatar/claude.webp' },
+  'code-reviewer': { name: 'Code reviewer', handle: 'code-reviewer', kind: 'agent', avatar: '/avatar/openai.svg' },
+  planner: { name: 'Planner', handle: 'planner', kind: 'agent', avatar: '/avatar/stacy.png' },
+  qa: { name: 'QA agent', handle: 'qa', kind: 'agent', avatar: '/avatar/angus.png' },
+  taico: { name: 'Taico', handle: 'taico', kind: 'agent', avatar: '/avatar/taico.png' },
 };
 
 export interface Message {
@@ -50,8 +51,8 @@ export type DemoEvent = { caption: string; side?: SideMove } & (
 );
 
 const BACKGROUND: BoardTask[] = [
-  { id: '7c01de', name: 'Spike: SSO with Okta', description: 'Do we need SAML, or is OIDC enough?', status: 'NOT_STARTED', assignee: 'fran', comments: 2, artefacts: 0 },
-  { id: '19bb40', name: 'Write the v2 migration guide', description: 'Breaking changes in auth and pagination', status: 'NOT_STARTED', assignee: 'docs', comments: 0, artefacts: 0 },
+  { id: '7c01de', name: 'Spike: SSO with Okta', description: 'Do we need SAML, or is OIDC enough?', status: 'NOT_STARTED', assignee: 'jane', comments: 2, artefacts: 0 },
+  { id: '19bb40', name: 'Plan the v2 migration', description: 'Split the auth and pagination changes into tasks', status: 'NOT_STARTED', assignee: 'planner', comments: 0, artefacts: 0 },
   { id: '5e8a13', name: 'Fix flaky checkout e2e', description: 'Cart total races the price fetch', status: 'IN_PROGRESS', assignee: 'qa', comments: 3, artefacts: 1 },
   { id: 'c2f7a9', name: 'Bump Postgres to 16', description: 'Staging is green, needs a final look', status: 'FOR_REVIEW', assignee: 'code-reviewer', comments: 4, artefacts: 1 },
   { id: '0d44e1', name: 'Drop the legacy /v1 auth', description: 'Last client migrated on Friday', status: 'DONE', assignee: 'claude-dev', comments: 6, artefacts: 2 },
@@ -82,11 +83,11 @@ export const DEMO_EVENTS: DemoEvent[] = [
   { type: 'approve', caption: 'Approved. It ships, and the whole trail stays on the task.',
     message: { by: 'code-reviewer', text: 'Both fixed. Approved.' } },
   { type: 'thread-message', caption: 'Days later, in a thread, you ask what happened.',
-    message: { by: 'fran', text: 'What happened with the export rate limit?' } },
+    message: { by: 'jane', text: 'What happened with the export rate limit?' } },
   { type: 'thread-message', caption: 'Taico answers from the task and its history.',
     message: { by: 'taico', text: 'It shipped in PR #412: a token bucket on /export, 100 req/min. Review caught that it was keyed by IP, which behind the load balancer would have throttled everyone. It’s keyed by API token now, with a Retry-After test.' } },
   { type: 'thread-message', caption: 'You hand off the follow-up.',
-    message: { by: 'fran', text: 'Nice. Remind me to tell the customer on Tuesday morning.' } },
+    message: { by: 'jane', text: 'Nice. Remind me to tell the customer on Tuesday morning.' } },
   { type: 'thread-message', caption: 'It’s scheduled, and you can see it.',
     message: { by: 'taico', text: 'Done. I’ll ping you here.', reminder: { title: 'Tell the customer /export is rate limited', when: 'Tue 09:00' } } },
 ];

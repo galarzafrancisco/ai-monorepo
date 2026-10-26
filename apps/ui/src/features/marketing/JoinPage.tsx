@@ -30,13 +30,12 @@ export function JoinPage() {
           <ul className="pub-ticks">
             <li>Every agent’s work on one board, with status, PR and history.</li>
             <li>Reviews go agent to agent. Nothing goes through your clipboard.</li>
-            <li>Context stays on the task, so the next session starts informed.</li>
+            <li>Decisions and feedback stay on the task, not in a terminal.</li>
           </ul>
           <Link to="/marketing#demo" className="pub-link">Watch a task ship →</Link>
         </div>
         <div id="request" className="pub-card pub-join__form">
-          <h2>Request early access</h2>
-          <p className="pub-sub">We’re letting developers in a few at a time. A person reads every request.</p>
+          <h2>Join the waitlist</h2>
           <JoinForm initialEmail={initialEmail} />
         </div>
       </main>

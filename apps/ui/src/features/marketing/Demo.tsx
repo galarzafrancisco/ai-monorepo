@@ -36,7 +36,7 @@ function DemoCard({ task, pulse, animate, when }: { task: BoardTask; pulse?: num
       className={task.id === HERO_ID ? 'pub-demo-card--hero' : ''}
       animation={animate ? 'entering' : undefined}
       pulseKey={pulse}
-      leading={<Avatar name={a.name} size="md" />}
+      leading={<Avatar name={a.name} src={a.avatar} size="md" />}
       topRight={when ?? (task.id === HERO_ID ? 'just now' : '2h ago')}
       tags={tags}
       footer={
@@ -56,7 +56,7 @@ function Comment({ m, latest, animate }: { m: Message; latest: boolean; animate:
   const a = ACTORS[m.by];
   return (
     <li className="pub-update">
-      <Avatar name={a.name} size="sm" />
+      <Avatar name={a.name} src={a.avatar} size="sm" />
       <div className="pub-update__body">
         <div className="pub-update__who">{a.name} <span>@{a.handle}</span></div>
         <p><Typed text={m.text} animate={latest && animate} /></p>
@@ -70,7 +70,7 @@ function ChatMessage({ m, latest, animate }: { m: Message; latest: boolean; anim
   const mine = a.kind === 'human';
   return (
     <li className={`pub-chat__msg${mine ? ' pub-chat__msg--mine' : ''}`}>
-      <div className="pub-chat__who"><Avatar name={a.name} size="xs" /> {a.name}</div>
+      <div className="pub-chat__who"><Avatar name={a.name} src={a.avatar} size="xs" /> {a.name}</div>
       <p><Typed text={m.text} animate={latest && animate && !mine} /></p>
       {m.reminder && (
         <div className="pub-reminder">

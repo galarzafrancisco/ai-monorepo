@@ -5,8 +5,8 @@ Taico sign-up is invite-only. People who aren't invited can say they're interest
 ## The journey
 
 1. **Login page.** A "What is Taico?" link goes to the public `/marketing` page.
-2. **Create account.** The UI asks the backend whether the email can be set up (`POST /auth/account-setup-status`, unchanged). If it can, normal onboarding continues. If it can't, the UI shows a generic message ("If you already have an account, sign in instead...") and a **Request access** button. The button opens `/join` with the email prefilled. The response doesn't say *why* setup isn't possible (not invited, already set up or deactivated), so no new information about accounts is exposed.
-3. **`/join`.** The form posts to `POST /api/v1/access-requests`. The UI only says "Request received" after the backend replies `201`.
+2. **Create account.** The UI asks the backend whether the email can be set up (`POST /auth/account-setup-status`, unchanged). If it can, normal onboarding continues. If it can't, the UI shows a generic message ("If you already have an account, sign in instead...") and a **Join the waitlist** button. The button opens `/join` with the email prefilled. The response doesn't say *why* setup isn't possible (not invited, already set up or deactivated), so no new information about accounts is exposed.
+3. **`/join`.** The form posts to `POST /api/v1/access-requests`. The UI only says "You’re on the waitlist" after the backend replies `201`.
 4. **Review.** Admins list, search, filter (new/reviewed), mark as reviewed or new, and delete requests.
 
 The public pages (`/join`, `/marketing`) always use the official dark theme. Visitors haven't used Taico yet, so any theme saved in that browser is ignored there (and left untouched): `PublicLayout` sets `data-theme="dark"` while mounted and puts the previous value back when the visitor moves into the app.

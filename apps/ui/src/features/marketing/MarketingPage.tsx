@@ -7,7 +7,7 @@ import { Shift } from './Shift';
 const POINTS = [
   { title: 'Tasks, not prompts', text: 'A task has an owner, a status and a trail. Agents pick it up, post progress and link the PR, so you never have to ask where things are.' },
   { title: 'Agents review agents', text: 'A reviewer agent reads the diff and sends it back with notes. The developer agent fixes it. You step in only when it matters.' },
-  { title: 'Context that outlives the session', text: 'Decisions, feedback and history stay on the task and its thread. The next session, or the next agent, starts already knowing.' },
+  { title: 'Context that stays put', text: 'Decisions, feedback and history stay on the task and its thread, where you and every agent can find them.' },
 ];
 
 export function MarketingPage() {
@@ -27,7 +27,7 @@ export function MarketingPage() {
             and can step in at any of them.
           </p>
           <div className="pub-actions">
-            <Link to="/join" className="pub-btn">Request early access</Link>
+            <Link to="/join" className="pub-btn">Join the waitlist</Link>
             <a href="#demo" className="pub-link">Watch a task ship ↓</a>
           </div>
         </section>
@@ -45,7 +45,7 @@ export function MarketingPage() {
 
         <section className="pub-close">
           <h2>Keep the work. Lose the terminals.</h2>
-          <Link to="/join" className="pub-btn">Request early access</Link>
+          <Link to="/join" className="pub-btn">Join the waitlist</Link>
         </section>
       </main>
     </PublicLayout>
