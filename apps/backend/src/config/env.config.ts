@@ -32,6 +32,8 @@ export interface AppConfig {
   // Database Configuration
   databaseUrl: string;
   databaseSsl: boolean;
+  /** Optional cap on the TypeORM pool (PGlite test runs use 1). */
+  databasePoolMax?: number;
   typeormSchemaMode: TypeormSchemaMode;
 
   // Security Configuration
@@ -81,6 +83,9 @@ export function loadConfig(): AppConfig {
     // Database Configuration
     databaseUrl: getDatabaseUrl(),
     databaseSsl: process.env.DATABASE_SSL === 'true',
+    databasePoolMax: process.env.DATABASE_POOL_MAX
+      ? Number(process.env.DATABASE_POOL_MAX)
+      : undefined,
     typeormSchemaMode: getTypeormSchemaMode(),
 
     // Security Configuration
@@ -117,14 +122,17 @@ export function loadConfig(): AppConfig {
     ),
 
     // Cleanup Configuration
-    mcpClientPruneRetentionHours: parseFloat(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '0.75'),
+    mcpClientPruneRetentionHours: parseFloat(
+      process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '0.75',
+    ),
 
     // Development Configuration
     vitePort: uiPort,
 
     threadStateReconcilerEnabled: getThreadStateReconcilerEnabled(),
     threadStateReconcilerDebounceMs: getThreadStateReconcilerDebounceMs(),
-    threadAgentCompactionTokenThreshold: getThreadAgentCompactionTokenThreshold(),
+    threadAgentCompactionTokenThreshold:
+      getThreadAgentCompactionTokenThreshold(),
   };
 
   // Log configuration (excluding sensitive data)
@@ -135,12 +143,22 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log('  - Database: PostgreSQL');
-  logger.log(`  - Database SSL: ${config.databaseSsl ? 'enabled' : 'disabled'}`);
+  logger.log(
+    `  - Database SSL: ${config.databaseSsl ? 'enabled' : 'disabled'}`,
+  );
   logger.log(`  - TypeORM Schema Mode: ${config.typeormSchemaMode}`);
-  logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
-  logger.log(`  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`);
-  logger.log(`  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`);
-  logger.log(`  - Thread Agent Compaction Token Threshold: ${config.threadAgentCompactionTokenThreshold}`);
+  logger.log(
+    `  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`,
+  );
+  logger.log(
+    `  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`,
+  );
+  logger.log(
+    `  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`,
+  );
+  logger.log(
+    `  - Thread Agent Compaction Token Threshold: ${config.threadAgentCompactionTokenThreshold}`,
+  );
 
   return config;
 }
@@ -206,7 +224,9 @@ function getDatabaseUrl(): string {
       throw new Error('DATABASE_URL must be a valid PostgreSQL connection URL');
     }
     if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
-      throw new Error('DATABASE_URL must use the postgres or postgresql protocol');
+      throw new Error(
+        'DATABASE_URL must use the postgres or postgresql protocol',
+      );
     }
     return databaseUrl;
   }
@@ -223,11 +243,14 @@ function getIssuerUrl(): string {
   if (issuerUrl) {
     return issuerUrl;
   }
-  const defaultPort = getEnv() === 'development' ? getUiPort() : getBackendPort();
+  const defaultPort =
+    getEnv() === 'development' ? getUiPort() : getBackendPort();
   // Development mode is typically proxied through Vite, so the issuer should
   // point at the UI port. Production mode serves the built UI from the backend,
   // so the issuer should point at the backend port.
-  logger.warn(`ISSUER_URL not set, defaulting to http://localhost:${defaultPort}`);
+  logger.warn(
+    `ISSUER_URL not set, defaulting to http://localhost:${defaultPort}`,
+  );
   return `http://localhost:${defaultPort}`;
 }
 
