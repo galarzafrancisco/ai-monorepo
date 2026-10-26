@@ -9,6 +9,8 @@ Taico sign-up is invite-only. People who aren't invited can say they're interest
 3. **`/join`.** The form posts to `POST /api/v1/access-requests`. The UI only says "Request received" after the backend replies `201`.
 4. **Review.** Admins list, search, filter (new/reviewed), mark as reviewed or new, and delete requests.
 
+The public pages (`/join`, `/marketing`) always use the official dark theme. Visitors haven't used Taico yet, so any theme saved in that browser is ignored there (and left untouched): `PublicLayout` sets `data-theme="dark"` while mounted and puts the previous value back when the visitor moves into the app.
+
 The email travels from step 2 to step 3 in React Router navigation state, not in the URL, so it doesn't end up in server logs, referrers or shareable links. `/join` reads it once and then replaces the history entry to clear it.
 
 ## API

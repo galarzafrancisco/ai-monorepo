@@ -70,7 +70,7 @@ export function JoinForm({ initialEmail = '' }: { initialEmail?: string }) {
       <label htmlFor="join-building">What are you building with agents? <span>(optional)</span></label>
       <textarea id="join-building" rows={3} value={building} onChange={(e) => setBuilding(e.target.value)} disabled={busy}
         aria-invalid={!!errors.building} aria-describedby={errors.building ? 'join-building-err' : undefined}
-        placeholder="Claude Code, 37 terminals, a lot of tabs…" maxLength={BUILDING_MAX + 50} />
+        placeholder="e.g. three Claude Code sessions on a Rails monolith, one of them reviewing the others" maxLength={BUILDING_MAX + 50} />
       {errors.building && <p id="join-building-err" className="pub-err">{errors.building}</p>}
 
       <label htmlFor="join-heard-from">Where did you hear about Taico? <span>(optional)</span></label>
@@ -108,7 +108,7 @@ export function JoinForm({ initialEmail = '' }: { initialEmail?: string }) {
 
       {failure && <p className="pub-err" role="alert">{failure}</p>}
 
-      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Request access'}</button>
+      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Request early access'}</button>
       <p className="pub-sub pub-privacy">
         We store your email and answers only so the Taico team can review your request. This doesn’t create an
         account, and we won’t add you to a mailing list. Want it deleted? Just ask and we’ll remove it.

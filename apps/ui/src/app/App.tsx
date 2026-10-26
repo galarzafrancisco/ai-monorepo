@@ -87,9 +87,11 @@ export function App() {
 
 function AppSwitch() {
   const { pathname } = useLocation();
-  // Public acquisition pages (/join, /marketing) bypass auth entirely.
+  // Public acquisition pages (/join, /marketing) bypass auth entirely, and skip
+  // ThemeProvider: they always use the dark theme (see PublicLayout), whatever
+  // theme this browser may have saved inside the app.
   if (isPublicPath(pathname)) {
-    return <ThemeProvider><PublicSite /></ThemeProvider>;
+    return <PublicSite />;
   }
   return <AuthenticatedApp />;
 }

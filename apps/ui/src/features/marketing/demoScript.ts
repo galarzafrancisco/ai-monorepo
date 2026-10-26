@@ -3,14 +3,18 @@
  * reduces events [0..n] into a view state, so playback, pause, stepping and
  * reduced-motion all share one source of truth. Illustrative content only.
  */
-export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-export type ActorId = 'fran' | 'claude-dev' | 'code-reviewer' | 'taico';
+import { TaskStatus } from '../../shared/const/taskStatus';
 
-export const ACTORS: Record<ActorId, { name: string; kind: 'human' | 'agent' }> = {
-  fran: { name: 'Fran', kind: 'human' },
-  'claude-dev': { name: 'Claude developer', kind: 'agent' },
-  'code-reviewer': { name: 'Code reviewer', kind: 'agent' },
-  taico: { name: 'Taico', kind: 'agent' },
+export { TaskStatus };
+export type ActorId = 'fran' | 'claude-dev' | 'code-reviewer' | 'docs' | 'qa' | 'taico';
+
+export const ACTORS: Record<ActorId, { name: string; handle: string; kind: 'human' | 'agent' }> = {
+  fran: { name: 'Fran', handle: 'fran', kind: 'human' },
+  'claude-dev': { name: 'Claude developer', handle: 'claude-dev', kind: 'agent' },
+  'code-reviewer': { name: 'Code reviewer', handle: 'code-reviewer', kind: 'agent' },
+  docs: { name: 'Docs writer', handle: 'docs', kind: 'agent' },
+  qa: { name: 'QA agent', handle: 'qa', kind: 'agent' },
+  taico: { name: 'Taico', handle: 'taico', kind: 'agent' },
 };
 
 export interface Message {
@@ -20,62 +24,128 @@ export interface Message {
   reminder?: { title: string; when: string };
 }
 
-export type DemoEvent =
-  | { caption: string; type: 'create' }
-  | { caption: string; type: 'status'; status: TaskStatus; assignee?: ActorId }
-  | { caption: string; type: 'comment'; message: Message }
-  | { caption: string; type: 'pr'; url: string }
-  | { caption: string; type: 'approve' }
-  | { caption: string; type: 'thread-message'; message: Message };
+export interface BoardTask {
+  id: string;
+  name: string;
+  description: string;
+  status: TaskStatus;
+  assignee: ActorId;
+  comments: number;
+  artefacts: number;
+}
 
-export const TASK_TITLE = 'Rate limit the /export endpoint';
+/** The task the demo follows. The rest of the board is background life. */
+export const HERO_ID = 'a41c92';
 export const PR_URL = 'github.com/acme/api/pull/412';
 
+type SideMove = { id: string; status: TaskStatus; assignee?: ActorId };
+
+export type DemoEvent = { caption: string; side?: SideMove } & (
+  | { type: 'create' }
+  | { type: 'status'; status: TaskStatus; assignee?: ActorId }
+  | { type: 'comment'; message: Message }
+  | { type: 'pr' }
+  | { type: 'approve'; message: Message }
+  | { type: 'thread-message'; message: Message }
+);
+
+const BACKGROUND: BoardTask[] = [
+  { id: '7c01de', name: 'Spike: SSO with Okta', description: 'Do we need SAML, or is OIDC enough?', status: 'NOT_STARTED', assignee: 'fran', comments: 2, artefacts: 0 },
+  { id: '19bb40', name: 'Write the v2 migration guide', description: 'Breaking changes in auth and pagination', status: 'NOT_STARTED', assignee: 'docs', comments: 0, artefacts: 0 },
+  { id: '5e8a13', name: 'Fix flaky checkout e2e', description: 'Cart total races the price fetch', status: 'IN_PROGRESS', assignee: 'qa', comments: 3, artefacts: 1 },
+  { id: 'c2f7a9', name: 'Bump Postgres to 16', description: 'Staging is green, needs a final look', status: 'FOR_REVIEW', assignee: 'code-reviewer', comments: 4, artefacts: 1 },
+  { id: '0d44e1', name: 'Drop the legacy /v1 auth', description: 'Last client migrated on Friday', status: 'DONE', assignee: 'claude-dev', comments: 6, artefacts: 2 },
+];
+
+export const HERO_TASK: BoardTask = {
+  id: HERO_ID, name: 'Rate limit the /export endpoint', description: 'One customer is hammering it. 100 req/min per client.',
+  status: 'NOT_STARTED', assignee: 'claude-dev', comments: 0, artefacts: 0,
+};
+
 export const DEMO_EVENTS: DemoEvent[] = [
-  { type: 'create', caption: 'You create a task and assign it to an agent.' },
-  { type: 'status', status: 'IN_PROGRESS', assignee: 'claude-dev', caption: 'Claude picks it up. Status moves to In progress.' },
-  { type: 'comment', message: { by: 'claude-dev', text: 'Starting on branch feature/export-rate-limit. Adding a token bucket in front of /export.' }, caption: 'Progress shows up as comments on the task.' },
-  { type: 'pr', url: PR_URL, caption: 'A pull request is linked to the task.' },
-  { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', caption: 'It goes to the code reviewer agent.' },
-  { type: 'comment', message: { by: 'code-reviewer', text: 'The bucket is keyed by IP. Behind our proxy that is everyone, so one noisy client throttles all. Key by API token. Also: no test for the 429 Retry-After header.' }, caption: 'The reviewer leaves substantive feedback…' },
-  { type: 'status', status: 'NOT_STARTED', assignee: 'claude-dev', caption: '…and sends it back to Not started.' },
-  { type: 'status', status: 'IN_PROGRESS', assignee: 'claude-dev', caption: 'Claude picks it up again.' },
-  { type: 'comment', message: { by: 'claude-dev', text: 'Keyed by API token now and added a Retry-After test. Pushed to the same PR.' }, caption: 'It addresses the feedback and updates the PR.' },
+  { type: 'create', caption: 'You write a task and assign it to your developer agent.' },
+  { type: 'status', status: 'IN_PROGRESS', caption: 'It picks the task up. The card moves to Building.',
+    side: { id: '19bb40', status: 'IN_PROGRESS' } },
+  { type: 'comment', caption: 'Progress lands on the task, not in a terminal you have to go find.',
+    message: { by: 'claude-dev', text: 'On branch feature/export-rate-limit. Adding a token bucket in front of /export.' } },
+  { type: 'pr', caption: 'The pull request is linked to the task.',
+    side: { id: 'c2f7a9', status: 'DONE' } },
+  { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', caption: 'When it’s ready, a reviewer agent takes it.' },
+  { type: 'comment', caption: 'The reviewer leaves real feedback…',
+    message: { by: 'code-reviewer', text: 'The bucket is keyed by IP. Behind the load balancer that’s everyone, so one noisy client throttles all of them. Key it by API token. Also missing: a test for the Retry-After header.' } },
+  { type: 'status', status: 'NOT_STARTED', assignee: 'claude-dev', caption: '…and sends it back. You didn’t copy-paste a thing.' },
+  { type: 'status', status: 'IN_PROGRESS', caption: 'The developer picks it up again, with the review right there on the task.' },
+  { type: 'comment', caption: 'It fixes both and pushes to the same PR.',
+    message: { by: 'claude-dev', text: 'Keyed by API token now, and added a Retry-After test. Pushed to the same PR.' },
+    side: { id: '5e8a13', status: 'FOR_REVIEW', assignee: 'code-reviewer' } },
   { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', caption: 'Back to review.' },
-  { type: 'approve', caption: 'The reviewer approves.' },
-  { type: 'thread-message', message: { by: 'fran', text: 'What got done on the export rate limit?' }, caption: 'Later, in a shared thread, you ask what happened.' },
-  { type: 'thread-message', message: { by: 'taico', text: 'Claude added token-bucket rate limiting to /export in PR #412. The reviewer flagged IP-based keys and a missing Retry-After test; both were fixed and the PR is approved.' }, caption: 'The agent answers from the task and its history.' },
-  { type: 'thread-message', message: { by: 'fran', text: 'Remind me to launch the marketing campaign.' }, caption: 'You hand it a reminder.' },
-  { type: 'thread-message', message: { by: 'taico', text: 'Done. I’ll remind you in this thread.', reminder: { title: 'Launch the marketing campaign', when: 'Tue 27 Oct, 09:00' } }, caption: 'It is scheduled, and visible.' },
+  { type: 'approve', caption: 'Approved. It ships, and the whole trail stays on the task.',
+    message: { by: 'code-reviewer', text: 'Both fixed. Approved.' } },
+  { type: 'thread-message', caption: 'Days later, in a thread, you ask what happened.',
+    message: { by: 'fran', text: 'What happened with the export rate limit?' } },
+  { type: 'thread-message', caption: 'Taico answers from the task and its history.',
+    message: { by: 'taico', text: 'It shipped in PR #412: a token bucket on /export, 100 req/min. Review caught that it was keyed by IP, which behind the load balancer would have throttled everyone. It’s keyed by API token now, with a Retry-After test.' } },
+  { type: 'thread-message', caption: 'You hand off the follow-up.',
+    message: { by: 'fran', text: 'Nice. Remind me to tell the customer on Tuesday morning.' } },
+  { type: 'thread-message', caption: 'It’s scheduled, and you can see it.',
+    message: { by: 'taico', text: 'Done. I’ll ping you here.', reminder: { title: 'Tell the customer /export is rate limited', when: 'Tue 09:00' } } },
 ];
 
 export interface DemoView {
-  scene: 'task' | 'thread';
-  status: TaskStatus;
-  assignee: ActorId;
+  scene: 'board' | 'thread';
+  tasks: BoardTask[];
+  hero: BoardTask | null;
   comments: Message[];
   prUrl: string | null;
   approved: boolean;
   threadMessages: Message[];
   caption: string;
+  /** Task ids touched by the latest step, for the update pulse. */
+  touched: string[];
 }
 
 export function reduceDemo(events: DemoEvent[], upTo: number): DemoView {
-  const view: DemoView = {
-    scene: 'task', status: 'NOT_STARTED', assignee: 'claude-dev', comments: [],
-    prUrl: null, approved: false, threadMessages: [], caption: '',
+  let tasks = BACKGROUND.map((t) => ({ ...t }));
+  let hero: BoardTask | null = null;
+  const view: Omit<DemoView, 'tasks' | 'hero'> = {
+    scene: 'board', comments: [], prUrl: null, approved: false, threadMessages: [], caption: '', touched: [],
   };
+  const patchHero = (p: Partial<BoardTask>) => { if (hero) hero = { ...hero, ...p }; };
+
   for (let i = 0; i <= upTo && i < events.length; i++) {
     const e = events[i];
     view.caption = e.caption;
+    view.touched = [HERO_ID];
     switch (e.type) {
-      case 'status': view.status = e.status; if (e.assignee) view.assignee = e.assignee; break;
-      case 'comment': view.comments = [...view.comments, e.message]; break;
-      case 'pr': view.prUrl = e.url; break;
-      case 'approve': view.approved = true; view.status = 'DONE'; break;
-      case 'thread-message': view.scene = 'thread'; view.threadMessages = [...view.threadMessages, e.message]; break;
-      case 'create': break;
+      case 'create': hero = { ...HERO_TASK }; break;
+      case 'status': patchHero({ status: e.status, ...(e.assignee && { assignee: e.assignee }) }); break;
+      case 'comment':
+        view.comments = [...view.comments, e.message];
+        patchHero({ comments: view.comments.length });
+        break;
+      case 'pr': view.prUrl = PR_URL; patchHero({ artefacts: 1 }); break;
+      case 'approve':
+        view.approved = true;
+        view.comments = [...view.comments, e.message];
+        patchHero({ status: 'DONE', comments: view.comments.length });
+        break;
+      case 'thread-message':
+        view.scene = 'thread';
+        view.threadMessages = [...view.threadMessages, e.message];
+        view.touched = [];
+        break;
+    }
+    if (e.side) {
+      const s = e.side;
+      tasks = tasks.map((t) => (t.id === s.id ? { ...t, status: s.status, ...(s.assignee && { assignee: s.assignee }) } : t));
+      view.touched = [...view.touched, s.id];
     }
   }
-  return view;
+  return { ...view, tasks: hero ? [hero, ...tasks] : tasks, hero };
+}
+
+/** How long a step stays on screen: long enough to read what it adds. */
+export function stepDuration(e: DemoEvent): number {
+  const text = 'message' in e ? e.message.text.length : 0;
+  return Math.min(6500, 2200 + e.caption.length * 12 + text * 28);
 }
