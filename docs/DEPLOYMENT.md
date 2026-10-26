@@ -125,7 +125,7 @@ replacements:
 | `DATABASE_SSL` | Require verified TLS to PostgreSQL | `false` for the private host endpoint |
 | `TYPEORM_SCHEMA_MODE` | Schema management; production uses migrations | `migrate` |
 | `TRUST_PROXY` | Number of trusted proxy hops (ingress) in front of the backend. Required so the public access-request rate limit uses real client IPs; without it all visitors share one bucket. Set to `0`/unset only when exposed directly | `1` |
-| `ACCESS_REQUEST_IP_HASH_KEY` | Secret key for the HMAC of visitor IPs stored with access requests. Sensitive: provide via a Kubernetes Secret, not `env.env`. If unset, a random per-process key is used (hashes reset on restart). Rotating it unlinks old hashes | _(secret)_ |
+| `ACCESS_REQUEST_IP_HASH_KEY` | Optional. Key for the HMAC of visitor IPs stored with access requests. No setup needed: if unset, a random per-process key is used (hashes simply aren't comparable across restarts) | _(unset)_ |
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
 
