@@ -222,6 +222,14 @@ async function main() {
     const created = await client.responses.ResponsesController_response201({ signal: undefined });
     console.log(`  Created resource ID: ${created.id}`);
 
+    // Test 22b: Responses - 202 Accepted with JSON body (non-200/201 success)
+    console.log('\n✓ Test 22b: Responses - 202 Accepted JSON body');
+    const accepted = await client.responses.ResponsesController_response202({ signal: undefined });
+    if (accepted?.operationId !== 'op-789') {
+      throw new Error('202 JSON body was dropped by generated client');
+    }
+    console.log(`  Accepted operation ID: ${accepted.operationId}`);
+
     // Test 23: Responses - 204 No Content
     console.log('\n✓ Test 23: Responses - 204 No Content');
     await client.responses.ResponsesController_response204({ signal: undefined });

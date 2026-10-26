@@ -668,12 +668,30 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
   return { params: params.join(', '), isParamsOptional };
 }
 
+function getSuccessResponse(op: Operation) {
+  const preferred = op.responses.get(200) || op.responses.get(201);
+  if (preferred) {
+    return preferred;
+  }
+  // Fall back to the lowest other 2xx status that declares content (e.g. 202).
+  const statuses = Array.from(op.responses.keys())
+    .filter((s) => s >= 200 && s < 300)
+    .sort((a, b) => a - b);
+  for (const status of statuses) {
+    const response = op.responses.get(status);
+    if (response?.content) {
+      return response;
+    }
+  }
+  return undefined;
+}
+
 function inferReturnType(
   op: Operation,
   isStreaming: boolean,
   responseMode: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void'
 ): string {
-  const successResponse = op.responses.get(200) || op.responses.get(201);
+  const successResponse = getSuccessResponse(op);
 
   if (!successResponse?.content) {
     return isStreaming ? 'AsyncIterable<any>' : 'Promise<void>';
@@ -722,7 +740,7 @@ function getPreferredRequestBodyContentType(op: Operation): string | undefined {
 }
 
 function inferResponseMode(op: Operation): 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void' {
-  const successResponse = op.responses.get(200) || op.responses.get(201);
+  const successResponse = getSuccessResponse(op);
   if (!successResponse?.content) {
     return 'void';
   }
