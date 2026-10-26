@@ -27,8 +27,25 @@ Admin routes use `AccessTokenGuard` + `ScopesGuard` + `@RequireScopes(UserScopes
 - **Validation.** All fields are bounded and trimmed on client and server. Unknown fields are rejected by the global validation pipe.
 - **Duplicates.** Emails are unique case-insensitively. A repeat submission updates the row (`submission_count + 1`, `last_submitted_at = now()`, new answer if one is given) and gets the exact same response, so the form can't be used to check whether an email was submitted before. Status is left as it was. Because the list is ordered by `last_submitted_at`, the repeat moves to the top.
 - **Honeypot.** If the hidden `website` field is filled, the backend returns the normal success response and stores nothing.
-- **Ceiling.** There's a best-effort, in-process limit of 300 accepted submissions per backend process per hour (`ACCESS_REQUESTS_BUSY`, `429`). It isn't shared across replicas and resets on restart. It only bounds how fast one flood can fill the table. Per-client rate limiting belongs at the gateway and is tracked as a separate task.
+- **Rate limits.** See [Rate limiting](#rate-limiting).
 - No CAPTCHA, IP address or IP fingerprint is collected, and no deployment secrets or environment variables are needed.
+
+## Rate limiting
+
+`POST /api/v1/access-requests` has two limits:
+
+| Where | Limit | Response | Scope |
+| --- | --- | --- | --- |
+| Gateway (`install/manifests/base/rate-limit.yaml`) | 10 per minute, burst 5 | `429`, plain-text body `rate limit exceeded`, `x-ratelimit-limit` / `-remaining` / `-reset` headers (seconds). No `Retry-After`. | All clients share one bucket on the gateway proxy. It covers all Taico replicas and survives app restarts. |
+| Backend (`access-requests.service.ts`) | 300 accepted per hour | `429` `ACCESS_REQUESTS_BUSY` | Per backend process, resets on restart. Kept as a backstop. |
+
+The gateway limit is an agentgateway `local` rate limit attached only to the `access-requests-submit` rule of the `taico` HTTPRoute. A rule-level policy takes precedence over the gateway-wide `rateLimit` in the `gateways` namespace, so the general limit still applies to every other path.
+
+**These limits aren't per client.** One flood can briefly block `/join` for everyone. agentgateway can only key limits by client IP with `global` rate limiting, which needs an external rate-limit service (such as envoy `ratelimit` with Redis). Taico doesn't run one, to avoid adding infrastructure. If abuse shows up in practice, that's the next step: point a `global` descriptor at `source.address`, after the `x-forwarded-for` normalisation already in the gateway policy.
+
+`/api/v1/auth/login` and `/api/v1/auth/account-setup-status` have no extra gateway limit. A shared bucket there would let one client lock everyone out of sign-in. Those paths rely on the gateway-wide limit.
+
+The gateway doesn't log request bodies. Its access log adds user agent and forwarded IP attributes, which are configured in the `gateways` repo, not here. Taico itself stores no IPs.
 
 ## Privacy and retention
 

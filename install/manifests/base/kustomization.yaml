@@ -9,5 +9,7 @@ resources:
   - ./listener-set.yaml
   - ./route.yaml
   - ./https-redirect.yaml
+  - ./rate-limit.yaml
+  - ./aliases.yaml
   - ./certificate.yaml
   - ./postgres-service.yaml

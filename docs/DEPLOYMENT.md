@@ -56,12 +56,32 @@ install/manifests/
 │   ├── listener-set.yaml           # Gateway API HTTPS listener
 │   ├── route.yaml                 # Gateway API HTTPS application route
 │   ├── https-redirect.yaml        # Gateway API HTTP-to-HTTPS redirect
+│   ├── rate-limit.yaml            # agentgateway rate limit for POST /api/v1/access-requests
+│   ├── aliases.yaml               # join./marketing.taico.app redirects (cert, listeners, routes)
 │   └── certificate.yaml           # TLS certificate
 └── overlays/
     └── main/                      # Production overlay
         ├── kustomization.yaml     # Overlay-specific config with replacements
         └── env.env                # Environment-specific values (placeholders)
 ```
+
+### Gateway rules
+
+The public Gateway (`gateways/public`, GatewayClass `agentgateway`) is managed in the gateways repo. It already sets a gateway-wide rate limit and normalises `x-forwarded-for`. Taico's manifests add:
+
+- **`POST /api/v1/access-requests` rate limit.** The `taico` HTTPRoute has a named rule, `access-requests-submit`, and `rate-limit.yaml` attaches an agentgateway `local` limit to it (10/min, burst 5). Clients past the limit get `429` with `x-ratelimit-*` headers. It's one bucket for all clients, not per IP. See [Access requests: Rate limiting](how-to-guides/access-requests.md#rate-limiting).
+- **Vanity hostnames.** `join.taico.app/*` redirects (`302`) to `https://taico.app/join`, and `marketing.taico.app/*` to `https://taico.app/marketing`, over both HTTP and HTTPS. They have their own Certificate (`taico-aliases-tls`) and ListenerSet, so a missing DNS record or failed issuance can't affect `taico.app`. **Prerequisite:** DNS records for both hostnames pointing at the public gateway. Until those exist, the `taico-aliases` Certificate stays pending, which is harmless.
+
+Check the rules after a sync:
+
+```bash
+kubectl get agentgatewaypolicy,listenerset,httproute,certificate -n taico
+# Rate limit: once the bucket is empty, the remaining POSTs in that minute return 429
+for i in $(seq 1 20); do curl -s -o /dev/null -w '%{http_code}\n' -X POST https://taico.app/api/v1/access-requests -H 'content-type: application/json' -d '{}'; done
+curl -sI https://join.taico.app/ | grep -i location   # https://taico.app/join
+```
+
+The `-d '{}'` body fails validation (`400`) so the check doesn't store anything, but it still uses up tokens from the bucket.
 
 ### Base ConfigMap
 
