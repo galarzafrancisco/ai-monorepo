@@ -135,6 +135,7 @@ Extensive documentation in `/docs/`:
 - `how-to-guides/realtime-events.md` - Real-time domain events, gateway wiring, room topology, and UI sync principles
 - `how-to-guides/sign-in-with-chatgpt.md` - The ChatGPT plan provider for threads: where it may be used, the sign-in flow, whose plan pays for a turn, and its limits
 - `how-to-guides/thread-timers.md` - Threads agent reminders, recurring schedules, task watchers and the `get_time` tool (user timezone): tools, multi-backend firing, downtime behavior
+- `how-to-guides/access-requests.md` - Public /join expressions of interest, admin review, abuse limits, privacy
 - `how-to-guides/search.md` - Hybrid search (keyword, fuzzy title, semantic), the search index, pgvector requirements, and search settings
 - `DEPLOYMENT.md` - Production deployment with Kubernetes and GitOps workflow
 

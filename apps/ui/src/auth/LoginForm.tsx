@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { WebAuthenticationService } from './api';
 import { Stack, Text, Button } from '../ui/primitives';
@@ -26,6 +26,7 @@ export function LoginForm() {
   const [slug, setSlug] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [noAccess, setNoAccess] = useState(false);
 
   const { login, refreshAuth, isLoading: authIsLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -65,14 +66,17 @@ export function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setNoAccess(false);
 
     try {
       const status = await WebAuthenticationService.webAuthControllerGetAccountSetupStatus({ email });
       if (!status.canSetup) {
-        setError('That email is not ready for account setup. Ask an admin to create or reset the account.');
+        setNoAccess(true);
+        setError('');
         return;
       }
       setEmail(status.email);
+      setNoAccess(false);
       setMode('setup-account');
     } catch (err: any) {
       setError(readAuthError(err, 'Could not check that email.'));
@@ -118,6 +122,15 @@ export function LoginForm() {
             </Stack>
 
             {error && <ErrorText size="2" weight="medium">{error}</ErrorText>}
+
+            {noAccess && (
+              <Stack spacing="2" aria-live="polite">
+                <Text size="2">This email isn’t set up for an account yet. Taico access is by invitation, but you can tell us you’re interested.</Text>
+                <Button type="button" variant="secondary" size="md" onClick={() => navigate('/join', { state: { email } })}>
+                  Express interest
+                </Button>
+              </Stack>
+            )}
 
             <Button type="submit" variant="primary" size="lg" disabled={isLoading} className="login-button">
               {isLoading ? 'Checking...' : 'Continue'}
@@ -238,6 +251,7 @@ export function LoginForm() {
           >
             Create account
           </Button>
+          <Link to="/marketing" className="login-about-link">What is Taico?</Link>
         </Stack>
       </Stack>
     </form>

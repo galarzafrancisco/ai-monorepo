@@ -45,6 +45,8 @@ import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
+import { AccessRequestsModule } from './access-requests/access-requests.module';
+import { AccessRequests1762300000000 } from './migrations/1762300000000-AccessRequests';
 import { WalkthroughModule } from './walkthrough/walkthrough.module';
 import { ServerLifecycleService } from './server-lifecycle.service';
 
@@ -81,6 +83,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadPins1762000000000,
         ThreadMessageTimezone1762100000000,
         ThreadHardDelete1762200000000,
+        AccessRequests1762300000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -104,6 +107,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
     WorkersModule,
     GlobalSearchModule,
     WalkthroughModule,
+    AccessRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService, ServerLifecycleService],

@@ -109,6 +109,12 @@ async function createConfiguredApp(
     }),
   });
 
+  // Behind a reverse proxy/ingress set TRUST_PROXY (e.g. "1" hop) so req.ip is the
+  // real client IP; the public access-request rate limit is keyed on it.
+  if (process.env.TRUST_PROXY) {
+    const v = process.env.TRUST_PROXY;
+    app.set('trust proxy', /^\d+$/.test(v) ? Number(v) : v === 'true' ? true : v);
+  }
   app.use(cookieParser());
   app.enableCors({
     origin: true,

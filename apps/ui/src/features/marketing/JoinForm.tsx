@@ -3,12 +3,14 @@ import type { FormEvent } from 'react';
 import { BUILDING_MAX, submitAccessRequest, validateAccessRequest } from './accessRequest';
 import type { AccessRequestErrors } from './accessRequest';
 
-export function JoinForm() {
-  const [email, setEmail] = useState('');
+export function JoinForm({ initialEmail = '' }: { initialEmail?: string }) {
+  const [email, setEmail] = useState(initialEmail);
   const [building, setBuilding] = useState('');
   const [errors, setErrors] = useState<AccessRequestErrors>({});
   const [busy, setBusy] = useState(false);
+  const [website, setWebsite] = useState(''); // honeypot
   const [done, setDone] = useState(false);
+  const [failure, setFailure] = useState('');
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -19,16 +21,20 @@ export function JoinForm() {
       return;
     }
     setBusy(true);
-    try { await submitAccessRequest({ email: email.trim(), building }); } finally { setBusy(false); }
-    setDone(true);
+    setFailure('');
+    const result = await submitAccessRequest({ email: email.trim(), building, website });
+    setBusy(false);
+    if (result.status === 'submitted') setDone(true);
+    else if (result.status === 'rate_limited') setFailure('Too many attempts from your network. Please try again in a while.');
+    else if (result.status === 'invalid') setFailure('We couldn’t accept that. Check your email address and description, then try again.');
+    else setFailure('Something went wrong and your request was not saved. Please try again.');
   }
 
   if (done) {
     return (
       <div className="pub-form-done" role="status">
-        <strong>Access requests aren’t open yet.</strong>
-        <p>Nothing was sent or stored, so we don’t have your email. Check back soon.</p>
-        <button type="button" className="pub-btn pub-btn--ghost" onClick={() => setDone(false)}>Back to the form</button>
+        <strong>Request received.</strong>
+        <p>We’ve stored your interest. Access isn’t automatic: an admin reviews requests and may or may not get in touch. We haven’t sent you an email.</p>
       </div>
     );
   }
@@ -47,7 +53,18 @@ export function JoinForm() {
         placeholder="Claude Code, 37 terminals, a lot of tabs…" maxLength={BUILDING_MAX + 50} />
       {errors.building && <p id="join-building-err" className="pub-err">{errors.building}</p>}
 
-      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Requesting…' : 'Request access'}</button>
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+        <label htmlFor="join-website">Leave this empty</label>
+        <input id="join-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+      </div>
+
+      {failure && <p className="pub-err" role="alert">{failure}</p>}
+
+      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Express interest'}</button>
+      <p className="pub-sub">
+        We store your email and answer so an admin can review your request. We don’t send marketing email, and this
+        doesn’t create an account. Ask an admin to delete your request at any time.
+      </p>
     </form>
   );
 }

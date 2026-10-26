@@ -1,6 +1,6 @@
 /**
- * Request-access form logic. Pure and transport-free so it can be unit tested
- * and wired to a real endpoint later without touching the UI.
+ * Request-access form logic. Validation is pure so it can be unit tested; the
+ * server re-validates everything.
  */
 export interface AccessRequestInput {
   email: string;
@@ -25,15 +25,34 @@ export function validateAccessRequest(input: AccessRequestInput): AccessRequestE
 
 export type AccessRequestResult =
   | { status: 'submitted' }
-  | { status: 'not_connected' };
+  | { status: 'rate_limited' }
+  | { status: 'invalid' }
+  | { status: 'error' };
 
 /**
- * PLACEHOLDER. Nothing is sent, stored, emailed or queued.
- * Replace the body with a real call (e.g. POST /api/v1/access-requests) and
- * return `{ status: 'submitted' }` only once the server confirms.
+ * POSTs to the public, write-only endpoint. Returns `submitted` only when the
+ * server confirmed (HTTP 2xx), i.e. the request has been stored.
+ * `website` is a honeypot field: real users never fill it.
  */
-export async function submitAccessRequest(input: AccessRequestInput): Promise<AccessRequestResult> {
-  void input; // unused until wired to a real endpoint
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  return { status: 'not_connected' };
+export async function submitAccessRequest(
+  input: AccessRequestInput & { website?: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<AccessRequestResult> {
+  try {
+    const res = await fetchImpl('/api/v1/access-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: input.email.trim(),
+        building: input.building.trim() || undefined,
+        website: input.website || undefined,
+      }),
+    });
+    if (res.ok) return { status: 'submitted' };
+    if (res.status === 429) return { status: 'rate_limited' };
+    if (res.status === 400) return { status: 'invalid' };
+    return { status: 'error' };
+  } catch {
+    return { status: 'error' };
+  }
 }

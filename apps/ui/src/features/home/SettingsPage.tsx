@@ -27,6 +27,7 @@ import {
   Server,
   Sparkles,
   Users,
+  Inbox,
 } from 'lucide-react';
 import './SettingsPage.css';
 
@@ -211,6 +212,15 @@ export function SettingsPage() {
       iconTone: 'accent',
       path: '/settings/users',
       action: 'Manage users',
+      detail: { label: 'Access', value: 'Admin only', tone: 'default' },
+    },
+    {
+      title: 'Access requests',
+      description: 'Review expressions of interest from the public join page.',
+      icon: Inbox,
+      iconTone: 'neutral',
+      path: '/settings/access-requests',
+      action: 'Review requests',
       detail: { label: 'Access', value: 'Admin only', tone: 'default' },
     },
     {

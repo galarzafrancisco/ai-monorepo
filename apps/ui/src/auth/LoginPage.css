@@ -116,3 +116,19 @@
     padding-right: var(--space-3);
   }
 }
+
+.login-about-link {
+  align-self: center;
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+.login-about-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-2);
+}
