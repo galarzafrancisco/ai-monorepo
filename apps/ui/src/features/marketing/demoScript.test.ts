@@ -27,6 +27,11 @@ describe('demo script', () => {
     const after = reduceDemo(DEMO_EVENTS, DEMO_EVENTS.length - 1).tasks.filter((t) => t.id !== HERO_ID);
     expect(after.some((t, i) => t.status !== before[i].status)).toBe(true);
   });
+  it('shows a building task asking for help, then unblocked once it moves on', () => {
+    const qa = (n: number) => reduceDemo(DEMO_EVENTS, n).tasks.find((t) => t.id === '5e8a13')!;
+    expect(qa(0)).toMatchObject({ status: 'IN_PROGRESS', questions: 1 });
+    expect(qa(DEMO_EVENTS.length - 1)).toMatchObject({ status: 'FOR_REVIEW', questions: 0 });
+  });
   it('ends in a thread with a shipped task and a reminder', () => {
     const v = reduceDemo(DEMO_EVENTS, DEMO_EVENTS.length - 1);
     expect(v.approved).toBe(true);

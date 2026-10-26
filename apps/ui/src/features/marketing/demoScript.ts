@@ -10,7 +10,7 @@ export type ActorId = 'jane' | 'claude-dev' | 'code-reviewer' | 'planner' | 'qa'
 
 /** Avatars are the bundled ones agents can pick in the app (apps/ui/public/avatar). */
 export const ACTORS: Record<ActorId, { name: string; handle: string; kind: 'human' | 'agent'; avatar?: string }> = {
-  jane: { name: 'Jane', handle: 'jane', kind: 'human' },
+  jane: { name: 'Jane', handle: 'jane', kind: 'human', avatar: '/avatar/grace.png' },
   'claude-dev': { name: 'Claude developer', handle: 'claude-dev', kind: 'agent', avatar: '/avatar/claude.webp' },
   'code-reviewer': { name: 'Code reviewer', handle: 'code-reviewer', kind: 'agent', avatar: '/avatar/openai.svg' },
   planner: { name: 'Planner', handle: 'planner', kind: 'agent', avatar: '/avatar/stacy.png' },
@@ -33,13 +33,15 @@ export interface BoardTask {
   assignee: ActorId;
   comments: number;
   artefacts: number;
+  /** Open questions the assignee is waiting on a person to answer. */
+  questions?: number;
 }
 
 /** The task the demo follows. The rest of the board is background life. */
 export const HERO_ID = 'a41c92';
 export const PR_URL = 'github.com/acme/api/pull/412';
 
-type SideMove = { id: string; status: TaskStatus; assignee?: ActorId };
+type SideMove = { id: string; status: TaskStatus; assignee?: ActorId; questions?: number };
 
 export type DemoEvent = { caption: string; side?: SideMove } & (
   | { type: 'create' }
@@ -53,7 +55,7 @@ export type DemoEvent = { caption: string; side?: SideMove } & (
 const BACKGROUND: BoardTask[] = [
   { id: '7c01de', name: 'Spike: SSO with Okta', description: 'Do we need SAML, or is OIDC enough?', status: 'NOT_STARTED', assignee: 'jane', comments: 2, artefacts: 0 },
   { id: '19bb40', name: 'Plan the v2 migration', description: 'Split the auth and pagination changes into tasks', status: 'NOT_STARTED', assignee: 'planner', comments: 0, artefacts: 0 },
-  { id: '5e8a13', name: 'Fix flaky checkout e2e', description: 'Cart total races the price fetch', status: 'IN_PROGRESS', assignee: 'qa', comments: 3, artefacts: 1 },
+  { id: '5e8a13', name: 'Fix flaky checkout e2e', description: 'Cart total races the price fetch', status: 'IN_PROGRESS', assignee: 'qa', comments: 3, artefacts: 1, questions: 1 },
   { id: 'c2f7a9', name: 'Bump Postgres to 16', description: 'Staging is green, needs a final look', status: 'FOR_REVIEW', assignee: 'code-reviewer', comments: 4, artefacts: 1 },
   { id: '0d44e1', name: 'Drop the legacy /v1 auth', description: 'Last client migrated on Friday', status: 'DONE', assignee: 'claude-dev', comments: 6, artefacts: 2 },
 ];
@@ -78,7 +80,7 @@ export const DEMO_EVENTS: DemoEvent[] = [
   { type: 'status', status: 'IN_PROGRESS', caption: 'The developer picks it up again, with the review right there on the task.' },
   { type: 'comment', caption: 'It fixes both and pushes to the same PR.',
     message: { by: 'claude-dev', text: 'Keyed by API token now, and added a Retry-After test. Pushed to the same PR.' },
-    side: { id: '5e8a13', status: 'FOR_REVIEW', assignee: 'code-reviewer' } },
+    side: { id: '5e8a13', status: 'FOR_REVIEW', assignee: 'code-reviewer', questions: 0 } },
   { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', caption: 'Back to review.' },
   { type: 'approve', caption: 'Approved. It ships, and the whole trail stays on the task.',
     message: { by: 'code-reviewer', text: 'Both fixed. Approved.' } },
@@ -138,7 +140,7 @@ export function reduceDemo(events: DemoEvent[], upTo: number): DemoView {
     }
     if (e.side) {
       const s = e.side;
-      tasks = tasks.map((t) => (t.id === s.id ? { ...t, status: s.status, ...(s.assignee && { assignee: s.assignee }) } : t));
+      tasks = tasks.map((t) => (t.id === s.id ? { ...t, status: s.status, ...(s.assignee && { assignee: s.assignee }), ...(s.questions !== undefined && { questions: s.questions }) } : t));
       view.touched = [...view.touched, s.id];
     }
   }

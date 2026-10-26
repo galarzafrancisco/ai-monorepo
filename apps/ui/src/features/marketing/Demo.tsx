@@ -30,11 +30,13 @@ function DemoCard({ task, pulse, animate, when }: { task: BoardTask; pulse?: num
   const a = ACTORS[task.assignee];
   const tags = [];
   if (task.comments) tags.push({ label: `💬 ${task.comments}` });
+  if (task.questions) tags.push({ label: `✋ ${task.questions}` });
   if (task.artefacts) tags.push({ label: `🔗 ${task.artefacts}` });
   return (
     <BoardCard
       className={task.id === HERO_ID ? 'pub-demo-card--hero' : ''}
       animation={animate ? 'entering' : undefined}
+      highlight={!!task.questions}
       pulseKey={pulse}
       leading={<Avatar name={a.name} src={a.avatar} size="md" />}
       topRight={when ?? (task.id === HERO_ID ? 'just now' : '2h ago')}

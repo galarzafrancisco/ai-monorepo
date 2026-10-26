@@ -70,7 +70,8 @@
 .pub-col .board-card:hover { transform: none; }
 .pub-col .row-title { font-size: 13px; }
 .pub-col .row-subtitle { font-size: 12px; }
-.pub .board-card.pub-demo-card--hero { border-color: color-mix(in srgb, var(--accent) 55%, var(--border-subtle)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 6px 18px rgba(0, 0, 0, 0.3); }
+/* The followed task glows softly; no border tint, since an accent border means "needs help" (BoardCard highlight). */
+.pub .board-card.pub-demo-card--hero { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 6px 18px rgba(0, 0, 0, 0.3); }
 
 .pub-panel { border-left: 1px solid var(--border-subtle); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; min-height: 0; overflow: hidden; }
 .pub-panel__head { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: var(--fs-1); }
