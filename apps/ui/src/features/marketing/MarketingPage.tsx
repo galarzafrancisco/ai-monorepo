@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Play } from 'lucide-react';
 import { Demo } from './Demo';
 import { PublicLayout } from './PublicLayout';
 import { Shift } from './Shift';
@@ -28,7 +29,7 @@ export function MarketingPage() {
           </p>
           <div className="pub-actions">
             <Link to="/join" className="pub-btn">Join the waitlist</Link>
-            <a href="#demo" className="pub-link">Watch a task ship ↓</a>
+            <a href="#demo" className="pub-btn pub-btn--ghost"><Play size={16} aria-hidden="true" /> Watch a task ship</a>
           </div>
         </section>
 

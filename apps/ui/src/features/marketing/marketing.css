@@ -25,6 +25,9 @@
 /* Buttons: same blue as the app's primary actions */
 .pub-btn { display: inline-flex; justify-content: center; align-items: center; font: inherit; font-weight: var(--fw-semibold); padding: var(--space-3) var(--space-5); min-height: 44px; border-radius: var(--r-3); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-contrast) !important; text-decoration: none; cursor: pointer; transition: background 0.15s; }
 .pub-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.pub-btn--ghost { gap: var(--space-2); background: transparent; border-color: var(--border); color: var(--text) !important; }
+.pub-btn--ghost:hover { background: var(--surface); border-color: var(--text-muted); }
+.pub-btn--ghost svg { color: var(--accent); }
 .pub-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* Hero: pain -> shift */
