@@ -124,6 +124,7 @@ replacements:
 | `DATABASE_URL` | PostgreSQL URL from the `taico-database` Secret | `postgresql://taico:...@taico-postgres:5432/taico` |
 | `DATABASE_SSL` | Require verified TLS to PostgreSQL | `false` for the private host endpoint |
 | `TYPEORM_SCHEMA_MODE` | Schema management; production uses migrations | `migrate` |
+| `TRUST_PROXY` | Number of trusted proxy hops (ingress) in front of the backend. Required so the public access-request rate limit uses real client IPs; without it all visitors share one bucket. Set to `0`/unset only when exposed directly | `1` |
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
 

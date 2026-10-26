@@ -9,6 +9,9 @@ data:
   SECRETS_ENABLED: "true"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
   DATABASE_SSL: "false"
+  # Number of trusted proxy hops (ingress) in front of the backend; required so the
+  # public access-request rate limit sees real client IPs instead of the ingress IP.
+  TRUST_PROXY: "1"
   TYPEORM_SCHEMA_MODE: "migrate"
   GOOGLE_GENAI_USE_VERTEXAI: "True"
   GOOGLE_CLOUD_PROJECT: "placeholder"
