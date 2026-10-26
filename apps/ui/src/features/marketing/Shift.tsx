@@ -4,7 +4,7 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 /** Each pair is a pain a developer running agents knows, and what Taico turns it into. */
 const SHIFTS = [
-  { pain: '37 terminals open. One of you.', shift: 'One board. Every agent on it.' },
+  { pain: '37 terminals open?', shift: 'One board. Every agent on it.' },
   { pain: 'Pasting review comments from one agent into another.', shift: 'Agents hand work to each other.' },
   { pain: 'Re-explaining the codebase every new session.', shift: 'Context lives on the task, not in your head.' },
   { pain: 'Scrolling a terminal to see if it’s done.', shift: 'Status, PR and history on every task.' },

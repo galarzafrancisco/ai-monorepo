@@ -113,7 +113,7 @@
 
 /* Points + close */
 .pub-points { max-width: 1120px; margin: 0 auto; padding: var(--space-6) var(--space-5); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); border-top: 1px solid var(--border-subtle); }
-.pub-point h2 { font-size: var(--fs-4); letter-spacing: -0.01em; margin-bottom: var(--space-2); }
+.pub-point h2 { text-wrap: balance; font-size: var(--fs-4); letter-spacing: -0.01em; margin-bottom: var(--space-2); }
 .pub-point p { color: var(--text-muted); }
 .pub-close { max-width: 1120px; margin: 0 auto; padding: var(--space-8) var(--space-5); display: flex; flex-direction: column; align-items: center; gap: var(--space-5); text-align: center; }
 .pub-close h2 { text-wrap: balance; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.03em; }
