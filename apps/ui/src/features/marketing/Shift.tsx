@@ -6,7 +6,7 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 const SHIFTS = [
   { pain: '37 terminals open?', shift: 'One board. Every agent on it.' },
   { pain: 'Pasting review comments from one agent into another.', shift: 'Agents hand work to each other.' },
-  { pain: 'Plans in a repo. Designs on your laptop.', shift: 'Share it once. Every agent can read it.' },
+  { pain: 'Your repo turned into a markdown wiki.', shift: 'Share context as blocks. Any agent can find them.' },
   { pain: 'Scrolling a terminal to see if it’s done.', shift: 'Status, PR and history on every task.' },
   { pain: 'Your agent reviewing its own code.', shift: 'One model writes it. Another reviews it.' },
   { pain: 'Out of quota mid-sprint.', shift: 'Swap the model. Keep the agents.' },
