@@ -15,8 +15,9 @@
 .pub-form { display: flex; flex-direction: column; gap: var(--space-2); }
 .pub-form label { font-weight: var(--fw-medium); font-size: var(--fs-2); margin-top: var(--space-2); }
 .pub-form label span { color: var(--text-muted); font-weight: var(--fw-normal); }
-.pub-form input, .pub-form textarea { font: inherit; font-size: var(--fs-input-mobile-safe); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--r-3); background: var(--bg); color: var(--text); resize: vertical; }
+.pub-form input, .pub-form textarea, .pub-form select { font: inherit; font-size: var(--fs-input-mobile-safe); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--r-3); background: var(--bg); color: var(--text); resize: vertical; }
 .pub-form input[aria-invalid='true'], .pub-form textarea[aria-invalid='true'] { border-color: var(--danger); }
+.pub-form select { min-height: 44px; resize: none; }
 .pub-form .pub-btn { margin-top: var(--space-3); }
 .pub-err { color: var(--danger); font-size: var(--fs-2); }
 .pub-form-done { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }

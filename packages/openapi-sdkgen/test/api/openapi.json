@@ -3373,6 +3373,28 @@
         ]
       }
     },
+    "/edge-cases/enum/nullable": {
+      "get": {
+        "operationId": "EdgeCasesController_testNullableEnums",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NullableEnumsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test nullable named enum, inline enum and ref",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
     "/edge-cases/enum/single-value": {
       "post": {
         "operationId": "EdgeCasesController_testSingleValueEnum",
@@ -5707,6 +5729,59 @@
         "required": [
           "id",
           "name"
+        ]
+      },
+      "NullableNamedEnum": {
+        "type": "string",
+        "enum": [
+          "alpha",
+          "beta"
+        ]
+      },
+      "NullableTargetDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "NullableEnumsDto": {
+        "type": "object",
+        "properties": {
+          "namedEnum": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NullableNamedEnum"
+              }
+            ]
+          },
+          "inlineEnum": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "one",
+              "two"
+            ]
+          },
+          "target": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NullableTargetDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "namedEnum",
+          "inlineEnum",
+          "target"
         ]
       },
       "SingleValueEnumDto": {

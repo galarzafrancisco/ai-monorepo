@@ -275,7 +275,7 @@ export interface ConnectionFlowResponseDto {
 export interface AuthJourneyResponseDto {
   id: string;
   status: 'not_started' | 'USER_CONSENT_REJECTED' | 'mcp_auth_flow_started' | 'mcp_auth_flow_completed' | 'connections_flow_started' | 'connections_flow_completed' | 'authorization_code_issued' | 'authorization_code_exchanged';
-  actor: ActorResponseDto;
+  actor: ActorResponseDto | null;
   mcpAuthorizationFlow: McpFlowResponseDto;
   connectionAuthorizationFlows: ConnectionFlowResponseDto[];
   createdAt: string;
@@ -541,7 +541,7 @@ export interface CommentResponseDto {
   id: string;
   taskId: string;
   commenterName: string;
-  commenterActor?: ActorResponseDto;
+  commenterActor?: ActorResponseDto | null;
   content: string;
   createdAt: string;
 }
@@ -578,7 +578,7 @@ export interface TaskResponseDto {
   description: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   assignee?: string | null;
-  assigneeActor?: ActorResponseDto;
+  assigneeActor?: ActorResponseDto | null;
   sessionId?: string | null;
   comments: CommentResponseDto[];
   artefacts: ArtefactResponseDto[];
@@ -665,9 +665,9 @@ export interface TaskInfoDto {
 export interface AgentRunResponseDto {
   id: string;
   actorId: string;
-  actor?: ActorResponseDto;
+  actor?: ActorResponseDto | null;
   parentTaskId: string;
-  parentTask?: TaskInfoDto;
+  parentTask?: TaskInfoDto | null;
   createdAt: string;
   startedAt?: Record<string, any> | null;
   endedAt?: Record<string, any> | null;
@@ -703,7 +703,7 @@ export interface TaskSummaryResponseDto {
   name: string;
   description: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-  assigneeActor?: ActorResponseDto;
+  assigneeActor?: ActorResponseDto | null;
   createdByActor: ActorResponseDto;
   tags: TagResponseDto[];
   commentCount: number;
@@ -815,7 +815,7 @@ export interface ThreadMessageResponseDto {
   threadId: string;
   content: string;
   createdByActorId?: string | null;
-  createdByActor?: ActorResponseDto;
+  createdByActor?: ActorResponseDto | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1092,7 +1092,7 @@ export interface MoveBlockDto {
 export interface TaskExecutionQueueEntryResponseDto {
   taskId: string;
   taskName: string | null;
-  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE' | null;
 }
 
 export interface TaskExecutionQueueListResponseDto {
@@ -1122,7 +1122,7 @@ export interface ActiveTaskExecutionResponseDto {
   id: string;
   taskId: string;
   taskName: string | null;
-  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE' | null;
   claimedAt: string;
   lastHeartbeatAt: string | null;
   runnerSessionId: string | null;
@@ -1132,7 +1132,7 @@ export interface ActiveTaskExecutionResponseDto {
   workerClientId: string;
   taskAssigneeActorIdBeforeClaim: string | null;
   agentActorId: string;
-  stats: ExecutionStatsResponseDto;
+  stats: ExecutionStatsResponseDto | null;
 }
 
 export interface ActiveTaskExecutionListResponseDto {
@@ -1145,7 +1145,7 @@ export interface ActiveTaskExecutionListResponseDto {
 
 export interface StopActiveTaskExecutionDto {
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
-  errorCode?: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN';
+  errorCode?: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN' | null;
   errorMessage?: string | null;
 }
 
@@ -1153,7 +1153,7 @@ export interface TaskExecutionHistoryResponseDto {
   id: string;
   taskId: string;
   taskName: string | null;
-  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE' | null;
   claimedAt: string;
   transitionedAt: string;
   agentActorId: string;
@@ -1161,9 +1161,9 @@ export interface TaskExecutionHistoryResponseDto {
   runnerSessionId: string | null;
   toolCallCount: number;
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
-  errorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN';
+  errorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN' | null;
   errorMessage: string | null;
-  stats: ExecutionStatsResponseDto;
+  stats: ExecutionStatsResponseDto | null;
 }
 
 export interface UpdateRunnerSessionIdDto {
@@ -1211,7 +1211,7 @@ export interface TaskBlueprintResponseDto {
   name: string;
   description: string;
   assigneeActorId?: Record<string, any> | null;
-  assigneeActor?: ActorResponseDto;
+  assigneeActor?: ActorResponseDto | null;
   tags: TagResponseDto[];
   dependsOnIds: string[];
   createdByActor: ActorResponseDto;
@@ -1377,9 +1377,13 @@ export interface UserWalkthroughStatusResponseDto {
   onboardingDisplayMode: 'FULL_PAGE' | 'BANNER' | 'OFF';
 }
 
+export type AccessRequestHeardFrom = 'x' | 'linkedin' | 'word_of_mouth' | 'conference_tshirt' | 'other';
+
 export interface CreateAccessRequestDto {
   email: string;
   building?: string;
+  heardFrom?: AccessRequestHeardFrom;
+  heardFromOther?: string;
   website?: string;
 }
 
@@ -1393,6 +1397,8 @@ export interface AccessRequestResponseDto {
   id: string;
   email: string;
   building: string | null;
+  heardFrom: AccessRequestHeardFrom | null;
+  heardFromOther: string | null;
   status: AccessRequestStatus;
   submissionCount: number;
   createdAt: string;

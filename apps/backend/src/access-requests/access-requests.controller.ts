@@ -51,7 +51,12 @@ export class AccessRequestsController {
   async create(@Body() dto: CreateAccessRequestDto): Promise<CreateAccessRequestResponseDto> {
     // Honeypot: answer exactly like a real submission, store nothing.
     if (dto.website && dto.website.trim() !== '') return { received: true };
-    await this.service.submit({ email: dto.email, building: dto.building });
+    await this.service.submit({
+      email: dto.email,
+      building: dto.building,
+      heardFrom: dto.heardFrom,
+      heardFromOther: dto.heardFromOther,
+    });
     return { received: true };
   }
 }
@@ -98,6 +103,8 @@ function toDto(r: AccessRequestResult): AccessRequestResponseDto {
     id: r.id,
     email: r.email,
     building: r.building,
+    heardFrom: r.heardFrom,
+    heardFromOther: r.heardFromOther,
     status: r.status,
     submissionCount: r.submissionCount,
     createdAt: r.createdAt.toISOString(),

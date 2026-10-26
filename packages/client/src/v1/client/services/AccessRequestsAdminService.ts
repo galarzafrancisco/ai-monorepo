@@ -14,7 +14,7 @@ export class AccessRequestsAdminService {
     /**
      * Admin: list access requests, most recently submitted first
      * @param status
-     * @param search Matches email or answer (case-insensitive)
+     * @param search Matches email, answer or "other" source text (case-insensitive)
      * @param limit
      * @param offset
      * @returns AccessRequestListResponseDto

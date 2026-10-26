@@ -7,6 +7,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise.js';
 export { OpenAPI } from './core/OpenAPI.js';
 export type { OpenAPIConfig } from './core/OpenAPI.js';
 
+export { AccessRequestHeardFrom } from './models/AccessRequestHeardFrom.js';
 export type { AccessRequestListResponseDto } from './models/AccessRequestListResponseDto.js';
 export type { AccessRequestResponseDto } from './models/AccessRequestResponseDto.js';
 export { AccessRequestStatus } from './models/AccessRequestStatus.js';

@@ -59,12 +59,15 @@ function generateTypeDefinition(name: string, schema: SchemaInfo): string {
 }
 
 function schemaToTypeScript(schema: SchemaInfo): string {
+  // A nullable $ref (e.g. `{ nullable: true, allOf: [{ $ref }] }`) or inline
+  // enum must keep its `| null`, otherwise runtime nulls are hidden from callers.
   if (schema.ref) {
-    return schema.ref;
+    return schema.nullable ? `${schema.ref} | null` : schema.ref;
   }
 
   if (schema.enum) {
-    return schema.enum.map((v) => `'${v}'`).join(' | ');
+    const values = schema.enum.map((v) => `'${v}'`).join(' | ');
+    return schema.nullable ? `${values} | null` : values;
   }
 
   let baseType: string;

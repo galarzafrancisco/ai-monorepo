@@ -57,6 +57,18 @@
   white-space: pre-wrap;
 }
 
+.access-requests__source {
+  overflow-wrap: anywhere;
+}
+
+.access-requests__source-label {
+  color: var(--text-muted);
+}
+
+.access-requests__source-other {
+  font-style: italic;
+}
+
 .access-requests__sr-only {
   position: absolute;
   width: 1px;

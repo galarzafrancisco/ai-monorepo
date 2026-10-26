@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { AccessRequestStatus } from '../../enums';
+import { AccessRequestHeardFrom, AccessRequestStatus } from '../../enums';
 
 export class ListAccessRequestsQueryDto {
   @ApiPropertyOptional({ enum: AccessRequestStatus, enumName: 'AccessRequestStatus' })
@@ -9,7 +9,7 @@ export class ListAccessRequestsQueryDto {
   @IsEnum(AccessRequestStatus)
   status?: AccessRequestStatus;
 
-  @ApiPropertyOptional({ description: 'Matches email or answer (case-insensitive)', maxLength: 100 })
+  @ApiPropertyOptional({ description: 'Matches email, answer or "other" source text (case-insensitive)', maxLength: 100 })
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
@@ -42,6 +42,9 @@ export class AccessRequestResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty() email!: string;
   @ApiProperty({ nullable: true, type: String }) building!: string | null;
+  @ApiProperty({ nullable: true, enum: AccessRequestHeardFrom, enumName: 'AccessRequestHeardFrom' })
+  heardFrom!: AccessRequestHeardFrom | null;
+  @ApiProperty({ nullable: true, type: String }) heardFromOther!: string | null;
   @ApiProperty({ enum: AccessRequestStatus, enumName: 'AccessRequestStatus' }) status!: AccessRequestStatus;
   @ApiProperty() submissionCount!: number;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;

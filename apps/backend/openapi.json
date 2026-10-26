@@ -8100,7 +8100,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Matches email or answer (case-insensitive)",
+            "description": "Matches email, answer or \"other\" source text (case-insensitive)",
             "schema": {
               "maxLength": 100,
               "type": "string"
@@ -15320,6 +15320,17 @@
           "onboardingDisplayMode"
         ]
       },
+      "AccessRequestHeardFrom": {
+        "type": "string",
+        "enum": [
+          "x",
+          "linkedin",
+          "word_of_mouth",
+          "conference_tshirt",
+          "other"
+        ],
+        "description": "Where did you hear about Taico?"
+      },
       "CreateAccessRequestDto": {
         "type": "object",
         "properties": {
@@ -15332,6 +15343,19 @@
             "type": "string",
             "maxLength": 280,
             "description": "What are you building with agents?"
+          },
+          "heardFrom": {
+            "description": "Where did you hear about Taico?",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccessRequestHeardFrom"
+              }
+            ]
+          },
+          "heardFromOther": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Where, when heardFrom is \"other\". Ignored for any other heardFrom."
           },
           "website": {
             "type": "string",
@@ -15375,6 +15399,18 @@
             "type": "string",
             "nullable": true
           },
+          "heardFrom": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccessRequestHeardFrom"
+              }
+            ]
+          },
+          "heardFromOther": {
+            "type": "string",
+            "nullable": true
+          },
           "status": {
             "allOf": [
               {
@@ -15403,6 +15439,8 @@
           "id",
           "email",
           "building",
+          "heardFrom",
+          "heardFromOther",
           "status",
           "submissionCount",
           "createdAt",
