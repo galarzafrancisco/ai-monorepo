@@ -95,10 +95,39 @@ jobs:
           echo "Check the test output above for details."
           echo "You can also download the test-results artifact for more information."
 
-  docker:
-    name: Build and Push Docker Image
+  # The image builds alongside the tests instead of after them. This job never
+  # pushes: it only warms the BuildKit cache, so the push job below rebuilds
+  # from cache in seconds once the tests have passed.
+  docker-build:
+    name: Build Docker Image
     runs-on: ubuntu-24.04-arm
-    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Pushes only when the tests AND the image build both passed. Every layer is
+  # already in the cache from docker-build; if the cache was evicted this does
+  # a full build instead, which is slower but still correct.
+  docker:
+    name: Push Docker Image
+    runs-on: ubuntu-24.04-arm
+    needs: [test, docker-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -139,7 +168,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   docker-release-tag:
     name: Tag existing image with release tag
