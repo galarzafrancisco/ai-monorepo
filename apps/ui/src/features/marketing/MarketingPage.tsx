@@ -45,7 +45,7 @@ export function MarketingPage() {
         </section>
 
         <section className="pub-close">
-          <h2>Keep the work. Lose the terminals.</h2>
+          <h2>Close the terminals. Keep the agents.</h2>
           <Link to="/join" className="pub-btn">Join the waitlist</Link>
         </section>
       </main>
