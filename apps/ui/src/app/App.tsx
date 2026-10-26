@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { ThemeProvider } from './providers';
 import { AuthProvider, LoginPage, OnboardingPage, ProtectedRoute, useAuth } from '../auth';
@@ -20,6 +20,8 @@ import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 import { ExecutionsRoutes } from '../features/executions/ExecutionsRoutes';
 import { ActorsProvider } from '../features/actors';
 import { ToastProvider } from '../shared/context/ToastContext';
+import { PublicSite } from '../features/marketing/PublicSite';
+import { isPublicPath } from '../features/marketing/publicPaths';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
 
 /**
@@ -78,6 +80,23 @@ function BetaAppRoutes() {
 export function App() {
   return (
     <BrowserRouter basename={BASE_PATH}>
+      <AppSwitch />
+    </BrowserRouter>
+  );
+}
+
+function AppSwitch() {
+  const { pathname } = useLocation();
+  // Public acquisition pages (/join, /marketing) bypass auth entirely.
+  if (isPublicPath(pathname)) {
+    return <ThemeProvider><PublicSite /></ThemeProvider>;
+  }
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
+  return (
+    <>
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
@@ -111,6 +130,6 @@ export function App() {
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </>
   )
 }
