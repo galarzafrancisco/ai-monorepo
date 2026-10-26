@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AccessRequestEntity } from './access-request.entity';
-import { AccessRequestStatus } from './enums';
+import { AccessRequestHeardFrom, AccessRequestStatus } from './enums';
 import { AccessRequestNotFoundError, AccessRequestsBusyError } from './errors/access-requests.errors';
 import { SubmissionCeiling } from './submission-ceiling';
 import {
@@ -35,15 +35,21 @@ export class AccessRequestsService {
 
     const email = input.email.trim();
     const building = input.building?.trim() ? input.building.trim() : null;
+    const { heardFrom, heardFromOther } = normalizeHeardFrom(input);
+    // A repeat that names a source replaces the stored source and its text
+    // together; a repeat without one keeps what was there.
     await this.repo.query(
-      `INSERT INTO "access_requests" ("email", "email_normalized", "building")
-       VALUES ($1, $2, $3)
+      `INSERT INTO "access_requests" ("email", "email_normalized", "building", "heard_from", "heard_from_other")
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT ("email_normalized") DO UPDATE SET
          "submission_count" = "access_requests"."submission_count" + 1,
          "last_submitted_at" = now(),
          "updated_at" = now(),
-         "building" = COALESCE(EXCLUDED."building", "access_requests"."building")`,
-      [email, email.toLowerCase(), building],
+         "building" = COALESCE(EXCLUDED."building", "access_requests"."building"),
+         "heard_from" = COALESCE(EXCLUDED."heard_from", "access_requests"."heard_from"),
+         "heard_from_other" = CASE WHEN EXCLUDED."heard_from" IS NULL
+           THEN "access_requests"."heard_from_other" ELSE EXCLUDED."heard_from_other" END`,
+      [email, email.toLowerCase(), building, heardFrom, heardFromOther],
     );
   }
 
@@ -56,7 +62,7 @@ export class AccessRequestsService {
     if (input.status) qb.andWhere('r.status = :status', { status: input.status });
     if (input.search) {
       const term = `%${input.search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-      qb.andWhere('(r.email ILIKE :term OR r.building ILIKE :term)', { term });
+      qb.andWhere('(r.email ILIKE :term OR r.building ILIKE :term OR r.heardFromOther ILIKE :term)', { term });
     }
     qb.take(input.limit ?? 50).skip(input.offset ?? 0);
     const [rows, total] = await qb.getManyAndCount();
@@ -84,10 +90,25 @@ function toResult(r: AccessRequestEntity): AccessRequestResult {
     id: r.id,
     email: r.email,
     building: r.building,
+    heardFrom: r.heardFrom,
+    heardFromOther: r.heardFromOther,
     status: r.status,
     submissionCount: r.submissionCount,
     createdAt: r.createdAt,
     lastSubmittedAt: r.lastSubmittedAt,
     reviewedAt: r.reviewedAt,
+  };
+}
+
+/** "Other" text is kept only for the "other" source, and blank text is dropped. */
+function normalizeHeardFrom(input: SubmitAccessRequestInput): {
+  heardFrom: AccessRequestHeardFrom | null;
+  heardFromOther: string | null;
+} {
+  const heardFrom = input.heardFrom ?? null;
+  const other = input.heardFromOther?.trim();
+  return {
+    heardFrom,
+    heardFromOther: heardFrom === AccessRequestHeardFrom.OTHER && other ? other : null,
   };
 }

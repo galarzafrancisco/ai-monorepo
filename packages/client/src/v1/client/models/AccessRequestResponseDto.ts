@@ -2,11 +2,14 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AccessRequestHeardFrom } from './AccessRequestHeardFrom.js';
 import type { AccessRequestStatus } from './AccessRequestStatus.js';
 export type AccessRequestResponseDto = {
     id: string;
     email: string;
     building: string | null;
+    heardFrom: AccessRequestHeardFrom | null;
+    heardFromOther: string | null;
     status: AccessRequestStatus;
     submissionCount: number;
     createdAt: string;

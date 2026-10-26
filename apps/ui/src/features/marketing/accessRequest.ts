@@ -2,9 +2,27 @@
  * Request-access form logic. Validation is pure so it can be unit tested; the
  * server re-validates everything (bounds mirror apps/backend access-request.limits.ts).
  */
+/** Stable values stored by the backend (AccessRequestHeardFrom). '' = not answered. */
+export type HeardFrom = '' | 'x' | 'linkedin' | 'word_of_mouth' | 'conference_tshirt' | 'other';
+
+export const HEARD_FROM_OPTIONS: ReadonlyArray<{ value: Exclude<HeardFrom, ''>; label: string }> = [
+  { value: 'x', label: 'X' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'word_of_mouth', label: 'Word of mouth' },
+  { value: 'conference_tshirt', label: 'Saw a T-shirt at a conference' },
+  { value: 'other', label: 'Other' },
+];
+
+export function heardFromLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return HEARD_FROM_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
+
 export interface AccessRequestInput {
   email: string;
   building: string;
+  heardFrom?: HeardFrom;
+  heardFromOther?: string;
 }
 
 export type AccessRequestErrors = Partial<Record<keyof AccessRequestInput, string>>;
@@ -12,6 +30,7 @@ export type AccessRequestErrors = Partial<Record<keyof AccessRequestInput, strin
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const EMAIL_MAX = 254;
 export const BUILDING_MAX = 280;
+export const HEARD_FROM_OTHER_MAX = 120;
 
 export function validateAccessRequest(input: AccessRequestInput): AccessRequestErrors {
   const errors: AccessRequestErrors = {};
@@ -20,6 +39,9 @@ export function validateAccessRequest(input: AccessRequestInput): AccessRequestE
   else if (email.length > EMAIL_MAX || !EMAIL_RE.test(email)) errors.email = 'That doesn’t look like an email address.';
   if (input.building.trim().length > BUILDING_MAX) {
     errors.building = `Keep it under ${BUILDING_MAX} characters.`;
+  }
+  if (input.heardFrom === 'other' && (input.heardFromOther ?? '').trim().length > HEARD_FROM_OTHER_MAX) {
+    errors.heardFromOther = `Keep it under ${HEARD_FROM_OTHER_MAX} characters.`;
   }
   return errors;
 }
@@ -30,7 +52,13 @@ export type AccessRequestResult =
   | { status: 'invalid' }
   | { status: 'error' };
 
-export type AccessRequestPayload = { email: string; building?: string; website?: string };
+export type AccessRequestPayload = {
+  email: string;
+  building?: string;
+  heardFrom?: Exclude<HeardFrom, ''>;
+  heardFromOther?: string;
+  website?: string;
+};
 export type AccessRequestSender = (body: AccessRequestPayload) => Promise<unknown>;
 
 /**
@@ -43,9 +71,13 @@ export async function submitAccessRequest(
   send: AccessRequestSender,
 ): Promise<AccessRequestResult> {
   try {
+    const heardFrom = input.heardFrom || undefined;
     await send({
       email: input.email.trim(),
       building: input.building.trim() || undefined,
+      heardFrom,
+      // Only "Other" carries free text; anything typed before switching away is dropped.
+      heardFromOther: heardFrom === 'other' ? input.heardFromOther?.trim() || undefined : undefined,
       website: input.website || undefined,
     });
     return { status: 'submitted' };
@@ -59,6 +91,6 @@ export async function submitAccessRequest(
 
 export const FAILURE_MESSAGES: Record<Exclude<AccessRequestResult['status'], 'submitted'>, string> = {
   busy: 'We’re getting a lot of requests right now and couldn’t save yours. Please try again in a little while.',
-  invalid: 'We couldn’t accept that. Check your email address and answer, then try again.',
+  invalid: 'We couldn’t accept that. Check your email address and answers, then try again.',
   error: 'Something went wrong and your request was not saved. Please try again.',
 };

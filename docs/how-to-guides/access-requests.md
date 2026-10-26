@@ -15,12 +15,30 @@ The email travels from step 2 to step 3 in React Router navigation state, not in
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| `POST` | `/api/v1/access-requests` | Public | Write-only. Body: `email` (≤254), optional `building` (≤280), honeypot `website`. Always `201 { received: true }` on success. |
-| `GET` | `/api/v1/admin/access-requests` | `user:admin` scope | `status`, `search` (≤100, email or answer, case-insensitive), `limit` (≤200), `offset`. Most recently submitted first. |
+| `POST` | `/api/v1/access-requests` | Public | Write-only. Body: `email` (≤254), optional `building` (≤280), optional `heardFrom` (enum, see below), optional `heardFromOther` (≤120), honeypot `website`. Always `201 { received: true }` on success. |
+| `GET` | `/api/v1/admin/access-requests` | `user:admin` scope | `status`, `search` (≤100, email, answer or "other" source text, case-insensitive), `limit` (≤200), `offset`. Most recently submitted first. |
 | `PATCH` | `/api/v1/admin/access-requests/:id` | `user:admin` scope | `{ status: 'new' \| 'reviewed' }` |
 | `DELETE` | `/api/v1/admin/access-requests/:id` | `user:admin` scope | Hard delete |
 
 Admin routes use `AccessTokenGuard` + `ScopesGuard` + `@RequireScopes(UserScopes.ADMIN.id)`, the same pattern as client registration. Anonymous calls get `401`, signed-in non-admins `403`. The admin scope is set when the user signs in, so a role change applies at their next sign-in.
+
+## Where did you hear about Taico?
+
+`/join` has an optional dropdown. The stored values (`AccessRequestHeardFrom`) are stable and the labels live only in the UI (`HEARD_FROM_OPTIONS` in `apps/ui/src/features/marketing/accessRequest.ts`):
+
+| Value | Label |
+| --- | --- |
+| `x` | X |
+| `linkedin` | LinkedIn |
+| `word_of_mouth` | Word of mouth |
+| `conference_tshirt` | Saw a T-shirt at a conference |
+| `other` | Other (reveals an optional free-text field, ≤120) |
+
+- Columns `heard_from` and `heard_from_other` are nullable, so requests from before the question existed stay valid and show no source in the admin view.
+- `heard_from_other` is only kept when `heard_from = 'other'`. The UI clears the text when another option is picked, the service drops it otherwise, and a DB check constraint (`CHK_access_requests_heard_from_other`) enforces it.
+- An unknown `heardFrom` value is rejected with `400`. There's no DB check on the value itself, so adding a source only needs the enum, the UI option and a regenerated client. Never rename or reuse a value: existing rows keep it. The admin view falls back to showing the raw value if it doesn't know the label.
+- A repeat submission that names a source replaces the stored source and text together. One without a source keeps the stored one.
+- Admins see the source under each request in **Settings > Access requests**.
 
 ## Abuse and duplicates
 
@@ -32,7 +50,7 @@ Admin routes use `AccessTokenGuard` + `ScopesGuard` + `@RequireScopes(UserScopes
 
 ## Privacy and retention
 
-- **Stored data.** Email, the optional answer, status, submission count, timestamps, and the ID of the admin who reviewed the request.
+- **Stored data.** Email, the optional answer, the optional "where did you hear about Taico" source and its free text, status, submission count, timestamps, and the ID of the admin who reviewed the request.
 - **Logging.** Submitted values aren't logged.
 - **Rendering.** The admin UI renders all submitted text as plain React text.
 - **Retention.** There's no automatic purge. Admins delete requests they no longer need, including on request from the person who submitted one. If volume grows, add a scheduled purge of reviewed rows older than N days.

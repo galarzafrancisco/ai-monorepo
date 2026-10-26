@@ -62,6 +62,8 @@ describe('Access requests E2E', () => {
       email: 'Person@Example.com',
       emailNormalized: 'person@example.com',
       building: 'agents',
+      heardFrom: null,
+      heardFromOther: null,
       status: 'new',
       submissionCount: 1,
     });
@@ -74,7 +76,52 @@ describe('Access requests E2E', () => {
     await submit({ email: 'a@b.co', building: 'x'.repeat(281) }).expect(400);
     await submit({ email: 'a@b.co', building: 42 }).expect(400);
     await submit({ email: 'a@b.co', role: 'admin' }).expect(400);
+    await submit({ email: 'a@b.co', heardFrom: 'myspace' }).expect(400);
+    await submit({ email: 'a@b.co', heardFrom: 7 }).expect(400);
+    await submit({ email: 'a@b.co', heardFrom: 'other', heardFromOther: 'x'.repeat(121) }).expect(400);
+    await submit({ email: 'a@b.co', heardFrom: 'other', heardFromOther: ['x'] }).expect(400);
     expect(await rows()).toHaveLength(0);
+  });
+
+  it('stores where the visitor heard about Taico', async () => {
+    await submit({ email: 'x@example.com', heardFrom: 'x' }).expect(201);
+    await submit({ email: 'shirt@example.com', heardFrom: 'conference_tshirt' }).expect(201);
+    await submit({ email: 'other@example.com', heardFrom: 'other', heardFromOther: '  a podcast  ' }).expect(201);
+    await submit({ email: 'blank@example.com', heardFrom: 'other', heardFromOther: '   ' }).expect(201);
+    // "Other" text is dropped unless "other" is the chosen source.
+    await submit({ email: 'mixed@example.com', heardFrom: 'linkedin', heardFromOther: 'ignored' }).expect(201);
+    await submit({ email: 'orphan@example.com', heardFromOther: 'ignored' }).expect(201);
+    await submit({ email: 'max@example.com', heardFrom: 'other', heardFromOther: 'y'.repeat(120) }).expect(201);
+
+    const byEmail = Object.fromEntries((await rows()).map((r) => [r.email, [r.heardFrom, r.heardFromOther]]));
+    expect(byEmail).toEqual({
+      'x@example.com': ['x', null],
+      'shirt@example.com': ['conference_tshirt', null],
+      'other@example.com': ['other', 'a podcast'],
+      'blank@example.com': ['other', null],
+      'mixed@example.com': ['linkedin', null],
+      'orphan@example.com': [null, null],
+      'max@example.com': ['other', 'y'.repeat(120)],
+    });
+  });
+
+  it('enforces "other" text only alongside the "other" source in the database', async () => {
+    await expect(
+      ds.query(
+        `INSERT INTO "access_requests" ("email", "email_normalized", "heard_from", "heard_from_other")
+         VALUES ('db@example.com', 'db@example.com', 'x', 'nope')`,
+      ),
+    ).rejects.toThrow(/CHK_access_requests_heard_from_other/);
+  });
+
+  it('updates the source on a repeat only when a new one is given', async () => {
+    await submit({ email: 'src@example.com', heardFrom: 'other', heardFromOther: 'a meetup' }).expect(201);
+    await submit({ email: 'SRC@example.com' }).expect(201);
+    let [row] = await rows();
+    expect([row.heardFrom, row.heardFromOther]).toEqual(['other', 'a meetup']);
+    await submit({ email: 'src@example.com', heardFrom: 'word_of_mouth' }).expect(201);
+    [row] = await rows();
+    expect([row.heardFrom, row.heardFromOther]).toEqual(['word_of_mouth', null]);
   });
 
   it('collapses duplicates into one row and answers identically', async () => {
@@ -119,14 +166,30 @@ describe('Access requests E2E', () => {
 
   it('lets admins list, search, filter, review and delete', async () => {
     await submit({ email: 'one@example.com', building: 'robots 100%' }).expect(201);
-    await submit({ email: 'two@example.com' }).expect(201);
+    await submit({ email: 'two@example.com', heardFrom: 'other', heardFromOther: 'Hacker News' }).expect(201);
 
     const list = await admin.list().expect(200);
     expect(list.body.total).toBe(2);
     expect(list.body.items.map((i: { email: string }) => i.email)).toEqual(['two@example.com', 'one@example.com']);
     expect(Object.keys(list.body.items[0]).sort()).toEqual(
-      ['building', 'createdAt', 'email', 'id', 'lastSubmittedAt', 'reviewedAt', 'status', 'submissionCount'].sort(),
+      [
+        'building',
+        'createdAt',
+        'email',
+        'heardFrom',
+        'heardFromOther',
+        'id',
+        'lastSubmittedAt',
+        'reviewedAt',
+        'status',
+        'submissionCount',
+      ].sort(),
     );
+    expect(list.body.items[0]).toMatchObject({ heardFrom: 'other', heardFromOther: 'Hacker News' });
+    expect(list.body.items[1]).toMatchObject({ heardFrom: null, heardFromOther: null });
+    expect((await admin.list('?search=hacker').expect(200)).body.items.map((i: { email: string }) => i.email)).toEqual([
+      'two@example.com',
+    ]);
 
     const search = await admin.list('?search=ROBOTS').expect(200);
     expect(search.body.items.map((i: { email: string }) => i.email)).toEqual(['one@example.com']);

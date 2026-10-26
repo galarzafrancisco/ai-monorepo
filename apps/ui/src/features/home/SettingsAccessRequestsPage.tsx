@@ -7,6 +7,7 @@ import { Button, Card, Stack, Text } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useHomeCtx } from './HomeProvider';
 import { AccessRequestsAdminService } from './accessRequestsApi';
+import { heardFromLabel } from '../marketing/accessRequest';
 import '../../auth/LoginPage.css';
 import './SettingsPage.css';
 import './SettingsUsersPage.css';
@@ -135,7 +136,7 @@ export function SettingsAccessRequestsPage() {
               value={searchInput}
               maxLength={100}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search email or answer"
+              placeholder="Search email or answers"
             />
             <Button type="submit" variant="secondary" size="sm">Search</Button>
           </form>
@@ -167,6 +168,7 @@ export function SettingsAccessRequestsPage() {
                 ) : (
                   <Text size="2" tone="muted">No answer given.</Text>
                 )}
+                <HeardFrom item={item} />
                 <Text size="1" tone="muted">
                   First sent {formatDate(item.createdAt)}
                   {item.submissionCount > 1 ? ` · sent ${item.submissionCount} times, last ${formatDate(item.lastSubmittedAt)}` : ''}
@@ -201,6 +203,19 @@ export function SettingsAccessRequestsPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+/** Attribution answer; older requests predate the question and show nothing. */
+function HeardFrom({ item }: { item: AccessRequestResponseDto }) {
+  const label = heardFromLabel(item.heardFrom);
+  if (!label) return null;
+  return (
+    <Text size="1" className="access-requests__source">
+      <span className="access-requests__source-label">Heard via </span>
+      {label}
+      {item.heardFromOther ? <>: <span className="access-requests__source-other">{item.heardFromOther}</span></> : null}
+    </Text>
   );
 }
 

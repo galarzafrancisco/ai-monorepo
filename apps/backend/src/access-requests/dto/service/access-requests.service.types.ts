@@ -1,8 +1,10 @@
-import { AccessRequestStatus } from '../../enums';
+import { AccessRequestHeardFrom, AccessRequestStatus } from '../../enums';
 
 export type SubmitAccessRequestInput = {
   email: string;
   building?: string | null;
+  heardFrom?: AccessRequestHeardFrom | null;
+  heardFromOther?: string | null;
 };
 
 export type ListAccessRequestsInput = {
@@ -16,6 +18,8 @@ export type AccessRequestResult = {
   id: string;
   email: string;
   building: string | null;
+  heardFrom: AccessRequestHeardFrom | null;
+  heardFromOther: string | null;
   status: AccessRequestStatus;
   submissionCount: number;
   createdAt: Date;

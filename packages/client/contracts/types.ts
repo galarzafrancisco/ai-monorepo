@@ -7095,11 +7095,20 @@ export interface components {
              */
             onboardingDisplayMode: "FULL_PAGE" | "BANNER" | "OFF";
         };
+        /**
+         * @description Where did you hear about Taico?
+         * @enum {string}
+         */
+        AccessRequestHeardFrom: "x" | "linkedin" | "word_of_mouth" | "conference_tshirt" | "other";
         CreateAccessRequestDto: {
             /** @example you@company.dev */
             email: string;
             /** @description What are you building with agents? */
             building?: string;
+            /** @description Where did you hear about Taico? */
+            heardFrom?: components["schemas"]["AccessRequestHeardFrom"];
+            /** @description Where, when heardFrom is "other". Ignored for any other heardFrom. */
+            heardFromOther?: string;
             /** @description Leave empty. */
             website?: string;
         };
@@ -7113,6 +7122,8 @@ export interface components {
             id: string;
             email: string;
             building: string | null;
+            heardFrom: components["schemas"]["AccessRequestHeardFrom"] | null;
+            heardFromOther: string | null;
             status: components["schemas"]["AccessRequestStatus"];
             submissionCount: number;
             /** Format: date-time */
@@ -12724,7 +12735,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: components["schemas"]["AccessRequestStatus"];
-                /** @description Matches email or answer (case-insensitive) */
+                /** @description Matches email, answer or "other" source text (case-insensitive) */
                 search?: string;
                 limit?: number;
                 offset?: number;

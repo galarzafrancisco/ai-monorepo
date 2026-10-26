@@ -1377,9 +1377,13 @@ export interface UserWalkthroughStatusResponseDto {
   onboardingDisplayMode: 'FULL_PAGE' | 'BANNER' | 'OFF';
 }
 
+export type AccessRequestHeardFrom = 'x' | 'linkedin' | 'word_of_mouth' | 'conference_tshirt' | 'other';
+
 export interface CreateAccessRequestDto {
   email: string;
   building?: string;
+  heardFrom?: AccessRequestHeardFrom;
+  heardFromOther?: string;
   website?: string;
 }
 
@@ -1393,6 +1397,8 @@ export interface AccessRequestResponseDto {
   id: string;
   email: string;
   building: string | null;
+  heardFrom: AccessRequestHeardFrom;
+  heardFromOther: string | null;
   status: AccessRequestStatus;
   submissionCount: number;
   createdAt: string;

@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { AccessRequestStatus } from './enums';
+import { AccessRequestHeardFrom, AccessRequestStatus } from './enums';
 
 /**
  * An expression of interest submitted from the public /join page.
@@ -29,6 +29,14 @@ export class AccessRequestEntity {
   /** Answer to "What are you building with agents?" (optional). */
   @Column({ type: 'varchar', length: 280, nullable: true })
   building!: string | null;
+
+  /** Answer to "Where did you hear about Taico?" (optional; null on older rows). */
+  @Column({ type: 'varchar', length: 32, nullable: true, name: 'heard_from' })
+  heardFrom!: AccessRequestHeardFrom | null;
+
+  /** Free text when `heardFrom` is `other`; always null otherwise (DB check). */
+  @Column({ type: 'varchar', length: 120, nullable: true, name: 'heard_from_other' })
+  heardFromOther!: string | null;
 
   @Column({ type: 'varchar', length: 16, default: AccessRequestStatus.NEW })
   status!: AccessRequestStatus;
