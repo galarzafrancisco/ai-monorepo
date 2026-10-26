@@ -121,4 +121,12 @@ describe('Access requests E2E', () => {
     await request(http).delete(`/api/v1/admin/access-requests/${id}`).set('Cookie', cookies).expect(204);
     await request(http).delete(`/api/v1/admin/access-requests/${id}`).set('Cookie', cookies).expect(404);
   });
+
+  it('orders by most recent submission so a retried older request moves to the top', async () => {
+    await submit({ email: 'old@example.com' }).expect(202);
+    await submit({ email: 'newer@example.com' }).expect(202);
+    await submit({ email: 'OLD@example.com' }).expect(202); // retry
+    const list = await request(http).get('/api/v1/admin/access-requests').set('Cookie', cookies).expect(200);
+    expect(list.body.items.map((i: any) => i.email)).toEqual(['old@example.com', 'newer@example.com']);
+  });
 });

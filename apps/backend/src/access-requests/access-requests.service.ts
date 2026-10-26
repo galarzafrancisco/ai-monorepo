@@ -56,7 +56,7 @@ export class AccessRequestsService {
   }
 
   async list(params: ListAccessRequestsParams) {
-    const qb = this.repo.createQueryBuilder('r').orderBy('r.createdAt', 'DESC');
+    const qb = this.repo.createQueryBuilder('r').orderBy('r.lastSubmittedAt', 'DESC').addOrderBy('r.createdAt', 'DESC');
     if (params.status) qb.andWhere('r.status = :status', { status: params.status });
     if (params.search) {
       const term = `%${params.search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
