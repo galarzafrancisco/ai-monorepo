@@ -387,6 +387,18 @@ export const ErrorCatalog: Record<
     type: '/errors/validation/failed',
     retryable: false,
   },
+  [ErrorCodes.ACCESS_REQUEST_NOT_FOUND]: {
+    status: 404,
+    title: 'Access request not found',
+    type: '/errors/access-requests/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.ACCESS_REQUESTS_BUSY]: {
+    status: 429,
+    title: 'Too many access requests',
+    type: '/errors/access-requests/busy',
+    retryable: true,
+  },
   [ErrorCodes.INTERNAL_ERROR]: {
     status: 500,
     title: 'Internal server error',

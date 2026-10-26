@@ -1376,3 +1376,35 @@ export interface UserWalkthroughStatusResponseDto {
   taskWithProjectCreated: boolean;
   onboardingDisplayMode: 'FULL_PAGE' | 'BANNER' | 'OFF';
 }
+
+export interface CreateAccessRequestDto {
+  email: string;
+  building?: string;
+  website?: string;
+}
+
+export interface CreateAccessRequestResponseDto {
+  received: boolean;
+}
+
+export type AccessRequestStatus = 'new' | 'reviewed';
+
+export interface AccessRequestResponseDto {
+  id: string;
+  email: string;
+  building: string | null;
+  status: AccessRequestStatus;
+  submissionCount: number;
+  createdAt: string;
+  lastSubmittedAt: string;
+  reviewedAt: string | null;
+}
+
+export interface AccessRequestListResponseDto {
+  items: AccessRequestResponseDto[];
+  total: number;
+}
+
+export interface UpdateAccessRequestDto {
+  status: AccessRequestStatus;
+}

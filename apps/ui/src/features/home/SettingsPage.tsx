@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Database,
   ExternalLink,
+  Inbox,
   KeyRound,
   LayoutDashboard,
   LockKeyhole,
@@ -137,6 +138,13 @@ export function SettingsPage() {
         aliases: ['users', 'user management', 'admin', 'accounts'],
         onSelect: () => navigate('/settings/users'),
       },
+      {
+        id: 'settings-access-requests',
+        label: 'Access requests',
+        description: 'Review expressions of interest from /join',
+        aliases: ['access requests', 'expressions of interest', 'join', 'interest'],
+        onSelect: () => navigate('/settings/access-requests'),
+      },
     ];
 
     return registerCommands(commands);
@@ -211,6 +219,15 @@ export function SettingsPage() {
       iconTone: 'accent',
       path: '/settings/users',
       action: 'Manage users',
+      detail: { label: 'Access', value: 'Admin only', tone: 'default' },
+    },
+    {
+      title: 'Access requests',
+      description: 'Review expressions of interest sent from the public /join page.',
+      icon: Inbox,
+      iconTone: 'accent',
+      path: '/settings/access-requests',
+      action: 'Review requests',
       detail: { label: 'Access', value: 'Admin only', tone: 'default' },
     },
     {

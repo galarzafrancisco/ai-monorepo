@@ -7,6 +7,9 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise.js';
 export { OpenAPI } from './core/OpenAPI.js';
 export type { OpenAPIConfig } from './core/OpenAPI.js';
 
+export type { AccessRequestListResponseDto } from './models/AccessRequestListResponseDto.js';
+export type { AccessRequestResponseDto } from './models/AccessRequestResponseDto.js';
+export { AccessRequestStatus } from './models/AccessRequestStatus.js';
 export type { AccountSetupStatusRequestDto } from './models/AccountSetupStatusRequestDto.js';
 export type { AccountSetupStatusResponseDto } from './models/AccountSetupStatusResponseDto.js';
 export type { ActiveTaskExecutionListResponseDto } from './models/ActiveTaskExecutionListResponseDto.js';
@@ -54,6 +57,8 @@ export type { ConnectionResponseDto } from './models/ConnectionResponseDto.js';
 export type { ConsentDecisionDto } from './models/ConsentDecisionDto.js';
 export type { ContextBlockSummaryResponseDto } from './models/ContextBlockSummaryResponseDto.js';
 export type { ContextTagResponseDto } from './models/ContextTagResponseDto.js';
+export type { CreateAccessRequestDto } from './models/CreateAccessRequestDto.js';
+export type { CreateAccessRequestResponseDto } from './models/CreateAccessRequestResponseDto.js';
 export { CreateAgentDto } from './models/CreateAgentDto.js';
 export type { CreateAgentRunDto } from './models/CreateAgentRunDto.js';
 export { CreateAiProviderDto } from './models/CreateAiProviderDto.js';
@@ -155,6 +160,7 @@ export { TokenExchangeRequestDto } from './models/TokenExchangeRequestDto.js';
 export type { TokenExchangeResponseDto } from './models/TokenExchangeResponseDto.js';
 export { TokenRequestDto } from './models/TokenRequestDto.js';
 export { TokenResponseDto } from './models/TokenResponseDto.js';
+export type { UpdateAccessRequestDto } from './models/UpdateAccessRequestDto.js';
 export type { UpdateAgentRunDto } from './models/UpdateAgentRunDto.js';
 export type { UpdateAiProviderConnectionDto } from './models/UpdateAiProviderConnectionDto.js';
 export type { UpdateAiProviderDto } from './models/UpdateAiProviderDto.js';
@@ -176,6 +182,8 @@ export { UserWalkthroughStatusResponseDto } from './models/UserWalkthroughStatus
 export type { VersionResponseDto } from './models/VersionResponseDto.js';
 export type { WorkerResponseDto } from './models/WorkerResponseDto.js';
 
+export { AccessRequestsService } from './services/AccessRequestsService.js';
+export { AccessRequestsAdminService } from './services/AccessRequestsAdminService.js';
 export { ActorsService } from './services/ActorsService.js';
 export { AgentService } from './services/AgentService.js';
 export { AgentExecutionTokensService } from './services/AgentExecutionTokensService.js';

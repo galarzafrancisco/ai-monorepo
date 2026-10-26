@@ -68,3 +68,6 @@
 .pub-dot.is-on::after { background: var(--text); }
 @keyframes pub-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pub-msg, .pub-slide { animation: none; } .pub-status { transition: none; } }
+/* Honeypot: off-screen for people, still present for naive bots. */
+.pub-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.pub-privacy { font-size: var(--fs-1); margin-top: var(--space-2); }

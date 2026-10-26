@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { WebAuthenticationService } from './api';
 import { Stack, Text, Button } from '../ui/primitives';
 import { ErrorText } from '../ui/primitives/ErrorText';
+import { accountSetupNextStep, joinNavigationState } from './accountSetup';
 import './LoginPage.css';
 
 export type NavForm = {
@@ -26,6 +27,7 @@ export function LoginForm() {
   const [slug, setSlug] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [offerRequestAccess, setOfferRequestAccess] = useState(false);
 
   const { login, refreshAuth, isLoading: authIsLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -65,14 +67,16 @@ export function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setOfferRequestAccess(false);
 
     try {
       const status = await WebAuthenticationService.webAuthControllerGetAccountSetupStatus({ email });
-      if (!status.canSetup) {
-        setError('That email is not ready for account setup. Ask an admin to create or reset the account.');
+      const next = accountSetupNextStep(status);
+      if (next.kind === 'request-access') {
+        setOfferRequestAccess(true);
         return;
       }
-      setEmail(status.email);
+      setEmail(next.email);
       setMode('setup-account');
     } catch (err: any) {
       setError(readAuthError(err, 'Could not check that email.'));
@@ -114,15 +118,29 @@ export function LoginForm() {
           <Stack spacing="4">
             <Stack spacing="2">
               <label htmlFor="setup-email" className="login-label"><Text size="2" weight="medium">Email</Text></label>
-              <input id="setup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="login-input" placeholder="name@work.com" required disabled={isLoading} autoComplete="email" />
+              <input id="setup-email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setOfferRequestAccess(false); }} className="login-input" placeholder="name@work.com" required disabled={isLoading} autoComplete="email" />
             </Stack>
 
             {error && <ErrorText size="2" weight="medium">{error}</ErrorText>}
 
-            <Button type="submit" variant="primary" size="lg" disabled={isLoading} className="login-button">
-              {isLoading ? 'Checking...' : 'Continue'}
-            </Button>
-            <Button type="button" variant="secondary" size="lg" disabled={isLoading} className="login-button" onClick={() => { setMode('sign-in'); setError(''); }}>
+            {offerRequestAccess && (
+              <div className="login-request-access" role="status">
+                <Text size="2" weight="semibold">We can’t set up an account for that email.</Text>
+                <Text size="2" tone="muted">
+                  Taico is invite-only for now. If you already have an account, sign in instead. Otherwise, tell us you’re interested and we’ll take a look.
+                </Text>
+                <Button type="button" variant="primary" size="lg" className="login-button" onClick={() => navigate('/join', { state: joinNavigationState(email) })}>
+                  Request access
+                </Button>
+              </div>
+            )}
+
+            {!offerRequestAccess && (
+              <Button type="submit" variant="primary" size="lg" disabled={isLoading} className="login-button">
+                {isLoading ? 'Checking...' : 'Continue'}
+              </Button>
+            )}
+            <Button type="button" variant="secondary" size="lg" disabled={isLoading} className="login-button" onClick={() => { setMode('sign-in'); setError(''); setOfferRequestAccess(false); }}>
               Back to sign in
             </Button>
           </Stack>
@@ -238,6 +256,7 @@ export function LoginForm() {
           >
             Create account
           </Button>
+          <Link to="/marketing" className="login-about-link">What is Taico?</Link>
         </Stack>
       </Stack>
     </form>
