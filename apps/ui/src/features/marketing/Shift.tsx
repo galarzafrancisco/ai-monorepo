@@ -7,6 +7,7 @@ const SHIFTS = [
   { pain: '37 terminals open?', shift: 'One board. Every agent on it.' },
   { pain: 'Pasting review comments from one agent into another.', shift: 'Agents hand work to each other.' },
   { pain: 'Re-explaining decisions to every new session.', shift: 'Context lives on the task, not in your head.' },
+  { pain: 'Scrolling a terminal to see if it’s done.', shift: 'Status, PR and history on every task.' },
   { pain: 'Your agent reviewing its own code.', shift: 'One model writes it. Another reviews it.' },
   { pain: 'Out of quota mid-sprint.', shift: 'Swap the model. Keep the agents.' },
   { pain: 'Prompting all day.', shift: 'You’re the tech lead now.' },
