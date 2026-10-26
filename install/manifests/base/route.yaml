@@ -12,6 +12,17 @@ spec:
   hostnames:
     - taico.app
   rules:
+    # Public, unauthenticated /join form submission. Named so the
+    # AgentgatewayPolicy in rate-limit.yaml can target just this rule.
+    - name: access-requests-submit
+      matches:
+        - path:
+            type: Exact
+            value: /api/v1/access-requests
+          method: POST
+      backendRefs:
+        - name: taico
+          port: 80
     - matches:
         - path:
             type: PathPrefix

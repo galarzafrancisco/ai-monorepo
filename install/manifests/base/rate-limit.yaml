@@ -1,0 +1,29 @@
+# Gateway-enforced ceiling for the public /join form (POST /api/v1/access-requests).
+#
+# This is an agentgateway *local* token bucket: it is enforced by the gateway
+# proxy (shared by every Taico replica, survives app restarts) but it is ONE
+# bucket for all clients, not per client IP. Per-IP limits need agentgateway's
+# `global` rate limiting, which requires an external rate-limit service (and
+# usually Redis). We deliberately don't run one. See
+# docs/how-to-guides/access-requests.md#rate-limiting.
+#
+# Precedence: a route-rule policy overrides the gateway-wide `rateLimit` in the
+# `gateways` namespace (field-level merge), so this bucket replaces the general
+# limit for this one rule only.
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: taico-access-requests-rate-limit
+  namespace: taico
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: taico
+      sectionName: access-requests-submit
+  traffic:
+    rateLimit:
+      local:
+        - requests: 10
+          unit: Minutes
+          burst: 5

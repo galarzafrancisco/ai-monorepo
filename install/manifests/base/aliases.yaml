@@ -1,0 +1,118 @@
+# Vanity hostnames that redirect to pages on taico.app:
+#   join.taico.app/*      -> https://taico.app/join
+#   marketing.taico.app/* -> https://taico.app/marketing
+#
+# Prerequisite: DNS records for both hostnames pointing at the public gateway.
+# The aliases have their own Certificate and ListenerSet so that a missing DNS
+# record or failed issuance can never affect the taico.app certificate or
+# listener. Redirects are 302 so the aliases can be repointed later without
+# fighting browser caches.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: taico-aliases
+  namespace: taico
+spec:
+  dnsNames:
+    - join.taico.app
+    - marketing.taico.app
+  secretName: taico-aliases-tls
+  privateKey:
+    rotationPolicy: Always
+  issuerRef:
+    name: letsencrypt-cluster-issuer
+    kind: ClusterIssuer
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: taico-aliases
+  namespace: taico
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: public
+    namespace: gateways
+  listeners:
+    - name: https-join
+      hostname: join.taico.app
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: taico-aliases-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https-marketing
+      hostname: marketing.taico.app
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: taico-aliases-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+# HTTPS: join.taico.app -> https://taico.app/join
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: taico-alias-join
+  namespace: taico
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: taico-aliases
+      sectionName: https-join
+    # Plain HTTP goes straight to the final URL (one hop, no http->https->taico.app).
+    # cert-manager's HTTP-01 solver routes use a more specific path, so they
+    # still win for /.well-known/acme-challenge/*.
+    - name: public
+      namespace: gateways
+      sectionName: http
+  hostnames:
+    - join.taico.app
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: taico.app
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /join
+            statusCode: 302
+---
+# HTTPS: marketing.taico.app -> https://taico.app/marketing
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: taico-alias-marketing
+  namespace: taico
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: taico-aliases
+      sectionName: https-marketing
+    - name: public
+      namespace: gateways
+      sectionName: http
+  hostnames:
+    - marketing.taico.app
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: taico.app
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /marketing
+            statusCode: 302
