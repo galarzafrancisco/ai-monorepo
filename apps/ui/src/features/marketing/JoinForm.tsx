@@ -108,7 +108,7 @@ export function JoinForm({ initialEmail = '' }: { initialEmail?: string }) {
 
       {failure && <p className="pub-err" role="alert">{failure}</p>}
 
-      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Join the waitlist'}</button>
+      <button type="submit" className="pub-btn" disabled={busy}>{busy ? 'Sending…' : 'Request early access'}</button>
       <p className="pub-sub pub-privacy">
         We store your email and answers only so the Taico team can review your request. This doesn’t create an
         account, and we won’t add you to a mailing list. Want it deleted? Just ask and we’ll remove it.

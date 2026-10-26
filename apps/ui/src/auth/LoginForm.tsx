@@ -130,7 +130,7 @@ export function LoginForm() {
                   Taico is invite-only for now. If you already have an account, sign in instead. Otherwise, tell us you’re interested and we’ll take a look.
                 </Text>
                 <Button type="button" variant="primary" size="lg" className="login-button" onClick={() => navigate('/join', { state: joinNavigationState(email) })}>
-                  Join the waitlist
+                  Request early access
                 </Button>
               </div>
             )}
