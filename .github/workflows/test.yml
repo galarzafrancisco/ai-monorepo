@@ -185,16 +185,37 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs: docker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Serialize deploys so two runs never mutate spark-ops at the same time.
+    concurrency:
+      group: deploy-spark-ops
+      cancel-in-progress: false
     permissions:
       contents: read
 
     steps:
+      - name: Check this commit is still the latest on main
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # If another PR merged while we were building, only the newest
+          # commit's run should update spark-ops, so skip the stale ones.
+          LATEST=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$LATEST" = "$GITHUB_SHA" ]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deploy: main moved to ${LATEST} (this run is ${GITHUB_SHA})"
+          fi
+
       - name: Checkout ai-monorepo
+        if: steps.current.outputs.latest == 'true'
         uses: actions/checkout@v5
         with:
           path: ai-monorepo
 
       - name: Checkout spark-ops
+        if: steps.current.outputs.latest == 'true'
         uses: actions/checkout@v5
         with:
           repository: galarzafrancisco/spark-ops
@@ -202,9 +223,11 @@ jobs:
           path: spark-ops
 
       - name: Setup Kustomize
+        if: steps.current.outputs.latest == 'true'
         uses: imranismail/setup-kustomize@v2
 
       - name: Extract image tag
+        if: steps.current.outputs.latest == 'true'
         id: image-tag
         run: |
           SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
@@ -213,6 +236,7 @@ jobs:
           echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Copy manifests to spark-ops
+        if: steps.current.outputs.latest == 'true'
         run: |
           # Remove old manifests if they exist
           rm -rf spark-ops/k8s/taico
@@ -227,7 +251,22 @@ jobs:
           # Use kustomize to set image tag
           kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
 
+      - name: Re-check this commit is still the latest on main (right before publishing)
+        id: final
+        if: steps.current.outputs.latest == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$LATEST" = "$GITHUB_SHA" ]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping spark-ops PR: main moved to ${LATEST} (this run is ${GITHUB_SHA})"
+          fi
+
       - name: Create Pull Request
+        if: steps.current.outputs.latest == 'true' && steps.final.outputs.latest == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.SPARK_OPS_TOKEN }}
