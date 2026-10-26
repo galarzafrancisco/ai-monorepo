@@ -38,15 +38,6 @@ spec:
             # missing key must stop the pod, not fall back to plaintext.
             - secretRef:
                 name: taico-secrets-encryption
-            # ACCESS_REQUEST_IP_HASH_KEY: HMAC key for visitor-IP hashes stored with
-            # access requests. Create with:
-            #   kubectl -n <ns> create secret generic taico-access-requests \
-            #     --from-literal=ACCESS_REQUEST_IP_HASH_KEY="$(openssl rand -hex 32)"
-            # Optional so existing clusters still start; without it a random
-            # per-process key is used (hashes not comparable across restarts).
-            - secretRef:
-                name: taico-access-requests
-                optional: true
           volumeMounts:
             - name: data
               mountPath: /app/data
