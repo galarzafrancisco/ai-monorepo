@@ -1,6 +1,7 @@
 import { useLayoutEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { COPYRIGHT_NOTICE } from '../../shared/const/brand';
 import './marketing.css';
 
 /**
@@ -31,7 +32,7 @@ export function PublicLayout({ children, nav }: { children: ReactNode; nav?: Rea
         {nav && <nav className="pub-nav__links">{nav}</nav>}
       </header>
       {children}
-      <footer className="pub-footer">© Taico</footer>
+      <footer className="pub-footer">{COPYRIGHT_NOTICE}</footer>
     </div>
   );
 }
