@@ -1,60 +1,51 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Demo } from './Demo';
 import { PublicLayout } from './PublicLayout';
+import { Shift } from './Shift';
 
-const LINES = [
-  { kind: 'Pain', text: '37 terminals open?', sub: 'Every agent in its own window, and you in the middle of all of them.' },
-  { kind: 'Pain', text: 'You’re not middleware.', sub: 'Copying a comment from one agent into another is a job for software, not you.' },
-  { kind: 'Pain', text: 'You’re not a context window.', sub: 'Decisions, history and progress should live somewhere that isn’t your head.' },
-  { kind: 'Shift', text: 'Give your agents tasks, not prompts.', sub: 'A task has an owner, a status and a trail. A prompt has none of those.' },
-  { kind: 'Shift', text: 'Get out of the way. Stay in control.', sub: 'Agents hand work to each other. You see every step and can step in at any one.' },
-  { kind: 'Shift', text: 'You’re the tech lead now.', sub: 'Stop prompting. Start leading.' },
+const POINTS = [
+  { title: 'Tasks, not prompts', text: 'A task has an owner, a status and a trail. Agents pick it up, post progress and link the PR, so you never have to ask where things are.' },
+  { title: 'Agents review agents', text: 'A reviewer agent reads the diff and sends it back with notes. The developer agent fixes it. You step in only when it matters.' },
+  { title: 'Context that stays put', text: 'Decisions, feedback and history stay on the task and its thread, where you and every agent can find them.' },
 ];
 
-function Carousel() {
-  const [i, setI] = useState(0);
-  const n = LINES.length;
-  const l = LINES[i];
-  return (
-    <section className="pub-carousel" aria-roledescription="carousel" aria-label="Why Taico">
-      <p className="pub-kind">{l.kind}</p>
-      <div aria-live="polite" key={i} className="pub-slide">
-        <h2>{l.text}</h2>
-        <p>{l.sub}</p>
-      </div>
-      <div className="pub-controls">
-        <button type="button" aria-label="Previous line" onClick={() => setI((i + n - 1) % n)}><ChevronLeft size={16} /></button>
-        <span className="pub-dots">
-          {LINES.map((_, d) => (
-            <button key={d} type="button" aria-label={`Line ${d + 1}`} aria-current={d === i}
-              className={`pub-dot${d === i ? ' is-on' : ''}`} onClick={() => setI(d)} />
-          ))}
-        </span>
-        <button type="button" aria-label="Next line" onClick={() => setI((i + 1) % n)}><ChevronRight size={16} /></button>
-      </div>
-    </section>
-  );
-}
-
 export function MarketingPage() {
+  // The join page links to /marketing#demo; the router doesn't scroll to hashes by itself.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [hash]);
   return (
-    <PublicLayout cta>
+    <PublicLayout nav={<Link to="/login" className="pub-nav__link">Sign in</Link>}>
       <main>
         <section className="pub-hero pub-hero--wide">
-          <h1>Stop prompting. Start leading.</h1>
+          <Shift />
+          <h1 className="pub-h1">Taico is a task board for you and your coding agents.</h1>
           <p className="pub-lead">
-            Taico is where your coding agents get tasks, report back, review each other’s work and keep
-            context, so you don’t have to ferry it around.
+            Agents pick up tasks, post progress, link their PRs and review each other’s work. You see every step
+            and can step in at any of them.
           </p>
-          <Link to="/join" className="pub-btn">Request access</Link>
+          <div className="pub-actions">
+            <Link to="/join" className="pub-btn">Join the waitlist</Link>
+            <a href="#demo" className="pub-link">Watch a task ship ↓</a>
+          </div>
         </section>
+
         <Demo />
-        <Carousel />
-        <section className="pub-hero pub-hero--wide">
+
+        <section className="pub-points" aria-label="How it works">
+          {POINTS.map((p) => (
+            <div key={p.title} className="pub-point">
+              <h2>{p.title}</h2>
+              <p>{p.text}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="pub-close">
           <h2>Keep the work. Lose the terminals.</h2>
-          <Link to="/join" className="pub-btn">Request access</Link>
+          <Link to="/join" className="pub-btn">Join the waitlist</Link>
         </section>
       </main>
     </PublicLayout>
