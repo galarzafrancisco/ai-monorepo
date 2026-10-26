@@ -35,7 +35,7 @@ export function JoinPage() {
           <Link to="/marketing#demo" className="pub-link">Watch a task ship →</Link>
         </div>
         <div id="request" className="pub-card pub-join__form">
-          <h2>Join the waitlist</h2>
+          <h2>Request early access</h2>
           <JoinForm initialEmail={initialEmail} />
         </div>
       </main>

@@ -28,7 +28,7 @@ export function MarketingPage() {
             and can step in at any of them.
           </p>
           <div className="pub-actions">
-            <Link to="/join" className="pub-btn">Join the waitlist</Link>
+            <Link to="/join" className="pub-btn">Request early access</Link>
             <a href="#demo" className="pub-btn pub-btn--ghost"><Play size={16} aria-hidden="true" /> Watch a task ship</a>
           </div>
         </section>
@@ -46,7 +46,7 @@ export function MarketingPage() {
 
         <section className="pub-close">
           <h2>Close the terminals. Keep the agents.</h2>
-          <Link to="/join" className="pub-btn">Join the waitlist</Link>
+          <Link to="/join" className="pub-btn">Request early access</Link>
         </section>
       </main>
     </PublicLayout>
