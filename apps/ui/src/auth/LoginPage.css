@@ -116,3 +116,35 @@
     padding-right: var(--space-3);
   }
 }
+
+.login-request-access {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  background: var(--surface);
+}
+
+.login-about-link {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login-about-link:hover {
+  color: var(--accent);
+}
+
+.login-about-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-2);
+}
