@@ -7,8 +7,8 @@ export class AccessRequestsResource extends BaseClient {
   }
 
   /** Public: express interest in access (write-only) */
-  async AccessRequestsController_create(params: { body: CreateAccessRequestDto; signal?: AbortSignal }): Promise<CreateAccessRequestResponseDto> {
-    return this.request('POST', '/api/v1/access-requests', { body: params.body, signal: params?.signal });
+  async AccessRequestsController_create(params: { body: CreateAccessRequestDto; signal?: AbortSignal }): Promise<void> {
+    return this.request('POST', '/api/v1/access-requests', { body: params.body, responseType: 'void', signal: params?.signal });
   }
 
 }

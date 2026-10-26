@@ -1,7 +1,7 @@
 import {
   Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiAcceptedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
@@ -38,7 +38,7 @@ export class AccessRequestsController {
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Public: express interest in access (write-only)' })
-  @ApiOkResponse({ type: CreateAccessRequestResponseDto })
+  @ApiAcceptedResponse({ type: CreateAccessRequestResponseDto })
   async create(@Body() dto: CreateAccessRequestDto, @Req() req: Request): Promise<CreateAccessRequestResponseDto> {
     const ip = req.ip ?? req.socket?.remoteAddress;
     if (!this.perIp.hit(ip ?? 'unknown') || !this.global.hit('all')) {
