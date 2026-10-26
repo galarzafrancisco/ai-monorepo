@@ -97,11 +97,12 @@ jobs:
 
   # The image builds alongside the tests instead of after them. This job never
   # pushes: it only warms the BuildKit cache, so the push job below rebuilds
-  # from cache in seconds once the tests have passed.
+  # from cache in seconds once the tests have passed. It also runs on PRs, so
+  # a broken Dockerfile or image build fails before merge, not after.
   docker-build:
     name: Build Docker Image
     runs-on: ubuntu-24.04-arm
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     permissions:
       contents: read
 
