@@ -55,7 +55,7 @@ export class AccessRequestsController {
   }
 }
 
-@ApiTags('Access Requests (admin)')
+@ApiTags('Access Requests Admin')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('admin/access-requests')
 @UseGuards(AccessTokenGuard)

@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
 import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,8 +20,19 @@ export class AccessRequestsService {
     @InjectRepository(ActorEntity) private readonly actors: Repository<ActorEntity>,
   ) {}
 
-  static hashIp(ip: string | undefined): string | null {
-    return ip ? createHash('sha256').update(`taico-access-request:${ip}`).digest('hex') : null;
+  /**
+   * Keyed hash (HMAC-SHA256) of the client IP. The key comes from
+   * ACCESS_REQUEST_IP_HASH_KEY; if unset, a random per-process key is used so the
+   * hash can never be reversed by enumerating IPv4 space (at the cost of hashes
+   * not being comparable across restarts). Rotating the key unlinks old hashes.
+   */
+  private static ephemeralKey: Buffer | undefined;
+
+  static hashIp(ip: string | undefined, key?: string): string | null {
+    if (!ip) return null;
+    const configured = key ?? process.env.ACCESS_REQUEST_IP_HASH_KEY;
+    const secret = configured || (AccessRequestsService.ephemeralKey ??= randomBytes(32));
+    return createHmac('sha256', secret).update(ip).digest('hex');
   }
 
   /**

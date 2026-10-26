@@ -15,4 +15,4 @@ The public `/join` page posts to `POST /api/v1/access-requests`. This stores an 
 In-memory per-process limits: 5 requests/IP/hour and 300/hour overall (429). Set `TRUST_PROXY` (e.g. `1`) when behind an ingress so the client IP is real; otherwise all visitors share one bucket. Limits reset on restart and aren't shared between replicas; add a shared limiter or a bot challenge if abused.
 
 ## Privacy / retention
-Stored: email, optional ≤280-char description, timestamps, submission count, and a salted SHA-256 of the IP (not the raw IP). Raw submissions aren't logged. Admins can delete any request; consider purging old reviewed requests periodically. No outbound email is sent.
+Stored: email, optional ≤280-char description, timestamps, submission count, and a keyed HMAC-SHA256 of the IP (not the raw IP). The key is `ACCESS_REQUEST_IP_HASH_KEY` (provide via a Kubernetes Secret); if unset a random per-process key is used, so hashes aren't comparable across restarts. Rotating the key unlinks previously stored hashes. Raw submissions aren't logged. Admins can delete any request; consider purging old reviewed requests periodically. No outbound email is sent.

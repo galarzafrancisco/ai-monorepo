@@ -8048,6 +8048,179 @@
           "Walkthrough"
         ]
       }
+    },
+    "/api/v1/access-requests": {
+      "post": {
+        "operationId": "AccessRequestsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccessRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAccessRequestResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Public: express interest in access (write-only)",
+        "tags": [
+          "Access Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/access-requests": {
+      "get": {
+        "operationId": "AccessRequestsAdminController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "reviewed"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Matches email or description (case-insensitive)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessRequestListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Admin: list access requests, newest first",
+        "tags": [
+          "Access Requests Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/access-requests/{id}": {
+      "patch": {
+        "operationId": "AccessRequestsAdminController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccessRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessRequestResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Admin: mark an access request new/reviewed",
+        "tags": [
+          "Access Requests Admin"
+        ]
+      },
+      "delete": {
+        "operationId": "AccessRequestsAdminController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Admin: delete an access request (retention)",
+        "tags": [
+          "Access Requests Admin"
+        ]
+      }
     }
   },
   "info": {
@@ -15143,6 +15316,116 @@
           "conversationModelReady",
           "taskWithProjectCreated",
           "onboardingDisplayMode"
+        ]
+      },
+      "CreateAccessRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "you@company.dev"
+          },
+          "building": {
+            "type": "string",
+            "maxLength": 280
+          },
+          "website": {
+            "type": "string",
+            "description": "Leave empty."
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "CreateAccessRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
+      "AccessRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "building": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "reviewed"
+            ]
+          },
+          "submissionCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "lastSubmittedAt": {
+            "type": "string"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "building",
+          "status",
+          "submissionCount",
+          "createdAt",
+          "lastSubmittedAt",
+          "reviewedAt"
+        ]
+      },
+      "AccessRequestListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessRequestResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ]
+      },
+      "UpdateAccessRequestDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "reviewed"
+            ]
+          }
+        },
+        "required": [
+          "status"
         ]
       }
     }

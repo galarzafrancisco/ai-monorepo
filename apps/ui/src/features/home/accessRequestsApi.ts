@@ -1,30 +1,37 @@
-export interface AccessRequestItem {
-  id: string;
-  email: string;
-  building: string | null;
-  status: 'new' | 'reviewed';
-  submissionCount: number;
-  createdAt: string;
-  lastSubmittedAt: string;
-  reviewedAt: string | null;
+import { ApiClient } from '@taico/client/v2';
+import type { AccessRequestResponseDto } from '@taico/client/v2';
+import { BFF_BASE_URL } from '../../config/api';
+
+const client = new ApiClient({
+  baseUrl: BFF_BASE_URL || window.location.origin,
+  credentials: 'include',
+});
+
+export type AccessRequestItem = AccessRequestResponseDto;
+
+async function wrap<T>(p: Promise<T>): Promise<T> {
+  try {
+    return await p;
+  } catch (e) {
+    const status = (e as { status?: unknown } | null)?.status;
+    if (typeof status === 'number') {
+      throw new Error(status === 403 ? 'Admin access required.' : `Request failed (${status}).`);
+    }
+    throw e;
+  }
 }
 
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/v1/admin/access-requests${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  });
-  if (!res.ok) throw new Error(res.status === 403 ? 'Admin access required.' : `Request failed (${res.status}).`);
-  return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
-}
+export const listAccessRequests = (p: { status?: string; search?: string }) =>
+  wrap(
+    client.accessRequestsAdmin.AccessRequestsAdminController_list({
+      limit: 200,
+      status: p.status === 'new' || p.status === 'reviewed' ? p.status : undefined,
+      search: p.search || undefined,
+    }),
+  );
 
-export const listAccessRequests = (p: { status?: string; search?: string }) => {
-  const q = new URLSearchParams({ limit: '200' });
-  if (p.status) q.set('status', p.status);
-  if (p.search) q.set('search', p.search);
-  return call<{ items: AccessRequestItem[]; total: number }>(`?${q}`);
-};
 export const setAccessRequestStatus = (id: string, status: 'new' | 'reviewed') =>
-  call<AccessRequestItem>(`/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-export const deleteAccessRequest = (id: string) => call<void>(`/${id}`, { method: 'DELETE' });
+  wrap(client.accessRequestsAdmin.AccessRequestsAdminController_update({ id, body: { status } }));
+
+export const deleteAccessRequest = (id: string) =>
+  wrap(client.accessRequestsAdmin.AccessRequestsAdminController_remove({ id }));
