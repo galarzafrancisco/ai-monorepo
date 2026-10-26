@@ -25,6 +25,9 @@
 /* Buttons: same blue as the app's primary actions */
 .pub-btn { display: inline-flex; justify-content: center; align-items: center; font: inherit; font-weight: var(--fw-semibold); padding: var(--space-3) var(--space-5); min-height: 44px; border-radius: var(--r-3); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-contrast) !important; text-decoration: none; cursor: pointer; transition: background 0.15s; }
 .pub-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.pub-btn--ghost { gap: var(--space-2); background: transparent; border-color: var(--border); color: var(--text) !important; }
+.pub-btn--ghost:hover { background: var(--surface); border-color: var(--text-muted); }
+.pub-btn--ghost svg { color: var(--accent); }
 .pub-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* Hero: pain -> shift */
@@ -33,6 +36,7 @@
 .pub-shift__pain { font-family: var(--font-mono); font-size: clamp(14px, 2vw, 17px); color: var(--text-muted); animation: pub-in 0.4s ease-out both; }
 .pub-shift__pain s { text-decoration: none; background: linear-gradient(var(--danger), var(--danger)) no-repeat 0 55% / 0 2px; animation: pub-strike 0.5s ease-in 0.9s forwards; }
 .pub-shift__new { font-weight: var(--fw-bold); letter-spacing: -0.035em; line-height: 1.08; text-wrap: balance; animation: pub-rise 0.55s cubic-bezier(.2,.7,.2,1) 1.25s both; }
+@media (min-width: 861px) { .pub-shift__sentence { display: inline-block; } }
 .pub-shift__slide.is-static .pub-shift__pain, .pub-shift__slide.is-static .pub-shift__new { animation: none; }
 .pub-shift__slide.is-static .pub-shift__pain s { animation: none; background-size: 100% 2px; }
 .pub-shift__nav { display: flex; align-items: center; gap: var(--space-2); }
@@ -113,7 +117,7 @@
 
 /* Points + close */
 .pub-points { max-width: 1120px; margin: 0 auto; padding: var(--space-6) var(--space-5); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); border-top: 1px solid var(--border-subtle); }
-.pub-point h2 { font-size: var(--fs-4); letter-spacing: -0.01em; margin-bottom: var(--space-2); }
+.pub-point h2 { text-wrap: balance; font-size: var(--fs-4); letter-spacing: -0.01em; margin-bottom: var(--space-2); }
 .pub-point p { color: var(--text-muted); }
 .pub-close { max-width: 1120px; margin: 0 auto; padding: var(--space-8) var(--space-5); display: flex; flex-direction: column; align-items: center; gap: var(--space-5); text-align: center; }
 .pub-close h2 { text-wrap: balance; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.03em; }
@@ -146,6 +150,8 @@
 
 /* Narrow screens: the board shows the column the task is in, and the panel moves under it. */
 @media (max-width: 860px) {
+  /* Long shifts wrap to three lines on phones; reserve them so the page doesn't jump. */
+  .pub-shift__slide { min-height: calc(3 * 1.08em + 1.6em); }
   .pub-window__app { grid-template-columns: minmax(0, 1fr); height: auto; }
   .pub-mini-nav { display: none; }
   .pub-scene--board { grid-template-columns: minmax(0, 1fr); }

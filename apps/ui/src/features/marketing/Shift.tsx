@@ -4,10 +4,12 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 /** Each pair is a pain a developer running agents knows, and what Taico turns it into. */
 const SHIFTS = [
-  { pain: '37 terminals open. One of you.', shift: 'One board. Every agent on it.' },
+  { pain: '37 terminals open?', shift: 'One board. Every agent on it.' },
   { pain: 'Pasting review comments from one agent into another.', shift: 'Agents hand work to each other.' },
-  { pain: 'Re-explaining the codebase every new session.', shift: 'Context lives on the task, not in your head.' },
+  { pain: 'Your repo turned into a markdown wiki.', shift: 'Share context as blocks. Any agent can find them.' },
   { pain: 'Scrolling a terminal to see if it’s done.', shift: 'Status, PR and history on every task.' },
+  { pain: 'Your agent reviewing its own code.', shift: 'One model writes it. Another reviews it.' },
+  { pain: 'Out of quota mid-sprint.', shift: 'Swap the model. Keep the agents.' },
   { pain: 'Prompting all day.', shift: 'You’re the tech lead now.' },
 ];
 
@@ -35,7 +37,10 @@ export function Shift() {
       onFocus={() => setHover(true)} onBlur={() => setHover(false)}>
       <div key={i} className={`pub-shift__slide${reduced ? ' is-static' : ''}`} aria-live={running ? 'off' : 'polite'}>
         <p className="pub-shift__pain"><s>{s.pain}</s></p>
-        <p className="pub-shift__new">{s.shift}</p>
+        <p className="pub-shift__new">
+          {/* Each sentence is its own span so wide screens break between sentences, not inside one. */}
+          {s.shift.split(/(?<=\.) /).map((sentence, n) => <span key={n}>{n > 0 && ' '}<span className="pub-shift__sentence">{sentence}</span></span>)}
+        </p>
       </div>
       <div className="pub-shift__nav">
         <button type="button" className="pub-shift__toggle" aria-label={paused ? 'Play' : 'Pause'}
