@@ -146,6 +146,8 @@
 
 /* Narrow screens: the board shows the column the task is in, and the panel moves under it. */
 @media (max-width: 860px) {
+  /* Long shifts wrap to three lines on phones; reserve them so the page doesn't jump. */
+  .pub-shift__slide { min-height: calc(3 * 1.08em + 1.6em); }
   .pub-window__app { grid-template-columns: minmax(0, 1fr); height: auto; }
   .pub-mini-nav { display: none; }
   .pub-scene--board { grid-template-columns: minmax(0, 1fr); }
