@@ -32,9 +32,10 @@
     "clean": "rm -rf test/client/generated",
     "generate": "tsx src/cli.ts test/api/openapi.json test/client/generated",
     "lint:generated": "tsc --noEmit --project test/client/tsconfig.json",
-    "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && node test/run.mjs",
+    "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && npm run test:contract && node test/run.mjs",
     "pack": "npm run build && npm pack",
-    "release": "npm run build && npm publish --access public"
+    "release": "npm run build && npm publish --access public",
+    "test:contract": "tsx test/client/nullable-contract.ts"
   },
   "devDependencies": {
     "@nestjs/common": "^11.1.17",

@@ -176,6 +176,28 @@ export class SingleValueEnumDto {
   status: SingleValueEnum;
 }
 
+// Nullable enums and refs: the generated type must keep `| null`
+export enum NullableNamedEnum {
+  ALPHA = 'alpha',
+  BETA = 'beta',
+}
+
+export class NullableTargetDto {
+  @ApiProperty({ type: String })
+  id: string;
+}
+
+export class NullableEnumsDto {
+  @ApiProperty({ nullable: true, enum: NullableNamedEnum, enumName: 'NullableNamedEnum' })
+  namedEnum: NullableNamedEnum | null;
+
+  @ApiProperty({ nullable: true, enum: ['one', 'two'] })
+  inlineEnum: 'one' | 'two' | null;
+
+  @ApiProperty({ nullable: true, type: () => NullableTargetDto })
+  target: NullableTargetDto | null;
+}
+
 // Enum with various naming conventions
 export enum MixedCaseEnum {
   UPPERCASE = 'UPPERCASE',
@@ -343,6 +365,13 @@ export class EdgeCasesController {
         { id: 'prod2', name: 'Smartphone' },
       ],
     };
+  }
+
+  @Get('enum/nullable')
+  @ApiOperation({ summary: 'Test nullable named enum, inline enum and ref' })
+  @ApiResponse({ status: 200, type: NullableEnumsDto })
+  testNullableEnums(): NullableEnumsDto {
+    return { namedEnum: null, inlineEnum: null, target: null };
   }
 
   // Enum edge cases
