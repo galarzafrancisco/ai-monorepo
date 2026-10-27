@@ -1,0 +1,87 @@
+/* Full-page trace: the header stays put and the trace scrolls inside the page. */
+.run-trace-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.beta-shell__desktop__main:has(.run-trace-page) {
+  overflow: hidden;
+}
+
+.run-trace-page__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.run-trace-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.run-trace-page__summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.run-trace-page__copy {
+  min-width: 0;
+}
+
+.run-trace-page__links {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.run-trace-page__trace {
+  flex: 1;
+  min-height: 0;
+}
+
+.run-trace-page__trace .task-traces__scroll {
+  padding: var(--space-4) var(--space-6);
+}
+
+.run-trace-page__trace .task-traces__text {
+  max-width: 80ch;
+}
+
+/* Phones: an edge-to-edge reading view with comfortable touch targets. */
+@media (max-width: 767px) {
+  .run-trace-page {
+    height: calc(100dvh - 120px);
+    padding: 0 var(--space-3) var(--space-3);
+  }
+
+  .run-trace-page__links {
+    width: 100%;
+  }
+
+  .run-trace-page__links .btn {
+    flex: 1;
+  }
+
+  .run-trace-page__trace .task-traces__scroll {
+    padding: var(--space-3);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .run-trace-page__trace .task-traces__text {
+    font-size: var(--fs-3);
+  }
+
+  .run-trace-page__trace .task-traces__tool > summary,
+  .run-trace-page__trace .task-traces__raw > summary,
+  .run-trace-page__trace .task-traces__footer .btn,
+  .run-trace-page__trace .task-traces__earlier {
+    min-height: 44px;
+  }
+}

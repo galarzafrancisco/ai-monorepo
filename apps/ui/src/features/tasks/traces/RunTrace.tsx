@@ -1,42 +1,21 @@
-import * as Dialog from '@radix-ui/react-dialog';
-import { useIsDesktop } from '../../../app/hooks/useIsDesktop';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDown,
-  ArrowLeft,
   Braces,
   ChevronRight,
   CircleAlert,
   MessageSquare,
-  PanelRightClose,
-  PanelRightOpen,
   Radio,
   Terminal,
   Sparkles,
 } from 'lucide-react';
 import { Button, Text } from '../../../ui/primitives';
-import { useActorsCtx } from '../../actors';
 import { buildTraceEntries, type TraceEntry } from './traceEntries';
 import { useExecutionTraces } from './useExecutionTraces';
 import { ExecutionSteps } from './ExecutionSteps';
+import type { TraceRun } from './runs';
 import './TaskTracesPanel.css';
 
-export type TraceRun = {
-  executionId: string;
-  agentActorId: string;
-  status: string;
-  source: 'active' | 'history';
-  timestamp: string;
-};
-const runStatus = (run: TraceRun) =>
-  run.source === 'active'
-    ? 'Running'
-    : ({
-        SUCCEEDED: 'Completed',
-        FAILED: 'Failed',
-        CANCELLED: 'Cancelled',
-        STALE: 'Stale',
-      }[run.status] ?? run.status);
 const time = (value: string) =>
   new Date(value).toLocaleTimeString([], {
     hour: '2-digit',
@@ -44,28 +23,22 @@ const time = (value: string) =>
     second: '2-digit',
   });
 
-export function TaskTracesPanel({
-  runs,
-  open,
-  onToggle,
-  onRefreshRuns,
-  isLoadingRuns,
-  runsError,
+/**
+ * One run's trace: its progress steps, then messages and tool activity, live
+ * while the run is active. Used by the task's Runs panel and the full-page
+ * trace view (/runs/:kind/:id/traces).
+ */
+export function RunTrace({
+  run,
+  onRunsChanged,
+  isLoadingRuns = false,
+  runsError = null,
 }: {
-  runs: TraceRun[];
-  open: boolean;
-  onToggle: () => void;
-  onRefreshRuns: () => void;
-  isLoadingRuns: boolean;
-  runsError: string | null;
+  run: TraceRun | null;
+  onRunsChanged: () => void;
+  isLoadingRuns?: boolean;
+  runsError?: string | null;
 }) {
-  const isMobile = !useIsDesktop();
-  const { actors } = useActorsCtx();
-  const [chosenId, setChosenId] = useState<string | null>(null);
-  const run =
-    runs.find((item) => item.executionId === chosenId) ??
-    runs.find((item) => item.source === 'active') ??
-    runs[0];
   const {
     events,
     lifecycle,
@@ -76,7 +49,7 @@ export function TaskTracesPanel({
     connected,
     refresh,
     loadEarlier,
-  } = useExecutionTraces(run?.executionId ?? null, open, onRefreshRuns);
+  } = useExecutionTraces(run?.executionId ?? null, true, onRunsChanged);
   const entries = useMemo(() => buildTraceEntries(events), [events]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const earlierAnchor = useRef<{ sequence: number; top: number } | null>(null);
@@ -87,8 +60,6 @@ export function TaskTracesPanel({
   const setFollowing = (value: boolean) =>
     setPausedExecutionId(value ? null : (run?.executionId ?? null));
   const visible = entries.filter((entry) => entry.kind !== 'system');
-  const actorName = (id: string) =>
-    actors.find((actor) => actor.id === id)?.displayName ?? 'Agent';
 
   useLayoutEffect(() => {
     earlierAnchor.current = null;
@@ -113,139 +84,8 @@ export function TaskTracesPanel({
     } else if (following) scroll.scrollTop = scroll.scrollHeight;
   }, [events, entries, following, isLoadingEarlier]);
 
-  const expandButton = (
-    <Button
-      variant="ghost"
-      className="task-traces__expand"
-      onClick={isMobile ? undefined : onToggle}
-      aria-label={
-        isMobile ? 'View execution traces' : 'Expand execution traces'
-      }
-      aria-expanded={open}
-      aria-controls="task-execution-traces"
-    >
-      {isMobile ? <Terminal size={20} /> : <PanelRightOpen size={18} />}
-      {isMobile ? (
-        <span className="task-traces__mobile-copy">
-          <span>Execution traces</span>
-          <span className="task-traces__mobile-description">
-            Worker progress, messages and tools
-          </span>
-        </span>
-      ) : (
-        <span>Execution traces</span>
-      )}
-      {runs.some((item) => item.source === 'active') && (
-        <span className="task-traces__dot" />
-      )}
-      {isMobile && (
-        <ChevronRight size={18} className="task-traces__mobile-chevron" />
-      )}
-    </Button>
-  );
-  const collapsed = (
-    <aside
-      id={isMobile ? undefined : 'task-execution-traces'}
-      className="task-traces task-traces--collapsed"
-      aria-label="Execution traces"
-    >
-      {isMobile ? (
-        <Dialog.Trigger asChild>{expandButton}</Dialog.Trigger>
-      ) : (
-        expandButton
-      )}
-    </aside>
-  );
-
-  const panel = (
-    <aside
-      id={isMobile ? undefined : 'task-execution-traces'}
-      className="task-traces"
-      aria-label="Execution traces"
-    >
-      <header className="task-traces__header">
-        {isMobile ? (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="task-traces__mobile-back"
-              onClick={onToggle}
-              aria-label="Back to task"
-            >
-              <ArrowLeft size={20} />
-              Task
-            </Button>
-            <Dialog.Title className="task-traces__mobile-title">
-              Execution traces
-            </Dialog.Title>
-            <span
-              className="task-traces__mobile-header-spacer"
-              aria-hidden="true"
-            />
-          </>
-        ) : (
-          <>
-            <div className="task-traces__heading">
-              <Terminal size={18} />
-              <Text weight="semibold">Execution traces</Text>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggle}
-              aria-label="Collapse execution traces"
-              aria-expanded={true}
-              aria-controls="task-execution-traces"
-            >
-              <PanelRightClose size={18} />
-            </Button>
-          </>
-        )}
-      </header>
-      <div className="task-traces__run">
-        <label className="task-traces__label" htmlFor="task-trace-run">
-          Execution
-        </label>
-        <select
-          id="task-trace-run"
-          value={run?.executionId ?? ''}
-          disabled={!runs.length}
-          onChange={(event) => {
-            setChosenId(event.target.value);
-            setPausedExecutionId(null);
-          }}
-        >
-          {!runs.length && (
-            <option value="">
-              {isLoadingRuns ? 'Loading runs…' : 'No runs yet'}
-            </option>
-          )}
-          {runs.map((item) => (
-            <option key={item.executionId} value={item.executionId}>
-              {actorName(item.agentActorId)} · {runStatus(item)} ·{' '}
-              {new Date(item.timestamp).toLocaleString([], {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </option>
-          ))}
-        </select>
-        {run && (
-          <div className="task-traces__run-meta">
-            <span
-              className={run.source === 'active' ? 'task-traces__live' : ''}
-            >
-              {run.source === 'active' && <span className="task-traces__dot" />}
-              {runStatus(run)}
-            </span>
-            <span>#{run.executionId.slice(0, 6)}</span>
-            <span>{events.length} events loaded</span>
-          </div>
-        )}
-      </div>
+  return (
+    <div className="run-trace">
       {run && (
         <ExecutionSteps
           events={lifecycle}
@@ -260,6 +100,7 @@ export function TaskTracesPanel({
             <Radio size={12} />
             {connected ? 'Live updates' : 'Reconnecting · checking for updates'}
           </span>
+          <span>{events.length} events loaded</span>
         </div>
       )}
       {(error || runsError) && (
@@ -271,7 +112,7 @@ export function TaskTracesPanel({
             variant="ghost"
             onClick={() => {
               refresh();
-              onRefreshRuns();
+              onRunsChanged();
             }}
           >
             Retry
@@ -315,7 +156,7 @@ export function TaskTracesPanel({
             {isLoadingEarlier ? 'Loading…' : 'Load earlier events'}
           </Button>
         )}
-        {isLoading || (isLoadingRuns && !runs.length) ? (
+        {isLoading || (isLoadingRuns && !run) ? (
           <div className="task-traces__empty" role="status">
             <Terminal size={28} />
             <Text>Loading execution traces…</Text>
@@ -387,31 +228,8 @@ export function TaskTracesPanel({
           </Button>
         )}
       </footer>
-    </aside>
+    </div>
   );
-
-  if (isMobile)
-    return (
-      <Dialog.Root
-        open={open}
-        onOpenChange={(next) => {
-          if (next !== open) onToggle();
-        }}
-      >
-        {collapsed}
-        <Dialog.Portal>
-          <Dialog.Overlay className="task-traces-mobile__overlay" />
-          <Dialog.Content
-            id="task-execution-traces"
-            className="task-traces-mobile__view"
-            aria-describedby={undefined}
-          >
-            {panel}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-    );
-  return open ? panel : collapsed;
 }
 
 function TraceEntryView({ entry }: { entry: TraceEntry }) {

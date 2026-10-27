@@ -227,6 +227,9 @@ export function ExecutionDetailPage() {
       <div className="executions-detail-topbar">
         <Button variant="secondary" onClick={() => navigate("/runs")}>Back to runs</Button>
         <Button variant="secondary" onClick={() => navigate(`/tasks/task/${detail.entry.taskId}`)}>Open task</Button>
+        {detail.kind !== "queue" ? (
+          <Button variant="primary" onClick={() => navigate(`/runs/${detail.kind}/${detail.entry.id}/traces`)}>View trace</Button>
+        ) : null}
       </div>
 
       <header className="executions-run-header">
