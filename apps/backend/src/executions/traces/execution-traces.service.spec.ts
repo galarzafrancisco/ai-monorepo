@@ -50,7 +50,14 @@ describe('ExecutionTracesService', () => {
     expect(query.mock.calls[1][0]).toContain(
       'ON CONFLICT (execution_id, sequence) DO NOTHING',
     );
-    expect(JSON.parse(query.mock.calls[1][1][2])).toEqual(input.events);
+    expect(query.mock.calls[1][1]).toEqual([
+      executionId,
+      input.harness,
+      1,
+      input.events[0].emittedAt,
+      null,
+      JSON.stringify(input.events[0].payload),
+    ]);
   });
 
   it('rejects another worker without inserting', async () => {
@@ -103,7 +110,7 @@ describe('ExecutionTracesService', () => {
     const input = batch();
     input.events[0].payload = null;
     await service.append(input, 'owner');
-    expect(JSON.parse(query.mock.calls[1][1][2])[0].payload).toBeNull();
+    expect(JSON.parse(query.mock.calls[1][1][5])).toBeNull();
   });
 
   it('returns a stable cursor on an empty page and orders events by sequence', async () => {

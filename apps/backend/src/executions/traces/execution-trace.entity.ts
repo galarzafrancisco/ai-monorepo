@@ -19,7 +19,7 @@ export class ExecutionTraceEntity {
   @Column({ type: 'timestamptz', name: 'emitted_at' })
   emittedAt!: Date;
 
-  @Column({ type: 'jsonb' })
+  @Column({ type: 'json' })
   payload!: unknown;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'received_at' })

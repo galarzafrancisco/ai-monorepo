@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PostExecutionTracePayload } from "@taico/events";
@@ -99,7 +99,7 @@ test("batches large tool output by bytes without truncating it", async () => {
 
 test("spooled batches survive a restart and are deleted only after ACK", async () => {
   const directory = await mkdtemp(join(tmpdir(), "taico-trace-test-"));
-  let spool = new ExecutionTraceSpool(directory, async () => false);
+  let spool = new ExecutionTraceSpool(directory, async () => ({ ok: false }));
   try {
     const original = batch();
     await spool.enqueue(original);
@@ -113,7 +113,7 @@ test("spooled batches survive a restart and are deleted only after ACK", async (
     const uploaded: PostExecutionTracePayload[] = [];
     spool = new ExecutionTraceSpool(directory, async (value) => {
       uploaded.push(value);
-      return true;
+      return { ok: true };
     });
     await spool.start();
     await spool.drain();
@@ -211,12 +211,17 @@ test("OpenCode and Codex expose ignored SDK events and session.idle before forma
 test("a failed batch blocks later batches of its execution while other executions upload", async () => {
   const directory = await mkdtemp(join(tmpdir(), "taico-trace-order-"));
   let online = false;
+  let now = 0;
   const seen: string[] = [];
-  const spool = new ExecutionTraceSpool(directory, async (value) => {
-    if (!online) return false;
-    seen.push(`${value.executionId}:${value.events[0].sequence}`);
-    return value.executionId !== batch().executionId;
-  });
+  const spool = new ExecutionTraceSpool(
+    directory,
+    async (value) => {
+      if (!online) return { ok: false };
+      seen.push(`${value.executionId}:${value.events[0].sequence}`);
+      return { ok: value.executionId !== batch().executionId };
+    },
+    () => now,
+  );
   try {
     await spool.enqueue(batch());
     await spool.enqueue({
@@ -227,9 +232,144 @@ test("a failed batch blocks later batches of its execution while other execution
     await spool.enqueue({ ...batch(), executionId: otherId });
     await spool.drain();
     online = true;
+    now += 5_000;
     await spool.drain();
     assert.deepEqual(seen, [`${batch().executionId}:1`, `${otherId}:1`]);
     assert.equal((await readdir(directory)).length, 2);
+  } finally {
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("non-JSON SDK events become diagnostic entries without aborting capture", async () => {
+  const batches: PostExecutionTracePayload[] = [];
+  const recorder = new HarnessTraceRecorder(
+    "execution",
+    "claude",
+    async (value) => {
+      batches.push(value);
+    },
+  );
+  const circular: Record<string, unknown> = {};
+  circular.self = circular;
+  for (const raw of [circular, { value: 1n }, undefined]) recorder.capture(raw);
+  recorder.capture({ text: "continues" });
+  await recorder.close();
+  assert.deepEqual(
+    batches[0].events.map((event) => event.sequence),
+    [1, 2, 3, 4],
+  );
+  for (const event of batches[0].events.slice(0, 3))
+    assert.ok((event.payload as Record<string, unknown>).captureError);
+  assert.deepEqual(batches[0].events[3].payload, { text: "continues" });
+});
+
+test("disk failures never replace the agent result or original error", async () => {
+  for (const outcome of ["success", new Error("agent interrupted")]) {
+    const recorder = new HarnessTraceRecorder(
+      "execution",
+      "claude",
+      async () => {
+        throw new Error("ENOSPC");
+      },
+    );
+    const run = async () => {
+      try {
+        recorder.capture({ text: "output" });
+        if (outcome instanceof Error) throw outcome;
+        return outcome;
+      } finally {
+        await recorder.close();
+      }
+    };
+    if (outcome instanceof Error)
+      await assert.rejects(run, (error) => error === outcome);
+    else assert.equal(await run(), "success");
+  }
+});
+
+test("permanent rejection preserves the failed batch and unblocks later sequences", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-permanent-"));
+  const sent: number[] = [];
+  const spool = new ExecutionTraceSpool(directory, async (value) => {
+    const sequence = value.events[0].sequence;
+    sent.push(sequence);
+    return sequence === 1 ? { ok: false, permanent: true } : { ok: true };
+  });
+  try {
+    const original = batch();
+    await spool.enqueue(original);
+    await spool.enqueue({
+      ...batch(),
+      events: [{ ...batch().events[0], sequence: 2 }],
+    });
+    await spool.drain();
+    assert.deepEqual(sent, [1, 2]);
+    const failed = await readdir(join(directory, "failed"));
+    assert.equal(failed.length, 1);
+    assert.deepEqual(
+      JSON.parse(await readFile(join(directory, "failed", failed[0]), "utf8")),
+      original,
+    );
+    await spool.drain();
+    assert.deepEqual(sent, [1, 2]);
+  } finally {
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("oversized events are quarantined before transport without blocking later batches", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-large-"));
+  const sent: number[] = [];
+  const spool = new ExecutionTraceSpool(directory, async (value) => {
+    sent.push(value.events[0].sequence);
+    return { ok: true };
+  });
+  try {
+    const large = batch();
+    large.events[0].payload = { text: "x".repeat(16 * 1024 * 1024) };
+    await spool.enqueue(large);
+    await spool.enqueue({
+      ...batch(),
+      events: [{ ...batch().events[0], sequence: 2 }],
+    });
+    await spool.drain();
+    assert.deepEqual(sent, [2]);
+    assert.equal((await readdir(join(directory, "failed"))).length, 1);
+  } finally {
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("transient upload failures back off while retaining ordered durable delivery", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-backoff-"));
+  let now = 0;
+  let attempts = 0;
+  const spool = new ExecutionTraceSpool(
+    directory,
+    async () => ({ ok: ++attempts === 3 }),
+    () => now,
+  );
+  try {
+    await spool.enqueue(batch());
+    await spool.drain();
+    assert.equal(attempts, 1);
+    now = 4_999;
+    await spool.drain();
+    assert.equal(attempts, 1);
+    now = 5_000;
+    await spool.drain();
+    assert.equal(attempts, 2);
+    now = 14_999;
+    await spool.drain();
+    assert.equal(attempts, 2);
+    now = 15_000;
+    await spool.drain();
+    assert.equal(attempts, 3);
+    assert.deepEqual(await readdir(directory), []);
   } finally {
     await spool.stop();
     await rm(directory, { recursive: true, force: true });

@@ -3,6 +3,7 @@ import {
   ExecutionWireEvents,
   type PostExecutionActivityPayload,
   type PostExecutionTracePayload,
+  type ExecutionTraceAck,
   type PostExecutionHeartbeatPayload,
   type PostWorkerHeartbeatPayload,
   type TaskExecutionQueuedWireEvent,
@@ -17,10 +18,7 @@ const ACK_TIMEOUT_MS = 5_000;
 const WORKER_HEARTBEAT_INTERVAL_MS = 30_000;
 const RECONNECT_RETRY_DELAY_MS = 5_000;
 
-type ActivityAck = {
-  ok: boolean;
-  error?: string;
-};
+type ActivityAck = ExecutionTraceAck;
 
 export type ExecutionActivityGatewayClientOptions = {
   baseUrl: string;
@@ -34,7 +32,9 @@ export type ExecutionActivityGatewayClientOptions = {
   randomizationFactor?: number;
   tokenRefreshSkewMs?: number;
   onTaskQueued?: (event: TaskExecutionQueuedWireEvent) => void;
-  onExecutionInterruptRequest?: (event: ExecutionInterruptRequestWireEvent) => void;
+  onExecutionInterruptRequest?: (
+    event: ExecutionInterruptRequestWireEvent,
+  ) => void;
 };
 
 export class ExecutionActivityGatewayClient {
@@ -49,11 +49,10 @@ export class ExecutionActivityGatewayClient {
   private reconnectPromise: Promise<void> | null = null;
   private resolveInitialConnect?: () => void;
 
-  constructor(
-    private readonly options: ExecutionActivityGatewayClientOptions,
-  ) {
+  constructor(private readonly options: ExecutionActivityGatewayClientOptions) {
     this.traceSpool = new ExecutionTraceSpool(options.traceDirectory, (batch) =>
-      this.emitWithAck(ExecutionWireEvents.EXECUTION_TRACE_POST, batch));
+      this.emitAcknowledgement(ExecutionWireEvents.EXECUTION_TRACE_POST, batch),
+    );
   }
 
   async queueTrace(batch: PostExecutionTracePayload): Promise<void> {
@@ -112,38 +111,54 @@ export class ExecutionActivityGatewayClient {
   }
 
   async publishWorkerHeartbeat(): Promise<boolean> {
-    return this.emitWithAck(
-      ExecutionWireEvents.WORKER_HEARTBEAT_POST,
-      { workerVersion: WORKER_VERSION },
-    );
+    return this.emitWithAck(ExecutionWireEvents.WORKER_HEARTBEAT_POST, {
+      workerVersion: WORKER_VERSION,
+    });
   }
 
   private async emitWithAck(
+    eventName: string,
+    payload?:
+      | PostExecutionActivityPayload
+      | PostExecutionHeartbeatPayload
+      | PostWorkerHeartbeatPayload,
+  ): Promise<boolean> {
+    return (await this.emitAcknowledgement(eventName, payload)).ok;
+  }
+
+  private async emitAcknowledgement(
     eventName: string,
     payload?:
       | PostExecutionTracePayload
       | PostExecutionActivityPayload
       | PostExecutionHeartbeatPayload
       | PostWorkerHeartbeatPayload,
-  ): Promise<boolean> {
+  ): Promise<ActivityAck> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
         console.warn(
           `[execution-activity] ${eventName} called while disconnected`,
-          eventName === ExecutionWireEvents.EXECUTION_TRACE_POST ? { executionId: payload && 'executionId' in payload ? payload.executionId : undefined } : payload,
+          eventName === ExecutionWireEvents.EXECUTION_TRACE_POST
+            ? {
+                executionId:
+                  payload && 'executionId' in payload
+                    ? payload.executionId
+                    : undefined,
+              }
+            : payload,
         );
       }
-      return false;
+      return { ok: false };
     }
 
-    return new Promise<boolean>((resolve) => {
+    return new Promise<ActivityAck>((resolve) => {
       let settled = false;
       const timeout = setTimeout(() => {
         if (settled) {
           return;
         }
         settled = true;
-        resolve(false);
+        resolve({ ok: false });
       }, ACK_TIMEOUT_MS);
 
       const handleAck = (ack?: ActivityAck) => {
@@ -157,7 +172,7 @@ export class ExecutionActivityGatewayClient {
           console.log(`[execution-activity] ${eventName} ack:`, ack);
         }
 
-        resolve(Boolean(ack?.ok));
+        resolve(ack ?? { ok: false });
       };
 
       if (payload === undefined) {
@@ -237,23 +252,38 @@ export class ExecutionActivityGatewayClient {
       );
     });
 
-    this.socket.on(ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED, () => {
-      this.handleHarnessesReportRequested();
-    });
+    this.socket.on(
+      ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED,
+      () => {
+        this.handleHarnessesReportRequested();
+      },
+    );
 
-    this.socket.on(ExecutionWireEvents.TASK_EXECUTION_QUEUED, (event: TaskExecutionQueuedWireEvent) => {
-      if (this.options.debug) {
-        console.log('[execution-activity] task queued event received:', event);
-      }
-      this.options.onTaskQueued?.(event);
-    });
+    this.socket.on(
+      ExecutionWireEvents.TASK_EXECUTION_QUEUED,
+      (event: TaskExecutionQueuedWireEvent) => {
+        if (this.options.debug) {
+          console.log(
+            '[execution-activity] task queued event received:',
+            event,
+          );
+        }
+        this.options.onTaskQueued?.(event);
+      },
+    );
 
-    this.socket.on(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, (event: ExecutionInterruptRequestWireEvent) => {
-      if (this.options.debug) {
-        console.log('[execution-activity] execution interrupt request received:', event);
-      }
-      this.options.onExecutionInterruptRequest?.(event);
-    });
+    this.socket.on(
+      ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST,
+      (event: ExecutionInterruptRequestWireEvent) => {
+        if (this.options.debug) {
+          console.log(
+            '[execution-activity] execution interrupt request received:',
+            event,
+          );
+        }
+        this.options.onExecutionInterruptRequest?.(event);
+      },
+    );
 
     this.socket.on('connect_error', (err: Error) => {
       this.reconnectAttempts++;
@@ -335,9 +365,7 @@ export class ExecutionActivityGatewayClient {
     this.resolveInitialConnect = undefined;
   }
 
-  private async reconnectWithFreshToken(
-    forceRefresh = false,
-  ): Promise<void> {
+  private async reconnectWithFreshToken(forceRefresh = false): Promise<void> {
     if (this.reconnectPromise) {
       return this.reconnectPromise;
     }
