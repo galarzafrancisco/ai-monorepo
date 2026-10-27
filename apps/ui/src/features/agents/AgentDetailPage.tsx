@@ -24,6 +24,7 @@ import {
   agentTypeLabel,
   concurrencyLimitOf,
   isSystemTool,
+  modelSummary,
   statusTriggersLabel,
   toolScopeSummary,
 } from './agentDisplay';
@@ -237,7 +238,7 @@ export function AgentDetailPage() {
       ) : (
         <InsetRow
           label="Model"
-          value={modelLabel === 'Default' && providerLabel === 'Default' ? 'Default' : modelLabel}
+          value={modelSummary(agent) ?? 'Default'}
           onClick={() => setEditing('model')}
         />
       )}
