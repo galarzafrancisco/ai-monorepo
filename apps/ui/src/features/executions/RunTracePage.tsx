@@ -35,9 +35,9 @@ export function RunTracePage() {
     const controller = new AbortController();
     ExecutionsService.TaskExecutionHistoryController_getHistoryEntry({ id, signal: controller.signal })
       .then((entry) => { setFetched(entry); setNotFound(false); })
-      .catch(() => { if (!controller.signal.aborted) setNotFound(true); });
+      .catch(() => { if (!controller.signal.aborted && kind === "history") setNotFound(true); });
     return () => controller.abort();
-  }, [id, needsFetch]);
+  }, [id, kind, needsFetch]);
   const finished = fromFeed ?? (fetched?.id === id ? fetched : null);
   const entry = useMemo(() => {
     if (kind === "active") return active.find((candidate) => candidate.id === id) ?? null;
@@ -70,7 +70,9 @@ export function RunTracePage() {
     return <div className="run-trace-page" aria-busy="true" />;
   }
 
-  if (!run || (kind === "active" && notFound)) {
+  // A live run missing from history is just still running, so only a finished
+  // run can be "not found".
+  if (!run) {
     return (
       <div className="run-trace-page">
         <Text as="div" size="5" weight="bold">Trace not found</Text>
