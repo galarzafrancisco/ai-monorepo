@@ -5,7 +5,7 @@
 }
 
 .agents-page--mobile {
-  padding: 0 var(--space-3) var(--space-6);
+  padding: 0 var(--space-3) var(--space-8);
 }
 
 .agents-page--desktop {
@@ -280,5 +280,73 @@
 }
 
 .agents-empty__action:hover {
+  background: var(--accent-hover);
+}
+
+/* Model / provider line, only when the agent overrides the defaults */
+.agents-list__model {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.agents-list__model span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-card__foot {
+  gap: var(--space-4);
+}
+
+.agent-card__foot-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.agent-card__foot-item svg {
+  flex-shrink: 0;
+}
+
+.agent-card__model {
+  flex: 1 1 auto;
+  font-family: var(--font-mono);
+}
+
+.agent-card__triggers {
+  flex-shrink: 0;
+  margin-left: auto;
+  max-width: 60%;
+}
+
+/* Floating "new agent" button (mobile) */
+.agents-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+  z-index: 999;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 35%, transparent), var(--shadow-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.agents-fab:active {
+  transform: scale(0.94);
   background: var(--accent-hover);
 }

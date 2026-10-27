@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronRight, Pencil, Plus, Wrench } from 'lucide-react';
 import { useAgentsCtx } from './AgentsProvider';
 import { Text, Stack, Button, Avatar, Chip, InsetGroup, InsetRow } from '../../ui/primitives';
 import { Agent, AgentAvatarDto } from './types';
@@ -19,7 +19,14 @@ import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
-import { AGENT_TYPE_COLORS, agentTypeLabel, concurrencyLimitOf, statusTriggersLabel } from './agentDisplay';
+import {
+  AGENT_TYPE_COLORS,
+  agentTypeLabel,
+  concurrencyLimitOf,
+  isSystemTool,
+  statusTriggersLabel,
+  toolScopeSummary,
+} from './agentDisplay';
 import './AgentDetailPage.css';
 
 type EditField =
@@ -196,13 +203,9 @@ export function AgentDetailPage() {
     : `${concurrencyLimit} ${concurrencyLimit === 1 ? 'task' : 'tasks'}`;
   const tagColorsByName = new Map(allTags.map((tag) => [tag.name, tag.color]));
   const tagTriggers = agent.tagTriggers ?? [];
-  const systemToolCount = toolPermissions.filter((permission) =>
-    permission.server.providedId === 'tasks' || permission.server.providedId === 'context'
-  ).length;
-  const additionalToolCount = toolPermissions.length - systemToolCount;
-  const toolDetail = permissionsLoading
-    ? 'Loading…'
-    : `${systemToolCount} system · ${additionalToolCount} additional`;
+  const toolsPath = `/agents/agent/${agent.slug}/tools`;
+  // Built-in tools first, then the ones granted to this agent
+  const sortedTools = [...toolPermissions].sort((a, b) => Number(isSystemTool(b)) - Number(isSystemTool(a)));
 
   const avatar = (
     <button
@@ -265,13 +268,31 @@ export function AgentDetailPage() {
     </>
   );
 
-  const toolsRow = (
-    <InsetRow
-      label="Tools"
-      detail={toolDetail}
-      value={permissionsLoading ? undefined : toolPermissions.length}
-      onClick={() => navigate(`/agents/agent/${agent.slug}/tools`)}
-    />
+  const toolRows = (
+    <>
+      {permissionsLoading && toolPermissions.length === 0 ? (
+        <InsetRow label={<span className="agent-detail-page__muted">Loading tools…</span>} />
+      ) : (
+        sortedTools.map((permission) => (
+          <InsetRow
+            key={permission.server.id}
+            leading={<span className="agent-tool-icon"><Wrench size={15} strokeWidth={2.2} aria-hidden /></span>}
+            label={permission.server.name}
+            detail={isSystemTool(permission) ? 'Built in' : permission.server.description || permission.server.type}
+            value={toolScopeSummary(permission)}
+            onClick={() => navigate(toolsPath)}
+          />
+        ))
+      )}
+      {!isDesktop && (
+        <InsetRow
+          tone="accent"
+          leading={<Plus size={20} aria-hidden />}
+          label="Manage tools"
+          onClick={() => navigate(toolsPath)}
+        />
+      )}
+    </>
   );
 
   const deleteRow = (
@@ -375,18 +396,30 @@ export function AgentDetailPage() {
         <div className="agent-detail-page__columns">
           <div className="agent-detail-page__main">
             <DocumentCard
+              title="Introduction"
+              text={introductionText}
+              empty="No introduction. Shown to people when they first talk to this agent."
+              onEdit={() => setEditing('introduction')}
+            />
+            <DocumentCard
               title="System prompt"
               text={agent.systemPrompt}
               empty="No system prompt. The agent runs with its harness defaults."
               mono
               onEdit={() => setEditing('systemPrompt')}
             />
-            <DocumentCard
-              title="Introduction"
-              text={introductionText}
-              empty="No introduction. Shown to people when they first talk to this agent."
-              onEdit={() => setEditing('introduction')}
-            />
+            <section className="agent-panel">
+              <header className="agent-panel__header">
+                <div>
+                  <h2 className="agent-panel__title">Tools</h2>
+                  <p className="agent-panel__subtitle">MCP servers this agent can use, and with which scopes.</p>
+                </div>
+                <Button size="sm" variant="secondary" onClick={() => navigate(toolsPath)}>
+                  Manage tools
+                </Button>
+              </header>
+              <InsetGroup className="agent-panel__rows">{toolRows}</InsetGroup>
+            </section>
             <AgentTokensSection slug={agent.slug} isDesktop />
           </div>
 
@@ -395,7 +428,6 @@ export function AgentDetailPage() {
             <InsetGroup title="Triggers" footer="Tasks that reach these statuses or get these tags are picked up.">
               {triggerRows}
             </InsetGroup>
-            <InsetGroup title="Capabilities">{toolsRow}</InsetGroup>
             <InsetGroup>{deleteRow}</InsetGroup>
           </aside>
         </div>
@@ -420,25 +452,25 @@ export function AgentDetailPage() {
       </InsetGroup>
 
       <InsetGroup title="Instructions">
-        <InsetRow label="System prompt" onClick={() => setEditing('systemPrompt')}>
-          <span className="agent-detail-page__preview agent-detail-page__preview--mono">
-            {agent.systemPrompt || 'None'}
-          </span>
-        </InsetRow>
         <InsetRow label="Introduction" onClick={() => setEditing('introduction')}>
           <span className="agent-detail-page__preview">
             {introductionText || 'None'}
           </span>
         </InsetRow>
+        <InsetRow label="System prompt" onClick={() => setEditing('systemPrompt')}>
+          <span className="agent-detail-page__preview agent-detail-page__preview--mono">
+            {agent.systemPrompt || 'None'}
+          </span>
+        </InsetRow>
       </InsetGroup>
+
+      <InsetGroup title="Tools">{toolRows}</InsetGroup>
 
       <InsetGroup title="Runtime">{runtimeRows}</InsetGroup>
 
       <InsetGroup title="Triggers" footer="Tasks that reach these statuses or get these tags are picked up by this agent.">
         {triggerRows}
       </InsetGroup>
-
-      <InsetGroup>{toolsRow}</InsetGroup>
 
       <AgentTokensSection slug={agent.slug} isDesktop={false} />
 

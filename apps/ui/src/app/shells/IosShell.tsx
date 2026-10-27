@@ -24,8 +24,6 @@ export interface IosShellProps {
   topActions?: ReactNode;
   /** Replaces the menu button with an iOS back button */
   back?: { label: string; path: string };
-  /** Nav bar actions on the right, e.g. an add button */
-  headerRight?: ReactNode;
 }
 
 function BottomNavContent({
@@ -259,9 +257,6 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
           <div className={`ios-shell__header__section-title ${sectionTitleVisible ? 'is-hidden' : 'is-visible'}`}>
             {props.sectionTitle}
           </div>
-          {props.headerRight ? (
-            <div className="ios-shell__header-right">{props.headerRight}</div>
-          ) : null}
         </Row>
       </header>
 

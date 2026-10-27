@@ -299,3 +299,52 @@
   color: var(--text-muted);
   font-size: var(--fs-2);
 }
+
+.agent-detail-page__muted {
+  color: var(--text-muted);
+}
+
+/* Square app-style icon for tool rows */
+.agent-tool-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+/* Desktop card with a header and inset rows (tools) */
+.agent-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-4);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.agent-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.agent-panel__title {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-semibold);
+}
+
+.agent-panel__subtitle {
+  margin: 2px 0 0;
+  font-size: var(--fs-1);
+  color: var(--text-muted);
+}
+
+.agent-panel__rows .inset-group__card {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+}

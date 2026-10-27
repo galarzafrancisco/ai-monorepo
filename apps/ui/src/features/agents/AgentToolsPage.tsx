@@ -11,24 +11,9 @@ import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useToast } from '../../shared/context/ToastContext';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import type { Agent } from './types';
+import { isSystemTool, toolScopeSummary } from './agentDisplay';
 import './AgentDetailPage.css';
 import './AgentToolsPage.css';
-
-function isSystemTool(permission: AgentToolPermissionResponseDto) {
-  return permission.server.providedId === 'tasks' || permission.server.providedId === 'context';
-}
-
-function getScopeSummary(permission: AgentToolPermissionResponseDto) {
-  if (permission.server.type === 'stdio') {
-    return 'No scopes';
-  }
-
-  if (permission.hasAllScopes) {
-    return 'All scopes';
-  }
-
-  return `${permission.grantedScopes.length} scope${permission.grantedScopes.length === 1 ? '' : 's'}`;
-}
 
 export function AgentToolsPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -157,9 +142,9 @@ export function AgentToolsPage() {
   const toolRow = (permission: AgentToolPermissionResponseDto, editable: boolean) => (
     <InsetRow
       key={permission.server.id}
-      leading={<span className="agent-tools-page__icon"><Wrench size={15} strokeWidth={2.2} aria-hidden /></span>}
+      leading={<span className="agent-tool-icon"><Wrench size={15} strokeWidth={2.2} aria-hidden /></span>}
       label={permission.server.name}
-      value={getScopeSummary(permission)}
+      value={toolScopeSummary(permission)}
       detail={permission.server.description || permission.server.type}
       onClick={editable ? () => handleOpenEditTool(permission) : undefined}
     />

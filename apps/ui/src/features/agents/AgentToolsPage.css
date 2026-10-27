@@ -29,16 +29,6 @@
   line-height: var(--lh-tight);
 }
 
-.agent-tools-page__icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  display: grid;
-  place-items: center;
-  color: var(--accent-contrast);
-  background: var(--accent);
-}
-
 .agent-tools-page__muted {
   color: var(--text-muted);
 }

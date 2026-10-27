@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, Search, X, Zap } from "lucide-react";
+import { Bot, Cpu, Plus, Search, X, Zap } from "lucide-react";
 import { Avatar, Chip, InsetGroup, InsetRow, Text } from "../../ui/primitives";
 import { useAgentsCtx } from "./AgentsProvider";
 import { Agent } from "./types";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { AGENT_TYPE_COLORS, agentTypeLabel, statusTriggersLabel } from "./agentDisplay";
+import { AGENT_TYPE_COLORS, agentTypeLabel, modelSummary, statusTriggersLabel } from "./agentDisplay";
 import "./AgentsPage.css";
 
 export function AgentsPage() {
@@ -73,6 +73,16 @@ export function AgentsPage() {
         <SearchField value={query} onChange={setQuery} placeholder="Search agents" />
       )}
       {body}
+      {!isDesktop && (
+        <button
+          type="button"
+          className="agents-fab"
+          onClick={() => navigate('/agents/new')}
+          aria-label="New agent"
+        >
+          <Plus size={26} strokeWidth={2.4} aria-hidden />
+        </button>
+      )}
     </div>
   );
 }
@@ -102,21 +112,31 @@ function AgentList({ title, agents, onOpen }: { title?: string; agents: Agent[];
   if (agents.length === 0) return null;
   return (
     <InsetGroup title={title} className="agents-list">
-      {agents.map((agent) => (
-        <InsetRow
-          key={agent.actorId}
-          leading={<Avatar name={agent.name} src={agent.avatarUrl || undefined} size={40} inactive={!agent.isActive} />}
-          label={<span className="agents-list__name">{agent.name}</span>}
-          value={<span className="agents-list__type">{agentTypeLabel(agent.type)}</span>}
-          detail={
-            <>
-              <span className="agents-list__slug">@{agent.slug}</span>
-              {agent.description ? ` · ${String(agent.description)}` : ''}
-            </>
-          }
-          onClick={() => onOpen(agent)}
-        />
-      ))}
+      {agents.map((agent) => {
+        const model = modelSummary(agent);
+        return (
+          <InsetRow
+            key={agent.actorId}
+            leading={<Avatar name={agent.name} src={agent.avatarUrl || undefined} size={40} inactive={!agent.isActive} />}
+            label={<span className="agents-list__name">{agent.name}</span>}
+            value={<span className="agents-list__type">{agentTypeLabel(agent.type)}</span>}
+            detail={
+              <>
+                <span className="agents-list__slug">@{agent.slug}</span>
+                {agent.description ? ` · ${String(agent.description)}` : ''}
+              </>
+            }
+            onClick={() => onOpen(agent)}
+          >
+            {model && (
+              <span className="agents-list__model">
+                <Cpu size={12} aria-hidden />
+                <span>{model}</span>
+              </span>
+            )}
+          </InsetRow>
+        );
+      })}
     </InsetGroup>
   );
 }
@@ -139,6 +159,7 @@ function AgentGrid({ title, agents, onOpen }: { title: string; agents: Agent[]; 
 }
 
 function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
+  const model = modelSummary(agent);
   return (
     <button
       type="button"
@@ -157,17 +178,32 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
         {agent.description ? String(agent.description) : <span className="agent-card__muted">No description</span>}
       </p>
       <div className="agent-card__foot">
-        <Zap size={13} aria-hidden />
-        <span>
-          {agent.statusTriggers.length > 0
-            ? `Picks up ${statusTriggersLabel(agent.statusTriggers)}`
-            : agent.tagTriggers && agent.tagTriggers.length > 0
-              ? `Picks up tags ${agent.tagTriggers.join(', ')}`
-              : 'No triggers'}
+        {model && (
+          <span className="agent-card__foot-item agent-card__model" title={model}>
+            <Cpu size={13} aria-hidden />
+            <span>{model}</span>
+          </span>
+        )}
+        <span className="agent-card__foot-item agent-card__triggers" title={triggerTitle(agent)}>
+          <Zap size={13} aria-hidden />
+          <span>
+            {agent.statusTriggers.length > 0
+              ? statusTriggersLabel(agent.statusTriggers)
+              : agent.tagTriggers && agent.tagTriggers.length > 0
+                ? agent.tagTriggers.map((tag) => `#${tag}`).join(' ')
+                : 'No triggers'}
+          </span>
         </span>
       </div>
     </button>
   );
+}
+
+function triggerTitle(agent: Agent): string {
+  const parts = [];
+  if (agent.statusTriggers.length > 0) parts.push(`statuses: ${statusTriggersLabel(agent.statusTriggers)}`);
+  if (agent.tagTriggers && agent.tagTriggers.length > 0) parts.push(`tags: ${agent.tagTriggers.join(', ')}`);
+  return parts.length > 0 ? `Picks up tasks by ${parts.join('; ')}` : 'No triggers';
 }
 
 function EmptyState({

@@ -1,4 +1,4 @@
-import type { AgentResponseDto } from "@taico/client/v2";
+import type { AgentResponseDto, AgentToolPermissionResponseDto } from "@taico/client/v2";
 import type { ChipProps } from "../../ui/primitives";
 import { TASKS_STATUS, type TaskStatus } from "../../shared/const/taskStatus";
 import type { AgentToken } from "./types";
@@ -93,4 +93,22 @@ export function lastUsedLabel(token: AgentToken): string {
 
 export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/** "anthropic/claude-opus-4", or null when the agent runs on its defaults. */
+export function modelSummary(agent: AgentResponseDto): string | null {
+  const parts = [agent.providerId?.trim(), agent.modelId?.trim()].filter(Boolean);
+  return parts.length > 0 ? parts.join('/') : null;
+}
+
+/** Tasks and Context are built in: every agent has them. */
+export function isSystemTool(permission: AgentToolPermissionResponseDto): boolean {
+  return permission.server.providedId === 'tasks' || permission.server.providedId === 'context';
+}
+
+export function toolScopeSummary(permission: AgentToolPermissionResponseDto): string {
+  if (permission.server.type === 'stdio') return 'No scopes';
+  if (permission.hasAllScopes) return 'All scopes';
+  const count = permission.grantedScopes.length;
+  return `${count} scope${count === 1 ? '' : 's'}`;
 }

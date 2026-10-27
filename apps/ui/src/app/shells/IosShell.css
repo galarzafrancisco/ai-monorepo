@@ -303,10 +303,3 @@
 .ios-shell__back:active {
   opacity: 0.5;
 }
-
-.ios-shell__header-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}

@@ -5,7 +5,6 @@ import { DesktopShell } from "../../app/shells/DesktopShell";
 import { IosShell } from "../../app/shells/IosShell";
 import { Button } from "../../ui/primitives";
 import { useAgentsCtx } from "./AgentsProvider";
-import "./AgentsLayout.css";
 
 export function AgentsLayout(): React.JSX.Element {
   const isDesktop = useIsDesktop();
@@ -48,16 +47,6 @@ export function AgentsLayout(): React.JSX.Element {
           sectionTitle={sectionTitle}
           navItems={navItems}
           back={back}
-          headerRight={isList ? (
-            <button
-              type="button"
-              className="agents-layout__nav-button"
-              onClick={() => navigate('/agents/new')}
-              aria-label="New agent"
-            >
-              <Plus size={24} strokeWidth={2.2} aria-hidden />
-            </button>
-          ) : undefined}
         >
           <Outlet />
         </IosShell>}
