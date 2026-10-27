@@ -47,16 +47,18 @@ export class ExecutionTracesService {
       );
       return `($1::uuid, $2, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
     });
-    await this.traces.query(
+    const inserted = await this.traces.query(
       `INSERT INTO execution_traces (execution_id, harness, sequence, emitted_at, runner_session_id, payload)
        VALUES ${rows.join(', ')}
-       ON CONFLICT (execution_id, sequence) DO NOTHING`,
+       ON CONFLICT (execution_id, sequence) DO NOTHING RETURNING sequence`,
       parameters,
     );
-    this.eventEmitter.emit(
-      ExecutionTracesChangedEvent.INTERNAL,
-      new ExecutionTracesChangedEvent(input.executionId),
-    );
+    if (inserted.length) {
+      this.eventEmitter.emit(
+        ExecutionTracesChangedEvent.INTERNAL,
+        new ExecutionTracesChangedEvent(input.executionId),
+      );
+    }
   }
 
   async list(

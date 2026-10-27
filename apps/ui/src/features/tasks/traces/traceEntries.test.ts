@@ -282,4 +282,188 @@ describe('trace presentation', () => {
     expect(messages[0].events.map((e) => e.sequence)).toEqual([3, 5]);
     expect(messages[1].events.map((e) => e.sequence)).toEqual([4, 6]);
   });
+  it('reconciles Claude per-block assistant events with their stream block indexes', () => {
+    const stream = (sequence: number, value: unknown) =>
+      event(sequence, { type: 'stream_event', event: value });
+    const final = (sequence: number, block: unknown) =>
+      event(sequence, {
+        type: 'assistant',
+        uuid: `u${sequence}`,
+        message: { id: 'm1', content: [block] },
+      });
+    const events = [
+      stream(1, { type: 'message_start', message: { id: 'm1' } }),
+      stream(2, {
+        type: 'content_block_start',
+        index: 0,
+        content_block: { type: 'thinking', thinking: '' },
+      }),
+      stream(3, {
+        type: 'content_block_delta',
+        index: 0,
+        delta: { type: 'thinking_delta', thinking: 'Reason' },
+      }),
+      final(4, { type: 'thinking', thinking: 'Reason complete' }),
+      stream(5, { type: 'content_block_stop', index: 0 }),
+      stream(6, {
+        type: 'content_block_start',
+        index: 1,
+        content_block: { type: 'text', text: '' },
+      }),
+      stream(7, {
+        type: 'content_block_delta',
+        index: 1,
+        delta: { type: 'text_delta', text: 'Hello' },
+      }),
+      final(8, { type: 'text', text: 'Hello complete' }),
+      stream(9, {
+        type: 'content_block_start',
+        index: 2,
+        content_block: { type: 'tool_use', id: 't1', name: 'Read', input: {} },
+      }),
+      stream(10, {
+        type: 'content_block_delta',
+        index: 2,
+        delta: { type: 'input_json_delta', partial_json: '{"path":"/file"}' },
+      }),
+      final(11, {
+        type: 'tool_use',
+        id: 't1',
+        name: 'Read',
+        input: { path: '/file' },
+      }),
+      event(12, {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 't1',
+              content: 'file contents',
+            },
+          ],
+        },
+      }),
+    ];
+    const entries = buildTraceEntries(events).filter(
+      (entry) => entry.kind !== 'system',
+    );
+    expect(entries.map((entry) => entry.kind)).toEqual([
+      'thinking',
+      'message',
+      'tool',
+    ]);
+    expect(entries.map((entry) => entry.text)).toEqual([
+      'Reason complete',
+      'Hello complete',
+      'file contents',
+    ]);
+    expect(entries[2]).toMatchObject({ title: 'Read', status: 'Completed' });
+    expect(entries[2].input).toContain('/file');
+    expect(entries[2].events.map((e) => e.sequence)).toEqual([9, 10, 11, 12]);
+    // A page that starts mid-message still reconciles partial blocks with finals.
+    const partial = buildTraceEntries(events.slice(6)).filter(
+      (entry) => entry.kind !== 'system',
+    );
+    expect(partial.map((entry) => entry.text)).toEqual([
+      'Hello complete',
+      'file contents',
+    ]);
+  });
+
+  it('keeps multiple non-streamed Claude blocks with a shared message ID', () => {
+    const events = ['first', 'second'].map((text, i) =>
+      event(i + 1, {
+        type: 'assistant',
+        uuid: `u${i}`,
+        message: { id: 'same', content: [{ type: 'text', text }] },
+      }),
+    );
+    expect(buildTraceEntries(events).map((entry) => entry.text)).toEqual([
+      'first',
+      'second',
+    ]);
+  });
+
+  it('does not combine orphaned Claude deltas across message boundaries', () => {
+    const events = [
+      event(1, {
+        type: 'stream_event',
+        event: {
+          type: 'content_block_delta',
+          index: 0,
+          delta: { type: 'text_delta', text: 'earlier tail' },
+        },
+      }),
+      event(2, { type: 'stream_event', event: { type: 'message_stop' } }),
+      event(3, {
+        type: 'stream_event',
+        event: { type: 'message_start', message: { id: 'next' } },
+      }),
+      event(4, {
+        type: 'stream_event',
+        event: {
+          type: 'content_block_delta',
+          index: 0,
+          delta: { type: 'text_delta', text: 'next message' },
+        },
+      }),
+    ];
+    expect(
+      buildTraceEntries(events)
+        .filter((entry) => entry.kind === 'message')
+        .map((entry) => entry.text),
+    ).toEqual(['earlier tail', 'next message']);
+  });
+
+  it('pairs ADK function results with calls across different event IDs', () => {
+    const events = [
+      event(
+        1,
+        {
+          id: 'call-event',
+          content: {
+            parts: [
+              {
+                functionCall: {
+                  id: 'call-1',
+                  name: 'read_file',
+                  args: { path: '/file' },
+                },
+              },
+            ],
+          },
+        },
+        'adk',
+      ),
+      event(
+        2,
+        {
+          id: 'result-event',
+          content: {
+            parts: [
+              {
+                functionResponse: {
+                  id: 'call-1',
+                  name: 'read_file',
+                  response: { text: 'result' },
+                },
+              },
+            ],
+          },
+        },
+        'adk',
+      ),
+    ];
+    const entries = buildTraceEntries(events);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      kind: 'tool',
+      title: 'read_file',
+      status: 'Completed',
+      events,
+    });
+    expect(entries[0].input).toContain('/file');
+    expect(entries[0].text).toContain('result');
+  });
 });

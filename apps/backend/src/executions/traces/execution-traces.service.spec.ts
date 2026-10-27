@@ -142,6 +142,14 @@ describe('ExecutionTracesService', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
+  it('does not notify viewers for a retry that inserted no new events', async () => {
+    query
+      .mockResolvedValueOnce([{ workerClientId: 'owner' }])
+      .mockResolvedValueOnce([]);
+    await service.append(batch(), 'owner');
+    expect(emit).not.toHaveBeenCalled();
+  });
+
   it('opens at the latest events and returns them chronologically with earlier-page metadata', async () => {
     find.mockResolvedValue([{ sequence: 5 }, { sequence: 4 }, { sequence: 3 }]);
     expect(await service.list(executionId, 0, 2, { latest: true })).toEqual({

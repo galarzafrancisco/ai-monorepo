@@ -32,6 +32,24 @@ export function buildTraceEntries(events: TraceEvent[]): TraceEntry[] {
   const entries = new Map<string, TraceEntry>();
   const claudeMessageIds = new Map<string, string>();
   const claudeToolKeys = new Map<string, string>();
+  const claudeStreamKeys = new Map<string, string>();
+  const claudeBlocks = new Map<
+    string,
+    {
+      scope: string;
+      messageId?: string;
+      type: string;
+    }
+  >();
+  const resetStream = (scope: string) => {
+    claudeMessageIds.delete(scope);
+    for (const [key, block] of claudeBlocks) {
+      if (block.scope === scope) claudeBlocks.delete(key);
+    }
+    for (const key of claudeStreamKeys.keys()) {
+      if (key.startsWith(`${scope}:`)) claudeStreamKeys.delete(key);
+    }
+  };
   const put = (
     event: TraceEvent,
     key: string,
@@ -64,12 +82,36 @@ export function buildTraceEntries(events: TraceEvent[]): TraceEntry[] {
     if (event.harness === 'claude' && type === 'stream_event') {
       const stream = object(raw.event);
       const streamMessage = object(stream.message);
+      if (stream.type === 'message_start') resetStream(scope);
       if (streamMessage.id)
         claudeMessageIds.set(scope, string(streamMessage.id));
       const index = typeof stream.index === 'number' ? stream.index : 0;
       const block = object(stream.content_block);
       const delta = object(stream.delta);
-      const key = `claude:${scope}:${claudeMessageIds.get(scope) || 'stream'}:${index}`;
+      const slot = `${scope}:${index}`;
+      const key =
+        claudeStreamKeys.get(slot) ??
+        `claude:${scope}:${claudeMessageIds.get(scope) || `partial-${event.sequence}`}:${index}`;
+      if (
+        stream.type === 'content_block_start' ||
+        stream.type === 'content_block_delta'
+      ) {
+        claudeStreamKeys.set(slot, key);
+        if (!claudeBlocks.has(key)) {
+          claudeBlocks.set(key, {
+            scope,
+            messageId: claudeMessageIds.get(scope),
+            type:
+              string(block.type) ||
+              (delta.type === 'thinking_delta'
+                ? 'thinking'
+                : delta.type === 'input_json_delta'
+                  ? 'tool_use'
+                  : 'text'),
+          });
+        }
+      }
+      if (stream.type === 'message_stop') resetStream(scope);
       if (stream.type === 'content_block_start') {
         if (block.type === 'tool_use' && block.id)
           claudeToolKeys.set(`${scope}:${string(block.id)}`, key);
@@ -150,7 +192,22 @@ export function buildTraceEntries(events: TraceEvent[]): TraceEntry[] {
             status: part.is_error ? 'Failed' : 'Completed',
           });
         } else {
-          const key = `claude:${scope}:${string(message.id) || event.sequence}:${index}`;
+          // The SDK emits one assistant event per completed block, sharing the
+          // message ID. Its content-array index is NOT the stream block index.
+          const messageId = string(message.id);
+          const streamed = [...claudeBlocks].find(
+            ([, block]) =>
+              block.scope === scope &&
+              block.type === partType &&
+              (!block.messageId || block.messageId === messageId),
+          );
+          const key =
+            (partType === 'tool_use'
+              ? claudeToolKeys.get(`${scope}:${string(part.id)}`)
+              : undefined) ??
+            streamed?.[0] ??
+            `claude:${scope}:${messageId || event.sequence}:${string(raw.uuid) || event.sequence}:${index}`;
+          claudeBlocks.delete(key);
           if (partType === 'tool_use' && part.id)
             claudeToolKeys.set(`${scope}:${string(part.id)}`, key);
           put(event, key, {
@@ -273,14 +330,23 @@ export function buildTraceEntries(events: TraceEvent[]): TraceEntry[] {
         const part = object(value);
         const call = object(part.functionCall ?? part.functionResponse);
         const tool = Boolean(part.functionCall || part.functionResponse);
-        put(event, `adk:${string(raw.id) || event.sequence}:${index}`, {
+        const key =
+          tool && call.id
+            ? `adk:tool:${string(call.id)}`
+            : `adk:${string(raw.id) || event.sequence}:${index}`;
+        const previous = entries.get(key);
+        put(event, key, {
           kind: tool ? 'tool' : part.thought ? 'thinking' : 'message',
           title:
             string(call.name) ||
             (part.thought ? 'Thinking' : string(raw.author) || 'Assistant'),
           text: tool ? content(call.response) : string(part.text),
-          input: content(call.args),
-          status: part.functionResponse ? 'Completed' : undefined,
+          input: part.functionCall ? content(call.args) : previous?.input,
+          status: part.functionResponse
+            ? 'Completed'
+            : tool
+              ? 'Running'
+              : undefined,
         });
       });
       continue;
@@ -305,6 +371,13 @@ export function mergeTraceEvents(
   current: TraceEvent[],
   incoming: TraceEvent[],
 ): TraceEvent[] {
+  // Live delivery normally appends; avoid rebuilding and sorting the whole run.
+  if (
+    !current.length ||
+    !incoming.length ||
+    incoming[0].sequence > current[current.length - 1].sequence
+  )
+    return [...current, ...incoming];
   const merged = new Map(current.map((event) => [event.sequence, event]));
   for (const event of incoming) merged.set(event.sequence, event);
   return [...merged.values()].sort((a, b) => a.sequence - b.sequence);

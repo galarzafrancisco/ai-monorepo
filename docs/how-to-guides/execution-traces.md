@@ -72,6 +72,10 @@ Tool output and original raw events are expandable. Lifecycle-only and
 unrecognized SDK events are omitted from the reading view, while all raw events
 remain stored and available through the API. Token deltas and updated tool
 snapshots are grouped for reading, with their underlying JSON inspectable.
+Claude's per-block assistant events are reconciled with streaming block identities,
+including when a page starts mid-message. ADK function calls and responses are
+paired by call ID. Loading earlier events anchors the visible entry so concurrent
+live updates do not move the reader's position.
 
 The panel opens at the latest 100 raw events. `latest=true` selects the newest
 page in chronological order. `beforeSequence` loads earlier pages, and

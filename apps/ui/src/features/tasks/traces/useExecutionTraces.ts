@@ -47,12 +47,14 @@ export function useExecutionTraces(
     let reconcileAgain = false;
     let loadingEarlier = false;
     let snapshot: TraceEvent[] = [];
+    const known = new Set<number>();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const apply = (incoming: TraceEvent[]) => {
       if (!incoming.length) return;
-      const known = new Set(snapshot.map((event) => event.sequence));
-      if (incoming.every((event) => known.has(event.sequence))) return;
-      snapshot = mergeTraceEvents(snapshot, incoming);
+      const added = incoming.filter((event) => !known.has(event.sequence));
+      if (!added.length) return;
+      for (const event of added) known.add(event.sequence);
+      snapshot = mergeTraceEvents(snapshot, added);
       if (!cancelled) setEventState({ executionId, events: snapshot });
     };
     const refresh = async (reconcile = false) => {

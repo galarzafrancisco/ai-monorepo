@@ -77,7 +77,7 @@ export function TaskTracesPanel({
   } = useExecutionTraces(run?.executionId ?? null, open, onRefreshRuns);
   const entries = useMemo(() => buildTraceEntries(events), [events]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const previousHeight = useRef<number | null>(null);
+  const earlierAnchor = useRef<{ sequence: number; top: number } | null>(null);
   const [pausedExecutionId, setPausedExecutionId] = useState<string | null>(
     null,
   );
@@ -89,18 +89,27 @@ export function TaskTracesPanel({
     actors.find((actor) => actor.id === id)?.displayName ?? 'Agent';
 
   useLayoutEffect(() => {
-    previousHeight.current = null;
+    earlierAnchor.current = null;
   }, [run?.executionId]);
   useLayoutEffect(() => {
     const scroll = scrollRef.current;
     if (!scroll) return;
-    if (previousHeight.current !== null) {
-      if (!isLoadingEarlier) {
-        scroll.scrollTop += scroll.scrollHeight - previousHeight.current;
-        previousHeight.current = null;
+    if (earlierAnchor.current) {
+      const anchor = earlierAnchor.current;
+      const anchored = entries.find((entry) =>
+        entry.events.some((event) => event.sequence === anchor.sequence),
+      );
+      const entry = anchored
+        ? scroll.querySelector<HTMLElement>(
+            `[data-trace-entry="${CSS.escape(anchored.id)}"]`,
+          )
+        : null;
+      if (entry) {
+        scroll.scrollTop += entry.getBoundingClientRect().top - anchor.top;
       }
+      if (!isLoadingEarlier) earlierAnchor.current = null;
     } else if (following) scroll.scrollTop = scroll.scrollHeight;
-  }, [events, following, isLoadingEarlier]);
+  }, [events, entries, following, isLoadingEarlier]);
 
   const expandButton = (
     <Button
@@ -275,7 +284,19 @@ export function TaskTracesPanel({
             disabled={isLoadingEarlier}
             onClick={async () => {
               setFollowing(false);
-              previousHeight.current = scrollRef.current?.scrollHeight ?? null;
+              const scroll = scrollRef.current;
+              const top = scroll?.getBoundingClientRect().top ?? 0;
+              const entry = [
+                ...(scroll?.querySelectorAll<HTMLElement>(
+                  '[data-trace-sequence]',
+                ) ?? []),
+              ].find((element) => element.getBoundingClientRect().bottom > top);
+              earlierAnchor.current = entry
+                ? {
+                    sequence: Number(entry.dataset.traceSequence),
+                    top: entry.getBoundingClientRect().top,
+                  }
+                : null;
               await loadEarlier();
             }}
           >
@@ -394,7 +415,11 @@ function TraceEntryView({ entry }: { entry: TraceEntry }) {
             : Braces;
   const raw = <RawTraceDetails entry={entry} />;
   return (
-    <article className={`task-traces__entry task-traces__entry--${entry.kind}`}>
+    <article
+      className={`task-traces__entry task-traces__entry--${entry.kind}`}
+      data-trace-sequence={entry.events[0].sequence}
+      data-trace-entry={entry.id}
+    >
       <div className="task-traces__marker">
         <Icon size={14} />
       </div>
