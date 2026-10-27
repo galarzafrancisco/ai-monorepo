@@ -392,13 +392,7 @@ export class ExecutionActivityGatewayClient {
           await this.options.auth.refreshAccessToken();
         }
 
-        if (this.socket) {
-          this.clearWorkerHeartbeatTimer();
-          this.socket.removeAllListeners();
-          this.socket.disconnect();
-          this.socket = undefined;
-        }
-
+        // Socket replacement, including ACK cancellation, is handled in one place.
         await this.connectWithFreshToken();
       } finally {
         this.reconnectPromise = null;
