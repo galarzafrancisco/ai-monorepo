@@ -1,24 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Maximize2, PanelRightClose, PanelRightOpen, Terminal } from 'lucide-react';
+import { ExternalLink, Maximize2, Minimize2, PanelRightClose, Terminal } from 'lucide-react';
 import { Button, Text } from '../../../ui/primitives';
 import { RunList } from './RunList';
 import { RunTrace } from './RunTrace';
 import { runTracePath, type TaskRun } from './runs';
 import './TaskTracesPanel.css';
 
+export type RunsPanelMode = 'closed' | 'third' | 'full';
+
 /**
- * Desktop side panel: the task's runs, and the trace of the selected one
- * (the live run by default, otherwise the latest). "Full view" opens the
- * same trace on its own page.
+ * Desktop side bar: the task's runs, and the trace of the selected one (the
+ * live run by default, otherwise the latest). It sits collapsed as a rail,
+ * opens to a third of the page, or takes the whole page.
  */
 export function TaskRunsPanel({
   runs,
   isLoadingRuns,
   runsError,
   onRefreshRuns,
-  open,
-  onToggle,
+  mode,
+  onModeChange,
   onInterrupt,
   interruptingExecutionIds,
 }: {
@@ -26,8 +28,8 @@ export function TaskRunsPanel({
   isLoadingRuns: boolean;
   runsError: string | null;
   onRefreshRuns: () => void;
-  open: boolean;
-  onToggle: () => void;
+  mode: RunsPanelMode;
+  onModeChange: (mode: RunsPanelMode) => void;
   onInterrupt: (run: TaskRun) => void;
   interruptingExecutionIds: Set<string>;
 }) {
@@ -39,27 +41,40 @@ export function TaskRunsPanel({
     null;
   const hasLiveRun = runs.some((item) => item.source === 'active');
 
-  if (!open) {
+  // Escape steps back out of the full view.
+  useEffect(() => {
+    if (mode !== 'full') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onModeChange('third');
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mode, onModeChange]);
+
+  if (mode === 'closed') {
     return (
-      <aside id="task-runs" className="task-traces task-traces--collapsed" aria-label="Runs">
-        <Button
-          variant="ghost"
-          className="task-traces__expand"
-          onClick={onToggle}
-          aria-label="Expand runs"
+      <aside id="task-runs" className="task-traces" aria-label="Runs">
+        <button
+          type="button"
+          className="task-runs-rail"
+          onClick={() => onModeChange('third')}
+          aria-label={`Open runs${runs.length ? ` (${runs.length})` : ''}`}
           aria-expanded={false}
           aria-controls="task-runs"
         >
-          <PanelRightOpen size={18} />
-          <span>Runs</span>
-          {hasLiveRun && <span className="task-traces__dot" />}
-        </Button>
+          <Terminal size={18} />
+          <span className="task-runs-rail__label">Runs</span>
+          {runs.length > 0 && <span>{runs.length}</span>}
+          {hasLiveRun && <span className="task-traces__dot" aria-label="A run is live" />}
+        </button>
       </aside>
     );
   }
 
+  const isFull = mode === 'full';
+
   return (
-    <aside id="task-runs" className="task-traces" aria-label="Runs">
+    <aside id="task-runs" className={`task-traces${isFull ? ' task-traces--full' : ''}`} aria-label="Runs">
       <header className="task-traces__header">
         <div className="task-traces__heading">
           <Terminal size={18} />
@@ -69,20 +84,29 @@ export function TaskRunsPanel({
         </div>
         <div className="task-traces__header-actions">
           {run && (
-            <Link className="task-traces__full-view" to={runTracePath(run)} title="Open this trace in a full page">
-              <Maximize2 size={14} />
-              Full view
+            <Link className="task-traces__icon-button" to={runTracePath(run)} title="Open this trace on its own page" aria-label="Open this trace on its own page">
+              <ExternalLink size={16} />
             </Link>
           )}
           <Button
             variant="ghost"
             size="sm"
-            onClick={onToggle}
-            aria-label="Collapse runs"
+            onClick={() => onModeChange(isFull ? 'third' : 'full')}
+            aria-label={isFull ? 'Shrink runs to the side' : 'Expand runs to full width'}
+            title={isFull ? 'Shrink to the side (Esc)' : 'Expand to full width'}
+          >
+            {isFull ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onModeChange('closed')}
+            aria-label="Close runs"
+            title="Close runs"
             aria-expanded={true}
             aria-controls="task-runs"
           >
-            <PanelRightClose size={18} />
+            <PanelRightClose size={16} />
           </Button>
         </div>
       </header>
