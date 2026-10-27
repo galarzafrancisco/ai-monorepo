@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { PopShell } from "../../app/shells/PopShell";
 import { Button, Modal } from "../../ui/primitives";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
@@ -21,6 +21,10 @@ type AgentSheetProps = {
 /** A bottom sheet on phones and a centered dialog on desktop. */
 export function AgentSheet({ title, onClose, primary, closeLabel = 'Done', children }: AgentSheetProps) {
   const isDesktop = useIsDesktop();
+  // Guards the primary action against double submits (e.g. issuing two tokens).
+  // The ref blocks clicks that land before the disabled state re-renders.
+  const pendingRef = useRef(false);
+  const [pending, setPending] = useState(false);
 
   if (!isDesktop) {
     return (
@@ -38,8 +42,15 @@ export function AgentSheet({ title, onClose, primary, closeLabel = 'Done', child
   }
 
   const runPrimary = async () => {
-    if (!primary) return;
-    if (await primary.onClick()) onClose();
+    if (!primary || pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
+    try {
+      if (await primary.onClick()) onClose();
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
   };
 
   return (
@@ -49,7 +60,9 @@ export function AgentSheet({ title, onClose, primary, closeLabel = 'Done', child
         {primary ? (
           <>
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button onClick={runPrimary} disabled={primary.disabled}>{primary.label}</Button>
+            <Button onClick={runPrimary} disabled={primary.disabled || pending}>
+              {pending ? `${primary.label}…` : primary.label}
+            </Button>
           </>
         ) : (
           <Button onClick={onClose}>{closeLabel}</Button>
