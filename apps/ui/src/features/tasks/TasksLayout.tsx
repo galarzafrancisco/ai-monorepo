@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { CalendarDays, GitBranch, LayoutDashboard } from "lucide-react";
+import { GitBranch, LayoutDashboard } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DesktopShell } from "../../app/shells/DesktopShell";
@@ -7,9 +6,6 @@ import { IosShell } from "../../app/shells/IosShell";
 import { useTasksCtx } from "./TasksProvider";
 import { TASKS_STATUS_NAV } from "./const";
 import { ShippedCelebration } from "./ShippedCelebration";
-import { Button } from "../../ui/primitives";
-import { ScheduledTasksService } from "../scheduled-tasks/api";
-import type { ScheduledTaskResponseDto } from "@taico/client/v2";
 import { ProjectPicker } from "../projects/ProjectPicker";
 import "./TasksLayout.css";
 
@@ -25,7 +21,6 @@ export function TasksLayout(): React.JSX.Element {
   } = useTasksCtx();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeScheduleCount, setActiveScheduleCount] = useState<number | null>(null);
   const isDependencyView = location.pathname === "/tasks/dependencies" || location.pathname.startsWith("/tasks/dependencies/");
   const isBoardView = [
     "/tasks/not-started",
@@ -54,28 +49,6 @@ export function TasksLayout(): React.JSX.Element {
     />
   );
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadCount = async () => {
-      try {
-        const response = await ScheduledTasksService.ScheduledTasksController_listScheduledTasks({ page: 1, limit: 50 });
-        if (!isMounted) {
-          return;
-        }
-        const active = response.items.filter((task: ScheduledTaskResponseDto) => task.enabled).length;
-        setActiveScheduleCount(active);
-      } catch {
-        if (isMounted) {
-          setActiveScheduleCount(null);
-        }
-      }
-    };
-    loadCount();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   return (
     <div style={{ minHeight: 0 }}>
       <ShippedCelebration trigger={shippedCelebrationTrigger} />
@@ -86,18 +59,6 @@ export function TasksLayout(): React.JSX.Element {
           headerActions={(
             <div className="tasks-layout__header-actions">
               {showViewToggle ? viewToggle : null}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="tasks-layout__header-button"
-                onClick={() => navigate('/tasks/schedule')}
-              >
-                <CalendarDays className="tasks-layout__header-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
-                Schedule
-                {activeScheduleCount && activeScheduleCount > 0 ? (
-                  <span className="tasks-layout__schedule-badge">{activeScheduleCount}</span>
-                ) : null}
-              </Button>
             </div>
           )}
         >

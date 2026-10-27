@@ -112,6 +112,12 @@ ul, ol {
 }
 
 /* ===== Scrollbars ===== */
+/* Every pane gets a thin scrollbar in the theme's colours, never the browser's white track. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
 /* Thin, quiet scrollbar for panes that scroll (lists, chat, sidebars). */
 .thin-scrollbar {
   scrollbar-width: thin;

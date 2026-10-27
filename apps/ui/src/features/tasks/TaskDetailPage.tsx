@@ -24,7 +24,7 @@ import type { Task } from './types';
 import { useChatReadiness } from '../ai-models/useChatReadiness';
 import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
-import { TaskRunsPanel } from './traces/TaskRunsPanel';
+import { TaskRunsPanel, type RunsPanelMode } from './traces/TaskRunsPanel';
 import { RunList } from './traces/RunList';
 import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
 import { ProjectPicker } from '../projects/ProjectPicker';
@@ -60,6 +60,7 @@ export type TaskDetailViewProps = {
 /** Updates shown before "Show earlier updates": enough to see where the task stands. */
 const RECENT_UPDATE_COUNT = 4;
 const PROJECT_TAG_PREFIX = 'project:';
+const RUNS_MODE_KEY = 'taico.taskRuns.mode';
 
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks, canChangeStatus = true }: TaskDetailViewProps) {
   const navigate = useNavigate();
@@ -70,9 +71,17 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const { registerCommands } = useCommandPalette();
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
-  const [runsOpen, setRunsOpen] = useState(() => {
-    try { return localStorage.getItem('taico.taskTraces.open') !== 'false' && window.innerWidth >= 1100; } catch { return window.innerWidth >= 1100; }
+  // The runs side bar starts collapsed; whichever size you leave it at sticks.
+  const [runsMode, setRunsMode] = useState<RunsPanelMode>(() => {
+    try {
+      const stored = localStorage.getItem(RUNS_MODE_KEY);
+      return stored === 'third' || stored === 'full' ? stored : 'closed';
+    } catch { return 'closed'; }
   });
+  const changeRunsMode = useCallback((mode: RunsPanelMode) => {
+    setRunsMode(mode);
+    try { localStorage.setItem(RUNS_MODE_KEY, mode); } catch { /* Storage may be unavailable. */ }
+  }, []);
   const [executionsTaskId, setExecutionsTaskId] = useState<string | null>(null);
   const currentTaskId = useRef(task?.id);
   currentTaskId.current = task?.id;
@@ -611,18 +620,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       isLoadingRuns={isLoadingExecutions}
       runsError={executionsError}
       onRefreshRuns={() => void loadExecutionsForTask(task.id)}
-      open={runsOpen}
-      onToggle={() => setRunsOpen((value) => {
-        try { localStorage.setItem('taico.taskTraces.open', String(!value)); } catch { /* Storage may be unavailable. */ }
-        return !value;
-      })}
+      mode={runsMode}
+      onModeChange={changeRunsMode}
       onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
       interruptingExecutionIds={interruptingExecutions}
     />
   );
 
   return (
-    <div className={`task-detail-workspace${runsOpen ? "" : " task-detail-workspace--traces-closed"}`}>
+    <div className={`task-detail-workspace task-detail-workspace--runs-${isDesktop ? runsMode : "closed"}`}>
     <div className="task-detail-main">
     <div className="task-detail-page">
 
