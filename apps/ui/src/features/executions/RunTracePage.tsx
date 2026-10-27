@@ -109,7 +109,8 @@ export function RunTracePage() {
         </div>
         <div className="run-trace-page__links">
           {entry && <Button variant="secondary" size="sm" onClick={() => navigate(`/tasks/task/${entry.taskId}`)}>Open task</Button>}
-          <Button variant="secondary" size="sm" onClick={() => navigate(`/runs/${kind}/${id}`)}>Run details</Button>
+          {/* Details come from the same feed; without a summary there's nothing to show there. */}
+          {entry && <Button variant="secondary" size="sm" onClick={() => navigate(`/runs/${kind}/${id}`)}>Run details</Button>}
         </div>
       </header>
       <div className="run-trace-page__trace task-traces">
