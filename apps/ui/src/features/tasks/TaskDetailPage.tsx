@@ -77,7 +77,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
   const [showAllTimelineItems, setShowAllTimelineItems] = useState(false);
-  const { projects, isLoading: isLoadingProjects } = useProjects();
+  const { projects, isLoading: isLoadingProjects, error: projectsError } = useProjects();
   const activityHideTimerRef = useRef<number | null>(null);
   const activityExitTimerRef = useRef<number | null>(null);
 
@@ -720,10 +720,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         <dd>
           <ProjectPicker
             projects={projects}
-            projectsLoaded={!isLoadingProjects}
+            // Without the project list, "No project" would be the only choice and
+            // would strip the task's project, so the picker stays locked.
+            projectsLoaded={!isLoadingProjects && !projectsError}
             selectedProjectId={currentProject?.id ?? null}
             onChange={(projectId) => void changeProject(projectId)}
-            emptyLabel="No project"
+            emptyLabel={!currentProject && projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : "No project"}
             ariaLabel="Task project"
             className="task-props__project"
           />
