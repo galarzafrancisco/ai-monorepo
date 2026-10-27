@@ -59,8 +59,11 @@ transcript permission or payload sanitization in this initial version.
 ## Task trace panel
 
 Task details show a collapsible **Agent traces** panel on wide desktop windows.
-On smaller screens it becomes a collapsible section above the task. Its open
-state is remembered locally. Select an execution to view its messages, reasoning
+On phones, a compact entry above the task opens a full-screen trace view with
+a Back to task control. The view traps focus, supports Escape, and restores focus
+to its entry when closed. It accounts for safe areas and keeps task navigation
+and comment actions behind the view. Tablet windows retain a collapsible section.
+Its open state is remembered locally. Select an execution to view its messages, reasoning
 summaries exposed by the harness, tool calls, arguments, output and errors.
 Tool output and original raw events are expandable; **System** reveals lifecycle
 and unrecognized SDK events. Token deltas and updated tool snapshots are grouped

@@ -435,3 +435,126 @@
     writing-mode: horizontal-tb;
   }
 }
+
+/* A dedicated reading view keeps phone navigation and task actions out of the way. */
+.task-traces-mobile__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg);
+}
+.task-traces-mobile__view {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+.task-traces-mobile__view:focus {
+  outline: none;
+}
+.task-traces-mobile__view > .task-traces {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.task-traces__mobile-title {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-semibold);
+}
+.task-traces__mobile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 74px;
+  min-height: 44px;
+}
+.task-traces__mobile-header-spacer {
+  width: 74px;
+}
+.task-traces-mobile__view .task-traces__header {
+  padding: var(--space-1) var(--space-2);
+  flex-shrink: 0;
+}
+.task-traces-mobile__view .task-traces__run {
+  flex-shrink: 0;
+}
+.task-traces-mobile__view .task-traces__run select {
+  min-height: 44px;
+  font-size: var(--fs-input-mobile-safe);
+}
+.task-traces-mobile__view .task-traces__toolbar {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.task-traces-mobile__view .task-traces__toolbar label {
+  min-height: 44px;
+  gap: var(--space-2);
+}
+.task-traces-mobile__view input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.task-traces-mobile__view .task-traces__scroll {
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.task-traces-mobile__view .task-traces__text {
+  font-size: var(--fs-3);
+}
+.task-traces-mobile__view .task-traces__tool > summary {
+  min-height: 44px;
+}
+.task-traces-mobile__view .task-traces__raw > summary {
+  min-height: 44px;
+}
+.task-traces-mobile__view .task-traces__footer {
+  flex-shrink: 0;
+  min-height: 56px;
+}
+.task-traces-mobile__view .task-traces__footer .btn,
+.task-traces-mobile__view .task-traces__earlier {
+  min-height: 44px;
+}
+@media (max-width: 767px) {
+  .task-traces__expand {
+    min-height: 72px;
+    gap: var(--space-3);
+  }
+  .task-traces__mobile-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    text-align: left;
+  }
+  .task-traces__mobile-copy > span:first-child {
+    font-size: var(--fs-2);
+    font-weight: var(--fw-medium);
+  }
+  .task-traces__mobile-description {
+    color: var(--text-muted);
+    font-weight: var(--fw-normal);
+  }
+  .task-traces__mobile-chevron {
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+}

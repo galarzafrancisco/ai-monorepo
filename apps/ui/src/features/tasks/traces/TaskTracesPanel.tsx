@@ -1,6 +1,9 @@
+import * as Dialog from '@radix-ui/react-dialog';
+import { useIsDesktop } from '../../../app/hooks/useIsDesktop';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDown,
+  ArrowLeft,
   Braces,
   ChevronRight,
   CircleAlert,
@@ -55,6 +58,7 @@ export function TaskTracesPanel({
   isLoadingRuns: boolean;
   runsError: string | null;
 }) {
+  const isMobile = !useIsDesktop();
   const { actors } = useActorsCtx();
   const [chosenId, setChosenId] = useState<string | null>(null);
   const run =
@@ -102,51 +106,93 @@ export function TaskTracesPanel({
     } else if (following) scroll.scrollTop = scroll.scrollHeight;
   }, [events, following, showSystem, isLoadingEarlier]);
 
-  if (!open)
-    return (
-      <aside
-        id="task-agent-traces"
-        className="task-traces task-traces--collapsed"
-        aria-label="Agent traces"
-      >
-        <Button
-          variant="ghost"
-          className="task-traces__expand"
-          onClick={onToggle}
-          aria-label="Expand agent traces"
-          aria-expanded={false}
-          aria-controls="task-agent-traces"
-        >
-          <PanelRightOpen size={18} />
+  const expandButton = (
+    <Button
+      variant="ghost"
+      className="task-traces__expand"
+      onClick={isMobile ? undefined : onToggle}
+      aria-label={isMobile ? 'View agent traces' : 'Expand agent traces'}
+      aria-expanded={open}
+      aria-controls="task-agent-traces"
+    >
+      {isMobile ? <Terminal size={20} /> : <PanelRightOpen size={18} />}
+      {isMobile ? (
+        <span className="task-traces__mobile-copy">
           <span>Agent traces</span>
-          {runs.some((item) => item.source === 'active') && (
-            <span className="task-traces__dot" />
-          )}
-        </Button>
-      </aside>
-    );
-
-  return (
+          <span className="task-traces__mobile-description">
+            Messages, tools and live activity
+          </span>
+        </span>
+      ) : (
+        <span>Agent traces</span>
+      )}
+      {runs.some((item) => item.source === 'active') && (
+        <span className="task-traces__dot" />
+      )}
+      {isMobile && (
+        <ChevronRight size={18} className="task-traces__mobile-chevron" />
+      )}
+    </Button>
+  );
+  const collapsed = (
     <aside
-      id="task-agent-traces"
+      id={isMobile ? undefined : 'task-agent-traces'}
+      className="task-traces task-traces--collapsed"
+      aria-label="Agent traces"
+    >
+      {isMobile ? (
+        <Dialog.Trigger asChild>{expandButton}</Dialog.Trigger>
+      ) : (
+        expandButton
+      )}
+    </aside>
+  );
+
+  const panel = (
+    <aside
+      id={isMobile ? undefined : 'task-agent-traces'}
       className="task-traces"
       aria-label="Agent traces"
     >
       <header className="task-traces__header">
-        <div className="task-traces__heading">
-          <Terminal size={18} />
-          <Text weight="semibold">Agent traces</Text>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggle}
-          aria-label="Collapse agent traces"
-          aria-expanded={true}
-          aria-controls="task-agent-traces"
-        >
-          <PanelRightClose size={18} />
-        </Button>
+        {isMobile ? (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="task-traces__mobile-back"
+              onClick={onToggle}
+              aria-label="Back to task"
+            >
+              <ArrowLeft size={20} />
+              Task
+            </Button>
+            <Dialog.Title className="task-traces__mobile-title">
+              Agent traces
+            </Dialog.Title>
+            <span
+              className="task-traces__mobile-header-spacer"
+              aria-hidden="true"
+            />
+          </>
+        ) : (
+          <>
+            <div className="task-traces__heading">
+              <Terminal size={18} />
+              <Text weight="semibold">Agent traces</Text>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              aria-label="Collapse agent traces"
+              aria-expanded={true}
+              aria-controls="task-agent-traces"
+            >
+              <PanelRightClose size={18} />
+            </Button>
+          </>
+        )}
       </header>
       <div className="task-traces__run">
         <label className="task-traces__label" htmlFor="task-trace-run">
@@ -320,6 +366,29 @@ export function TaskTracesPanel({
       </footer>
     </aside>
   );
+
+  if (isMobile)
+    return (
+      <Dialog.Root
+        open={open}
+        onOpenChange={(next) => {
+          if (next !== open) onToggle();
+        }}
+      >
+        {collapsed}
+        <Dialog.Portal>
+          <Dialog.Overlay className="task-traces-mobile__overlay" />
+          <Dialog.Content
+            id="task-agent-traces"
+            className="task-traces-mobile__view"
+            aria-describedby={undefined}
+          >
+            {panel}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    );
+  return open ? panel : collapsed;
 }
 
 function TraceEntryView({ entry }: { entry: TraceEntry }) {
