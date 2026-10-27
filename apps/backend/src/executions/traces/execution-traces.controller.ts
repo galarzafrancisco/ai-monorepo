@@ -47,10 +47,12 @@ export class ExecutionTracesController {
         executionId,
         query.afterSequence,
         query.limit,
+        { latest: query.latest, beforeSequence: query.beforeSequence },
       );
       return {
         items: result.items.map(ExecutionTraceResponseDto.fromEntity),
         nextAfterSequence: result.nextAfterSequence,
+        hasMoreBefore: result.hasMoreBefore,
       };
     } catch (error) {
       if (error instanceof ExecutionTraceNotFoundError)

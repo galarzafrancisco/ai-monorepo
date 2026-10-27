@@ -54,3 +54,29 @@ cursor alone is not a guarantee of a complete stream.
 Raw output can include prompts, file contents, tool arguments and tool results.
 It has the same sensitivity as a harness transcript. There is no separate
 transcript permission or payload sanitization in this initial version.
+
+
+## Task trace panel
+
+Task details show a collapsible **Agent traces** panel on wide desktop windows.
+On smaller screens it becomes a collapsible section above the task. Its open
+state is remembered locally. Select an execution to view its messages, reasoning
+summaries exposed by the harness, tool calls, arguments, output and errors.
+Tool output and original raw events are expandable; **System** reveals lifecycle
+and unrecognized SDK events. Token deltas and updated tool snapshots are grouped
+for reading, while all underlying JSON remains inspectable.
+
+The panel opens at the latest 100 raw events. `latest=true` selects the newest
+page in chronological order. `beforeSequence` loads earlier pages, and
+`hasMoreBefore` indicates whether another earlier page exists. Reading earlier
+history preserves the scroll position. New output follows the bottom only when
+the reader is already near it; **Jump to latest** resumes following.
+
+After a batch is durably inserted, `ExecutionTracesChangedEvent` is mapped by the
+executions gateway to `execution.traces.changed` with only the execution ID.
+Authenticated readers with `tasks:read` join `execution-traces-<executionId>` via
+`execution.traces.subscribe`. The panel fetches persisted events through REST on
+notification, subscription acknowledgement, reconnect and a ten-second fallback.
+It also subscribes to execution list changes to discover new runs. Collapsing
+unmounts its subscription and stops its trace reads. Raw output is never included
+in these notifications or broadcast to collection subscribers.

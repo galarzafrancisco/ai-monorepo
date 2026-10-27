@@ -1,3 +1,5 @@
+import { ExecutionTracesChangedEvent } from '../events/execution-traces-changed.event';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import type { PostExecutionTracePayload } from '@taico/events';
 import { ExecutionTracesService } from './execution-traces.service';
@@ -26,13 +28,18 @@ describe('ExecutionTracesService', () => {
   let query: jest.Mock;
   let find: jest.Mock;
   let service: ExecutionTracesService;
+  let emit: jest.Mock;
   beforeEach(() => {
     query = jest.fn().mockResolvedValue([{ workerClientId: 'owner' }]);
     find = jest.fn().mockResolvedValue([]);
-    service = new ExecutionTracesService({
-      query,
-      find,
-    } as unknown as Repository<ExecutionTraceEntity>);
+    emit = jest.fn();
+    service = new ExecutionTracesService(
+      {
+        query,
+        find,
+      } as unknown as Repository<ExecutionTraceEntity>,
+      { emit } as unknown as EventEmitter2,
+    );
   });
 
   it('stores the entire JSON payload in one idempotent batch insert after resolving ownership', async () => {
@@ -103,11 +110,47 @@ describe('ExecutionTracesService', () => {
     expect(await service.list(executionId, 5, 10)).toEqual({
       items: [],
       nextAfterSequence: 5,
+      hasMoreBefore: false,
     });
     expect(find).toHaveBeenCalledWith(
-      expect.objectContaining({ order: { sequence: 'ASC' }, take: 10 }),
+      expect.objectContaining({ order: { sequence: 'ASC' }, take: 11 }),
     );
     find.mockResolvedValue([{ sequence: 9 }]);
     expect((await service.list(executionId, 5, 10)).nextAfterSequence).toBe(9);
+  });
+
+  it('notifies viewers only after a successful durable insert', async () => {
+    await service.append(batch(), 'owner');
+    expect(emit).toHaveBeenCalledWith(
+      ExecutionTracesChangedEvent.INTERNAL,
+      expect.objectContaining({ executionId }),
+    );
+    emit.mockClear();
+    query
+      .mockResolvedValueOnce([{ workerClientId: 'owner' }])
+      .mockRejectedValueOnce(new Error('write failed'));
+    await expect(service.append(batch(), 'owner')).rejects.toThrow(
+      'write failed',
+    );
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('opens at the latest events and returns them chronologically with earlier-page metadata', async () => {
+    find.mockResolvedValue([{ sequence: 5 }, { sequence: 4 }, { sequence: 3 }]);
+    expect(await service.list(executionId, 0, 2, { latest: true })).toEqual({
+      items: [{ sequence: 4 }, { sequence: 5 }],
+      nextAfterSequence: 5,
+      hasMoreBefore: true,
+    });
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ order: { sequence: 'DESC' }, take: 3 }),
+    );
+  });
+
+  it('does not infer earlier events from gaps in the sequence', async () => {
+    find.mockResolvedValue([{ sequence: 4 }, { sequence: 3 }]);
+    const page = await service.list(executionId, 0, 2, { beforeSequence: 5 });
+    expect(page.items.map((item) => item.sequence)).toEqual([3, 4]);
+    expect(page.hasMoreBefore).toBe(false);
   });
 });

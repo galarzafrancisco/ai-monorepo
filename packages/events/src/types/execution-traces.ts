@@ -1,3 +1,7 @@
+export interface ExecutionTracesChangedWireEvent {
+  executionId: string;
+}
+
 /** Raw JSON from a harness, without formatter filtering or normalization. */
 export type HarnessJson =
   | null

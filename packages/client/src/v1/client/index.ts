@@ -86,6 +86,8 @@ export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto.js'
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto.js';
 export type { DisconnectAiProviderResponseDto } from './models/DisconnectAiProviderResponseDto.js';
 export type { ExecutionStatsResponseDto } from './models/ExecutionStatsResponseDto.js';
+export type { ExecutionTraceResponseDto } from './models/ExecutionTraceResponseDto.js';
+export type { ExecutionTracesResponseDto } from './models/ExecutionTracesResponseDto.js';
 export { FlowClientDto } from './models/FlowClientDto.js';
 export type { FlowServerDto } from './models/FlowServerDto.js';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto.js';

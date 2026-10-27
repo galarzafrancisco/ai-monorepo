@@ -7182,6 +7182,83 @@
         ]
       }
     },
+    "/api/v1/executions/{executionId}/traces": {
+      "get": {
+        "operationId": "ExecutionTracesController_list",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "afterSequence",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "latest",
+            "required": false,
+            "in": "query",
+            "description": "Return the most recent events, in chronological order",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "beforeSequence",
+            "required": false,
+            "in": "query",
+            "description": "Load events before this sequence",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionTracesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Read raw harness events for an active or historical execution",
+        "tags": [
+          "Executions"
+        ]
+      }
+    },
     "/api/v1/workers": {
       "get": {
         "operationId": "WorkersController_listWorkers",
@@ -14272,6 +14349,69 @@
           "page",
           "limit",
           "totalPages"
+        ]
+      },
+      "ExecutionTraceResponseDto": {
+        "type": "object",
+        "properties": {
+          "executionId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "number"
+          },
+          "harness": {
+            "type": "string"
+          },
+          "runnerSessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "emittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload": {
+            "type": "object",
+            "description": "Unmodified harness JSON event",
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "executionId",
+          "sequence",
+          "harness",
+          "runnerSessionId",
+          "emittedAt",
+          "receivedAt",
+          "payload"
+        ]
+      },
+      "ExecutionTracesResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExecutionTraceResponseDto"
+            }
+          },
+          "hasMoreBefore": {
+            "type": "boolean"
+          },
+          "nextAfterSequence": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "hasMoreBefore",
+          "nextAfterSequence"
         ]
       },
       "WorkerResponseDto": {

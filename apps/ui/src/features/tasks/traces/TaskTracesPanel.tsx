@@ -1,0 +1,429 @@
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowDown,
+  Braces,
+  ChevronRight,
+  CircleAlert,
+  MessageSquare,
+  PanelRightClose,
+  PanelRightOpen,
+  Radio,
+  Terminal,
+  Sparkles,
+} from 'lucide-react';
+import { Button, Text } from '../../../ui/primitives';
+import { useActorsCtx } from '../../actors';
+import { buildTraceEntries, type TraceEntry } from './traceEntries';
+import { useExecutionTraces } from './useExecutionTraces';
+import './TaskTracesPanel.css';
+
+export type TraceRun = {
+  executionId: string;
+  agentActorId: string;
+  status: string;
+  source: 'active' | 'history';
+  timestamp: string;
+};
+const runStatus = (run: TraceRun) =>
+  run.source === 'active'
+    ? 'Running'
+    : ({
+        SUCCEEDED: 'Completed',
+        FAILED: 'Failed',
+        CANCELLED: 'Cancelled',
+        STALE: 'Stale',
+      }[run.status] ?? run.status);
+const time = (value: string) =>
+  new Date(value).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+export function TaskTracesPanel({
+  runs,
+  open,
+  onToggle,
+  onRefreshRuns,
+  isLoadingRuns,
+  runsError,
+}: {
+  runs: TraceRun[];
+  open: boolean;
+  onToggle: () => void;
+  onRefreshRuns: () => void;
+  isLoadingRuns: boolean;
+  runsError: string | null;
+}) {
+  const { actors } = useActorsCtx();
+  const [chosenId, setChosenId] = useState<string | null>(null);
+  const run =
+    runs.find((item) => item.executionId === chosenId) ??
+    runs.find((item) => item.source === 'active') ??
+    runs[0];
+  const {
+    events,
+    isLoading,
+    isLoadingEarlier,
+    hasMoreBefore,
+    error,
+    connected,
+    refresh,
+    loadEarlier,
+  } = useExecutionTraces(run?.executionId ?? null, open, onRefreshRuns);
+  const entries = useMemo(() => buildTraceEntries(events), [events]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const previousHeight = useRef<number | null>(null);
+  const [pausedExecutionId, setPausedExecutionId] = useState<string | null>(
+    null,
+  );
+  const following = pausedExecutionId !== run?.executionId;
+  const setFollowing = (value: boolean) =>
+    setPausedExecutionId(value ? null : (run?.executionId ?? null));
+  const [showSystem, setShowSystem] = useState(false);
+  const visible = showSystem
+    ? entries
+    : entries.filter((entry) => entry.kind !== 'system');
+  const systemCount = entries.filter((entry) => entry.kind === 'system').length;
+  const actorName = (id: string) =>
+    actors.find((actor) => actor.id === id)?.displayName ?? 'Agent';
+
+  useLayoutEffect(() => {
+    previousHeight.current = null;
+  }, [run?.executionId]);
+  useLayoutEffect(() => {
+    const scroll = scrollRef.current;
+    if (!scroll) return;
+    if (previousHeight.current !== null) {
+      if (!isLoadingEarlier) {
+        scroll.scrollTop += scroll.scrollHeight - previousHeight.current;
+        previousHeight.current = null;
+      }
+    } else if (following) scroll.scrollTop = scroll.scrollHeight;
+  }, [events, following, showSystem, isLoadingEarlier]);
+
+  if (!open)
+    return (
+      <aside
+        id="task-agent-traces"
+        className="task-traces task-traces--collapsed"
+        aria-label="Agent traces"
+      >
+        <Button
+          variant="ghost"
+          className="task-traces__expand"
+          onClick={onToggle}
+          aria-label="Expand agent traces"
+          aria-expanded={false}
+          aria-controls="task-agent-traces"
+        >
+          <PanelRightOpen size={18} />
+          <span>Agent traces</span>
+          {runs.some((item) => item.source === 'active') && (
+            <span className="task-traces__dot" />
+          )}
+        </Button>
+      </aside>
+    );
+
+  return (
+    <aside
+      id="task-agent-traces"
+      className="task-traces"
+      aria-label="Agent traces"
+    >
+      <header className="task-traces__header">
+        <div className="task-traces__heading">
+          <Terminal size={18} />
+          <Text weight="semibold">Agent traces</Text>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggle}
+          aria-label="Collapse agent traces"
+          aria-expanded={true}
+          aria-controls="task-agent-traces"
+        >
+          <PanelRightClose size={18} />
+        </Button>
+      </header>
+      <div className="task-traces__run">
+        <label className="task-traces__label" htmlFor="task-trace-run">
+          Execution
+        </label>
+        <select
+          id="task-trace-run"
+          value={run?.executionId ?? ''}
+          disabled={!runs.length}
+          onChange={(event) => {
+            setChosenId(event.target.value);
+            setPausedExecutionId(null);
+          }}
+        >
+          {!runs.length && (
+            <option value="">
+              {isLoadingRuns ? 'Loading runs…' : 'No runs yet'}
+            </option>
+          )}
+          {runs.map((item) => (
+            <option key={item.executionId} value={item.executionId}>
+              {actorName(item.agentActorId)} · {runStatus(item)} ·{' '}
+              {new Date(item.timestamp).toLocaleString([], {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </option>
+          ))}
+        </select>
+        {run && (
+          <div className="task-traces__run-meta">
+            <span
+              className={run.source === 'active' ? 'task-traces__live' : ''}
+            >
+              {run.source === 'active' && <span className="task-traces__dot" />}
+              {runStatus(run)}
+            </span>
+            <span>#{run.executionId.slice(0, 6)}</span>
+            <span>{events.length} events loaded</span>
+          </div>
+        )}
+      </div>
+      {run && (
+        <div className="task-traces__toolbar">
+          <span className="task-traces__connection">
+            <Radio size={12} />
+            {connected ? 'Live updates' : 'Reconnecting · checking for updates'}
+          </span>
+          <label>
+            <input
+              type="checkbox"
+              checked={showSystem}
+              onChange={(event) => setShowSystem(event.target.checked)}
+            />{' '}
+            System{systemCount ? ` (${systemCount})` : ''}
+          </label>
+        </div>
+      )}
+      {(error || runsError) && (
+        <div className="task-traces__error" role="alert">
+          <CircleAlert size={16} />
+          <span>{error || runsError}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              refresh();
+              onRefreshRuns();
+            }}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+      <div
+        className="task-traces__scroll"
+        ref={scrollRef}
+        tabIndex={0}
+        aria-label="Execution events"
+        onScroll={(event) => {
+          const el = event.currentTarget;
+          setFollowing(el.scrollHeight - el.scrollTop - el.clientHeight < 64);
+        }}
+      >
+        {hasMoreBefore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="task-traces__earlier"
+            disabled={isLoadingEarlier}
+            onClick={async () => {
+              setFollowing(false);
+              previousHeight.current = scrollRef.current?.scrollHeight ?? null;
+              await loadEarlier();
+            }}
+          >
+            {isLoadingEarlier ? 'Loading…' : 'Load earlier events'}
+          </Button>
+        )}
+        {isLoading || (isLoadingRuns && !runs.length) ? (
+          <div className="task-traces__empty" role="status">
+            <Terminal size={28} />
+            <Text>Loading agent traces…</Text>
+          </div>
+        ) : !events.length ? (
+          <div className="task-traces__empty">
+            <Terminal size={30} />
+            <Text weight="medium">
+              {!run
+                ? 'A window into the work'
+                : run.source === 'active'
+                  ? 'Waiting for the first event'
+                  : 'No traces for this run'}
+            </Text>
+            <Text size="2" tone="muted">
+              {!run
+                ? 'When an agent runs this task, its messages and tool activity will appear here.'
+                : run.source === 'active'
+                  ? 'Messages and tool activity will arrive here as the agent works.'
+                  : 'This execution may have run before trace capture was enabled.'}
+            </Text>
+          </div>
+        ) : (
+          <>
+            <div className="task-traces__timeline">
+              {visible.map((entry) => (
+                <TraceEntryView
+                  key={`${run?.executionId}:${entry.id}`}
+                  entry={entry}
+                />
+              ))}
+            </div>
+            {!visible.length && (
+              <p className="task-traces__system-hint">
+                Only system events so far. Enable System to inspect them.
+              </p>
+            )}
+            <div className="task-traces__end">
+              <span
+                className={run?.source === 'active' ? 'task-traces__dot' : ''}
+              />
+              {run?.source === 'active'
+                ? 'Waiting for activity'
+                : 'End of execution'}
+            </div>
+          </>
+        )}
+      </div>
+      <footer className="task-traces__footer">
+        <span>
+          {events.length
+            ? `Last event ${time(events[events.length - 1].emittedAt)}`
+            : 'Traces are saved with each execution'}
+        </span>
+        {events.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFollowing(true);
+              if (scrollRef.current)
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }}
+          >
+            <ArrowDown size={13} />
+            {following ? 'Following' : 'Jump to latest'}
+          </Button>
+        )}
+      </footer>
+    </aside>
+  );
+}
+
+function TraceEntryView({ entry }: { entry: TraceEntry }) {
+  const Icon =
+    entry.kind === 'tool'
+      ? Terminal
+      : entry.kind === 'thinking'
+        ? Sparkles
+        : entry.kind === 'error'
+          ? CircleAlert
+          : entry.kind === 'message'
+            ? MessageSquare
+            : Braces;
+  const raw = <RawTraceDetails entry={entry} />;
+  return (
+    <article className={`task-traces__entry task-traces__entry--${entry.kind}`}>
+      <div className="task-traces__marker">
+        <Icon size={14} />
+      </div>
+      <div className="task-traces__entry-content">
+        <div className="task-traces__entry-meta">
+          <span>{entry.kind === 'tool' ? 'Tool' : entry.title}</span>
+          <time dateTime={entry.events[0].emittedAt}>
+            {time(entry.events[0].emittedAt)}
+          </time>
+        </div>
+        {entry.kind === 'tool' ? (
+          <details className="task-traces__tool">
+            <summary>
+              <ChevronRight size={13} />
+              <strong>{entry.title}</strong>
+              {entry.status && (
+                <span
+                  className={
+                    entry.status.toLowerCase() === 'failed'
+                      ? 'task-traces__failed'
+                      : ''
+                  }
+                >
+                  {entry.status}
+                </span>
+              )}
+            </summary>
+            {entry.input && (
+              <>
+                <div className="task-traces__label">Input</div>
+                <pre>{entry.input}</pre>
+              </>
+            )}
+            {entry.text && (
+              <>
+                <div className="task-traces__label">Output</div>
+                <pre>{entry.text}</pre>
+              </>
+            )}
+            {raw}
+          </details>
+        ) : (
+          <>
+            {entry.text &&
+              (entry.text.length > 1600 ? (
+                <details className="task-traces__long">
+                  <summary>
+                    {entry.text.slice(0, 360)}… <span>Show more</span>
+                  </summary>
+                  <div className="task-traces__text">{entry.text}</div>
+                </details>
+              ) : (
+                <div className="task-traces__text">{entry.text}</div>
+              ))}
+            {raw}
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function RawTraceDetails({ entry }: { entry: TraceEntry }) {
+  const [open, setOpen] = useState(false);
+  const json = useMemo(
+    () =>
+      open
+        ? JSON.stringify(
+            entry.events.map((event) => event.payload),
+            null,
+            2,
+          )
+        : '',
+    [open, entry.events],
+  );
+  return (
+    <details
+      className="task-traces__raw"
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary>
+        <Braces size={12} />
+        Raw{' '}
+        {entry.events.length === 1
+          ? 'event'
+          : `events (${entry.events.length})`}
+      </summary>
+      {open && <pre>{json}</pre>}
+    </details>
+  );
+}

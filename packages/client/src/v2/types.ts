@@ -1188,6 +1188,22 @@ export interface TaskExecutionHistoryListResponseDto {
   totalPages: number;
 }
 
+export interface ExecutionTraceResponseDto {
+  executionId: string;
+  sequence: number;
+  harness: string;
+  runnerSessionId: string | null;
+  emittedAt: string;
+  receivedAt: string;
+  payload: Record<string, any> | null;
+}
+
+export interface ExecutionTracesResponseDto {
+  items: ExecutionTraceResponseDto[];
+  hasMoreBefore: boolean;
+  nextAfterSequence: number;
+}
+
 export interface WorkerResponseDto {
   id: string;
   oauthClientId: string;
