@@ -15,6 +15,8 @@ import * as cookie from 'cookie';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   ExecutionWireEvents,
+  EXECUTION_TRACE_MAX_BYTES,
+  type PostExecutionTracePayload,
   type PostExecutionHeartbeatPayload,
   type PostExecutionActivityPayload,
   type PostWorkerHeartbeatPayload,
@@ -35,6 +37,9 @@ import { tokenFromCookies } from '../auth/guards/extractors/token-cookie.extract
 import { TaskExecutionQueuedEvent } from './queue/task-execution-queued.event';
 import { ExecutionInterruptEvent } from './events/execution-interrupt.event';
 
+import { ExecutionTracesService } from './traces/execution-traces.service';
+import { ExecutionTraceNotFoundError, ExecutionTraceWorkerMismatchError, InvalidExecutionTraceError } from './traces/execution-traces.errors';
+
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
 
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
@@ -44,6 +49,7 @@ const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
     origin: '*',
   },
   namespace: '/executions/worker',
+  maxHttpBufferSize: EXECUTION_TRACE_MAX_BYTES,
 })
 export class ExecutionsWorkerGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -61,6 +67,7 @@ export class ExecutionsWorkerGateway
 
   constructor(
     private readonly executionActivityService: ExecutionActivityService,
+    private readonly executionTracesService: ExecutionTracesService,
     private readonly workersService: WorkersService,
     private readonly accessTokenValidationService: AccessTokenValidationService,
   ) {}
@@ -117,6 +124,24 @@ export class ExecutionsWorkerGateway
           this.workerSocketsByClientId.delete(oauthClientId);
         }
       }
+    }
+  }
+
+  @SubscribeMessage(ExecutionWireEvents.EXECUTION_TRACE_POST)
+  async postExecutionTrace(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: PostExecutionTracePayload,
+  ) {
+    try {
+      await this.executionTracesService.append(body, this.getOauthClientId(client) ?? '');
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof InvalidExecutionTraceError || error instanceof ExecutionTraceNotFoundError || error instanceof ExecutionTraceWorkerMismatchError) {
+        return { ok: false, error: error.message };
+      }
+      this.logger.error({ message: 'Failed to store execution trace', socketId: client.id,
+        error: error instanceof Error ? error.message : String(error) });
+      return { ok: false, error: 'internal error' };
     }
   }
 

@@ -16,6 +16,11 @@ export abstract class BaseAgentRunner implements AgentRunner {
   protected readonly usePeriodicHeartbeat: boolean = true;
 
   abstract readonly kind: string;
+  private onRawEvent?: (event: unknown) => void;
+
+  protected emitRawEvent(event: unknown): void {
+    this.onRawEvent?.(event);
+  }
 
   getModel(): Model | null {
     return null;
@@ -29,6 +34,7 @@ export abstract class BaseAgentRunner implements AgentRunner {
     ctx: AgentRunContext,
     cb: AgentRunCallbacks = BaseAgentRunner.DEFAULT_CALLBACKS
   ): Promise<AgentRunResult> {
+    this.onRawEvent = cb.onRawEvent;
     const events: string[] = [];
     let sessionId: string | null = null;
     let result = '';
@@ -87,6 +93,7 @@ export abstract class BaseAgentRunner implements AgentRunner {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
       throw err;
     } finally {
+      this.onRawEvent = undefined;
       if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
       }

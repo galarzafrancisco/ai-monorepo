@@ -73,6 +73,9 @@ export type AgentRunCallbacks = {
   /** Called once when a session/run ID is known */
   onSession?: (sessionId: string) => void | Promise<void>;
 
+  /** Every SDK event, before formatting or filtering. */
+  onRawEvent?: (event: unknown) => void;
+
   /** Called for every human-readable event */
   onEvent?: (message: string) => void | Promise<void>;
 

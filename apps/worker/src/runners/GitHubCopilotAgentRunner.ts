@@ -63,6 +63,8 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         const session = await this.client.createSession({
           model: this.model,
           onPermissionRequest: approveAll,
+          streaming: true,
+          onEvent: (event) => this.emitRawEvent(event),
           mcpServers,
         });
         this.currentSession = session;

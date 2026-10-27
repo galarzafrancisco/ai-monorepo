@@ -1,0 +1,53 @@
+# Raw worker execution traces
+
+Workers capture every event exposed by their harness SDK before human-readable
+formatters filter it. Claude partial messages and Copilot streaming are enabled.
+Copilot registers its catch-all handler before session creation; OpenCode (also
+used by the Codex runner) and ADK capture their entire event streams. This stores
+SDK events, not the harness process's stdout/stderr or private internal state.
+
+## Ownership and storage
+
+`execution_traces` stores the original event as PostgreSQL JSONB, with the stable
+execution ID, a monotonically increasing sequence starting at 1, harness name,
+optional session ID, worker timestamp and server receipt timestamp. The payload
+is not normalized, summarized or redacted. JSONB preserves JSON content, not
+original whitespace or object-key ordering.
+
+Traces survive the transition from active execution to execution history,
+including stale executions. A task foreign key supports task deletion cleanup;
+there is no foreign key to the transient active execution row. Trace events do
+not become comments or task activity broadcasts. No UI is changed.
+
+## Delivery
+
+The worker snapshots SDK JSON synchronously and spools batches after one second,
+100 events, or approximately 512 KiB. Batches are written atomically with private
+file permissions under `<workingDirectory>/.taico/traces/<server-and-client-hash>`.
+The spool retries pending batches every five seconds, including after a worker
+restart using the same directory, server and OAuth client identity. Files are
+removed only after acknowledgement of a successful database insert. A unique
+(execution ID, sequence) key makes retries idempotent. Delivery can be out of
+order, so readers should use sequence numbers rather than receipt time.
+
+`execution.trace.post` uses the authenticated worker WebSocket. The backend
+validates each batch and checks the OAuth client owns the active or historical
+execution. It acknowledges only after storage. Batches have at most 100 events;
+the transport accepts up to 16 MiB per frame. Oversized individual events remain
+in the pending spool rather than being truncated. A worker crash can lose events
+in the current unspooled batch (up to roughly one second). Disk write failures
+are logged and a final spool failure fails the execution. No automatic retention
+policy is applied yet; account for database and offline spool growth.
+
+## Reading
+
+`GET /api/v1/executions/:executionId/traces?afterSequence=0&limit=100` requires
+`tasks:read`, matching execution-history access. It returns ordered `items` and
+`nextAfterSequence`. Both active and historical executions are supported.
+Consumers polling a running execution should overlap/reload earlier pages when
+they need to detect events arriving late from a reconnecting worker; a sequence
+cursor alone is not a guarantee of a complete stream.
+
+Raw output can include prompts, file contents, tool arguments and tool results.
+It has the same sensitivity as a harness transcript. There is no separate
+transcript permission or payload sanitization in this initial version.

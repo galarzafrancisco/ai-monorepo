@@ -2,11 +2,13 @@ import { io, Socket } from 'socket.io-client';
 import {
   ExecutionWireEvents,
   type PostExecutionActivityPayload,
+  type PostExecutionTracePayload,
   type PostExecutionHeartbeatPayload,
   type PostWorkerHeartbeatPayload,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
+import { ExecutionTraceSpool } from './execution-trace-spool.js';
 import { WorkerAuth } from './auth/worker-auth.js';
 import { WORKER_VERSION } from './version.js';
 
@@ -22,6 +24,7 @@ type ActivityAck = {
 
 export type ExecutionActivityGatewayClientOptions = {
   baseUrl: string;
+  traceDirectory: string;
   auth: WorkerAuth;
   debug?: boolean;
   reconnection?: boolean;
@@ -36,6 +39,7 @@ export type ExecutionActivityGatewayClientOptions = {
 
 export class ExecutionActivityGatewayClient {
   private socket?: Socket;
+  private readonly traceSpool: ExecutionTraceSpool;
   private started = false;
   private reconnectAttempts = 0;
   private tokenRefreshTimer?: ReturnType<typeof setTimeout>;
@@ -47,7 +51,14 @@ export class ExecutionActivityGatewayClient {
 
   constructor(
     private readonly options: ExecutionActivityGatewayClientOptions,
-  ) {}
+  ) {
+    this.traceSpool = new ExecutionTraceSpool(options.traceDirectory, (batch) =>
+      this.emitWithAck(ExecutionWireEvents.EXECUTION_TRACE_POST, batch));
+  }
+
+  async queueTrace(batch: PostExecutionTracePayload): Promise<void> {
+    await this.traceSpool.enqueue(batch);
+  }
 
   async start(): Promise<void> {
     if (this.started) {
@@ -61,10 +72,12 @@ export class ExecutionActivityGatewayClient {
 
     await this.connectWithFreshToken();
     await initialConnectPromise;
+    await this.traceSpool.start();
   }
 
   async stop(): Promise<void> {
     this.started = false;
+    await this.traceSpool.stop();
     this.clearTokenRefreshTimer();
     this.clearReconnectRetryTimer();
     this.clearWorkerHeartbeatTimer();
@@ -108,6 +121,7 @@ export class ExecutionActivityGatewayClient {
   private async emitWithAck(
     eventName: string,
     payload?:
+      | PostExecutionTracePayload
       | PostExecutionActivityPayload
       | PostExecutionHeartbeatPayload
       | PostWorkerHeartbeatPayload,
@@ -116,7 +130,7 @@ export class ExecutionActivityGatewayClient {
       if (this.options.debug) {
         console.warn(
           `[execution-activity] ${eventName} called while disconnected`,
-          payload,
+          eventName === ExecutionWireEvents.EXECUTION_TRACE_POST ? { executionId: payload && 'executionId' in payload ? payload.executionId : undefined } : payload,
         );
       }
       return false;

@@ -8,6 +8,9 @@ module.exports = {
       tsconfig: {
         ...require('./tsconfig.json').compilerOptions,
         esModuleInterop: true,
+        module: 'commonjs',
+        moduleResolution: 'node',
+        resolvePackageJsonExports: false,
         // The AI SDK ships ESM only, so its JavaScript is transformed too.
         allowJs: true,
       }
