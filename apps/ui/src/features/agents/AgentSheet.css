@@ -1,0 +1,128 @@
+.agent-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.agent-sheet--mobile {
+  padding: var(--space-5) var(--space-3) var(--space-7);
+}
+
+/* Inside the bottom sheet the page colour is --surface, so cards go one step up */
+.agent-sheet--mobile .inset-group {
+  --inset-group-bg: var(--card-bg);
+}
+
+.agent-sheet--desktop {
+  gap: var(--space-4);
+}
+
+.agent-sheet__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+/* Text field styled as an inset row */
+.agent-sheet__input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--inset-row-pad-x, var(--space-4));
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-input-mobile-safe);
+}
+
+.agent-sheet--desktop .agent-sheet__input {
+  font-size: var(--fs-2);
+  min-height: 40px;
+}
+
+.agent-sheet__input::placeholder {
+  color: var(--text-muted);
+}
+
+/* iOS segmented control */
+.agent-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+}
+
+.agent-segmented__item {
+  appearance: none;
+  border: 0;
+  border-radius: 7px;
+  padding: 6px var(--space-2);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.agent-segmented__item--active {
+  background: var(--card-bg);
+  font-weight: var(--fw-semibold);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Checkmark used in iOS-style choice lists */
+.agent-sheet__check {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.agent-sheet__scope-id {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.agent-sheet--desktop .agent-sheet__scopes {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Revealed token */
+.agent-sheet__token {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  line-height: var(--lh-normal);
+  word-break: break-all;
+  white-space: pre-wrap;
+  color: var(--text);
+  max-height: 160px;
+  overflow-y: auto;
+  user-select: all;
+}
+
+.agent-sheet__notice {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-4);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  line-height: var(--lh-normal);
+}
+
+.agent-sheet__notice svg {
+  flex-shrink: 0;
+  color: var(--warning);
+  margin-top: 1px;
+}

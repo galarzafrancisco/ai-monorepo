@@ -1,153 +1,230 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/primitives";
+import { Bot, Cpu, Plus, Search, X, Zap } from "lucide-react";
+import { Avatar, Chip, InsetGroup, InsetRow, Text } from "../../ui/primitives";
 import { useAgentsCtx } from "./AgentsProvider";
 import { Agent } from "./types";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
-import type { AgentResponseDto } from "@taico/client/v2";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
+import { AGENT_TYPE_COLORS, agentTypeLabel, modelSummary, statusTriggersLabel } from "./agentDisplay";
 import "./AgentsPage.css";
 
 export function AgentsPage() {
   const { agents, setSectionTitle, isLoading, error } = useAgentsCtx();
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
+  const [query, setQuery] = useState('');
 
   // Set document title (browser tab)
   useDocumentTitle();
 
   // Set page title
   useEffect(() => {
-    setSectionTitle("All Agents");
+    setSectionTitle("Agents");
   }, [setSectionTitle]);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return agents;
+    return agents.filter((agent) =>
+      [agent.name, agent.slug, agent.description ?? '', agent.type]
+        .some((field) => String(field).toLowerCase().includes(q))
+    );
+  }, [agents, query]);
+
+  const active = filtered.filter((agent) => agent.isActive);
+  const inactive = filtered.filter((agent) => !agent.isActive);
+  const open = (agent: Agent) => navigate(`/agents/agent/${agent.slug}`);
+
+  let body: React.ReactNode;
   if (isLoading && agents.length === 0) {
-    return (
-      <DataRowContainer>
-        <DataRow leading={<Avatar name="..." size="lg" />}>
-          <Text tone="muted">Loading agents...</Text>
-        </DataRow>
-      </DataRowContainer>
+    body = <EmptyState title="Loading agents…" />;
+  } else if (error) {
+    body = <EmptyState title="Couldn't load agents" detail={error} />;
+  } else if (agents.length === 0) {
+    body = (
+      <EmptyState
+        title="No agents yet"
+        detail="Agents pick up tasks for you. Create one to get started."
+        action={{ label: 'New agent', onClick: () => navigate('/agents/new') }}
+      />
     );
-  }
-
-  if (error) {
-    return (
-      <DataRowContainer>
-        <DataRow leading={<Avatar name="!" size="lg" />}>
-          <Text tone="muted">Error: {error}</Text>
-        </DataRow>
-      </DataRowContainer>
-    );
-  }
-
-  if (agents.length === 0) {
-    return (
+  } else if (filtered.length === 0) {
+    body = <EmptyState title="No results" detail={`No agents match “${query.trim()}”.`} />;
+  } else if (isDesktop) {
+    body = (
       <>
-        <DataRowContainer>
-          <DataRow leading={<Avatar name="?" size="lg" />}>
-            <Text tone="muted">No agents found</Text>
-          </DataRow>
-        </DataRowContainer>
-        <NewAgentButton isDesktop={isDesktop} onClick={() => navigate('/agents/new')} />
+        <AgentGrid title="Active" agents={active} onOpen={open} />
+        <AgentGrid title="Inactive" agents={inactive} onOpen={open} />
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <AgentList title={inactive.length > 0 ? 'Active' : undefined} agents={active} onOpen={open} />
+        <AgentList title="Inactive" agents={inactive} onOpen={open} />
       </>
     );
   }
 
   return (
-    <>
-      <DataRowContainer>
-        {agents.map(agent => (
-          <AgentRow
-            key={agent.actorId}
-            agent={agent}
-            onClick={() => navigate(`/agents/agent/${agent.slug}`)}
-          />
-        ))}
-      </DataRowContainer>
-
-      <NewAgentButton isDesktop={isDesktop} onClick={() => navigate('/agents/new')} />
-    </>
+    <div className={`agents-page ${isDesktop ? 'agents-page--desktop' : 'agents-page--mobile'}`}>
+      {agents.length > 0 && (
+        <SearchField value={query} onChange={setQuery} placeholder="Search agents" />
+      )}
+      {body}
+      {!isDesktop && (
+        <button
+          type="button"
+          className="agents-fab"
+          onClick={() => navigate('/agents/new')}
+          aria-label="New agent"
+        >
+          <Plus size={26} strokeWidth={2.4} aria-hidden />
+        </button>
+      )}
+    </div>
   );
 }
 
-function NewAgentButton({ isDesktop, onClick }: { isDesktop: boolean; onClick: () => void }) {
+function SearchField({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
+  return (
+    <label className="agents-search">
+      <Search size={16} className="agents-search__icon" aria-hidden />
+      <input
+        type="search"
+        className="agents-search__input"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+      />
+      {value && (
+        <button type="button" className="agents-search__clear" onClick={() => onChange('')} aria-label="Clear search">
+          <X size={12} strokeWidth={3} aria-hidden />
+        </button>
+      )}
+    </label>
+  );
+}
+
+function AgentList({ title, agents, onOpen }: { title?: string; agents: Agent[]; onOpen: (agent: Agent) => void }) {
+  if (agents.length === 0) return null;
+  return (
+    <InsetGroup title={title} className="agents-list">
+      {agents.map((agent) => {
+        const model = modelSummary(agent);
+        return (
+          <InsetRow
+            key={agent.actorId}
+            leading={<Avatar name={agent.name} src={agent.avatarUrl || undefined} size={40} inactive={!agent.isActive} />}
+            label={<span className="agents-list__name">{agent.name}</span>}
+            value={<span className="agents-list__type">{agentTypeLabel(agent.type)}</span>}
+            detail={
+              <>
+                <span className="agents-list__slug">@{agent.slug}</span>
+                {agent.description ? ` · ${String(agent.description)}` : ''}
+              </>
+            }
+            onClick={() => onOpen(agent)}
+          >
+            {model && (
+              <span className="agents-list__model">
+                <Cpu size={12} aria-hidden />
+                <span>{model}</span>
+              </span>
+            )}
+          </InsetRow>
+        );
+      })}
+    </InsetGroup>
+  );
+}
+
+function AgentGrid({ title, agents, onOpen }: { title: string; agents: Agent[]; onOpen: (agent: Agent) => void }) {
+  if (agents.length === 0) return null;
+  return (
+    <section className="agents-grid__section">
+      <h2 className="agents-grid__title">
+        {title}
+        <span className="agents-grid__count">{agents.length}</span>
+      </h2>
+      <div className="agents-grid">
+        {agents.map((agent) => (
+          <AgentCard key={agent.actorId} agent={agent} onClick={() => onOpen(agent)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
+  const model = modelSummary(agent);
   return (
     <button
-      className={`agents-fab ${isDesktop ? 'agents-fab--desktop' : ''}`}
       type="button"
+      className={`agent-card ${agent.isActive ? '' : 'agent-card--inactive'}`}
       onClick={onClick}
-      aria-label="Create new agent"
     >
-      {isDesktop ? (
-        <>
-          <span className="agents-fab__plus">+</span>
-          <span className="agents-fab__label">New agent</span>
-        </>
-      ) : (
-        '+'
-      )}
+      <div className="agent-card__head">
+        <Avatar name={agent.name} src={agent.avatarUrl || undefined} size={44} inactive={!agent.isActive} />
+        <div className="agent-card__identity">
+          <span className="agent-card__name">{agent.name}</span>
+          <span className="agent-card__slug">@{agent.slug}</span>
+        </div>
+        <Chip color={AGENT_TYPE_COLORS[agent.type]}>{agentTypeLabel(agent.type)}</Chip>
+      </div>
+      <p className="agent-card__description">
+        {agent.description ? String(agent.description) : <span className="agent-card__muted">No description</span>}
+      </p>
+      <div className="agent-card__foot">
+        {model && (
+          <span className="agent-card__foot-item agent-card__model" title={model}>
+            <Cpu size={13} aria-hidden />
+            <span>{model}</span>
+          </span>
+        )}
+        <span className="agent-card__foot-item agent-card__triggers" title={triggerTitle(agent)}>
+          <Zap size={13} aria-hidden />
+          <span>
+            {agent.statusTriggers.length > 0
+              ? statusTriggersLabel(agent.statusTriggers)
+              : agent.tagTriggers && agent.tagTriggers.length > 0
+                ? agent.tagTriggers.map((tag) => `#${tag}`).join(' ')
+                : 'No triggers'}
+          </span>
+        </span>
+      </div>
     </button>
   );
 }
 
-function AgentRow({ agent, onClick }: { agent: Agent; onClick?: () => void }): React.JSX.Element {
-  const tags: DataRowTag[] = [
-    getTypeTag(agent.type),
-    getStatusTag(agent.isActive),
-  ];
+function triggerTitle(agent: Agent): string {
+  const parts = [];
+  if (agent.statusTriggers.length > 0) parts.push(`statuses: ${statusTriggersLabel(agent.statusTriggers)}`);
+  if (agent.tagTriggers && agent.tagTriggers.length > 0) parts.push(`tags: ${agent.tagTriggers.join(', ')}`);
+  return parts.length > 0 ? `Picks up tasks by ${parts.join('; ')}` : 'No triggers';
+}
 
+function EmptyState({
+  title,
+  detail,
+  action,
+}: {
+  title: string;
+  detail?: string;
+  action?: { label: string; onClick: () => void };
+}) {
   return (
-    <DataRow
-      leading={<Avatar name={agent.name} size="lg" />}
-      topRight={elapsedTime(agent.updatedAt)}
-      tags={tags}
-      onClick={onClick}
-    >
-      <Text className="pre" style="mono" tone="muted">
-        @{agent.slug}
-      </Text>
-      <Text weight="bold" size="3" tone="default">
-        {agent.name}
-      </Text>
-      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        <Text tone="muted" size="2">
-          {agent.description ? String(agent.description) : 'No description'}
-        </Text>
-      </div>
-      <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {agent.statusTriggers.length > 0 && (
-          <span>Triggers: {agent.statusTriggers.join(', ')}</span>
-        )}
-        {agent.statusTriggers.length > 0 && agent.allowedTools.length > 0 && ' · '}
-        {agent.allowedTools.length > 0 && (
-          <span>Tools: {agent.allowedTools.length}</span>
-        )}
-      </div>
-    </DataRow>
+    <div className="agents-empty">
+      <Bot size={36} strokeWidth={1.5} className="agents-empty__icon" aria-hidden />
+      <Text size="3" weight="semibold">{title}</Text>
+      {detail && <Text size="2" tone="muted">{detail}</Text>}
+      {action && (
+        <button type="button" className="agents-empty__action" onClick={action.onClick}>
+          {action.label}
+        </button>
+      )}
+    </div>
   );
-}
-
-function getTypeTag(type: AgentResponseDto['type']): DataRowTag {
-  const typeColors: Record<AgentResponseDto['type'], DataRowTag['color']> = {
-    'claude': 'purple',
-    'codex': 'green',
-    'opencode': 'blue',
-    'adk': 'red',
-    'githubcopilot': 'yellow',
-    'other': 'gray',
-  };
-
-  return {
-    label: type,
-    color: typeColors[type] || 'gray',
-  };
-}
-
-function getStatusTag(isActive: boolean): DataRowTag {
-  return {
-    label: isActive ? 'active' : 'inactive',
-    color: isActive ? 'green' : 'gray',
-  };
 }

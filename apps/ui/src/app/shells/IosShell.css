@@ -31,6 +31,10 @@
 }
 
 .ios-shell__header__section-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   transition: opacity 180ms ease, transform 180ms ease;
   will-change: opacity, transform;
 }
@@ -275,4 +279,27 @@
 .ios-shell__drawer-item--active .ios-shell__drawer-badge {
   background: var(--accent-contrast);
   color: var(--accent);
+}
+
+/* iOS back button (replaces the menu button on detail pages) */
+.ios-shell__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin-left: calc(var(--space-2) * -1);
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  color: var(--accent);
+  font-size: var(--fs-3);
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-shell__back:hover {
+  text-decoration: none;
+  color: var(--accent-hover);
+}
+
+.ios-shell__back:active {
+  opacity: 0.5;
 }

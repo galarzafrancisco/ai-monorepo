@@ -208,7 +208,7 @@ export function AddAgentToolPermissionPop({
     }
   }, [isSaving, onCancel, onConfigureScopedTool, onSaveUnscopedTool]);
 
-  const primaryLabel = selectedTool?.type === "http" && selectedToolScopes.length > 0 ? "next" : (isSaving ? "saving" : "save");
+  const primaryLabel = selectedTool?.type === "http" && selectedToolScopes.length > 0 ? "Next" : (isSaving ? "Saving…" : "Save");
 
   return (
     <PopShell
@@ -221,7 +221,7 @@ export function AddAgentToolPermissionPop({
           }}
           style={{ opacity: !selectedTool || loadingScopes || isSaving ? 0.5 : 1, pointerEvents: !selectedTool || loadingScopes || isSaving ? "none" : "auto" }}
         >
-          <Text size="4" weight="normal" className="pop-shell__main-title-button">
+          <Text size="3" weight="semibold" className="pop-shell__main-title-button">
             {primaryLabel}
           </Text>
         </div>

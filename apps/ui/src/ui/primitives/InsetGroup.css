@@ -1,0 +1,231 @@
+/*
+ * iOS "inset grouped" list.
+ * Cards sit on the page background; rows inside are separated by hairlines
+ * that start at the text, not at the card edge.
+ */
+.inset-group {
+  --inset-group-bg: var(--card-bg);
+  --inset-row-pad-x: var(--space-4);
+  --inset-row-pad-y: 11px;
+  --inset-row-leading: 30px;
+  --inset-row-font: var(--fs-3);
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inset-group__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--inset-row-pad-x);
+  min-height: 20px;
+}
+
+.inset-group__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--fw-normal);
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.inset-group__action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-2);
+}
+
+.inset-group__card {
+  background: var(--inset-group-bg);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.inset-group__footer {
+  padding: 0 var(--inset-row-pad-x);
+  font-size: 13px;
+  line-height: var(--lh-normal);
+  color: var(--text-muted);
+}
+
+/* Rows */
+.inset-row {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--inset-row-pad-y) var(--inset-row-pad-x);
+  font-size: var(--inset-row-font);
+  line-height: var(--lh-tight);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hairline between rows, inset to where the text starts */
+.inset-group__card > * + .inset-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--inset-row-pad-x);
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.inset-row--has-leading + .inset-row--has-leading::before {
+  left: calc(var(--inset-row-pad-x) + var(--inset-row-leading) + var(--space-3));
+}
+
+.inset-row--clickable {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+/* Only on real pointers: on touch screens :hover sticks after a tap */
+@media (hover: hover) {
+  .inset-row--clickable:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--inset-group-bg) 94%, var(--text));
+  }
+}
+
+.inset-row--clickable:active:not(:disabled) {
+  background: color-mix(in srgb, var(--inset-group-bg) 80%, var(--text));
+  transition: none;
+}
+
+.inset-row--clickable:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.inset-row:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.inset-row__leading {
+  flex-shrink: 0;
+  width: var(--inset-row-leading);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.inset-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inset-row__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.inset-row__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inset-row__value {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.inset-row__detail {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inset-row__extra {
+  display: block;
+  min-width: 0;
+  margin-top: 3px;
+}
+
+.inset-row__chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin-right: -4px;
+}
+
+/* Tones */
+.inset-row--accent {
+  color: var(--accent);
+}
+
+.inset-row--accent .inset-row__leading {
+  color: var(--accent);
+}
+
+.inset-row--danger {
+  color: var(--danger);
+}
+
+.inset-row--centered {
+  justify-content: center;
+}
+
+.inset-row--centered .inset-row__body {
+  flex: 0 1 auto;
+  align-items: center;
+}
+
+/* Denser on pointer devices */
+@media (min-width: 768px) {
+  .inset-group {
+    --inset-row-pad-x: var(--space-4);
+    --inset-row-pad-y: 9px;
+    --inset-row-font: var(--fs-2);
+    --inset-row-leading: 28px;
+  }
+
+  .inset-group__card {
+    border: 1px solid var(--border-subtle);
+  }
+
+  .inset-row {
+    min-height: 40px;
+  }
+
+  .inset-group__title {
+    font-size: var(--fs-1);
+  }
+}
