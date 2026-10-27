@@ -33,6 +33,7 @@ describe('MetaService system tags', () => {
     return {
       service,
       tagRepository,
+      projectRepository,
     };
   }
 
@@ -118,5 +119,36 @@ describe('MetaService system tags', () => {
     await service.cleanupOrphanedTag('tag-1');
 
     expect(tagRepository.delete).not.toHaveBeenCalled();
+  });
+});
+
+describe('MetaService orphaned tag cleanup', () => {
+  function createService() {
+    const tagRepository = { findOne: jest.fn(), delete: jest.fn(async () => ({ affected: 1 })) };
+    const projectRepository = { findOne: jest.fn() };
+    const service = new MetaService(tagRepository as any, {} as any, projectRepository as any);
+    return { service, tagRepository, projectRepository };
+  }
+
+  it('keeps a project tag when its last task leaves the project', async () => {
+    // Deleting the tag would cascade to the project and lose its description and repo.
+    const { service, tagRepository, projectRepository } = createService();
+    tagRepository.findOne.mockResolvedValue({ id: 'tag-1', name: 'project:taico', tasks: [], blocks: [] });
+    projectRepository.findOne.mockResolvedValue({ id: 'project-1', tagId: 'tag-1', slug: 'taico' });
+
+    await service.cleanupOrphanedTag('tag-1');
+
+    expect(projectRepository.findOne).toHaveBeenCalledWith({ where: { tagId: 'tag-1' } });
+    expect(tagRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it('still deletes an unused tag that no project owns', async () => {
+    const { service, tagRepository, projectRepository } = createService();
+    tagRepository.findOne.mockResolvedValue({ id: 'tag-2', name: 'backend', tasks: [], blocks: [] });
+    projectRepository.findOne.mockResolvedValue(null);
+
+    await service.cleanupOrphanedTag('tag-2');
+
+    expect(tagRepository.delete).toHaveBeenCalledWith('tag-2');
   });
 });

@@ -461,6 +461,20 @@ export class MetaService implements OnModuleInit {
     const blockCount = tagWithRelations.blocks?.length || 0;
 
     if (taskCount === 0 && blockCount === 0) {
+      // A project's tag outlives its tasks: deleting it would cascade to the project
+      // (description, repository) just because its last task moved elsewhere.
+      const project = await this.projectRepository.findOne({
+        where: { tagId },
+      });
+      if (project) {
+        this.logger.log({
+          message: 'Project tag kept during orphan cleanup',
+          tagId,
+          projectId: project.id,
+        });
+        return;
+      }
+
       this.logger.log({
         message: 'Tag is orphaned, cleaning up',
         tagId,
