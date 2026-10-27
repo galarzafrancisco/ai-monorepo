@@ -30,6 +30,7 @@ import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
 import { getTaskStatusTag } from './taskStatusTag';
 import { TaskTracesPanel } from './traces/TaskTracesPanel';
+import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -76,6 +77,7 @@ const POTENTIALLY_STALE_MESSAGE = "We haven't seen activity in a while. If the w
 
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
   const { showError, showToast } = useToast();
@@ -668,6 +670,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     }
   };
 
+  const tracesPanel = (
+    <TaskTracesPanel key={task.id} runs={executionsTaskId === task.id ? executions : []}
+      open={tracesOpen} onToggle={() => setTracesOpen((value) => {
+        try { localStorage.setItem('taico.taskTraces.open', String(!value)); } catch { /* Storage may be unavailable. */ }
+        return !value;
+      })} onRefreshRuns={() => void loadExecutionsForTask(task.id)} isLoadingRuns={isLoadingExecutions}
+      runsError={executionsError} />
+  );
+
   return (
     <div className={`task-detail-workspace${tracesOpen ? "" : " task-detail-workspace--traces-closed"}`}>
     <div className="task-detail-page">
@@ -952,24 +963,26 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         ) : null}
       </DataRowContainer>
 
-      <DataRowContainer className='task-detail-page__section'>
-        <div className="task-detail-page__activity">
-          <div className={`task-detail-page__activity-slot ${liveActivity ? 'task-detail-page__activity-slot--active' : ''}`}>
-            <div className="task-detail-page__activity-placeholder">
-              <Text size='2' tone='muted'>Live activity will show here</Text>
-            </div>
-            {liveActivity ? (
-              <div
-                className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
-              >
-                <Text size='2' className='task-detail-page__activity-message'>
-                  {liveActivity.message?.replace(/\s+/g, ' ').trim() || 'Activity in progress...'}
-                </Text>
+      {!isDesktop ? tracesPanel : (
+        <DataRowContainer className='task-detail-page__section'>
+          <div className="task-detail-page__activity">
+            <div className={`task-detail-page__activity-slot ${liveActivity ? 'task-detail-page__activity-slot--active' : ''}`}>
+              <div className="task-detail-page__activity-placeholder">
+                <Text size='2' tone='muted'>Live activity will show here</Text>
               </div>
-            ) : null}
+              {liveActivity ? (
+                <div
+                  className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
+                >
+                  <Text size='2' className='task-detail-page__activity-message'>
+                    {liveActivity.message?.replace(/\s+/g, ' ').trim() || 'Activity in progress...'}
+                  </Text>
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </DataRowContainer>
+        </DataRowContainer>
+      )}
 
       <DataRowContainer title="Runs" className='task-detail-page__section'>
         {isLoadingExecutions && executions.length === 0 ? (
@@ -1204,12 +1217,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         />
       ) : null}
     </div >
-    <TaskTracesPanel key={task.id} runs={executionsTaskId === task.id ? executions : []}
-      open={tracesOpen} onToggle={() => setTracesOpen((value) => {
-        try { localStorage.setItem('taico.taskTraces.open', String(!value)); } catch { /* Storage may be unavailable. */ }
-        return !value;
-      })} onRefreshRuns={() => void loadExecutionsForTask(task.id)} isLoadingRuns={isLoadingExecutions}
-      runsError={executionsError} />
+    {isDesktop ? tracesPanel : null}
     </div>
   );
 }
