@@ -681,6 +681,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   return (
     <div className={`task-detail-workspace${tracesOpen ? "" : " task-detail-workspace--traces-closed"}`}>
+    <div className="task-detail-main">
     <div className="task-detail-page">
 
       {error && (
@@ -1127,15 +1128,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         })}
       </DataRowContainer>
 
-      <Button
-        className="task-detail-fab"
-        onClick={() => setShowNewCommentPop(true)}
-        variant='primary'
-        size='lg'
-      >
-        Add Comment
-      </Button>
-
       {!task.assigneeActor && (
         <DataRowContainer className='task-detail-page__comment-buttons'>
           <Button
@@ -1217,6 +1209,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         />
       ) : null}
     </div >
+      <Button
+        className="task-detail-fab"
+        onClick={() => setShowNewCommentPop(true)}
+        variant='primary'
+        size='lg'
+      >
+        Add Comment
+      </Button>
+    </div>
     {isDesktop ? tracesPanel : null}
     </div>
   );
