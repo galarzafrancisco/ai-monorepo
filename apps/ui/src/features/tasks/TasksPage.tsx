@@ -94,6 +94,11 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   }
   const handleNewTaskSave = async ({ title, description, projectId }: { title: string, description: string, projectId: string | null }): Promise<boolean> => {
     const project = projects.find((candidate) => candidate.id === projectId);
+    // A project was chosen but the list hasn't loaded: don't create the task without it.
+    if (projectId && !project) {
+      showError(new Error("Projects haven't loaded, so the task can't go into its project yet. Try again in a moment."));
+      return false;
+    }
     console.log(`save title: ${title} - description: ${description}`);
     setNewTask({
       name: title,

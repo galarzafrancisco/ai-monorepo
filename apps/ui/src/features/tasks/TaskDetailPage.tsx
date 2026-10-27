@@ -53,13 +53,15 @@ export type TaskDetailViewProps = {
   activityByTaskId?: Record<string, TaskActivityWireEvent>;
   handlers: TaskDetailHandlers;
   allTasks: Task[];
+  /** Scheduled-task blueprints have no status, so they hide the status controls. */
+  canChangeStatus?: boolean;
 };
 
 /** Updates shown before "Show earlier updates": enough to see where the task stands. */
 const RECENT_UPDATE_COUNT = 4;
 const PROJECT_TAG_PREFIX = 'project:';
 
-export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
+export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks, canChangeStatus = true }: TaskDetailViewProps) {
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const { actors } = useActorsCtx();
@@ -185,7 +187,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       [TaskStatus.DONE]: ['done', 'shipped', 'release', 'complete'],
     };
 
-    const statusCommands = Object.entries(TASKS_STATUS).map(([status, info]) => ({
+    const statusCommands = !canChangeStatus ? [] : Object.entries(TASKS_STATUS).map(([status, info]) => ({
       id: `task-status-${status}`,
       label: info.label,
       description: `Mark task as ${info.label.toLowerCase()}`,
@@ -236,7 +238,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     ];
 
     return registerCommands([...statusCommands, ...actionCommands]);
-  }, [task, registerCommands, handleChangeStatusForPalette, handlers, showError, threadId, handleOpenOrCreateThread]);
+  }, [task, canChangeStatus, registerCommands, handleChangeStatusForPalette, handlers, showError, threadId, handleOpenOrCreateThread]);
 
   useEffect(() => {
     if (isLoadingTask) {
@@ -634,7 +636,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {/* Everything you act on, at the top and always in reach: move the task, open its PR, talk about it. */}
       <div className="task-bar">
         <div className="task-bar__row">
-          <div className="task-bar__status" role="group" aria-label="Status">
+          {canChangeStatus && <div className="task-bar__status" role="group" aria-label="Status">
             {Object.entries(TASKS_STATUS).map(([status, info]) => {
               const Icon = info.icon;
               const isCurrent = status === task.status;
@@ -652,7 +654,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                 </button>
               );
             })}
-          </div>
+          </div>}
           <div className="task-bar__actions">
             {task.artefacts.map((artefact) => {
               const { label, isPullRequest } = describeArtefactLink(artefact.link);

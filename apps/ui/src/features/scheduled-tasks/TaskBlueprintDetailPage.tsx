@@ -113,6 +113,7 @@ export function TaskBlueprintDetailPage() {
       setSectionTitle={setSectionTitle}
       handlers={handlers}
       allTasks={tasks}
+      canChangeStatus={false}
     />
   );
 }
