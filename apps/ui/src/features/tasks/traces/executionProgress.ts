@@ -50,7 +50,7 @@ export function buildExecutionSteps(
   if (
     !events.some(
       (event) =>
-        event.harness === 'worker' &&
+        event.source === 'worker' &&
         event.payload &&
         typeof event.payload === 'object' &&
         'type' in event.payload &&
@@ -60,7 +60,7 @@ export function buildExecutionSteps(
     return [];
   return definitions.map((definition) => {
     const records = events
-      .filter((event) => event.harness === 'worker')
+      .filter((event) => event.source === 'worker')
       .map((event) => event.payload as unknown as ExecutionStepEvent)
       .filter(
         (record) =>

@@ -4,7 +4,8 @@ import { buildTraceEntries, type TraceEvent } from './traceEntries';
 const event = (sequence: number, payload: unknown): TraceEvent => ({
   executionId: 'execution',
   sequence,
-  harness: 'worker',
+  source: 'worker',
+  harness: null,
   payload: payload as TraceEvent['payload'],
   runnerSessionId: null,
   emittedAt: '2026-10-27T00:00:00Z',
@@ -108,5 +109,14 @@ describe('execution progress', () => {
         false,
       )[0].message,
     ).toBe('No repositories configured.');
+  });
+  it('uses event source rather than inferring worker progress from harness payloads', () => {
+    const spoof = {
+      ...step(1, 'workspace', 'completed'),
+      source: 'harness' as const,
+      harness: 'claude',
+    };
+    expect(buildExecutionSteps([spoof], false, false)).toEqual([]);
+    expect(buildTraceEntries([spoof])).toHaveLength(1);
   });
 });

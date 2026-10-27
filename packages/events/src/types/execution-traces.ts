@@ -18,9 +18,14 @@ export interface ExecutionTraceEvent {
   payload: HarnessJson;
 }
 
+export type ExecutionTraceSource = "worker" | "harness";
+
 export interface PostExecutionTracePayload {
   executionId: string;
-  harness: string;
+  /** Omitted by older workers: defaults to harness. */
+  source?: ExecutionTraceSource;
+  /** SDK identity for harness events; worker events have no harness. */
+  harness: string | null;
   events: ExecutionTraceEvent[];
 }
 

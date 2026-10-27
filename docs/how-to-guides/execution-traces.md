@@ -102,7 +102,12 @@ in these notifications or broadcast to collection subscribers.
 
 ## Worker execution progress
 
-New workers also record `taico.execution.step` JSON events with `harness: "worker"`.
+Every stored event has an explicit `source`: `worker` for execution lifecycle
+records, or `harness` for the agent conversation. Worker records have `harness:
+null`; harness records retain the actual SDK name (Claude, OpenCode, etc.).
+Older workers and existing agent traces default to `source: "harness"`.
+
+New workers record `taico.execution.step` JSON events with `source: "worker"`.
 They share the execution's sequence and durable spool with unchanged harness
 payloads. The UI shows Prepare workspace, Set up agent, Run agent and Finish
 execution with the walkthrough's connected status indicators. Repository events
@@ -118,6 +123,7 @@ not treated as success when a worker becomes stale.
 
 Every trace read includes `lifecycle`, the worker records for the entire execution,
 independent of the raw-event page. This keeps preparation visible after thousands
-of harness events without fetching the full transcript. New records use the same
+of harness events without fetching the full transcript. A partial index on worker events keeps this
+lookup independent of conversation size. New records use the same
 execution-scoped change notifications and read permissions. Older workers/runs
 without lifecycle events show that step details are unavailable.

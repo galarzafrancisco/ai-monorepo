@@ -6477,7 +6477,9 @@ export interface components {
         ExecutionTraceResponseDto: {
             executionId: string;
             sequence: number;
-            harness: string;
+            /** @enum {string} */
+            source: "worker" | "harness";
+            harness: string | null;
             runnerSessionId: string | null;
             /** Format: date-time */
             emittedAt: string;

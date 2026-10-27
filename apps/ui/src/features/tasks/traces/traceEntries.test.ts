@@ -12,6 +12,7 @@ const event = (
   executionId: 'execution',
   sequence,
   harness,
+  source: 'harness',
   runnerSessionId: null,
   emittedAt: '2026-10-27T02:00:00Z',
   receivedAt: '2026-10-27T02:00:01Z',

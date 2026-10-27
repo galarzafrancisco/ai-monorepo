@@ -1191,7 +1191,8 @@ export interface TaskExecutionHistoryListResponseDto {
 export interface ExecutionTraceResponseDto {
   executionId: string;
   sequence: number;
-  harness: string;
+  source: 'worker' | 'harness';
+  harness: string | null;
   runnerSessionId: string | null;
   emittedAt: string;
   receivedAt: string;

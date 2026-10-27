@@ -121,14 +121,18 @@ for (const outcome of [
         await assert.rejects(work);
       else await work;
       const events = batches.flatMap((batch) =>
-        batch.events.map((event) => ({ ...event, harness: batch.harness })),
+        batch.events.map((event) => ({
+          ...event,
+          harness: batch.harness,
+          source: batch.source,
+        })),
       );
       assert.deepEqual(
         events.map((event) => event.sequence),
         Array.from({ length: events.length }, (_, i) => i + 1),
       );
       const lifecycle = events
-        .filter((event) => event.harness === 'worker')
+        .filter((event) => event.source === 'worker')
         .map((event) => event.payload as unknown as ExecutionStepEvent);
       assert.equal(lifecycle[0].step, 'workspace');
       assert.equal(lifecycle[0].status, 'running');
@@ -187,7 +191,7 @@ test('one sequence spans alternating worker and harness batches', async () => {
   const batches: PostExecutionTracePayload[] = [];
   const recorder = new HarnessTraceRecorder(
     'execution',
-    'worker',
+    null,
     async (batch) => {
       batches.push(batch);
     },
@@ -199,7 +203,11 @@ test('one sequence spans alternating worker and harness batches', async () => {
   await recorder.close();
   assert.deepEqual(
     batches.map((batch) => batch.harness),
-    ['worker', 'claude', 'worker'],
+    [null, 'claude', null],
+  );
+  assert.deepEqual(
+    batches.map((batch) => batch.source),
+    ['worker', 'harness', 'worker'],
   );
   assert.deepEqual(
     batches.flatMap((batch) => batch.events.map((event) => event.sequence)),

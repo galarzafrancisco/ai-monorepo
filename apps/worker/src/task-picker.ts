@@ -34,7 +34,7 @@ export async function pickTask({
     `[worker] Claimed task ${execution.taskId} as execution ${execution.id}.`,
   );
 
-  const trace = new HarnessTraceRecorder(execution.id, 'worker', (batch) =>
+  const trace = new HarnessTraceRecorder(execution.id, null, (batch) =>
     activityGatewayClient.queueTrace(batch),
   );
   let stopStatus: 'SUCCEEDED' | 'FAILED' | 'CANCELLED' = 'SUCCEEDED';
