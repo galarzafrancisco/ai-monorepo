@@ -16,7 +16,7 @@ import {
 } from "@taico/events";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { Text, Stack, Button, DataRowContainer, Chip, Avatar } from "../../ui/primitives";
+import { Text, Stack, Button, DataRowContainer, Chip, Avatar, ContextRail, RailSection } from "../../ui/primitives";
 import { DeleteWithConfirmation } from "../../ui/components";
 import type { Thread } from "./types";
 import { getUIWebSocketUrl } from "../../config/api";
@@ -505,129 +505,88 @@ function ThreadDetailPageDesktop({
         </div>
       </div>
 
-      {/* Right sidebar with context and tasks */}
-      <div className={`thread-detail-page__sidebar ${!isSidebarOpen ? "thread-detail-page__sidebar--collapsed" : ""}`}>
-        {isSidebarOpen && (
-          <div className="thread-detail-page__sidebar-scroll thin-scrollbar">
-            {thread.participants.length > 0 && (
-              <div className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  Participants
-                  <Text as="span" size="2" tone="muted" weight="normal"> · {participantsSummary(thread.participants)}</Text>
-                </Text>
-                <div className="thread-detail-page__participants">
-                  {thread.participants.map((participant) => (
-                    <div key={participant.id} className="thread-detail-page__participant">
-                      <Avatar
-                        name={participant.displayName}
-                        inactive={isDeactivated(participant)}
-                        size="sm"
-                        src={participant.avatarUrl || undefined}
-                      />
-                      <div className="thread-detail-page__participant-text">
-                        <Text size="2" weight="medium">
-                          {participant.displayName}
-                        </Text>
-                        <Text size="1" tone="muted">
-                          {actorHandle(participant)}
-                        </Text>
-                      </div>
-                    </div>
-                  ))}
+      <ContextRail label="Thread details" open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        {thread.participants.length > 0 && (
+          <RailSection title="Participants" count={participantsSummary(thread.participants)}>
+            {thread.participants.map((participant) => (
+              <div key={participant.id} className="thread-detail-page__participant">
+                <Avatar
+                  name={participant.displayName}
+                  inactive={isDeactivated(participant)}
+                  size="sm"
+                  src={participant.avatarUrl || undefined}
+                />
+                <div className="thread-detail-page__participant-text">
+                  <Text size="2" weight="medium">
+                    {participant.displayName}
+                  </Text>
+                  <Text size="1" tone="muted">
+                    {actorHandle(participant)}
+                  </Text>
                 </div>
-              </div>
-            )}
-
-            {/* What will wake the agent up: right after participants, so it is never missed */}
-            {waitSections(thread).map((section) => (
-              <div key={section.key} className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  {section.title}
-                  <Text as="span" size="2" tone="muted" weight="normal"> · {section.count}</Text>
-                </Text>
-                {section.list}
               </div>
             ))}
+          </RailSection>
+        )}
 
-            {/* Tasks grouped by status */}
-            {taskGroups.map((group) => {
-              const isCollapsed = collapsedGroups.has(group.status);
-              return (
-                <div key={group.status} className="thread-detail-page__sidebar-section">
-                  <button
-                    type="button"
-                    className="thread-detail-page__group-toggle"
-                    aria-expanded={!isCollapsed}
-                    onClick={() => toggleGroup(group.status)}
-                  >
-                    <span className="thread-detail-page__group-chevron">{isCollapsed ? "▶" : "▼"}</span>
-                    <Text as="span" size="2" weight="semibold">
-                      {group.label}
-                    </Text>
-                    <Text as="span" size="2" tone="muted">
-                      · {group.tasks.length} {group.tasks.length === 1 ? "task" : "tasks"}
-                    </Text>
-                  </button>
-                  {!isCollapsed && (
-                    <div className="thread-detail-page__sidebar-content">
-                      {group.tasks.map((task) => (
-                        <ThreadTaskCard key={task.id} task={task} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        {/* What will wake the agent up: right after participants, so it is never missed */}
+        {waitSections(thread).map((section) => (
+          <RailSection key={section.key} title={section.title} count={section.count}>
+            {section.list}
+          </RailSection>
+        ))}
 
-            {/* Context section */}
-            {contextBlocks.length > 0 && (
-              <div className="thread-detail-page__sidebar-section">
-                <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-                  Context
-                  <Text as="span" size="2" tone="muted" weight="normal"> · {contextBlocks.length} {contextBlocks.length === 1 ? "block" : "blocks"}</Text>
-                </Text>
-                <div className="thread-detail-page__sidebar-content">
-                  {contextBlocks.map((contextBlock) => (
-                    <ThreadContextCard
-                      key={`${contextBlock.id}-${contextBlock.isStateMemory ? "state" : "reference"}`}
-                      contextBlock={contextBlock}
-                      isStateMemory={contextBlock.isStateMemory}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Tasks grouped by status */}
+        {taskGroups.map((group) => (
+          <RailSection
+            key={group.status}
+            title={group.label}
+            count={`${group.tasks.length} ${group.tasks.length === 1 ? "task" : "tasks"}`}
+            collapsible
+            collapsed={collapsedGroups.has(group.status)}
+            onCollapsedChange={() => toggleGroup(group.status)}
+          >
+            {group.tasks.map((task) => (
+              <ThreadTaskCard key={task.id} task={task} />
+            ))}
+          </RailSection>
+        ))}
 
-            {/* Empty state */}
-            {thread.tasks.length === 0 && contextBlocks.length === 0 && (
-              <div className="thread-detail-page__sidebar-empty">
-                <Text size="2" tone="muted">
-                  No context or tasks attached
-                </Text>
-              </div>
-            )}
+        {contextBlocks.length > 0 && (
+          <RailSection
+            title="Context"
+            count={`${contextBlocks.length} ${contextBlocks.length === 1 ? "block" : "blocks"}`}
+          >
+            {contextBlocks.map((contextBlock) => (
+              <ThreadContextCard
+                key={`${contextBlock.id}-${contextBlock.isStateMemory ? "state" : "reference"}`}
+                contextBlock={contextBlock}
+                isStateMemory={contextBlock.isStateMemory}
+              />
+            ))}
+          </RailSection>
+        )}
 
-            <div className="thread-detail-page__sidebar-section thread-detail-page__sidebar-delete">
-              <div className="thread-detail-page__sidebar-content thread-detail-page__sidebar-content--centered">
-                <DeleteWithConfirmation
-                  className="thread-detail-page__delete-actions"
-                  onDelete={onDelete}
-                  size="md"
-                  deleteLabel="Delete thread"
-                  confirmLabel="Delete forever"
-                />
-              </div>
-            </div>
+        {thread.tasks.length === 0 && contextBlocks.length === 0 && (
+          <div className="thread-detail-page__sidebar-empty">
+            <Text size="2" tone="muted">
+              No context or tasks attached
+            </Text>
           </div>
         )}
-        <button
-          className="thread-detail-page__sidebar-toggle"
-          onClick={() => setIsSidebarOpen((current) => !current)}
-          aria-label={isSidebarOpen ? "Collapse details panel" : "Expand details panel"}
-        >
-          {isSidebarOpen ? "→" : "←"}
-        </button>
-      </div>
+
+        <RailSection title="Delete" footer>
+          <div className="thread-detail-page__sidebar-delete">
+            <DeleteWithConfirmation
+              className="thread-detail-page__delete-actions"
+              onDelete={onDelete}
+              size="md"
+              deleteLabel="Delete thread"
+              confirmLabel="Delete forever"
+            />
+          </div>
+        </RailSection>
+      </ContextRail>
     </div>
   );
 }

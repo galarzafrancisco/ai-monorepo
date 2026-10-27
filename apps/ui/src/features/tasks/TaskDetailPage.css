@@ -705,3 +705,110 @@
     background: var(--color-surface-hover, #374151);
   }
 }
+
+/* ===== Task workspace: the task, and the details rail flush to the right edge ===== */
+.beta-shell__desktop__main:has(.task-detail-workspace) {
+  overflow: hidden;
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+.desktop-shell__content:has(> .task-detail-workspace) {
+  min-height: 0;
+}
+.task-detail-workspace {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+}
+.task-detail-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.task-detail-main > .task-detail-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-6) var(--space-8) 0;
+}
+.task-detail-workspace .task-detail-fab {
+  position: absolute;
+  bottom: var(--space-4);
+  right: var(--space-6);
+  z-index: 2;
+}
+
+.task-detail-page__title {
+  margin: 0;
+  font-size: var(--fs-6);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Properties in the rail: a narrower label column, no page margins. */
+.task-props--rail {
+  grid-template-columns: 72px minmax(0, 1fr);
+  margin: 0;
+  padding: 0 var(--space-1);
+}
+.task-props--rail .task-props__project .project-picker__trigger {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.task-rail__live {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--r-4);
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+.task-rail__delete {
+  display: flex;
+  justify-content: center;
+}
+.task-rail__delete-actions {
+  width: 100%;
+  max-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.task-rail__delete-actions .btn {
+  width: 100%;
+}
+/* The rail is narrow: the assignee's name is enough, and long values truncate. */
+.task-props--rail .task-props__person {
+  max-width: 100%;
+}
+.task-props--rail .task-props__person > span:not(.task-props__muted) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-props--rail .task-props__person .task-props__muted {
+  display: none;
+}
+
+/* Phones have no rail: details, runs and delete sit inline in the task. */
+@media (max-width: 767px) {
+  .task-detail-workspace {
+    display: block;
+    height: auto;
+  }
+  .task-detail-main > .task-detail-page {
+    height: auto;
+    overflow: visible;
+    padding: 0;
+  }
+  .task-detail-workspace .task-detail-fab {
+    position: fixed;
+    right: var(--space-5);
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+  }
+}

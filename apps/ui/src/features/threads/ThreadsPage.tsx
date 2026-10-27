@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, DataRowContainer, Text } from "../../ui/primitives";
-import { Avatar, Chip } from "../../ui/primitives";
+import { Avatar, Chip, ContextRail, RailSection } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { ThreadRow } from "./ThreadRow";
 import { splitPinnedThreads } from "./splitPinnedThreads";
@@ -351,25 +351,17 @@ function OptimisticDesktopThread({
         </div>
       </div>
 
-      <div className="thread-detail-page__sidebar threads-page-desktop__optimistic-sidebar">
-        <div className="thread-detail-page__sidebar-scroll">
-          <div className="thread-detail-page__sidebar-section">
-            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-              Context
-              <Text as="span" size="2" tone="muted" weight="normal"> · 1 block</Text>
-            </Text>
-            <div className="thread-detail-page__sidebar-content">
-              <ThreadContextCard
-                contextBlock={{
-                  id: "creating",
-                  title: "Thread state memory",
-                }}
-                isStateMemory
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <ContextRail label="Thread details" className="threads-page-desktop__optimistic-sidebar">
+        <RailSection title="Context" count="1 block">
+          <ThreadContextCard
+            contextBlock={{
+              id: "creating",
+              title: "Thread state memory",
+            }}
+            isStateMemory
+          />
+        </RailSection>
+      </ContextRail>
     </div>
   );
 }

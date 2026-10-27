@@ -1,0 +1,121 @@
+/* Right-hand context rail: full height, flush right, sections stacked top to bottom. */
+.context-rail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  min-width: 320px;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+.context-rail--collapsed {
+  width: 52px;
+  min-width: 52px;
+}
+
+.context-rail__scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.context-rail__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  padding: var(--space-2);
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.context-rail__toggle:hover {
+  background: color-mix(in srgb, var(--surface) 80%, var(--border));
+  color: var(--text);
+}
+
+.context-rail__toggle:focus-visible,
+.rail-section__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.rail-section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rail-section--footer {
+  margin-top: auto;
+  border-bottom: 0;
+  padding-top: var(--space-4);
+}
+
+.rail-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.rail-section__heading,
+.rail-section__toggle {
+  margin: 0;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+  line-height: var(--lh-normal);
+}
+
+.rail-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--r-1);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rail-section__toggle > svg {
+  color: var(--text-muted);
+}
+
+.rail-section__count {
+  font-weight: var(--fw-normal);
+  color: var(--text-muted);
+}
+
+.rail-section__action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+}
+
+.rail-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .context-rail {
+    transition: none;
+  }
+}
