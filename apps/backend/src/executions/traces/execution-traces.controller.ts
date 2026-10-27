@@ -51,6 +51,7 @@ export class ExecutionTracesController {
       );
       return {
         items: result.items.map(ExecutionTraceResponseDto.fromEntity),
+        lifecycle: result.lifecycle.map(ExecutionTraceResponseDto.fromEntity),
         nextAfterSequence: result.nextAfterSequence,
         hasMoreBefore: result.hasMoreBefore,
       };

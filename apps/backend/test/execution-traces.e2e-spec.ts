@@ -21,6 +21,9 @@ import { TaskStatus } from '../src/tasks/enums';
 import { AccessTokenValidationService } from '../src/auth/guards/validation/access-token-validation.service';
 import { WorkersScopes } from '../src/executions/workers.scopes';
 import { StaleActiveTaskExecutionPrunerService } from '../src/executions/staleness/stale-active-task-execution-pruner.service';
+import { ExecutionTraces1762500000000 } from '../src/migrations/1762500000000-ExecutionTraces';
+import { ExecutionTraceJson1762500000001 } from '../src/migrations/1762500000001-ExecutionTraceJson';
+import { ExecutionTraceSource1762500000002 } from '../src/migrations/1762500000002-ExecutionTraceSource';
 import { ExecutionTraceEntity } from '../src/executions/traces/execution-trace.entity';
 
 // Real migration + PostgreSQL + worker socket + authenticated read API. Only
@@ -163,6 +166,53 @@ describe('Raw execution traces E2E', () => {
     if (app) await app.close();
   });
 
+  it('migrates existing harness and preview worker records without changing their raw payloads', async () => {
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      const schema = `trace_source_${randomUUID().replaceAll('-', '')}`;
+      await runner.query(`CREATE SCHEMA "${schema}"`);
+      await runner.query(`SET LOCAL search_path TO "${schema}"`);
+      await new ExecutionTraces1762500000000().up(runner);
+      await new ExecutionTraceJson1762500000001().up(runner);
+      await runner.query(
+        `INSERT INTO execution_traces (execution_id, sequence, harness, emitted_at, payload)
+        VALUES ($1, 1, 'claude', now(), $2::json), ($1, 2, 'worker', now(), $2::json)`,
+        [executionId, JSON.stringify({ text: 'raw\u0000payload' })],
+      );
+      const migration = new ExecutionTraceSource1762500000002();
+      await migration.up(runner);
+      const expected = [
+        {
+          source: 'harness',
+          harness: 'claude',
+          payload: { text: 'raw\u0000payload' },
+        },
+        {
+          source: 'worker',
+          harness: null,
+          payload: { text: 'raw\u0000payload' },
+        },
+      ];
+      expect(
+        await runner.query(
+          'SELECT source, harness, payload FROM execution_traces ORDER BY sequence',
+        ),
+      ).toEqual(expected);
+      await migration.down(runner);
+      await migration.up(runner);
+      expect(
+        await runner.query(
+          'SELECT source, harness, payload FROM execution_traces ORDER BY sequence',
+        ),
+      ).toEqual(expected);
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
+  });
+
   it('persists unmodified JSON and handles duplicate retries without overwrite', async () => {
     const body = payload();
     expect(await post(owner, body)).toEqual({ ok: true });
@@ -172,6 +222,7 @@ describe('Raw execution traces E2E', () => {
     expect(response.body.items).toHaveLength(1);
     expect(response.body.items[0]).toMatchObject({
       sequence: 1,
+      source: 'harness',
       harness: 'claude',
       runnerSessionId: 'session-1',
       payload: payload().events[0].payload,
@@ -306,6 +357,47 @@ describe('Raw execution traces E2E', () => {
     const first = await read('?beforeSequence=2&limit=2').expect(200);
     expect(first.body.items.map((item: any) => item.sequence)).toEqual([1]);
     expect(first.body.hasMoreBefore).toBe(false);
+  });
+
+  it('returns worker progress outside the latest raw-event page, including late uploads', async () => {
+    const worker = payload(1);
+    worker.source = 'worker';
+    worker.harness = null;
+    worker.events[0].payload = {
+      type: 'taico.execution.step',
+      step: 'workspace',
+      status: 'completed',
+      message: 'No repositories configured.',
+    };
+    expect(await post(owner, worker)).toEqual({ ok: true });
+    const harness = payload(2);
+    harness.events = Array.from({ length: 100 }, (_, index) => ({
+      ...harness.events[0],
+      sequence: index + 2,
+    }));
+    expect(await post(owner, harness)).toEqual({ ok: true });
+    const final: PostExecutionTracePayload = {
+      ...payload(102),
+      source: 'worker',
+      harness: null,
+    };
+    final.events[0].payload = {
+      type: 'taico.execution.step',
+      step: 'finish',
+      status: 'completed',
+    };
+    expect(await post(owner, final)).toEqual({ ok: true });
+    const page = (await read('?latest=true&limit=2').expect(200)).body;
+    expect(page.items.map((item: any) => item.sequence)).toEqual([101, 102]);
+    expect(page.lifecycle.map((item: any) => item.sequence)).toEqual([1, 102]);
+    expect(page.lifecycle[0]).toMatchObject({
+      source: 'worker',
+      harness: null,
+      payload: worker.events[0].payload,
+    });
+    const incremental = (await read('?afterSequence=102').expect(200)).body;
+    expect(incremental.items).toEqual([]);
+    expect(incremental.lifecycle).toEqual(page.lifecycle);
   });
 
   it('notifies authenticated viewers of saved trace changes without broadcasting raw content', async () => {

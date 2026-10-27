@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { HarnessJson } from '@taico/events';
+import type { HarnessJson, ExecutionTraceSource } from '@taico/events';
 import { ExecutionTraceEntity } from '../../execution-trace.entity';
 
 export class ExecutionTraceResponseDto {
   @ApiProperty() executionId!: string;
   @ApiProperty() sequence!: number;
-  @ApiProperty() harness!: string;
+  @ApiProperty({ enum: ['worker', 'harness'] }) source!: ExecutionTraceSource;
+  @ApiProperty({ type: String, nullable: true }) harness!: string | null;
   @ApiProperty({ type: String, nullable: true }) runnerSessionId!:
     | string
     | null;
@@ -23,6 +24,7 @@ export class ExecutionTraceResponseDto {
     return {
       executionId: event.executionId,
       sequence: event.sequence,
+      source: event.source,
       harness: event.harness,
       runnerSessionId: event.runnerSessionId,
       emittedAt: event.emittedAt.toISOString(),
@@ -35,6 +37,12 @@ export class ExecutionTraceResponseDto {
 export class ExecutionTracesResponseDto {
   @ApiProperty({ type: [ExecutionTraceResponseDto] })
   items!: ExecutionTraceResponseDto[];
+  @ApiProperty({
+    type: [ExecutionTraceResponseDto],
+    description:
+      'Worker lifecycle records across the entire execution, independent of the raw-event page',
+  })
+  lifecycle!: ExecutionTraceResponseDto[];
   @ApiProperty()
   hasMoreBefore!: boolean;
   @ApiProperty() nextAfterSequence!: number;

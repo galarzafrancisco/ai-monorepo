@@ -1,3 +1,4 @@
+import type { ExecutionTraceSource } from '@taico/events';
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity({ name: 'execution_traces' })
@@ -10,8 +11,11 @@ export class ExecutionTraceEntity {
   @PrimaryColumn({ type: 'integer' })
   sequence!: number;
 
-  @Column({ type: 'text' })
-  harness!: string;
+  @Column({ type: 'text', default: 'harness' })
+  source!: ExecutionTraceSource;
+
+  @Column({ type: 'text', nullable: true })
+  harness!: string | null;
 
   @Column({ type: 'text', name: 'runner_session_id', nullable: true })
   runnerSessionId!: string | null;

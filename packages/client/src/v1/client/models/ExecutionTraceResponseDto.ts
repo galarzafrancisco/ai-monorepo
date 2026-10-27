@@ -5,7 +5,8 @@
 export type ExecutionTraceResponseDto = {
     executionId: string;
     sequence: number;
-    harness: string;
+    source: ExecutionTraceResponseDto.source;
+    harness: string | null;
     runnerSessionId: string | null;
     emittedAt: string;
     receivedAt: string;
@@ -14,4 +15,10 @@ export type ExecutionTraceResponseDto = {
      */
     payload: Record<string, any> | null;
 };
+export namespace ExecutionTraceResponseDto {
+    export enum source {
+        WORKER = 'worker',
+        HARNESS = 'harness',
+    }
+}
 

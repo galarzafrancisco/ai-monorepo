@@ -36,7 +36,8 @@ describe('ExecutionTracesService', () => {
     service = new ExecutionTracesService(
       {
         query,
-        find,
+        find: (options: { where: { source?: string } }) =>
+          options.where.source ? Promise.resolve([]) : find(options),
       } as unknown as Repository<ExecutionTraceEntity>,
       { emit } as unknown as EventEmitter2,
     );
@@ -53,10 +54,25 @@ describe('ExecutionTracesService', () => {
     expect(query.mock.calls[1][1]).toEqual([
       executionId,
       input.harness,
+      'harness',
       1,
       input.events[0].emittedAt,
       null,
       JSON.stringify(input.events[0].payload),
+    ]);
+  });
+
+  it('stores explicit worker source without a fake SDK identity', async () => {
+    const input: PostExecutionTracePayload = {
+      ...batch(),
+      source: 'worker',
+      harness: null,
+    };
+    await service.append(input, 'owner');
+    expect(query.mock.calls[1][1].slice(0, 3)).toEqual([
+      executionId,
+      null,
+      'worker',
     ]);
   });
 
@@ -79,6 +95,10 @@ describe('ExecutionTracesService', () => {
     null,
     { ...batch(), executionId: 'not-a-uuid' },
     { ...batch(), harness: '' },
+    { ...batch(), source: 'unknown' },
+    { ...batch(), source: null },
+    { ...batch(), source: 'worker' },
+    { ...batch(), source: 'harness', harness: null },
     { ...batch(), events: [] },
     { ...batch(), events: Array(101).fill(batch().events[0]) },
     { ...batch(), events: [{ ...batch().events[0], sequence: 0 }] },
@@ -110,12 +130,13 @@ describe('ExecutionTracesService', () => {
     const input = batch();
     input.events[0].payload = null;
     await service.append(input, 'owner');
-    expect(JSON.parse(query.mock.calls[1][1][5])).toBeNull();
+    expect(JSON.parse(query.mock.calls[1][1][6])).toBeNull();
   });
 
   it('returns a stable cursor on an empty page and orders events by sequence', async () => {
     expect(await service.list(executionId, 5, 10)).toEqual({
       items: [],
+      lifecycle: [],
       nextAfterSequence: 5,
       hasMoreBefore: false,
     });
@@ -154,6 +175,7 @@ describe('ExecutionTracesService', () => {
     find.mockResolvedValue([{ sequence: 5 }, { sequence: 4 }, { sequence: 3 }]);
     expect(await service.list(executionId, 0, 2, { latest: true })).toEqual({
       items: [{ sequence: 4 }, { sequence: 5 }],
+      lifecycle: [],
       nextAfterSequence: 5,
       hasMoreBefore: true,
     });

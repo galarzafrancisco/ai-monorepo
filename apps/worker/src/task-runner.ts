@@ -1,8 +1,14 @@
 import { ApiClient } from '@taico/client/v2';
-import { AgentToolPermissionResponseDto, ServerResponseDto } from '@taico/client/v2';
+import {
+  AgentToolPermissionResponseDto,
+  ServerResponseDto,
+} from '@taico/client/v2';
 import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
-import { getProjectSlugsFromTags, resolveProjectRepos } from './helpers/projectRepos.js';
+import {
+  getProjectSlugsFromTags,
+  resolveProjectRepos,
+} from './helpers/projectRepos.js';
 import { EXECUTION_ID_HEADER } from './helpers/config.js';
 import { BaseAgentRunner } from './runners/BaseAgentRunner.js';
 import {
@@ -19,9 +25,11 @@ import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 import { HarnessTraceRecorder } from './harness-trace-recorder.js';
+import type { ExecutionStep } from '@taico/events';
 import { WORKER_VERSION } from './version.js';
 import {
   InterruptedExecutionError,
+  TaskExecutionError,
   TaskExecutionPreconditionError,
   UnsupportedAgentTypeError,
   classifyAgentError,
@@ -39,9 +47,10 @@ type ExecuteTaskParams = {
   baseDir: string;
   baseUrl: string;
   activityGatewayClient: ExecutionActivityGatewayClient;
+  trace: HarnessTraceRecorder;
   mode?: RunMode;
   inputRequest?: InputRequestLike;
-}
+};
 
 export async function executeTask({
   taskId,
@@ -50,6 +59,7 @@ export async function executeTask({
   baseDir,
   baseUrl,
   activityGatewayClient,
+  trace,
   mode = 'normal',
   inputRequest,
 }: ExecuteTaskParams): Promise<void> {
@@ -64,10 +74,15 @@ export async function executeTask({
     }
   };
 
+  let step: ExecutionStep = 'workspace';
+  trace.workerStep({ step, status: 'running' });
   // Wrap entire execution in try/finally to ensure cleanup
   try {
+    throwIfInterrupted();
     // Get the task
-    const task = await workerClient.task.TasksController_getTask({ id: taskId });
+    const task = await workerClient.task.TasksController_getTask({
+      id: taskId,
+    });
     // TODO: We should validate dependencies are clear
 
     // Get the agent assigned to the task
@@ -77,7 +92,9 @@ export async function executeTask({
         `Task ${task.id} is not assigned or is missing an assignee slug.`,
       );
     }
-    const agent = await workerClient.agent.AgentsController_getAgentBySlug({ slug: actor.slug });
+    const agent = await workerClient.agent.AgentsController_getAgentBySlug({
+      slug: actor.slug,
+    });
     if (!agent) {
       throw new TaskExecutionPreconditionError(
         `Assigned agent @${actor.slug} was not found for task ${task.id}.`,
@@ -86,10 +103,10 @@ export async function executeTask({
 
     // Prepare one repo per project tag, each in its own folder
     const projectSlugs = getProjectSlugsFromTags(task.tags);
-    const { repos: projectRepos, skipped: skippedProjects } = await resolveProjectRepos(
-      projectSlugs,
-      (slug) => workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug }),
-    );
+    const { repos: projectRepos, skipped: skippedProjects } =
+      await resolveProjectRepos(projectSlugs, (slug) =>
+        workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug }),
+      );
     for (const project of skippedProjects) {
       console.warn(
         `[worker] skipping project:${project.slug} for task ${taskId}: ${project.reason === 'not_found' ? 'project not found' : 'project has no repoUrl'}`,
@@ -101,15 +118,41 @@ export async function executeTask({
       agentId: agent.actorId,
       baseDir,
       repos: projectRepos,
+      onRepository: (repository) =>
+        trace.workerStep({ step: 'workspace', status: 'running', repository }),
     });
     const workDir = workspace.cwd;
+    trace.workerStep({
+      step,
+      status: 'completed',
+      message:
+        [
+          workspace.repos.length
+            ? ''
+            : 'No repositories prepared. Using a local workspace.',
+          ...skippedProjects.map(
+            (project) =>
+              `Skipped ${project.slug}: ${project.reason === 'not_found' ? 'project not found' : 'no repository configured'}.`,
+          ),
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined,
+    });
+    step = 'setup';
+    trace.workerStep({ step, status: 'running' });
+    throwIfInterrupted();
 
-    const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
+    const thread =
+      await workerClient.threads.ThreadsController_getThreadByTaskId({
+        taskId,
+      });
 
     const permissions =
-      await workerClient.agent.AgentToolPermissionsController_listAgentToolPermissions({
-        actorId: agent.actorId,
-      });
+      await workerClient.agent.AgentToolPermissionsController_listAgentToolPermissions(
+        {
+          actorId: agent.actorId,
+        },
+      );
     const serversById = await fetchMcpServersById(workerClient, permissions);
     const runtimeMcpServers = buildRuntimeMcpServers(
       permissions,
@@ -121,12 +164,15 @@ export async function executeTask({
     );
 
     // Get an access token for the agent
-    const agentToken = await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken({
-      slug: agent.slug,
-      body: {
-        expirationSeconds: 60 * 60, // 1 hour? what's a sensible ttl?
-      }
-    });
+    const agentToken =
+      await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken(
+        {
+          slug: agent.slug,
+          body: {
+            expirationSeconds: 60 * 60, // 1 hour? what's a sensible ttl?
+          },
+        },
+      );
 
     attachRuntimeAuthHeaders(runtimeMcpServers, agentToken.token);
 
@@ -174,9 +220,11 @@ export async function executeTask({
 
     activeExecutionInterruptHandlers.set(executionId, () => runner?.cancel());
 
-    // Raw traces have their own durable path, independent of task activity.
-    const trace = new HarnessTraceRecorder(executionId, runner.kind,
-      (batch) => activityGatewayClient.queueTrace(batch));
+    trace.setHarness(runner.kind);
+    trace.workerStep({ step, status: 'completed' });
+    step = 'agent';
+    trace.workerStep({ step, status: 'running' });
+    throwIfInterrupted();
 
     // Run and pipe results
     try {
@@ -271,19 +319,32 @@ export async function executeTask({
             console.log('error message:', error.message);
             console.log('raw message', error.rawMessage);
             throw classifyAgentError(error);
-          }
-        }
+          },
+        },
       );
     } catch (error) {
       throw classifyRunnerError(error);
-    } finally {
-      try {
-        await trace.close();
-      } catch (error) {
-        // Trace failures must not replace a successful result or classified error.
-        console.warn('[worker] Unable to close execution trace', error);
-      }
     }
+    throwIfInterrupted();
+    trace.workerStep({ step, status: 'completed' });
+  } catch (error) {
+    const kind = error instanceof TaskExecutionError ? error.kind : null;
+    trace.workerStep({
+      step,
+      status:
+        kind === 'interrupted'
+          ? 'interrupted'
+          : kind === 'cancelled'
+            ? 'cancelled'
+            : 'failed',
+      message:
+        error instanceof TaskExecutionError
+          ? error.displayMessage
+          : error instanceof Error
+            ? error.message
+            : String(error),
+    });
+    throw error;
   } finally {
     // Clean up abort controller - this now runs no matter where we fail
     activeExecutionAbortControllers.delete(executionId);

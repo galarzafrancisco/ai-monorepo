@@ -36,7 +36,11 @@ export class ExecutionTracesService {
 
     // Pass payloads directly as json, without jsonb conversion or JSON text
     // extraction: either would reject valid escaped NULs and lone surrogates.
-    const parameters: unknown[] = [input.executionId, input.harness];
+    const parameters: unknown[] = [
+      input.executionId,
+      input.harness,
+      input.source ?? 'harness',
+    ];
     const rows = input.events.map((event) => {
       const offset = parameters.length;
       parameters.push(
@@ -45,10 +49,10 @@ export class ExecutionTracesService {
         event.runnerSessionId,
         JSON.stringify(event.payload),
       );
-      return `($1::uuid, $2, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
+      return `($1::uuid, $2, $3, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
     });
     const inserted = await this.traces.query(
-      `INSERT INTO execution_traces (execution_id, harness, sequence, emitted_at, runner_session_id, payload)
+      `INSERT INTO execution_traces (execution_id, harness, source, sequence, emitted_at, runner_session_id, payload)
        VALUES ${rows.join(', ')}
        ON CONFLICT (execution_id, sequence) DO NOTHING RETURNING sequence`,
       parameters,
@@ -69,22 +73,29 @@ export class ExecutionTracesService {
   ) {
     await this.resolveExecution(executionId);
     const backwards = options.latest || options.beforeSequence !== undefined;
-    const items = await this.traces.find({
-      where: {
-        executionId,
-        sequence:
-          options.beforeSequence !== undefined
-            ? LessThan(options.beforeSequence)
-            : MoreThan(afterSequence),
-      },
-      order: { sequence: backwards ? 'DESC' : 'ASC' },
-      take: limit + 1,
-    });
+    const [items, lifecycle] = await Promise.all([
+      this.traces.find({
+        where: {
+          executionId,
+          sequence:
+            options.beforeSequence !== undefined
+              ? LessThan(options.beforeSequence)
+              : MoreThan(afterSequence),
+        },
+        order: { sequence: backwards ? 'DESC' : 'ASC' },
+        take: limit + 1,
+      }),
+      this.traces.find({
+        where: { executionId, source: 'worker' },
+        order: { sequence: 'ASC' },
+      }),
+    ]);
     const hasMore = items.length > limit;
     if (hasMore) items.pop();
     if (backwards) items.reverse();
     return {
       items,
+      lifecycle,
       nextAfterSequence: items.at(-1)?.sequence ?? afterSequence,
       hasMoreBefore: Boolean(backwards && hasMore),
     };
@@ -112,13 +123,17 @@ export class ExecutionTracesService {
     const invalid = () => {
       throw new InvalidExecutionTraceError('Invalid execution trace batch.');
     };
+    const source = input?.source === undefined ? 'harness' : input.source;
     if (
       !input ||
+      (source !== 'worker' && source !== 'harness') ||
       typeof input.executionId !== 'string' ||
       !isUUID(input.executionId) ||
-      typeof input.harness !== 'string' ||
-      !input.harness.length ||
-      input.harness.length > 100 ||
+      (source === 'worker'
+        ? input.harness !== null
+        : typeof input.harness !== 'string' ||
+          !input.harness.length ||
+          input.harness.length > 100) ||
       !Array.isArray(input.events) ||
       !input.events.length ||
       input.events.length > EXECUTION_TRACE_BATCH_SIZE

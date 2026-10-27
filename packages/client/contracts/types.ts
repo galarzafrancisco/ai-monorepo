@@ -6477,7 +6477,9 @@ export interface components {
         ExecutionTraceResponseDto: {
             executionId: string;
             sequence: number;
-            harness: string;
+            /** @enum {string} */
+            source: "worker" | "harness";
+            harness: string | null;
             runnerSessionId: string | null;
             /** Format: date-time */
             emittedAt: string;
@@ -6490,6 +6492,8 @@ export interface components {
         };
         ExecutionTracesResponseDto: {
             items: components["schemas"]["ExecutionTraceResponseDto"][];
+            /** @description Worker lifecycle records across the entire execution, independent of the raw-event page */
+            lifecycle: components["schemas"]["ExecutionTraceResponseDto"][];
             hasMoreBefore: boolean;
             nextAfterSequence: number;
         };

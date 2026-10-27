@@ -1,7 +1,13 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { prepareWorkspace } from '../helpers/prepareWorkspace.js';
@@ -45,7 +51,11 @@ after(() => {
 
 test('no repos: cwd is the base task/agent directory', async () => {
   const baseDir = join(root, 'ws-none');
-  const workspace = await prepareWorkspace({ taskId: 't1', agentId: 'a1', baseDir });
+  const workspace = await prepareWorkspace({
+    taskId: 't1',
+    agentId: 'a1',
+    baseDir,
+  });
   assert.equal(workspace.cwd, join(baseDir, 't1', 'a1'));
   assert.deepEqual(workspace.repos, []);
   assert.ok(existsSync(workspace.cwd));
@@ -61,7 +71,9 @@ test('one repo: keeps the legacy repo/ layout', async () => {
   });
   const expected = join(baseDir, 't1', 'a1', 'repo');
   assert.equal(workspace.cwd, expected);
-  assert.deepEqual(workspace.repos, [{ slug: 'alpha', repoUrl: originA, dir: expected }]);
+  assert.deepEqual(workspace.repos, [
+    { slug: 'alpha', repoUrl: originA, dir: expected },
+  ]);
   assert.equal(readFileSync(join(expected, 'README.md'), 'utf8'), '# alpha\n');
 });
 
@@ -71,7 +83,12 @@ test('several repos: each project is cloned into its own folder', async () => {
     { slug: 'alpha', repoUrl: originA },
     { slug: 'beta', repoUrl: originB },
   ];
-  const workspace = await prepareWorkspace({ taskId: 't1', agentId: 'a1', baseDir, repos });
+  const workspace = await prepareWorkspace({
+    taskId: 't1',
+    agentId: 'a1',
+    baseDir,
+    repos,
+  });
 
   const reposRoot = join(baseDir, 't1', 'a1', 'repos');
   assert.equal(workspace.cwd, reposRoot);
@@ -79,13 +96,24 @@ test('several repos: each project is cloned into its own folder', async () => {
     workspace.repos.map((repo) => repo.dir),
     [join(reposRoot, 'alpha'), join(reposRoot, 'beta')],
   );
-  assert.equal(readFileSync(join(reposRoot, 'alpha', 'README.md'), 'utf8'), '# alpha\n');
-  assert.equal(readFileSync(join(reposRoot, 'beta', 'README.md'), 'utf8'), '# beta\n');
+  assert.equal(
+    readFileSync(join(reposRoot, 'alpha', 'README.md'), 'utf8'),
+    '# alpha\n',
+  );
+  assert.equal(
+    readFileSync(join(reposRoot, 'beta', 'README.md'), 'utf8'),
+    '# beta\n',
+  );
   assert.ok(existsSync(join(reposRoot, 'alpha', '.git')));
   assert.ok(existsSync(join(reposRoot, 'beta', '.git')));
 
   // Re-running on an existing workspace fetches instead of re-cloning.
-  const again = await prepareWorkspace({ taskId: 't1', agentId: 'a1', baseDir, repos });
+  const again = await prepareWorkspace({
+    taskId: 't1',
+    agentId: 'a1',
+    baseDir,
+    repos,
+  });
   assert.deepEqual(again, workspace);
 });
 
@@ -123,5 +151,62 @@ test('clone failure names the project that failed', async () => {
       ],
     }),
     /Failed to prepare repository for project "ghost"/,
+  );
+});
+
+test('reports real clone and fetch progress for every repository', async () => {
+  const progress: Array<{ slug: string; action: string; status: string }> = [];
+  const options = {
+    taskId: 't1',
+    agentId: 'a1',
+    baseDir: join(root, 'ws-progress'),
+    repos: [
+      { slug: 'alpha', repoUrl: originA },
+      { slug: 'beta', repoUrl: originB },
+    ],
+    onRepository: (event: { slug: string; action: string; status: string }) => {
+      progress.push(event);
+    },
+  };
+  await prepareWorkspace(options);
+  await prepareWorkspace(options);
+  assert.deepEqual(
+    progress.map(({ slug, action, status }) => `${slug}:${action}:${status}`),
+    [
+      'alpha:clone:running',
+      'alpha:clone:completed',
+      'beta:clone:running',
+      'beta:clone:completed',
+      'alpha:fetch:running',
+      'alpha:fetch:completed',
+      'beta:fetch:running',
+      'beta:fetch:completed',
+    ],
+  );
+});
+
+test('reports the failing repo and preserves earlier successful progress', async () => {
+  const progress: Array<{ slug: string; status: string }> = [];
+  await assert.rejects(
+    prepareWorkspace({
+      taskId: 't1',
+      agentId: 'a1',
+      baseDir: join(root, 'ws-progress-failure'),
+      repos: [
+        { slug: 'alpha', repoUrl: originA },
+        { slug: 'beta', repoUrl: originB },
+      ],
+      ensureRepo: async ({ repo }) => {
+        if (repo === originB) throw new Error('clone failed');
+      },
+      onRepository: (event) => {
+        progress.push(event);
+      },
+    }),
+    /beta/,
+  );
+  assert.deepEqual(
+    progress.map(({ slug, status }) => `${slug}:${status}`),
+    ['alpha:running', 'alpha:completed', 'beta:running', 'beta:failed'],
   );
 });

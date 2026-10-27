@@ -14360,8 +14360,16 @@
           "sequence": {
             "type": "number"
           },
+          "source": {
+            "type": "string",
+            "enum": [
+              "worker",
+              "harness"
+            ]
+          },
           "harness": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "runnerSessionId": {
             "type": "string",
@@ -14385,6 +14393,7 @@
         "required": [
           "executionId",
           "sequence",
+          "source",
           "harness",
           "runnerSessionId",
           "emittedAt",
@@ -14401,6 +14410,13 @@
               "$ref": "#/components/schemas/ExecutionTraceResponseDto"
             }
           },
+          "lifecycle": {
+            "description": "Worker lifecycle records across the entire execution, independent of the raw-event page",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExecutionTraceResponseDto"
+            }
+          },
           "hasMoreBefore": {
             "type": "boolean"
           },
@@ -14410,6 +14426,7 @@
         },
         "required": [
           "items",
+          "lifecycle",
           "hasMoreBefore",
           "nextAfterSequence"
         ]

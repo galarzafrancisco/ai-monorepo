@@ -18,9 +18,14 @@ export interface ExecutionTraceEvent {
   payload: HarnessJson;
 }
 
+export type ExecutionTraceSource = "worker" | "harness";
+
 export interface PostExecutionTracePayload {
   executionId: string;
-  harness: string;
+  /** Omitted by older workers: defaults to harness. */
+  source?: ExecutionTraceSource;
+  /** SDK identity for harness events; worker events have no harness. */
+  harness: string | null;
   events: ExecutionTraceEvent[];
 }
 
@@ -37,3 +42,25 @@ export interface ExecutionTraceAck {
 export const EXECUTION_TRACE_BATCH_BYTES = 512 * 1024;
 export const EXECUTION_TRACE_MAX_BYTES = 16 * 1024 * 1024;
 export const EXECUTION_TRACE_BATCH_SIZE = 100;
+
+/** Worker lifecycle records share the execution sequence with harness events. */
+export type ExecutionStep = "workspace" | "setup" | "agent" | "finish";
+export type ExecutionStepStatus =
+  | "running"
+  | "completed"
+  | "failed"
+  | "interrupted"
+  | "cancelled";
+export type ExecutionRepositoryProgress = {
+  slug: string;
+  repository: string;
+  action: "clone" | "fetch";
+  status: "running" | "completed" | "failed";
+};
+export type ExecutionStepEvent = {
+  type: "taico.execution.step";
+  step: ExecutionStep;
+  status: ExecutionStepStatus;
+  message?: string;
+  repository?: ExecutionRepositoryProgress;
+};

@@ -18,6 +18,7 @@ import { Button, Text } from '../../../ui/primitives';
 import { useActorsCtx } from '../../actors';
 import { buildTraceEntries, type TraceEntry } from './traceEntries';
 import { useExecutionTraces } from './useExecutionTraces';
+import { ExecutionSteps } from './ExecutionSteps';
 import './TaskTracesPanel.css';
 
 export type TraceRun = {
@@ -67,6 +68,7 @@ export function TaskTracesPanel({
     runs[0];
   const {
     events,
+    lifecycle,
     isLoading,
     isLoadingEarlier,
     hasMoreBefore,
@@ -116,20 +118,22 @@ export function TaskTracesPanel({
       variant="ghost"
       className="task-traces__expand"
       onClick={isMobile ? undefined : onToggle}
-      aria-label={isMobile ? 'View agent traces' : 'Expand agent traces'}
+      aria-label={
+        isMobile ? 'View execution traces' : 'Expand execution traces'
+      }
       aria-expanded={open}
-      aria-controls="task-agent-traces"
+      aria-controls="task-execution-traces"
     >
       {isMobile ? <Terminal size={20} /> : <PanelRightOpen size={18} />}
       {isMobile ? (
         <span className="task-traces__mobile-copy">
-          <span>Agent traces</span>
+          <span>Execution traces</span>
           <span className="task-traces__mobile-description">
-            Messages, tools and live activity
+            Worker progress, messages and tools
           </span>
         </span>
       ) : (
-        <span>Agent traces</span>
+        <span>Execution traces</span>
       )}
       {runs.some((item) => item.source === 'active') && (
         <span className="task-traces__dot" />
@@ -141,9 +145,9 @@ export function TaskTracesPanel({
   );
   const collapsed = (
     <aside
-      id={isMobile ? undefined : 'task-agent-traces'}
+      id={isMobile ? undefined : 'task-execution-traces'}
       className="task-traces task-traces--collapsed"
-      aria-label="Agent traces"
+      aria-label="Execution traces"
     >
       {isMobile ? (
         <Dialog.Trigger asChild>{expandButton}</Dialog.Trigger>
@@ -155,9 +159,9 @@ export function TaskTracesPanel({
 
   const panel = (
     <aside
-      id={isMobile ? undefined : 'task-agent-traces'}
+      id={isMobile ? undefined : 'task-execution-traces'}
       className="task-traces"
-      aria-label="Agent traces"
+      aria-label="Execution traces"
     >
       <header className="task-traces__header">
         {isMobile ? (
@@ -173,7 +177,7 @@ export function TaskTracesPanel({
               Task
             </Button>
             <Dialog.Title className="task-traces__mobile-title">
-              Agent traces
+              Execution traces
             </Dialog.Title>
             <span
               className="task-traces__mobile-header-spacer"
@@ -184,15 +188,15 @@ export function TaskTracesPanel({
           <>
             <div className="task-traces__heading">
               <Terminal size={18} />
-              <Text weight="semibold">Agent traces</Text>
+              <Text weight="semibold">Execution traces</Text>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onToggle}
-              aria-label="Collapse agent traces"
+              aria-label="Collapse execution traces"
               aria-expanded={true}
-              aria-controls="task-agent-traces"
+              aria-controls="task-execution-traces"
             >
               <PanelRightClose size={18} />
             </Button>
@@ -242,6 +246,14 @@ export function TaskTracesPanel({
           </div>
         )}
       </div>
+      {run && (
+        <ExecutionSteps
+          events={lifecycle}
+          terminal={run.source === 'history'}
+          stale={run.status === 'STALE'}
+          loading={isLoading}
+        />
+      )}
       {run && (
         <div className="task-traces__toolbar">
           <span className="task-traces__connection">
@@ -306,7 +318,7 @@ export function TaskTracesPanel({
         {isLoading || (isLoadingRuns && !runs.length) ? (
           <div className="task-traces__empty" role="status">
             <Terminal size={28} />
-            <Text>Loading agent traces…</Text>
+            <Text>Loading execution traces…</Text>
           </div>
         ) : !events.length ? (
           <div className="task-traces__empty">
@@ -390,7 +402,7 @@ export function TaskTracesPanel({
         <Dialog.Portal>
           <Dialog.Overlay className="task-traces-mobile__overlay" />
           <Dialog.Content
-            id="task-agent-traces"
+            id="task-execution-traces"
             className="task-traces-mobile__view"
             aria-describedby={undefined}
           >

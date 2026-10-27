@@ -8,9 +8,13 @@
 .task-detail-workspace--traces-closed {
   grid-template-columns: minmax(0, 1fr) 44px;
 }
-.task-detail-workspace > .task-detail-page {
+.task-detail-main {
+  position: relative;
   min-width: 0;
   min-height: 0;
+}
+.task-detail-main > .task-detail-page {
+  height: 100%;
   overflow-y: auto;
   padding-right: var(--space-2);
 }
@@ -18,11 +22,9 @@
   overflow: hidden;
 }
 .task-detail-workspace .task-detail-fab {
-  position: sticky;
-  float: right;
+  position: absolute;
   bottom: var(--space-4);
-  right: auto;
-  margin-right: var(--space-3);
+  right: var(--space-3);
   z-index: 2;
 }
 .task-traces {
@@ -372,10 +374,18 @@
     height: auto;
     gap: var(--space-3);
   }
-  .task-detail-workspace > .task-detail-page {
+  .task-detail-main {
+    order: 2;
+  }
+  .task-detail-main > .task-detail-page {
+    height: auto;
     overflow: visible;
     padding: 0;
-    order: 2;
+  }
+  .task-detail-workspace .task-detail-fab {
+    position: fixed;
+    right: var(--space-5);
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
   }
   .task-traces {
     order: 1;
@@ -409,7 +419,7 @@
     flex-direction: column;
     gap: var(--space-3);
   }
-  .task-detail-workspace > .task-detail-page {
+  .task-detail-main {
     flex: 1;
     order: 2;
   }

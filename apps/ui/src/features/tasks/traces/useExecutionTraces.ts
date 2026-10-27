@@ -16,9 +16,12 @@ export function useExecutionTraces(
   const [eventState, setEventState] = useState<{
     executionId: string | null;
     events: TraceEvent[];
-  }>({ executionId: null, events: [] });
+    lifecycle: TraceEvent[];
+  }>({ executionId: null, events: [], lifecycle: [] });
   const events =
     eventState.executionId === executionId ? eventState.events : [];
+  const lifecycle =
+    eventState.executionId === executionId ? eventState.lifecycle : [];
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingEarlier, setIsLoadingEarlier] = useState(false);
   const [hasMoreBefore, setHasMoreBefore] = useState(false);
@@ -32,7 +35,7 @@ export function useExecutionTraces(
   } | null>(null);
 
   useEffect(() => {
-    setEventState({ executionId, events: [] });
+    setEventState({ executionId, events: [], lifecycle: [] });
     setError(null);
     setHasMoreBefore(false);
     setConnected(false);
@@ -48,14 +51,26 @@ export function useExecutionTraces(
     let loadingEarlier = false;
     let snapshot: TraceEvent[] = [];
     const known = new Set<number>();
+    let lifecycleSnapshot: TraceEvent[] = [];
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const apply = (incoming: TraceEvent[]) => {
-      if (!incoming.length) return;
+    const apply = (incoming: TraceEvent[], lifecycle: TraceEvent[]) => {
+      const mergedLifecycle = mergeTraceEvents(
+        lifecycleSnapshot,
+        lifecycle ?? [],
+      );
+      const lifecycleChanged =
+        mergedLifecycle.length !== lifecycleSnapshot.length;
+      lifecycleSnapshot = mergedLifecycle;
       const added = incoming.filter((event) => !known.has(event.sequence));
-      if (!added.length) return;
+      if (!added.length && !lifecycleChanged) return;
       for (const event of added) known.add(event.sequence);
       snapshot = mergeTraceEvents(snapshot, added);
-      if (!cancelled) setEventState({ executionId, events: snapshot });
+      if (!cancelled)
+        setEventState({
+          executionId,
+          events: snapshot,
+          lifecycle: lifecycleSnapshot,
+        });
     };
     const refresh = async (reconcile = false) => {
       if (!executionId || cancelled) return;
@@ -74,7 +89,7 @@ export function useExecutionTraces(
             signal: abort.signal,
           });
           if (cancelled) return;
-          apply(page.items);
+          apply(page.items, page.lifecycle);
           setHasMoreBefore(page.hasMoreBefore);
           loaded = true;
         } else {
@@ -85,7 +100,7 @@ export function useExecutionTraces(
               { executionId, afterSequence, limit: 100, signal: abort.signal },
             );
             if (cancelled) return;
-            apply(page.items);
+            apply(page.items, page.lifecycle);
             more = page.items.length === 100;
           }
           if (reconcile && !cancelled) {
@@ -99,7 +114,7 @@ export function useExecutionTraces(
                 signal: abort.signal,
               });
             if (cancelled) return;
-            apply(latest.items);
+            apply(latest.items, latest.lifecycle);
             if (snapshot[0]?.sequence === latest.items[0]?.sequence)
               setHasMoreBefore(latest.hasMoreBefore);
           }
@@ -108,7 +123,9 @@ export function useExecutionTraces(
       } catch (err) {
         if (!cancelled)
           setError(
-            err instanceof Error ? err.message : 'Could not load agent traces.',
+            err instanceof Error
+              ? err.message
+              : 'Could not load execution traces.',
           );
       } finally {
         syncing = false;
@@ -144,7 +161,7 @@ export function useExecutionTraces(
             signal: abort.signal,
           });
           if (!cancelled) {
-            apply(page.items);
+            apply(page.items, page.lifecycle);
             setHasMoreBefore(page.hasMoreBefore);
             setError(null);
           }
@@ -228,6 +245,7 @@ export function useExecutionTraces(
   }, []);
   return {
     events,
+    lifecycle,
     isLoading,
     isLoadingEarlier,
     hasMoreBefore,

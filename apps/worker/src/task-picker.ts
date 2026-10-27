@@ -1,4 +1,5 @@
 import { ApiClient } from '@taico/client/v2';
+import { HarnessTraceRecorder } from './harness-trace-recorder.js';
 import { executeTask } from './task-runner.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 import {
@@ -13,7 +14,7 @@ type PickTaskParams = {
   baseDir: string;
   baseUrl: string;
   activityGatewayClient: ExecutionActivityGatewayClient;
-}
+};
 
 export async function pickTask({
   client,
@@ -33,6 +34,9 @@ export async function pickTask({
     `[worker] Claimed task ${execution.taskId} as execution ${execution.id}.`,
   );
 
+  const trace = new HarnessTraceRecorder(execution.id, null, (batch) =>
+    activityGatewayClient.queueTrace(batch),
+  );
   let stopStatus: 'SUCCEEDED' | 'FAILED' | 'CANCELLED' = 'SUCCEEDED';
   let stopErrorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN' | undefined;
   let stopErrorMessage: string | undefined;
@@ -48,6 +52,7 @@ export async function pickTask({
       baseDir: baseDir,
       baseUrl,
       activityGatewayClient,
+      trace,
     });
   } catch (error) {
     if (error instanceof UnsupportedAgentTypeError) {
@@ -71,35 +76,69 @@ export async function pickTask({
     } else {
       stopStatus = 'FAILED';
       stopErrorCode = 'UNKNOWN';
-      stopErrorMessage =
-        error instanceof Error ? error.message : String(error);
+      stopErrorMessage = error instanceof Error ? error.message : String(error);
       shouldRethrow = true;
     }
     taskError = error;
   } finally {
-    if (shouldUnclaim) {
-      await client.executions.ActiveTaskExecutionController_unclaimTaskExecution({
-        executionId: execution.id,
-      });
-      deferTaskClaimAfterUnclaim(execution.taskId);
-
-      console.log(
-        `[worker] Unclaimed execution ${execution.id} for task ${execution.taskId}: ${stopErrorMessage}`,
-      );
-    } else {
-      const historyEntry =
-        await client.executions.ActiveTaskExecutionController_stopTaskExecution({
-          executionId: execution.id,
-          body: {
-            status: stopStatus,
-            errorCode: stopErrorCode,
-            errorMessage: stopErrorMessage,
+    trace.workerStep({
+      step: 'finish',
+      status: 'running',
+      message: shouldUnclaim
+        ? 'Returning this task to the queue.'
+        : 'Saving the execution result.',
+    });
+    try {
+      if (shouldUnclaim) {
+        await client.executions.ActiveTaskExecutionController_unclaimTaskExecution(
+          {
+            executionId: execution.id,
           },
-        });
+        );
+        deferTaskClaimAfterUnclaim(execution.taskId);
 
-      console.log(
-        `[worker] Stopped execution ${execution.id} with status ${historyEntry.status}.`,
-      );
+        console.log(
+          `[worker] Unclaimed execution ${execution.id} for task ${execution.taskId}: ${stopErrorMessage}`,
+        );
+      } else {
+        const historyEntry =
+          await client.executions.ActiveTaskExecutionController_stopTaskExecution(
+            {
+              executionId: execution.id,
+              body: {
+                status: stopStatus,
+                errorCode: stopErrorCode,
+                errorMessage: stopErrorMessage,
+              },
+            },
+          );
+
+        console.log(
+          `[worker] Stopped execution ${execution.id} with status ${historyEntry.status}.`,
+        );
+      }
+      trace.workerStep({
+        step: 'finish',
+        status: 'completed',
+        message: shouldUnclaim
+          ? 'Task returned to the queue for a compatible worker.'
+          : 'Result saved. Workspace kept for later use.',
+      });
+    } catch (error) {
+      trace.workerStep({
+        step: 'finish',
+        status: 'failed',
+        message: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    } finally {
+      try {
+        await trace.close();
+      } catch {
+        console.warn(
+          `[worker] Could not close execution trace ${execution.id}`,
+        );
+      }
     }
   }
 

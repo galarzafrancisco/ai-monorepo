@@ -68,6 +68,7 @@ export function buildTraceEntries(events: TraceEvent[]): TraceEntry[] {
     });
   };
   for (const event of events) {
+    if (event.source === 'worker') continue;
     const raw = object(event.payload);
     const scope = string(raw.parent_tool_use_id) || 'root';
     const type = string(raw.type);
