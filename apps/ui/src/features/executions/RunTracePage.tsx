@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Avatar, Button, Chip, Text } from "../../ui/primitives";
@@ -7,9 +7,8 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { isDeactivated, useActorsCtx } from "../actors";
 import { RunTrace } from "../tasks/traces/RunTrace";
 import { runStatusTag, type TraceRun } from "../tasks/traces/runs";
-import { ExecutionsService } from "./api";
-import type { TaskExecutionHistoryResponseDto } from "./types";
 import { useExecutions } from "./useExecutions";
+import { useHistoryEntry } from "./useHistoryEntry";
 import "./RunTracePage.css";
 
 /**
@@ -26,19 +25,10 @@ export function RunTracePage() {
   // The runs feed only holds the latest runs, so a finished run outside it is
   // fetched on its own: a run is never shown as live just because it's old.
   const fromFeed = useMemo(() => history.find((candidate) => candidate.id === id) ?? null, [history, id]);
-  const [fetched, setFetched] = useState<TaskExecutionHistoryResponseDto | null>(null);
-  const [notFound, setNotFound] = useState(false);
   const liveInFeed = kind === "active" && active.some((candidate) => candidate.id === id);
-  const needsFetch = Boolean(id) && !fromFeed && (kind === "history" || (kind === "active" && hasLoadedOnce && !liveInFeed));
-  useEffect(() => {
-    if (!needsFetch || !id) return;
-    const controller = new AbortController();
-    ExecutionsService.TaskExecutionHistoryController_getHistoryEntry({ id, signal: controller.signal })
-      .then((entry) => { setFetched(entry); setNotFound(false); })
-      .catch(() => { if (!controller.signal.aborted && kind === "history") setNotFound(true); });
-    return () => controller.abort();
-  }, [id, kind, needsFetch]);
-  const finished = fromFeed ?? (fetched?.id === id ? fetched : null);
+  const needsFetch = !fromFeed && (kind === "history" || (kind === "active" && hasLoadedOnce && !liveInFeed));
+  const fetched = useHistoryEntry(id, needsFetch);
+  const finished = fromFeed ?? fetched.entry;
   const entry = useMemo(() => {
     if (kind === "active") return active.find((candidate) => candidate.id === id) ?? null;
     if (kind === "history") return finished;
@@ -66,8 +56,17 @@ export function RunTracePage() {
   useDocumentTitle();
   const onRunsChanged = useCallback(() => { void loadExecutions({ silent: true }); }, [loadExecutions]);
 
-  if (!run && kind === "history" && !notFound) {
+  if (!run && kind === "history" && fetched.status === "loading") {
     return <div className="run-trace-page" aria-busy="true" />;
+  }
+
+  if (!run && kind === "history" && fetched.status === "error") {
+    return (
+      <div className="run-trace-page">
+        <Text as="div" size="5" weight="bold">Couldn't load this run</Text>
+        <Button variant="secondary" onClick={fetched.retry}>Try again</Button>
+      </div>
+    );
   }
 
   // A live run missing from history is just still running, so only a finished
