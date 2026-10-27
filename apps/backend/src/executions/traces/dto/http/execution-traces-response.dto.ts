@@ -35,5 +35,7 @@ export class ExecutionTraceResponseDto {
 export class ExecutionTracesResponseDto {
   @ApiProperty({ type: [ExecutionTraceResponseDto] })
   items!: ExecutionTraceResponseDto[];
+  @ApiProperty()
+  hasMoreBefore!: boolean;
   @ApiProperty() nextAfterSequence!: number;
 }

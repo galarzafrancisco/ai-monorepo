@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ExecutionTracesChangedEvent } from '../events/execution-traces-changed.event';
+import { LessThan, MoreThan, Repository } from 'typeorm';
 import { isISO8601, isUUID } from 'class-validator';
 import {
   EXECUTION_TRACE_BATCH_SIZE,
@@ -19,6 +21,7 @@ export class ExecutionTracesService {
   constructor(
     @InjectRepository(ExecutionTraceEntity)
     private readonly traces: Repository<ExecutionTraceEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async append(
@@ -44,24 +47,46 @@ export class ExecutionTracesService {
       );
       return `($1::uuid, $2, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
     });
-    await this.traces.query(
+    const inserted = await this.traces.query(
       `INSERT INTO execution_traces (execution_id, harness, sequence, emitted_at, runner_session_id, payload)
        VALUES ${rows.join(', ')}
-       ON CONFLICT (execution_id, sequence) DO NOTHING`,
+       ON CONFLICT (execution_id, sequence) DO NOTHING RETURNING sequence`,
       parameters,
     );
+    if (inserted.length) {
+      this.eventEmitter.emit(
+        ExecutionTracesChangedEvent.INTERNAL,
+        new ExecutionTracesChangedEvent(input.executionId),
+      );
+    }
   }
 
-  async list(executionId: string, afterSequence: number, limit: number) {
+  async list(
+    executionId: string,
+    afterSequence: number,
+    limit: number,
+    options: { latest?: boolean; beforeSequence?: number } = {},
+  ) {
     await this.resolveExecution(executionId);
+    const backwards = options.latest || options.beforeSequence !== undefined;
     const items = await this.traces.find({
-      where: { executionId, sequence: MoreThan(afterSequence) },
-      order: { sequence: 'ASC' },
-      take: limit,
+      where: {
+        executionId,
+        sequence:
+          options.beforeSequence !== undefined
+            ? LessThan(options.beforeSequence)
+            : MoreThan(afterSequence),
+      },
+      order: { sequence: backwards ? 'DESC' : 'ASC' },
+      take: limit + 1,
     });
+    const hasMore = items.length > limit;
+    if (hasMore) items.pop();
+    if (backwards) items.reverse();
     return {
       items,
       nextAfterSequence: items.at(-1)?.sequence ?? afterSequence,
+      hasMoreBefore: Boolean(backwards && hasMore),
     };
   }
 

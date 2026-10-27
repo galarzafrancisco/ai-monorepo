@@ -29,6 +29,7 @@ import { useChatReadiness } from '../ai-models/useChatReadiness';
 import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
 import { getTaskStatusTag } from './taskStatusTag';
+import { TaskTracesPanel } from './traces/TaskTracesPanel';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -81,6 +82,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const { registerCommands } = useCommandPalette();
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
+  const [tracesOpen, setTracesOpen] = useState(() => {
+    try { return localStorage.getItem('taico.taskTraces.open') !== 'false' && window.innerWidth >= 1100; } catch { return window.innerWidth >= 1100; }
+  });
+  const [executionsTaskId, setExecutionsTaskId] = useState<string | null>(null);
+  const currentTaskId = useRef(task?.id);
+  currentTaskId.current = task?.id;
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
   const [showAllTimelineItems, setShowAllTimelineItems] = useState(false);
@@ -476,6 +483,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   useEffect(() => {
     setShowAllTimelineItems(false);
     setShowAllExecutions(false);
+    setExecutions([]);
+    setExecutionsTaskId(null);
+    setExecutionsError(null);
   }, [task?.id]);
 
   const loadExecutionsForTask = useCallback(async (taskId: string) => {
@@ -520,15 +530,17 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       );
 
+      if (currentTaskId.current !== taskId) return;
+      setExecutionsTaskId(taskId);
       setExecutions(sorted);
       setExecutionsError(null);
     } catch (err: unknown) {
       const message = err instanceof Error
         ? err.message
         : 'Failed to load runs for this task';
-      setExecutionsError(message);
+      if (currentTaskId.current === taskId) setExecutionsError(message);
     } finally {
-      setIsLoadingExecutions(false);
+      if (currentTaskId.current === taskId) setIsLoadingExecutions(false);
     }
   }, []);
 
@@ -657,6 +669,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   };
 
   return (
+    <div className={`task-detail-workspace${tracesOpen ? "" : " task-detail-workspace--traces-closed"}`}>
     <div className="task-detail-page">
 
       {error && (
@@ -1191,6 +1204,13 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         />
       ) : null}
     </div >
+    <TaskTracesPanel key={task.id} runs={executionsTaskId === task.id ? executions : []}
+      open={tracesOpen} onToggle={() => setTracesOpen((value) => {
+        try { localStorage.setItem('taico.taskTraces.open', String(!value)); } catch { /* Storage may be unavailable. */ }
+        return !value;
+      })} onRefreshRuns={() => void loadExecutionsForTask(task.id)} isLoadingRuns={isLoadingExecutions}
+      runsError={executionsError} />
+    </div>
   );
 }
 

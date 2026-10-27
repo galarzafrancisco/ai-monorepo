@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { ActiveTaskExecutionListResponseDto, ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryListResponseDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueListResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto } from './types.js';
+import type { ActiveTaskExecutionListResponseDto, ActiveTaskExecutionResponseDto, ExecutionTracesResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryListResponseDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueListResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto } from './types.js';
 
 export class ExecutionsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -54,6 +54,11 @@ export class ExecutionsResource extends BaseClient {
   /** List task execution history */
   async TaskExecutionHistoryController_listHistory(params?: { page?: number; limit?: number; taskId?: string; signal?: AbortSignal }): Promise<TaskExecutionHistoryListResponseDto> {
     return this.request('GET', '/api/v1/executions/history', { params: { page: params?.page, limit: params?.limit, taskId: params?.taskId }, signal: params?.signal });
+  }
+
+  /** Read raw harness events for an active or historical execution */
+  async ExecutionTracesController_list(params: { executionId: string; afterSequence?: number; limit?: number; latest?: boolean; beforeSequence?: number; signal?: AbortSignal }): Promise<ExecutionTracesResponseDto> {
+    return this.request('GET', `/api/v1/executions/${params.executionId}/traces`, { params: { afterSequence: params.afterSequence, limit: params.limit, latest: params.latest, beforeSequence: params.beforeSequence }, signal: params?.signal });
   }
 
 }

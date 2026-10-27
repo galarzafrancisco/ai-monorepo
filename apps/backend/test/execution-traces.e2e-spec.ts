@@ -289,4 +289,60 @@ describe('Raw execution traces E2E', () => {
     ).toBe(2);
     expect((await read().expect(200)).body.items).toHaveLength(2);
   });
+
+  it('pages backwards from the latest saved events', async () => {
+    const body = payload();
+    body.events = [1, 2, 3, 4, 5].map((sequence) => ({
+      ...body.events[0],
+      sequence,
+    }));
+    expect(await post(owner, body)).toEqual({ ok: true });
+    const latest = await read('?latest=true&limit=2').expect(200);
+    expect(latest.body.items.map((item: any) => item.sequence)).toEqual([4, 5]);
+    expect(latest.body.hasMoreBefore).toBe(true);
+    const older = await read('?beforeSequence=4&limit=2').expect(200);
+    expect(older.body.items.map((item: any) => item.sequence)).toEqual([2, 3]);
+    expect(older.body.hasMoreBefore).toBe(true);
+    const first = await read('?beforeSequence=2&limit=2').expect(200);
+    expect(first.body.items.map((item: any) => item.sequence)).toEqual([1]);
+    expect(first.body.hasMoreBefore).toBe(false);
+  });
+
+  it('notifies authenticated viewers of saved trace changes without broadcasting raw content', async () => {
+    const { port } = app.getHttpServer().address() as AddressInfo;
+    const viewer = io(`http://127.0.0.1:${port}/executions`, {
+      transports: ['websocket'],
+      extraHeaders: { cookie: cookies },
+      forceNew: true,
+      reconnection: false,
+    });
+    sockets.push(viewer);
+    await new Promise<void>((resolve, reject) => {
+      viewer.once('connect', resolve);
+      viewer.once('connect_error', reject);
+    });
+    expect(
+      await viewer
+        .timeout(5000)
+        .emitWithAck('execution.traces.subscribe', { executionId }),
+    ).toEqual({ ok: true });
+    expect(
+      await viewer
+        .timeout(5000)
+        .emitWithAck('execution.traces.subscribe', { executionId: 'invalid' }),
+    ).toEqual({ ok: false });
+    const changed = new Promise((resolve, reject) => {
+      const timeout = setTimeout(
+        () => reject(new Error('Trace change event was not delivered')),
+        5000,
+      );
+      viewer.once(ExecutionWireEvents.EXECUTION_TRACES_CHANGED, (event) => {
+        clearTimeout(timeout);
+        resolve(event);
+      });
+    });
+    expect(await post(owner, payload())).toEqual({ ok: true });
+    expect(await changed).toEqual({ executionId });
+    expect((await read().expect(200)).body.items).toHaveLength(1);
+  });
 });

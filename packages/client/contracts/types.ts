@@ -2180,6 +2180,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/executions/{executionId}/traces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read raw harness events for an active or historical execution */
+        get: operations["ExecutionTracesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workers": {
         parameters: {
             query?: never;
@@ -6456,6 +6473,25 @@ export interface components {
              * @example 3
              */
             totalPages: number;
+        };
+        ExecutionTraceResponseDto: {
+            executionId: string;
+            sequence: number;
+            harness: string;
+            runnerSessionId: string | null;
+            /** Format: date-time */
+            emittedAt: string;
+            /** Format: date-time */
+            receivedAt: string;
+            /** @description Unmodified harness JSON event */
+            payload: {
+                [key: string]: unknown;
+            } | null;
+        };
+        ExecutionTracesResponseDto: {
+            items: components["schemas"]["ExecutionTraceResponseDto"][];
+            hasMoreBefore: boolean;
+            nextAfterSequence: number;
         };
         WorkerResponseDto: {
             /** Format: uuid */
@@ -12089,6 +12125,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskExecutionHistoryListResponseDto"];
+                };
+            };
+        };
+    };
+    ExecutionTracesController_list: {
+        parameters: {
+            query?: {
+                afterSequence?: number;
+                limit?: number;
+                /** @description Return the most recent events, in chronological order */
+                latest?: boolean;
+                /** @description Load events before this sequence */
+                beforeSequence?: number;
+            };
+            header?: never;
+            path: {
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionTracesResponseDto"];
                 };
             };
         };

@@ -63,3 +63,37 @@ cursor alone is not a guarantee of a complete stream.
 Raw output can include prompts, file contents, tool arguments and tool results.
 It has the same sensitivity as a harness transcript. There is no separate
 transcript permission or payload sanitization in this initial version.
+
+
+## Task trace panel
+
+Task details show a collapsible **Agent traces** panel on wide desktop windows.
+On phones, a compact entry above the task opens a full-screen trace view with
+a Back to task control. The view traps focus, supports Escape, and restores focus
+to its entry when closed. It accounts for safe areas and keeps task navigation
+and comment actions behind the view. Tablet windows retain a collapsible section.
+Its open state is remembered locally. Select an execution to view its messages, reasoning
+summaries exposed by the harness, tool calls, arguments, output and errors.
+Tool output and original raw events are expandable. Lifecycle-only and
+unrecognized SDK events are omitted from the reading view, while all raw events
+remain stored and available through the API. Token deltas and updated tool
+snapshots are grouped for reading, with their underlying JSON inspectable.
+Claude's per-block assistant events are reconciled with streaming block identities,
+including when a page starts mid-message. ADK function calls and responses are
+paired by call ID. Loading earlier events anchors the visible entry so concurrent
+live updates do not move the reader's position.
+
+The panel opens at the latest 100 raw events. `latest=true` selects the newest
+page in chronological order. `beforeSequence` loads earlier pages, and
+`hasMoreBefore` indicates whether another earlier page exists. Reading earlier
+history preserves the scroll position. New output follows the bottom only when
+the reader is already near it; **Jump to latest** resumes following.
+
+After a batch is durably inserted, `ExecutionTracesChangedEvent` is mapped by the
+executions gateway to `execution.traces.changed` with only the execution ID.
+Authenticated readers with `tasks:read` join `execution-traces-<executionId>` via
+`execution.traces.subscribe`. The panel fetches persisted events through REST on
+notification, subscription acknowledgement, reconnect and a ten-second fallback.
+It also subscribes to execution list changes to discover new runs. Collapsing
+unmounts its subscription and stops its trace reads. Raw output is never included
+in these notifications or broadcast to collection subscribers.

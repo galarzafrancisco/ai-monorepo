@@ -28,6 +28,7 @@ export const ExecutionWireEvents = {
   TASK_EXECUTION_QUEUED: 'task.execution.queued',
   EXECUTION_INTERRUPT_REQUEST: 'execution.interrupt.request',
   EXECUTIONS_CHANGED: 'executions.changed',
+  EXECUTION_TRACES_CHANGED: 'execution.traces.changed',
 } as const;
 
 export type ExecutionWireEventName =

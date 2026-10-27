@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { ActiveTaskExecutionListResponseDto } from '../models/ActiveTaskExecutionListResponseDto.js';
 import type { ActiveTaskExecutionResponseDto } from '../models/ActiveTaskExecutionResponseDto.js';
+import type { ExecutionTracesResponseDto } from '../models/ExecutionTracesResponseDto.js';
 import type { StopActiveTaskExecutionDto } from '../models/StopActiveTaskExecutionDto.js';
 import type { TaskExecutionHistoryListResponseDto } from '../models/TaskExecutionHistoryListResponseDto.js';
 import type { TaskExecutionHistoryResponseDto } from '../models/TaskExecutionHistoryResponseDto.js';
@@ -229,6 +230,38 @@ export class ExecutionsService {
                 'page': page,
                 'limit': limit,
                 'taskId': taskId,
+            },
+        });
+    }
+    /**
+     * Read raw harness events for an active or historical execution
+     * @param executionId
+     * @param afterSequence
+     * @param limit
+     * @param latest Return the most recent events, in chronological order
+     * @param beforeSequence Load events before this sequence
+     * @returns ExecutionTracesResponseDto
+     * @throws ApiError
+     */
+    public static executionTracesControllerList(
+        executionId: string,
+        afterSequence?: number,
+        limit: number = 100,
+        latest: boolean = false,
+        beforeSequence?: number,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ExecutionTracesResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/executions/{executionId}/traces',
+            path: {
+                'executionId': executionId,
+            },
+            query: {
+                'afterSequence': afterSequence,
+                'limit': limit,
+                'latest': latest,
+                'beforeSequence': beforeSequence,
             },
         });
     }
