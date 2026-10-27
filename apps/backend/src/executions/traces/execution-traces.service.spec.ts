@@ -27,9 +27,7 @@ describe('ExecutionTracesService', () => {
   let find: jest.Mock;
   let service: ExecutionTracesService;
   beforeEach(() => {
-    query = jest
-      .fn()
-      .mockResolvedValue([{ taskId: 'task', workerClientId: 'owner' }]);
+    query = jest.fn().mockResolvedValue([{ workerClientId: 'owner' }]);
     find = jest.fn().mockResolvedValue([]);
     service = new ExecutionTracesService({
       query,
@@ -45,7 +43,7 @@ describe('ExecutionTracesService', () => {
     expect(query.mock.calls[1][0]).toContain(
       'ON CONFLICT (execution_id, sequence) DO NOTHING',
     );
-    expect(JSON.parse(query.mock.calls[1][1][3])).toEqual(input.events);
+    expect(JSON.parse(query.mock.calls[1][1][2])).toEqual(input.events);
   });
 
   it('rejects another worker without inserting', async () => {
@@ -98,7 +96,7 @@ describe('ExecutionTracesService', () => {
     const input = batch();
     input.events[0].payload = null;
     await service.append(input, 'owner');
-    expect(JSON.parse(query.mock.calls[1][1][3])[0].payload).toBeNull();
+    expect(JSON.parse(query.mock.calls[1][1][2])[0].payload).toBeNull();
   });
 
   it('returns a stable cursor on an empty page and orders events by sequence', async () => {

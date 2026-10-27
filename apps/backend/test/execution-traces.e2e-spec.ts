@@ -258,9 +258,13 @@ describe('Raw execution traces E2E', () => {
     ).not.toBeNull();
     expect(await post(owner, payload(2))).toEqual({ ok: true });
     expect((await read().expect(200)).body.items).toHaveLength(2);
-    await db.query('DELETE FROM tasks WHERE id = $1', [taskId]);
+    await request(app.getHttpServer())
+      .delete(`/api/v1/tasks/tasks/${taskId}`)
+      .set('Cookie', cookies)
+      .expect(204);
     expect(
       await db.getRepository(ExecutionTraceEntity).countBy({ executionId }),
-    ).toBe(0);
+    ).toBe(2);
+    expect((await read().expect(200)).body.items).toHaveLength(2);
   });
 });

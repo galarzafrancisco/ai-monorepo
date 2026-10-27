@@ -1,16 +1,6 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  PrimaryColumn,
-} from 'typeorm';
-import { TaskEntity } from '../../tasks/task.entity';
+import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity({ name: 'execution_traces' })
-@Index('idx_execution_traces_task_id', ['taskId'])
 export class ExecutionTraceEntity {
   // Executions move from active to history, so there is deliberately no FK to
   // either of those tables. Their stable execution ID owns the trace.
@@ -19,13 +9,6 @@ export class ExecutionTraceEntity {
 
   @PrimaryColumn({ type: 'integer' })
   sequence!: number;
-
-  @Column({ type: 'uuid', name: 'task_id' })
-  taskId!: string;
-
-  @ManyToOne(() => TaskEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'task_id' })
-  task?: TaskEntity;
 
   @Column({ type: 'text' })
   harness!: string;

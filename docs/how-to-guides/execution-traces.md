@@ -15,9 +15,12 @@ is not normalized, summarized or redacted. JSONB preserves JSON content, not
 original whitespace or object-key ordering.
 
 Traces survive the transition from active execution to execution history,
-including stale executions. A task foreign key supports task deletion cleanup;
-there is no foreign key to the transient active execution row. Trace events do
-not become comments or task activity broadcasts. No UI is changed.
+including stale executions. Traces belong only to an execution: there is no
+direct task reference or task-deletion cascade. Deleting a task through the API
+preserves its execution history and traces. There is no foreign key to the
+transient active execution row; future execution cleanup must also delete the
+execution’s traces. Trace events do not become comments or task activity
+broadcasts. No UI is changed.
 
 ## Delivery
 

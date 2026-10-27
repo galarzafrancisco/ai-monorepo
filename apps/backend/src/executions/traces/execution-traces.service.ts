@@ -35,17 +35,12 @@ export class ExecutionTracesService {
     // upload is safe, and cannot overwrite events already stored.
     await this.traces.query(
       `
-      INSERT INTO execution_traces (execution_id, task_id, harness, sequence, emitted_at, runner_session_id, payload)
-      SELECT $1::uuid, $2::uuid, $3, (event->>'sequence')::integer,
+      INSERT INTO execution_traces (execution_id, harness, sequence, emitted_at, runner_session_id, payload)
+      SELECT $1::uuid, $2, (event->>'sequence')::integer,
              (event->>'emittedAt')::timestamptz, event->>'runnerSessionId', event->'payload'
-      FROM jsonb_array_elements($4::jsonb) AS event
+      FROM jsonb_array_elements($3::jsonb) AS event
       ON CONFLICT (execution_id, sequence) DO NOTHING`,
-      [
-        input.executionId,
-        execution.taskId,
-        input.harness,
-        JSON.stringify(input.events),
-      ],
+      [input.executionId, input.harness, JSON.stringify(input.events)],
     );
   }
 
@@ -64,14 +59,14 @@ export class ExecutionTracesService {
 
   private async resolveExecution(
     executionId: string,
-  ): Promise<{ taskId: string; workerClientId: string }> {
+  ): Promise<{ workerClientId: string }> {
     // A single snapshot avoids a race when an execution moves to history.
     const [execution] = await this.traces.query(
       `
-      SELECT task_id AS "taskId", worker_client_id AS "workerClientId"
+      SELECT worker_client_id AS "workerClientId"
       FROM active_task_executions WHERE id = $1 AND deleted_at IS NULL
       UNION ALL
-      SELECT task_id AS "taskId", worker_client_id AS "workerClientId"
+      SELECT worker_client_id AS "workerClientId"
       FROM task_execution_history WHERE id = $1 AND deleted_at IS NULL
       LIMIT 1`,
       [executionId],
