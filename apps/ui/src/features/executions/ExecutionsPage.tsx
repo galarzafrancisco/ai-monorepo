@@ -165,7 +165,7 @@ export function ExecutionDetailPage() {
 
   // The feed only holds the latest runs; an older finished run is fetched by id.
   const inFeed = kind === "history" && history.some((candidate) => candidate.id === id);
-  const fetched = useHistoryEntry(id, kind === "history" && hasLoadedOnce && !inFeed);
+  const fetched = useHistoryEntry(id, kind === "history" && (hasLoadedOnce || Boolean(error)) && !inFeed);
 
   const detail = useMemo<ExecutionDetailResult | null>(() => {
     if (!kind || !id) {
@@ -200,7 +200,8 @@ export function ExecutionDetailPage() {
     );
   }
 
-  if (error) {
+  // A run fetched on its own still shows when the feed failed.
+  if (error && !detail && fetched.status !== "loading") {
     return (
       <div className="executions-page">
         <Card className="executions-empty-card">
