@@ -29,7 +29,12 @@ The worker snapshots SDK JSON synchronously and spools batches after one second,
 file permissions under `<workingDirectory>/.taico/traces/<server-and-client-hash>`.
 The spool checks pending batches every five seconds, including after a worker
 restart using the same directory, server and OAuth client identity. Transient
-failures back off from five seconds to five minutes without discarding batches. Files are
+failures back off from five seconds to five minutes without discarding batches.
+Disconnected transports do not count as failed uploads, and reconnect immediately
+clears backoff and drains the queue. A disconnect (including socket replacement)
+cancels pending acknowledgement waits. Trace acknowledgement timeouts allow
+64 KiB/s transfer time plus ten seconds for processing, capped at five minutes;
+activity and heartbeat acknowledgements keep their five-second timeout. Files are
 removed only after acknowledgement of a successful database insert. A unique
 (execution ID, sequence) key makes retries idempotent. Delivery can be out of
 order, so readers should use sequence numbers rather than receipt time.
@@ -38,7 +43,8 @@ order, so readers should use sequence numbers rather than receipt time.
 validates each batch and checks the OAuth client owns the active or historical
 execution. It acknowledges only after storage. Batches have at most 100 events;
 the transport accepts up to 16 MiB per frame. Oversized batches and permanent server rejections are moved intact to a local
-`failed/` directory and logged; later batches continue uploading. These files
+`failed/` directory and logged; later batches continue uploading. Oversized individual events are isolated from neighbouring small events by the
+recorder’s byte-based batching. These files
 require manual inspection and are never silently truncated or deleted. A worker crash can lose events
 in the current unspooled batch (up to roughly one second). Disk write failures
 are logged and may lose unspooled traces, but never change the execution result.
