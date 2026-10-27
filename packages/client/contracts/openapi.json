@@ -7182,6 +7182,46 @@
         ]
       }
     },
+    "/api/v1/executions/history/{id}": {
+      "get": {
+        "description": "Returns a single execution history row by id, including runs older than the latest page of history.",
+        "operationId": "TaskExecutionHistoryController_getHistoryEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskExecutionHistoryResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Execution not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get one finished execution",
+        "tags": [
+          "Executions"
+        ]
+      }
+    },
     "/api/v1/executions/{executionId}/traces": {
       "get": {
         "operationId": "ExecutionTracesController_list",

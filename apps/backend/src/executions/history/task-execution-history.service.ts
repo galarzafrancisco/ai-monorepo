@@ -8,6 +8,7 @@ import {
   TaskExecutionHistoryResult,
 } from '../dto/service/execution-results.service.types';
 import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
+import { TaskExecutionHistoryEntryNotFoundError } from '../errors/executions.errors';
 
 @Injectable()
 export class TaskExecutionHistoryService {
@@ -41,6 +42,18 @@ export class TaskExecutionHistoryService {
       page,
       limit,
     };
+  }
+
+  /** One finished run, for pages that link to it directly (e.g. its trace). */
+  async getHistoryEntry(id: string): Promise<TaskExecutionHistoryResult> {
+    const entry = await this.taskExecutionHistoryRepository.findOne({
+      where: { id },
+      relations: ['task', 'stats'],
+    });
+    if (!entry) {
+      throw new TaskExecutionHistoryEntryNotFoundError(id);
+    }
+    return this.mapHistoryEntryToResult(entry);
   }
 
   async getLatestHistoryForTask(

@@ -5,6 +5,7 @@ import { TaskExecutionHistoryService } from './task-execution-history.service';
 import { TaskExecutionHistoryEntity } from './task-execution-history.entity';
 import { TaskExecutionHistoryStatus } from './task-execution-history-status.enum';
 import { TaskExecutionHistoryErrorCode } from './task-execution-history-error-code.enum';
+import { TaskExecutionHistoryEntryNotFoundError } from '../errors/executions.errors';
 
 describe('TaskExecutionHistoryService', () => {
   let service: TaskExecutionHistoryService;
@@ -28,6 +29,42 @@ describe('TaskExecutionHistoryService', () => {
       TaskExecutionHistoryService,
     );
     repository = module.get(getRepositoryToken(TaskExecutionHistoryEntity));
+  });
+
+  describe('getHistoryEntry', () => {
+    it('returns one finished run by id, with its task', async () => {
+      repository.findOne.mockResolvedValue({
+        id: 'run-1',
+        taskId: 'task-1',
+        task: { name: 'Rate limit the /export endpoint' },
+        status: TaskExecutionHistoryStatus.SUCCEEDED,
+        claimedAt: new Date('2026-10-27T08:00:00Z'),
+        transitionedAt: new Date('2026-10-27T08:04:00Z'),
+        agentActorId: 'agent-1',
+        workerClientId: 'worker-1',
+        runnerSessionId: null,
+        toolCallCount: 3,
+        errorCode: null,
+        errorMessage: null,
+        stats: null,
+      } as unknown as TaskExecutionHistoryEntity);
+
+      const result = await service.getHistoryEntry('run-1');
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 'run-1' },
+        relations: ['task', 'stats'],
+      });
+      expect(result).toMatchObject({ id: 'run-1', taskId: 'task-1', taskName: 'Rate limit the /export endpoint', toolCallCount: 3 });
+    });
+
+    it('throws when the run does not exist', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(service.getHistoryEntry('missing')).rejects.toBeInstanceOf(
+        TaskExecutionHistoryEntryNotFoundError,
+      );
+    });
   });
 
   describe('getLatestHistoryForTask', () => {

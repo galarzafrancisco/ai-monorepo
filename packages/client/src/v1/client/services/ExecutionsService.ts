@@ -234,6 +234,28 @@ export class ExecutionsService {
         });
     }
     /**
+     * Get one finished execution
+     * Returns a single execution history row by id, including runs older than the latest page of history.
+     * @param id
+     * @returns TaskExecutionHistoryResponseDto
+     * @throws ApiError
+     */
+    public static taskExecutionHistoryControllerGetHistoryEntry(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<TaskExecutionHistoryResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/executions/history/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Execution not found`,
+            },
+        });
+    }
+    /**
      * Read raw harness events for an active or historical execution
      * @param executionId
      * @param afterSequence
