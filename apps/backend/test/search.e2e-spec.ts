@@ -421,7 +421,13 @@ describe('Search E2E', () => {
         (_, index) => `## Section ${index}\n\n${`Filler sentence number ${index}. `.repeat(40)}`,
       );
       const id = await createBlock('Long manual', sections.join('\n\n'));
-      await eventually(async () => expect((await indexStatus()).pending).toBe(0), 30_000);
+      // The block is indexed by an event handler after the request returns, so
+      // "nothing pending" alone can hold before the block is even queued. Wait
+      // for its first embedding to have happened, then for the queue to drain.
+      await eventually(async () => {
+        expect(embeddingCalls.flat().some((text) => text.startsWith('Long manual'))).toBe(true);
+        expect((await indexStatus()).pending).toBe(0);
+      }, 30_000);
 
       embeddingCalls.length = 0;
       await api('patch', `/context/blocks/${id}`)
