@@ -84,11 +84,7 @@ export function TaskTracesPanel({
   const following = pausedExecutionId !== run?.executionId;
   const setFollowing = (value: boolean) =>
     setPausedExecutionId(value ? null : (run?.executionId ?? null));
-  const [showSystem, setShowSystem] = useState(false);
-  const visible = showSystem
-    ? entries
-    : entries.filter((entry) => entry.kind !== 'system');
-  const systemCount = entries.filter((entry) => entry.kind === 'system').length;
+  const visible = entries.filter((entry) => entry.kind !== 'system');
   const actorName = (id: string) =>
     actors.find((actor) => actor.id === id)?.displayName ?? 'Agent';
 
@@ -104,7 +100,7 @@ export function TaskTracesPanel({
         previousHeight.current = null;
       }
     } else if (following) scroll.scrollTop = scroll.scrollHeight;
-  }, [events, following, showSystem, isLoadingEarlier]);
+  }, [events, following, isLoadingEarlier]);
 
   const expandButton = (
     <Button
@@ -243,14 +239,6 @@ export function TaskTracesPanel({
             <Radio size={12} />
             {connected ? 'Live updates' : 'Reconnecting · checking for updates'}
           </span>
-          <label>
-            <input
-              type="checkbox"
-              checked={showSystem}
-              onChange={(event) => setShowSystem(event.target.checked)}
-            />{' '}
-            System{systemCount ? ` (${systemCount})` : ''}
-          </label>
         </div>
       )}
       {(error || runsError) && (
@@ -328,8 +316,10 @@ export function TaskTracesPanel({
               ))}
             </div>
             {!visible.length && (
-              <p className="task-traces__system-hint">
-                Only system events so far. Enable System to inspect them.
+              <p className="task-traces__activity-hint">
+                {run?.source === 'active'
+                  ? 'Waiting for messages or tool activity.'
+                  : 'No messages or tool activity in this run.'}
               </p>
             )}
             <div className="task-traces__end">

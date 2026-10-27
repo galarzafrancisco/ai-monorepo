@@ -65,9 +65,10 @@ to its entry when closed. It accounts for safe areas and keeps task navigation
 and comment actions behind the view. Tablet windows retain a collapsible section.
 Its open state is remembered locally. Select an execution to view its messages, reasoning
 summaries exposed by the harness, tool calls, arguments, output and errors.
-Tool output and original raw events are expandable; **System** reveals lifecycle
-and unrecognized SDK events. Token deltas and updated tool snapshots are grouped
-for reading, while all underlying JSON remains inspectable.
+Tool output and original raw events are expandable. Lifecycle-only and
+unrecognized SDK events are omitted from the reading view, while all raw events
+remain stored and available through the API. Token deltas and updated tool
+snapshots are grouped for reading, with their underlying JSON inspectable.
 
 The panel opens at the latest 100 raw events. `latest=true` selects the newest
 page in chronological order. `beforeSequence` loads earlier pages, and
