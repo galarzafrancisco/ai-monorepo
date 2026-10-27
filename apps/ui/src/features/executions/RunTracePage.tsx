@@ -20,25 +20,21 @@ export function RunTracePage() {
   const navigate = useNavigate();
   const { kind, id } = useParams<{ kind: string; id: string }>();
   const { actors } = useActorsCtx();
-  const { active, history, hasLoadedOnce, loadExecutions } = useExecutions();
+  const { active, history, loadExecutions } = useExecutions();
 
-  // The runs feed only holds the latest runs, so a finished run outside it is
-  // fetched on its own: a run is never shown as live just because it's old.
-  const fromFeed = useMemo(() => history.find((candidate) => candidate.id === id) ?? null, [history, id]);
-  const liveInFeed = kind === "active" && active.some((candidate) => candidate.id === id);
-  const needsFetch = !fromFeed && (kind === "history" || (kind === "active" && hasLoadedOnce && !liveInFeed));
-  const fetched = useHistoryEntry(id, needsFetch);
-  const finished = fromFeed ?? fetched.entry;
+  // A finished run is always fetched by id (the feed only holds the latest runs);
+  // a live one comes from the feed and follows itself to history when it ends.
+  const fetched = useHistoryEntry(id, kind === "history");
   const entry = useMemo(() => {
     if (kind === "active") return active.find((candidate) => candidate.id === id) ?? null;
-    if (kind === "history") return finished;
+    if (kind === "history") return fetched.entry;
     return null;
-  }, [active, finished, id, kind]);
+  }, [active, fetched.entry, id, kind]);
+  const hasFinished = kind === "active" && history.some((candidate) => candidate.id === id);
 
-  // A live run that has finished moves into history under the same id: follow it there.
   useEffect(() => {
-    if (kind === "active" && finished) navigate(`/runs/history/${id}/traces`, { replace: true });
-  }, [finished, id, kind, navigate]);
+    if (hasFinished) navigate(`/runs/history/${id}/traces`, { replace: true });
+  }, [hasFinished, id, navigate]);
 
   const run = useMemo<TraceRun | null>(() => {
     if (!id || (kind !== "active" && kind !== "history")) return null;
@@ -69,8 +65,6 @@ export function RunTracePage() {
     );
   }
 
-  // A live run missing from history is just still running, so only a finished
-  // run can be "not found".
   if (!run) {
     return (
       <div className="run-trace-page">
