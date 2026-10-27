@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
-import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer, ContextRail, RailSection } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer } from '../../ui/primitives';
 import { DeleteWithConfirmation, useCommandPalette } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
@@ -24,6 +24,7 @@ import type { Task } from './types';
 import { useChatReadiness } from '../ai-models/useChatReadiness';
 import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
+import { TaskRunsPanel } from './traces/TaskRunsPanel';
 import { RunList } from './traces/RunList';
 import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
 import { ProjectPicker } from '../projects/ProjectPicker';
@@ -59,7 +60,7 @@ export type TaskDetailViewProps = {
 /** Updates shown before "Show earlier updates": enough to see where the task stands. */
 const RECENT_UPDATE_COUNT = 4;
 const PROJECT_TAG_PREFIX = 'project:';
-const RAIL_OPEN_KEY = 'taico.taskRail.open';
+const RUNS_MODE_KEY = 'taico.taskRuns.mode';
 
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks, canChangeStatus = true }: TaskDetailViewProps) {
   const navigate = useNavigate();
@@ -70,13 +71,17 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const { registerCommands } = useCommandPalette();
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
-  // The details rail starts open; if you collapse it, it stays collapsed.
-  const [isRailOpen, setIsRailOpen] = useState(() => {
-    try { return localStorage.getItem(RAIL_OPEN_KEY) !== 'false'; } catch { return true; }
+  // The runs side bar is for troubleshooting: it starts collapsed, and stays open once you open it.
+  const [isRunsOpen, setIsRunsOpen] = useState(() => {
+    try {
+      // 'third' and 'full' are the panel's older open sizes.
+      const stored = localStorage.getItem(RUNS_MODE_KEY);
+      return stored === 'open' || stored === 'third' || stored === 'full';
+    } catch { return false; }
   });
-  const changeRailOpen = useCallback((open: boolean) => {
-    setIsRailOpen(open);
-    try { localStorage.setItem(RAIL_OPEN_KEY, String(open)); } catch { /* Storage may be unavailable. */ }
+  const changeRunsOpen = useCallback((open: boolean) => {
+    setIsRunsOpen(open);
+    try { localStorage.setItem(RUNS_MODE_KEY, open ? 'open' : 'closed'); } catch { /* Storage may be unavailable. */ }
   }, []);
   const [executionsTaskId, setExecutionsTaskId] = useState<string | null>(null);
   const currentTaskId = useRef(task?.id);
@@ -254,7 +259,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       setSectionTitle('Task');
       return
     }
-    // On desktop the page shows its own title, so the rail can run the full height.
+    // On desktop the page shows its own title, so the runs panel can run the full height.
     setSectionTitle(isDesktop ? '' : task.name);
   }, [task, isLoadingTask, setSectionTitle, isDesktop]);
 
@@ -610,105 +615,22 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     }
   };
 
-  const taskProps = (
-  <dl className={`task-props${isDesktop ? ' task-props--rail' : ''}`}>
-    <dt>Assignee</dt>
-    <dd>
-      {task.assigneeActor ? (
-        <button type="button" className="task-props__person" onClick={() => setShowAssignPop(true)} title="Reassign">
-          <Avatar size="xs" name={task.assigneeActor.displayName} inactive={isDeactivated(task.assigneeActor)} src={task.assigneeActor.avatarUrl || undefined} />
-          <span>{task.assigneeActor.displayName}</span>
-          <span className="task-props__muted">{actorHandle(task.assigneeActor)}</span>
-        </button>
-      ) : (
-        <span className="task-props__inline">
-          <span className="task-props__muted">Unassigned</span>
-          <Button size="sm" variant="secondary" onClick={() => setShowAssignPop(true)}>Assign</Button>
-          <Button size="sm" variant="secondary" onClick={() => { handlers.assignTaskToMe({ taskId: task.id }).catch(showError); }}>Assign to me</Button>
-        </span>
-      )}
-    </dd>
-
-    <dt>Project</dt>
-    <dd>
-      <ProjectPicker
-        projects={projects}
-        // Without the project list, "No project" would be the only choice and
-        // would strip the task's project, so the picker stays locked.
-        projectsLoaded={!isLoadingProjects && !projectsError}
-        selectedProjectId={currentProject?.id ?? null}
-        onChange={(projectId) => void changeProject(projectId)}
-        emptyLabel={!currentProject && projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : "No project"}
-        ariaLabel="Task project"
-        className="task-props__project"
-      />
-    </dd>
-
-    <dt>Tags</dt>
-    <dd className="task-props__tags">
-      {otherTags.map((tag) => (
-        <Chip key={tag.id} className="task-props__tag">
-          {tag.name}
-          <button type="button" className="chip__remove" onClick={() => void removeTag(tag.id)} aria-label={`Remove tag ${tag.name}`}>×</button>
-        </Chip>
-      ))}
-      <Chip onClick={() => setShowTagPop(true)} clickLabel="Add tag">+ add tag</Chip>
-    </dd>
-
-    <dt>Created</dt>
-    <dd className="task-props__inline">
-      <Avatar size="xs" name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />
-      <span>{task.createdByActor.displayName}</span>
-      <span className="task-props__muted">{elapsedTime(task.createdAt)} · <span className="task-props__mono">#{task.id.slice(0, 6)}</span></span>
-    </dd>
-  </dl>
-  );
-
-  const runs = executionsTaskId === task.id ? executions : [];
-  const hasLiveRun = runs.some((run) => run.source === 'active');
-
-  const deleteTask = async () => {
-    try {
-      await handlers.deleteTask({ taskId: task.id });
-      navigate(backPath);
-    } catch (err: unknown) {
-      showError(err);
-    }
-  };
-
-  const rail = (
-    <ContextRail label="Task details" open={isRailOpen} onOpenChange={changeRailOpen}>
-      <RailSection title="Details">
-        {taskProps}
-      </RailSection>
-      <RailSection
-        title="Runs"
-        count={runs.length > 0 ? (
-          <>
-            {runs.length}
-            {hasLiveRun && <span className="task-rail__live" aria-label="A run is live">live</span>}
-          </>
-        ) : undefined}
-      >
-        <RunList
-          runs={runs}
-          onSelect={(run) => navigate(runTracePath(run))}
-          onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
-          interruptingExecutionIds={interruptingExecutions}
-          isLoading={isLoadingExecutions}
-          error={executionsError}
-        />
-      </RailSection>
-      <RailSection title="Delete" footer>
-        <div className="task-rail__delete">
-          <DeleteWithConfirmation className="task-rail__delete-actions" onDelete={deleteTask} size="md" deleteLabel="Delete task" confirmLabel="Delete forever" />
-        </div>
-      </RailSection>
-    </ContextRail>
+  const runsPanel = (
+    <TaskRunsPanel
+      key={task.id}
+      runs={executionsTaskId === task.id ? executions : []}
+      isLoadingRuns={isLoadingExecutions}
+      runsError={executionsError}
+      onRefreshRuns={() => void loadExecutionsForTask(task.id)}
+      open={isRunsOpen}
+      onOpenChange={changeRunsOpen}
+      onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
+      interruptingExecutionIds={interruptingExecutions}
+    />
   );
 
   return (
-    <div className="task-detail-workspace">
+    <div className={`task-detail-workspace${isDesktop && isRunsOpen ? ' task-detail-workspace--runs-open' : ''}`}>
     <div className="task-detail-main">
     <div className="task-detail-page">
 
@@ -788,7 +710,57 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         ) : null}
       </div>
 
-      {isDesktop ? null : taskProps}
+      <dl className="task-props">
+        <dt>Assignee</dt>
+        <dd>
+          {task.assigneeActor ? (
+            <button type="button" className="task-props__person" onClick={() => setShowAssignPop(true)} title="Reassign">
+              <Avatar size="xs" name={task.assigneeActor.displayName} inactive={isDeactivated(task.assigneeActor)} src={task.assigneeActor.avatarUrl || undefined} />
+              <span>{task.assigneeActor.displayName}</span>
+              <span className="task-props__muted">{actorHandle(task.assigneeActor)}</span>
+            </button>
+          ) : (
+            <span className="task-props__inline">
+              <span className="task-props__muted">Unassigned</span>
+              <Button size="sm" variant="secondary" onClick={() => setShowAssignPop(true)}>Assign</Button>
+              <Button size="sm" variant="secondary" onClick={() => { handlers.assignTaskToMe({ taskId: task.id }).catch(showError); }}>Assign to me</Button>
+            </span>
+          )}
+        </dd>
+
+        <dt>Project</dt>
+        <dd>
+          <ProjectPicker
+            projects={projects}
+            // Without the project list, "No project" would be the only choice and
+            // would strip the task's project, so the picker stays locked.
+            projectsLoaded={!isLoadingProjects && !projectsError}
+            selectedProjectId={currentProject?.id ?? null}
+            onChange={(projectId) => void changeProject(projectId)}
+            emptyLabel={!currentProject && projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : "No project"}
+            ariaLabel="Task project"
+            className="task-props__project"
+          />
+        </dd>
+
+        <dt>Tags</dt>
+        <dd className="task-props__tags">
+          {otherTags.map((tag) => (
+            <Chip key={tag.id} className="task-props__tag">
+              {tag.name}
+              <button type="button" className="chip__remove" onClick={() => void removeTag(tag.id)} aria-label={`Remove tag ${tag.name}`}>×</button>
+            </Chip>
+          ))}
+          <Chip onClick={() => setShowTagPop(true)} clickLabel="Add tag">+ add tag</Chip>
+        </dd>
+
+        <dt>Created</dt>
+        <dd className="task-props__inline">
+          <Avatar size="xs" name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />
+          <span>{task.createdByActor.displayName}</span>
+          <span className="task-props__muted">{elapsedTime(task.createdAt)} · <span className="task-props__mono">#{task.id.slice(0, 6)}</span></span>
+        </dd>
+      </dl>
 
       <section className="task-detail-page__description" aria-label="Description">
         {task.description ? (
@@ -924,7 +896,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {!isDesktop ? (
         <DataRowContainer title="Runs" className='task-detail-page__section task-detail-page__runs'>
           <RunList
-            runs={runs}
+            runs={executionsTaskId === task.id ? executions : []}
             onSelect={(run) => navigate(runTracePath(run))}
             onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
             interruptingExecutionIds={interruptingExecutions}
@@ -993,9 +965,29 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </DataRowContainer>
       ) : null}
 
-      {isDesktop ? null : (
-        <DeleteWithConfirmation className='task-detail-page__comment-buttons' onDelete={deleteTask} />
-      )}
+      <section className="task-danger-zone" aria-labelledby="task-danger-zone-title">
+        <h2 id="task-danger-zone-title" className="task-danger-zone__title">Danger zone</h2>
+        <div className="task-danger-zone__box">
+          <div className="task-danger-zone__text">
+            <Text weight="semibold">Delete this task</Text>
+            <Text size="2" tone="muted">Once deleted, the task is gone for everyone. This can't be undone.</Text>
+          </div>
+          <DeleteWithConfirmation
+            className="task-danger-zone__actions"
+            size="sm"
+            deleteLabel="Delete task"
+            confirmLabel="Delete forever"
+            onDelete={async () => {
+              try {
+                await handlers.deleteTask({ taskId: task.id });
+                navigate(backPath);
+              } catch (err: unknown) {
+                showError(err);
+              }
+            }}
+          />
+        </div>
+      </section>
 
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
@@ -1026,7 +1018,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         Add Comment
       </Button>
     </div>
-    {isDesktop ? rail : null}
+    {isDesktop ? runsPanel : null}
     </div>
   );
 }

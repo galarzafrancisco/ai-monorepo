@@ -33,11 +33,14 @@ export function RunTrace({
   onRunsChanged,
   isLoadingRuns = false,
   runsError = null,
+  compact = false,
 }: {
   run: TraceRun | null;
   onRunsChanged: () => void;
   isLoadingRuns?: boolean;
   runsError?: string | null;
+  /** Side-panel use: drops the connection toolbar, and the footer while following. */
+  compact?: boolean;
 }) {
   const {
     events,
@@ -94,7 +97,7 @@ export function RunTrace({
           loading={isLoading}
         />
       )}
-      {run && (
+      {run && !compact && (
         <div className="task-traces__toolbar">
           <span className="task-traces__connection">
             <Radio size={12} />
@@ -207,7 +210,7 @@ export function RunTrace({
           </>
         )}
       </div>
-      <footer className="task-traces__footer">
+      {(!compact || (events.length > 0 && !following)) && <footer className="task-traces__footer">
         <span>
           {events.length
             ? `Last event ${time(events[events.length - 1].emittedAt)}`
@@ -227,7 +230,7 @@ export function RunTrace({
             {following ? 'Following' : 'Jump to latest'}
           </Button>
         )}
-      </footer>
+      </footer>}
     </div>
   );
 }

@@ -301,14 +301,6 @@
   margin: var(--space-3);
 }
 
-/* Comments */
-.task-detail-page__comment-buttons {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 8px;
-  margin: var(--space-3);
-}
-
 /* Actions */
 .task-detail-page__actions {
   display: grid;
@@ -706,41 +698,11 @@
   }
 }
 
-/* ===== Task workspace: the task, and the details rail flush to the right edge ===== */
-.beta-shell__desktop__main:has(.task-detail-workspace) {
-  overflow: hidden;
-  padding-top: 0;
-  padding-right: 0;
-  padding-bottom: 0;
-}
-.desktop-shell__content:has(> .task-detail-workspace) {
-  min-height: 0;
-}
-.task-detail-workspace {
-  display: flex;
-  min-height: 0;
-  height: 100%;
-}
-.task-detail-main {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-}
-.task-detail-main > .task-detail-page {
-  height: 100%;
-  overflow-y: auto;
-  padding: var(--space-6) var(--space-6) var(--space-8) 0;
-}
-.task-detail-workspace .task-detail-fab {
-  position: absolute;
-  bottom: var(--space-4);
-  right: var(--space-6);
-  z-index: 2;
-}
-
+/* Desktop: the page carries its own title, so the runs panel can run the full height. */
 .task-detail-page__title {
+  /* Top spacing lives on the title, so the sticky status bar meets the page's top edge. */
   margin: 0;
+  padding-top: var(--space-6);
   font-size: var(--fs-6);
   font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
@@ -748,67 +710,48 @@
   overflow-wrap: anywhere;
 }
 
-/* Properties in the rail: a narrower label column, no page margins. */
-.task-props--rail {
-  grid-template-columns: 72px minmax(0, 1fr);
-  margin: 0;
-  padding: 0 var(--space-1);
+/* Danger zone: destructive actions last on the page, set apart. */
+.task-danger-zone {
+  margin: var(--space-8) 0 var(--space-4);
+  padding: 0 var(--space-3);
 }
-.task-props--rail .task-props__project .project-picker__trigger {
-  min-width: 0;
-  max-width: 100%;
+.task-danger-zone__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  color: var(--text);
 }
-
-.task-rail__live {
-  margin-left: var(--space-2);
-  padding: 0 var(--space-2);
-  border-radius: var(--r-4);
-  background: color-mix(in srgb, var(--success) 18%, transparent);
-  color: var(--success);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-medium);
-}
-.task-rail__delete {
+.task-danger-zone__box {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, var(--border));
+  border-radius: var(--r-3);
 }
-.task-rail__delete-actions {
-  width: 100%;
-  max-width: 190px;
+.task-danger-zone__text {
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.task-danger-zone__actions {
+  display: flex;
+  flex-direction: row;
+  flex: none;
   gap: var(--space-2);
+  padding: 0;
+  background: none;
+  border: 0;
 }
-.task-rail__delete-actions .btn {
-  width: 100%;
-}
-/* The rail is narrow: the assignee's name is enough, and long values truncate. */
-.task-props--rail .task-props__person {
-  max-width: 100%;
-}
-.task-props--rail .task-props__person > span:not(.task-props__muted) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.task-props--rail .task-props__person .task-props__muted {
-  display: none;
-}
-
-/* Phones have no rail: details, runs and delete sit inline in the task. */
 @media (max-width: 767px) {
-  .task-detail-workspace {
-    display: block;
-    height: auto;
+  .task-danger-zone__box {
+    flex-direction: column;
+    align-items: stretch;
   }
-  .task-detail-main > .task-detail-page {
-    height: auto;
-    overflow: visible;
-    padding: 0;
-  }
-  .task-detail-workspace .task-detail-fab {
-    position: fixed;
-    right: var(--space-5);
-    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+  /* Clear the floating Add Comment button. */
+  .task-danger-zone {
+    margin-bottom: calc(var(--space-8) + 56px);
   }
 }
