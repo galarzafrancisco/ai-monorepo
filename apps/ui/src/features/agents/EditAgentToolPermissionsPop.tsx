@@ -245,8 +245,8 @@ export function EditAgentToolPermissionsPop({
           }}
           style={{ opacity: isSaving ? 0.5 : 1, pointerEvents: isSaving ? "none" : "auto" }}
         >
-          <Text size="4" weight="normal" className="pop-shell__main-title-button">
-            {isSaving ? "saving" : saveLabel}
+          <Text size="3" weight="semibold" className="pop-shell__main-title-button">
+            {isSaving ? "Saving…" : saveLabel}
           </Text>
         </div>
       ) : undefined}

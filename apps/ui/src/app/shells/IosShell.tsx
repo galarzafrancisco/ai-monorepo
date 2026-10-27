@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from 'react-router-dom';
+import { ChevronLeft } from "lucide-react";
 import "./IosShell.css";
 import { Row, Text } from "../../ui/primitives";
 import { NavegationItem } from "../../shared/types/NavegationItem";
@@ -21,6 +22,10 @@ export interface IosShellProps {
   children: ReactNode;
   navItems: NavegationItem[];
   topActions?: ReactNode;
+  /** Replaces the menu button with an iOS back button */
+  back?: { label: string; path: string };
+  /** Nav bar actions on the right, e.g. an add button */
+  headerRight?: ReactNode;
 }
 
 function BottomNavContent({
@@ -232,19 +237,31 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
         // ref={headerRef}
         className={`ios-shell__header ${contentBehindHeader ? 'elevated' : ''}`}>
         <Row spacing="5" align="center">
-          <button
-            className="ios-shell__hamburger"
-            onClick={() => setIsDrawerOpen(true)}
-            aria-label="Open menu"
-          >
-            ☰
-          </button>
-          <Text size="3" weight="normal" as="div">
-            {props.appTitle}
-          </Text>
+          {props.back ? (
+            <Link to={props.back.path} className="ios-shell__back">
+              <ChevronLeft size={26} strokeWidth={2.2} aria-hidden />
+              <span>{props.back.label}</span>
+            </Link>
+          ) : (
+            <>
+              <button
+                className="ios-shell__hamburger"
+                onClick={() => setIsDrawerOpen(true)}
+                aria-label="Open menu"
+              >
+                ☰
+              </button>
+              <Text size="3" weight="normal" as="div">
+                {props.appTitle}
+              </Text>
+            </>
+          )}
           <div className={`ios-shell__header__section-title ${sectionTitleVisible ? 'is-hidden' : 'is-visible'}`}>
             {props.sectionTitle}
           </div>
+          {props.headerRight ? (
+            <div className="ios-shell__header-right">{props.headerRight}</div>
+          ) : null}
         </Row>
       </header>
 

@@ -6,6 +6,10 @@ type PopShellProps = {
   title: string;
   onCancel?: () => void;
   onSave?: () => boolean | Promise<boolean>;
+  /** Label of the right header button (default "Save") */
+  saveLabel?: string;
+  /** Disables the right header button */
+  saveDisabled?: boolean;
 
 
   /** Inner content renders whatever it wants */
@@ -26,6 +30,8 @@ export function PopShell({
   children,
   headerLeft,
   headerRight,
+  saveLabel = "Save",
+  saveDisabled = false,
   closeMs = 220,
 }: PopShellProps) {
   const [open, setOpen] = useState(false);
@@ -41,7 +47,7 @@ export function PopShell({
   }
 
   async function save() {
-    if (!onSave || saving) return;
+    if (!onSave || saving || saveDisabled) return;
     try {
       setSaving(true);
       const ok = await onSave();
@@ -83,13 +89,13 @@ export function PopShell({
         <div className="pop-shell__main-title">
           {headerLeft ?? (
             <div onClick={close}>
-              <Text size="4" weight="normal" className="pop-shell__main-title-button">
-                cancel
+              <Text size="3" weight="normal" className="pop-shell__main-title-button">
+                Cancel
               </Text>
             </div>
           )}
 
-          <Text size="4" weight="medium">
+          <Text size="3" weight="semibold">
             {title}
           </Text>
 
@@ -97,10 +103,13 @@ export function PopShell({
           {headerRight ?? (
             <div
               onClick={save}
-              style={{ opacity: saving ? 0.6 : 1, pointerEvents: saving ? "none" : "auto" }}
+              style={{
+                opacity: saving || saveDisabled ? 0.4 : 1,
+                pointerEvents: saving || saveDisabled ? "none" : "auto",
+              }}
             >
-              <Text size="4" weight="normal" className="pop-shell__main-title-button">
-                {saving ? "saving" : "save"}
+              <Text size="3" weight="semibold" className="pop-shell__main-title-button">
+                {saving ? `${saveLabel}…` : saveLabel}
               </Text>
             </div>
           )}

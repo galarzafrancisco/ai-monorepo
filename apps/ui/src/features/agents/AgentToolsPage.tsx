@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ChevronRight, Plus, Wrench } from 'lucide-react';
 import type { AgentToolPermissionResponseDto } from '@taico/client/v2';
 import { useAgentsCtx } from './AgentsProvider';
 import { AgentToolPermissionsService } from './api';
 import { AddAgentToolPermissionPop } from './AddAgentToolPermissionPop';
 import { EditAgentToolPermissionsPop } from './EditAgentToolPermissionsPop';
-import { Text, Stack, Button, DataRow, DataRowContainer, Chip } from '../../ui/primitives';
+import { Text, Stack, Button, InsetGroup, InsetRow } from '../../ui/primitives';
+import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useToast } from '../../shared/context/ToastContext';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import type { Agent } from './types';
+import './AgentDetailPage.css';
 import './AgentToolsPage.css';
 
 function isSystemTool(permission: AgentToolPermissionResponseDto) {
@@ -17,14 +20,14 @@ function isSystemTool(permission: AgentToolPermissionResponseDto) {
 
 function getScopeSummary(permission: AgentToolPermissionResponseDto) {
   if (permission.server.type === 'stdio') {
-    return 'No scopes required';
+    return 'No scopes';
   }
 
   if (permission.hasAllScopes) {
     return 'All scopes';
   }
 
-  return `${permission.grantedScopes.length} scope${permission.grantedScopes.length === 1 ? '' : 's'} granted`;
+  return `${permission.grantedScopes.length} scope${permission.grantedScopes.length === 1 ? '' : 's'}`;
 }
 
 export function AgentToolsPage() {
@@ -32,6 +35,7 @@ export function AgentToolsPage() {
   const navigate = useNavigate();
   const { agents, setSectionTitle, loadAgentDetails } = useAgentsCtx();
   const { showError } = useToast();
+  const isDesktop = useIsDesktop();
 
   const agentFromList = agents.find((candidate) => candidate.slug === slug);
   const [agent, setAgent] = useState<Agent | null>(agentFromList || null);
@@ -87,12 +91,8 @@ export function AgentToolsPage() {
   }, [agent, loadToolPermissions]);
 
   useEffect(() => {
-    if (!agent) {
-      setSectionTitle('Tools');
-      return;
-    }
-    setSectionTitle(`${agent.name} Tools`);
-  }, [agent, setSectionTitle]);
+    setSectionTitle('Tools');
+  }, [setSectionTitle]);
 
   useDocumentTitle({ agent: { name: agent ? `${agent.name} Tools` : undefined } });
 
@@ -154,97 +154,66 @@ export function AgentToolsPage() {
   const systemTools = toolPermissions.filter(isSystemTool);
   const additionalTools = toolPermissions.filter((permission) => !isSystemTool(permission));
 
+  const toolRow = (permission: AgentToolPermissionResponseDto, editable: boolean) => (
+    <InsetRow
+      key={permission.server.id}
+      leading={<span className="agent-tools-page__icon"><Wrench size={15} strokeWidth={2.2} aria-hidden /></span>}
+      label={permission.server.name}
+      value={getScopeSummary(permission)}
+      detail={permission.server.description || permission.server.type}
+      onClick={editable ? () => handleOpenEditTool(permission) : undefined}
+    />
+  );
+
   return (
-    <div className="agent-tools-page">
-      <DataRowContainer className="agent-tools-page__section">
-        <DataRow>
-          <Stack spacing="1">
-            <Text size="3" weight="medium">Tools</Text>
-            <Text size="2" tone="muted">
-              Tasks and Context stay available. Additional tools can be assigned per agent with scoped access.
-            </Text>
-          </Stack>
-        </DataRow>
-      </DataRowContainer>
+    <div className={`agent-tools-page ${isDesktop ? 'agent-tools-page--desktop' : 'agent-tools-page--mobile'}`}>
+      {isDesktop && (
+        <>
+          <nav className="agent-detail-page__breadcrumb" aria-label="Breadcrumb">
+            <Link to="/agents">Agents</Link>
+            <ChevronRight size={14} aria-hidden />
+            <Link to={`/agents/agent/${agent.slug}`}>{agent.name}</Link>
+            <ChevronRight size={14} aria-hidden />
+            <span>Tools</span>
+          </nav>
+          <div className="agent-tools-page__header">
+            <h1 className="agent-tools-page__title">Tools</h1>
+            <Button onClick={handleOpenAddTool}>
+              <Plus size={16} aria-hidden />
+              Add tool
+            </Button>
+          </div>
+        </>
+      )}
 
-      <DataRowContainer title="System Tools" className="agent-tools-page__section">
-        {systemTools.map((permission) => (
-          <DataRow key={permission.server.id}>
-            <div className="agent-tools-page__row">
-              <div className="agent-tools-page__row-main">
-                <div className="agent-tools-page__row-title">
-                  <Text size="2" weight="medium">{permission.server.name}</Text>
-                  <div className="agent-tools-page__chips">
-                    <Chip color="purple">System Tool</Chip>
-                    <Chip color={permission.server.type === 'http' ? 'green' : 'orange'}>
-                      {permission.server.type}
-                    </Chip>
-                  </div>
-                </div>
-                <Text size="1" tone="muted">{permission.server.description}</Text>
-                <Text size="1" tone="muted">{getScopeSummary(permission)}</Text>
-              </div>
-            </div>
-          </DataRow>
-        ))}
-      </DataRowContainer>
-
-      <DataRowContainer
-        title="Additional Tools"
-        className="agent-tools-page__section"
+      <InsetGroup
+        title="Built in"
+        footer="Tasks and Context are always available to every agent."
       >
-        {permissionsLoading ? (
-          <DataRow>
-            <Text size="2" tone="muted">Loading tool permissions...</Text>
-          </DataRow>
-        ) : additionalTools.length === 0 ? (
-          <DataRow>
-            <Stack spacing="1">
-              <Text size="2" tone="muted">No additional tools configured</Text>
-              <Text size="1" tone="muted">Add a tool to grant this agent access beyond Tasks and Context.</Text>
-            </Stack>
-          </DataRow>
-        ) : (
-          additionalTools.map((permission) => (
-            <DataRow
-              key={permission.server.id}
-              onClick={() => handleOpenEditTool(permission)}
-              trailing={<Text size="2" tone="muted">Edit</Text>}
-            >
-              <div className="agent-tools-page__row">
-                <div className="agent-tools-page__row-main">
-                  <div className="agent-tools-page__row-title">
-                    <Text size="2" weight="medium">{permission.server.name}</Text>
-                    <div className="agent-tools-page__chips">
-                      <Chip color={permission.server.type === 'http' ? 'green' : 'orange'}>
-                        {permission.server.type}
-                      </Chip>
-                    </div>
-                  </div>
-                  <Text size="1" tone="muted">{permission.server.description}</Text>
-                  <Text size="1" tone="muted">{getScopeSummary(permission)}</Text>
-                </div>
-              </div>
-            </DataRow>
-          ))
-        )}
-      </DataRowContainer>
+        {systemTools.map((permission) => toolRow(permission, false))}
+      </InsetGroup>
 
-      <DataRowContainer className="agent-tools-page__actions">
-        <Button
-          size="lg"
-          onClick={handleOpenAddTool}
-        >
-          Add Tool
-        </Button>
-        <Button
-          size="lg"
-          variant="secondary"
-          onClick={() => navigate(`/agents/agent/${agent.slug}`)}
-        >
-          Back to agent details
-        </Button>
-      </DataRowContainer>
+      <InsetGroup
+        title="Additional"
+        footer="Grant this agent access to more MCP servers, with the scopes you choose."
+      >
+        {permissionsLoading && additionalTools.length === 0 ? (
+          <InsetRow label={<span className="agent-tools-page__muted">Loading…</span>} />
+        ) : (
+          additionalTools.map((permission) => toolRow(permission, true))
+        )}
+        {!isDesktop && (
+          <InsetRow
+            tone="accent"
+            leading={<Plus size={20} aria-hidden />}
+            label="Add tool"
+            onClick={handleOpenAddTool}
+          />
+        )}
+        {isDesktop && !permissionsLoading && additionalTools.length === 0 && (
+          <InsetRow label={<span className="agent-tools-page__muted">No additional tools</span>} />
+        )}
+      </InsetGroup>
 
       {showAddToolPop && (
         <AddAgentToolPermissionPop
@@ -318,7 +287,7 @@ export function AgentToolsPage() {
           }))}
           fixedTool={pendingScopedTool}
           title="Select Scopes"
-          saveLabel="save"
+          saveLabel="Save"
           onCancel={() => setPendingScopedTool(null)}
           onSave={async () => {
             await loadToolPermissions(agent.actorId);
