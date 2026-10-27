@@ -31,16 +31,24 @@ export class ExecutionTracesService {
       throw new ExecutionTraceWorkerMismatchError(input.executionId);
     }
 
-    // One INSERT per batch. Retrying an acknowledged or partially acknowledged
-    // upload is safe, and cannot overwrite events already stored.
+    // Pass payloads directly as json, without jsonb conversion or JSON text
+    // extraction: either would reject valid escaped NULs and lone surrogates.
+    const parameters: unknown[] = [input.executionId, input.harness];
+    const rows = input.events.map((event) => {
+      const offset = parameters.length;
+      parameters.push(
+        event.sequence,
+        event.emittedAt,
+        event.runnerSessionId,
+        JSON.stringify(event.payload),
+      );
+      return `($1::uuid, $2, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
+    });
     await this.traces.query(
-      `
-      INSERT INTO execution_traces (execution_id, harness, sequence, emitted_at, runner_session_id, payload)
-      SELECT $1::uuid, $2, (event->>'sequence')::integer,
-             (event->>'emittedAt')::timestamptz, event->>'runnerSessionId', event->'payload'
-      FROM jsonb_array_elements($3::jsonb) AS event
-      ON CONFLICT (execution_id, sequence) DO NOTHING`,
-      [input.executionId, input.harness, JSON.stringify(input.events)],
+      `INSERT INTO execution_traces (execution_id, harness, sequence, emitted_at, runner_session_id, payload)
+       VALUES ${rows.join(', ')}
+       ON CONFLICT (execution_id, sequence) DO NOTHING`,
+      parameters,
     );
   }
 

@@ -277,7 +277,12 @@ export async function executeTask({
     } catch (error) {
       throw classifyRunnerError(error);
     } finally {
-      await trace.close();
+      try {
+        await trace.close();
+      } catch (error) {
+        // Trace failures must not replace a successful result or classified error.
+        console.warn('[worker] Unable to close execution trace', error);
+      }
     }
   } finally {
     // Clean up abort controller - this now runs no matter where we fail

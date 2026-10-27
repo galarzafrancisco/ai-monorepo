@@ -31,14 +31,24 @@ export class HarnessTraceRecorder {
   }
 
   capture(payload: unknown): void {
-    const serialized = JSON.stringify(payload);
-    if (serialized === undefined)
-      throw new Error("Harness emitted a non-JSON event");
+    let snapshot: HarnessJson;
+    try {
+      const serialized = JSON.stringify(payload);
+      if (serialized === undefined)
+        throw new Error("Harness emitted a non-JSON event");
+      snapshot = JSON.parse(serialized) as HarnessJson;
+    } catch {
+      // Observability must never abort a harness, including on circular SDK data.
+      snapshot = {
+        captureError: "Harness event could not be serialized as JSON",
+      };
+      console.warn(`[worker] Non-JSON trace event for ${this.executionId}`);
+    }
     const event: ExecutionTraceEvent = {
       sequence: ++this.sequence,
       emittedAt: new Date().toISOString(),
       runnerSessionId: this.sessionId,
-      payload: JSON.parse(serialized) as HarnessJson,
+      payload: snapshot,
     };
     const bytes = Buffer.byteLength(JSON.stringify(event));
     this.pending.push({ event, bytes });
@@ -54,10 +64,13 @@ export class HarnessTraceRecorder {
   async close(): Promise<void> {
     clearInterval(this.timer);
     await this.flush();
-    if (this.pending.length)
-      throw new Error(
-        `Unable to spool ${this.pending.length} harness trace events`,
+    if (this.pending.length) {
+      console.warn(
+        `[worker] Unable to spool ${this.pending.length} harness trace events for ${this.executionId}`,
       );
+      this.pending = [];
+      this.pendingBytes = 0;
+    }
   }
 
   private flush(): Promise<void> {

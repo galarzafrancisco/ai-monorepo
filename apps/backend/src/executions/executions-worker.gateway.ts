@@ -137,7 +137,7 @@ export class ExecutionsWorkerGateway
       return { ok: true };
     } catch (error) {
       if (error instanceof InvalidExecutionTraceError || error instanceof ExecutionTraceNotFoundError || error instanceof ExecutionTraceWorkerMismatchError) {
-        return { ok: false, error: error.message };
+        return { ok: false, permanent: true, error: error.message };
       }
       this.logger.error({ message: 'Failed to store execution trace', socketId: client.id,
         error: error instanceof Error ? error.message : String(error) });

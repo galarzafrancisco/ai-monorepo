@@ -188,6 +188,22 @@ describe('Raw execution traces E2E', () => {
     );
   });
 
+  it('round-trips NULs, lone surrogates and JSON-looking escapes without altering raw payloads', async () => {
+    const body = payload();
+    body.events[0].payload = {
+      text: 'before\u0000after',
+      surrogate: '\ud800',
+      literal: '\\u0000',
+      nested: { ['key\u0000']: ['\udfff', null, '😀'] },
+    };
+    expect(await post(owner, body)).toEqual({ ok: true });
+    expect((await read().expect(200)).body.items[0].payload).toEqual(
+      body.events[0].payload,
+    );
+    expect(await post(owner, payload(2))).toEqual({ ok: true });
+    expect((await read().expect(200)).body.items).toHaveLength(2);
+  });
+
   it('orders by sequence and pages by cursor, including JSON null', async () => {
     expect(await post(owner, payload(3))).toEqual({ ok: true });
     const body = payload(1);
@@ -202,7 +218,10 @@ describe('Raw execution traces E2E', () => {
   });
 
   it('rejects other workers and malformed batches without writes', async () => {
-    expect((await post(stranger, payload())).ok).toBe(false);
+    expect(await post(stranger, payload())).toMatchObject({
+      ok: false,
+      permanent: true,
+    });
     for (const body of [
       null,
       { ...payload(), executionId: 'invalid' },
@@ -213,7 +232,10 @@ describe('Raw execution traces E2E', () => {
         events: [{ ...payload().events[0], emittedAt: 'bad date' }],
       },
     ]) {
-      expect((await post(owner, body)).ok).toBe(false);
+      expect(await post(owner, body)).toMatchObject({
+        ok: false,
+        permanent: true,
+      });
     }
     expect((await read().expect(200)).body.items).toEqual([]);
     await request(app.getHttpServer())
