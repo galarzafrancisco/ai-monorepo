@@ -24,6 +24,7 @@ export interface PostExecutionTracePayload {
 export interface ExecutionTraceAck {
   ok: boolean;
   permanent?: boolean;
+  retryable?: "disconnected";
   error?: string;
 }
 

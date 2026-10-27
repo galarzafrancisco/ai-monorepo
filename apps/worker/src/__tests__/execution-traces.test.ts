@@ -375,3 +375,250 @@ test("transient upload failures back off while retaining ordered durable deliver
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("offline attempts do not back off and reconnect uploads queued sequences immediately", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-reconnect-"));
+  let connected = false;
+  const now = 0;
+  let attempts = 0;
+  const uploaded: number[] = [];
+  const spool = new ExecutionTraceSpool(
+    directory,
+    async (value) => {
+      attempts++;
+      if (!connected) return { ok: false, retryable: "disconnected" };
+      uploaded.push(value.events[0].sequence);
+      return { ok: true };
+    },
+    () => now,
+  );
+  try {
+    await spool.enqueue(batch());
+    await spool.enqueue({
+      ...batch(),
+      events: [{ ...batch().events[0], sequence: 2 }],
+    });
+    await spool.drain();
+    const before = attempts;
+    // Same clock: disconnected attempts must not schedule a retry delay.
+    for (let i = 0; i < 8; i++) await spool.drain();
+    assert.equal(attempts, before + 8);
+    connected = true;
+    await spool.resume();
+    assert.deepEqual(uploaded, [1, 2]);
+    assert.deepEqual(await readdir(directory), []);
+  } finally {
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("reconnect clears accumulated backoff from the previous transport", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-reset-"));
+  let healthy = false;
+  let now = 0;
+  let attempts = 0;
+  const spool = new ExecutionTraceSpool(
+    directory,
+    async () => {
+      attempts++;
+      return { ok: healthy };
+    },
+    () => now,
+  );
+  try {
+    await spool.enqueue(batch());
+    await spool.drain();
+    for (const timestamp of [5_000, 15_000, 35_000, 75_000, 155_000, 315_000]) {
+      now = timestamp;
+      await spool.drain();
+    }
+    const before = attempts;
+    healthy = true;
+    await spool.drain();
+    assert.equal(attempts, before);
+    // No clock advance or five-second poll needed after a healthy reconnect.
+    await spool.resume();
+    assert.equal(attempts, before + 1);
+    assert.deepEqual(await readdir(directory), []);
+  } finally {
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("recorder isolates oversized events so neighbouring small events still upload", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-neighbours-"));
+  const uploaded: number[] = [];
+  const spool = new ExecutionTraceSpool(directory, async (value) => {
+    uploaded.push(...value.events.map((event) => event.sequence));
+    return { ok: true };
+  });
+  const recorder = new HarnessTraceRecorder(
+    batch().executionId,
+    "claude",
+    (value) => spool.enqueue(value),
+  );
+  try {
+    recorder.capture({ text: "before" });
+    recorder.capture({ text: "x".repeat(16 * 1024 * 1024) });
+    recorder.capture({ text: "after" });
+    await recorder.close();
+    await spool.drain();
+    assert.deepEqual(uploaded, [1, 3]);
+    const failed = await readdir(join(directory, "failed"));
+    assert.equal(failed.length, 1);
+    const preserved = JSON.parse(
+      await readFile(join(directory, "failed", failed[0]), "utf8"),
+    );
+    assert.deepEqual(
+      preserved.events.map((event: { sequence: number }) => event.sequence),
+      [2],
+    );
+    assert.equal(preserved.events[0].payload.text.length, 16 * 1024 * 1024);
+  } finally {
+    await recorder.close();
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("large trace acknowledgements can arrive after five seconds", async (t) => {
+  const { EventEmitter } = await import("node:events");
+  const { ExecutionActivityGatewayClient } =
+    await import("../execution-activity-gateway-client.js");
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-slow-"));
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let acknowledge!: (ack: { ok: boolean }) => void;
+  let sent!: () => void;
+  const started = new Promise<void>((resolve) => {
+    sent = resolve;
+  });
+  class Transport extends EventEmitter {
+    connected = true;
+    emit(name: string, ...args: unknown[]): boolean {
+      if (name === "execution.trace.post") {
+        acknowledge = args[1] as typeof acknowledge;
+        sent();
+        return true;
+      }
+      return super.emit(name, ...args);
+    }
+  }
+  const client = new ExecutionActivityGatewayClient({
+    baseUrl: "http://unused",
+    traceDirectory: directory,
+    auth: {} as never,
+  });
+  Object.assign(client, { socket: new Transport() });
+  const spool = (client as unknown as { traceSpool: ExecutionTraceSpool })
+    .traceSpool;
+  try {
+    const value = batch();
+    value.events[0].payload = { text: "x".repeat(2 * 1024 * 1024) };
+    await client.queueTrace(value);
+    await started;
+    t.mock.timers.tick(6_000);
+    acknowledge({ ok: true });
+    await spool.drain();
+    assert.deepEqual(await readdir(directory), []);
+  } finally {
+    await spool.stop();
+    t.mock.timers.reset();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("disconnect cancels an in-flight large upload wait without adding backoff", async () => {
+  const { EventEmitter } = await import("node:events");
+  const { ExecutionActivityGatewayClient } =
+    await import("../execution-activity-gateway-client.js");
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-inflight-"));
+  let sent!: () => void;
+  const started = new Promise<void>((resolve) => {
+    sent = resolve;
+  });
+  class Transport extends EventEmitter {
+    connected = true;
+    healthy = false;
+    emit(name: string, ...args: unknown[]): boolean {
+      if (name === "execution.trace.post") {
+        if (this.healthy)
+          (args[1] as (ack: { ok: boolean }) => void)({ ok: true });
+        sent();
+        return true;
+      }
+      return super.emit(name, ...args);
+    }
+  }
+  const socket = new Transport();
+  const client = new ExecutionActivityGatewayClient({
+    baseUrl: "http://unused",
+    traceDirectory: directory,
+    auth: {} as never,
+  });
+  Object.assign(client, { socket });
+  const spool = (client as unknown as { traceSpool: ExecutionTraceSpool })
+    .traceSpool;
+  try {
+    await client.queueTrace(batch());
+    await started;
+    socket.connected = false;
+    socket.emit("disconnect", "transport close");
+    await spool.drain();
+    assert.equal(socket.listenerCount("disconnect"), 0);
+    socket.connected = true;
+    socket.healthy = true;
+    await spool.resume();
+    assert.deepEqual(await readdir(directory), []);
+  } finally {
+    await spool.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("shutdown cancels pending acknowledgement waits and keeps the durable batch", async () => {
+  const { EventEmitter } = await import("node:events");
+  const { ExecutionActivityGatewayClient } =
+    await import("../execution-activity-gateway-client.js");
+  const directory = await mkdtemp(join(tmpdir(), "taico-trace-shutdown-"));
+  let sent!: () => void;
+  const started = new Promise<void>((resolve) => {
+    sent = resolve;
+  });
+  class Transport extends EventEmitter {
+    connected = true;
+    emit(name: string, ...args: unknown[]): boolean {
+      if (name === "execution.trace.post") {
+        sent();
+        return true;
+      }
+      return super.emit(name, ...args);
+    }
+    disconnect() {
+      this.connected = false;
+      this.emit("disconnect", "io client disconnect");
+    }
+  }
+  const socket = new Transport();
+  const client = new ExecutionActivityGatewayClient({
+    baseUrl: "http://unused",
+    traceDirectory: directory,
+    auth: {} as never,
+  });
+  Object.assign(client, { socket });
+  try {
+    await client.queueTrace(batch());
+    await started;
+    await client.stop();
+    assert.equal(socket.listenerCount("disconnect"), 0);
+    assert.equal(
+      (await readdir(directory)).filter((name) => name.endsWith(".json"))
+        .length,
+      1,
+    );
+  } finally {
+    await client.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});

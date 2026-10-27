@@ -67,8 +67,15 @@ export class ExecutionTraceSpool {
       })
       .finally(() => {
         this.draining = undefined;
+        if (this.drainRequested) void this.drain();
       });
     return this.draining;
+  }
+
+  /** A healthy new transport should not inherit delays from the old one. */
+  resume(): Promise<void> {
+    this.retries.clear();
+    return this.drain();
   }
 
   async stop(): Promise<void> {
@@ -112,7 +119,7 @@ export class ExecutionTraceSpool {
         } else if (ack.permanent) {
           await this.quarantine(name, "server permanently rejected batch");
         } else {
-          this.defer(name);
+          if (ack.retryable !== "disconnected") this.defer(name);
           blockedExecutions.add(executionId);
         }
       } catch (error) {

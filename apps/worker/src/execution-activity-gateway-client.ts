@@ -41,6 +41,7 @@ export class ExecutionActivityGatewayClient {
   private socket?: Socket;
   private readonly traceSpool: ExecutionTraceSpool;
   private started = false;
+  private traceSpoolStarted = false;
   private reconnectAttempts = 0;
   private tokenRefreshTimer?: ReturnType<typeof setTimeout>;
   private reconnectRetryTimer?: ReturnType<typeof setTimeout>;
@@ -72,24 +73,23 @@ export class ExecutionActivityGatewayClient {
     await this.connectWithFreshToken();
     await initialConnectPromise;
     await this.traceSpool.start();
+    this.traceSpoolStarted = true;
   }
 
   async stop(): Promise<void> {
     this.started = false;
-    await this.traceSpool.stop();
+    this.traceSpoolStarted = false;
     this.clearTokenRefreshTimer();
     this.clearReconnectRetryTimer();
     this.clearWorkerHeartbeatTimer();
     this.clearInitialConnectHandlers();
 
-    if (!this.socket) {
-      return;
-    }
-
     const socket = this.socket;
     this.socket = undefined;
-    socket.removeAllListeners();
-    socket.disconnect();
+    // Resolve outstanding ACK waits before removing their disconnect listeners.
+    socket?.disconnect();
+    socket?.removeAllListeners();
+    await this.traceSpool.stop();
   }
 
   async publishActivity(
@@ -148,39 +148,54 @@ export class ExecutionActivityGatewayClient {
             : payload,
         );
       }
-      return { ok: false };
+      return { ok: false, retryable: 'disconnected' };
     }
 
+    const socket = this.socket;
+    // Allow transfer at 64 KiB/s plus server processing time for raw traces.
+    // Other activity and heartbeat acknowledgements retain their short timeout.
+    const timeoutMs =
+      eventName === ExecutionWireEvents.EXECUTION_TRACE_POST
+        ? Math.min(
+            300_000,
+            10_000 +
+              Math.ceil(
+                Buffer.byteLength(JSON.stringify(payload)) / (64 * 1024),
+              ) *
+                1_000,
+          )
+        : ACK_TIMEOUT_MS;
     return new Promise<ActivityAck>((resolve) => {
       let settled = false;
-      const timeout = setTimeout(() => {
-        if (settled) {
-          return;
-        }
+      const finish = (ack: ActivityAck) => {
+        if (settled) return;
         settled = true;
-        resolve({ ok: false });
-      }, ACK_TIMEOUT_MS);
+        clearTimeout(timeout);
+        socket.off('disconnect', onDisconnect);
+        resolve(ack);
+      };
+      const onDisconnect = () =>
+        finish({ ok: false, retryable: 'disconnected' });
+      const timeout = setTimeout(() => finish({ ok: false }), timeoutMs);
+      socket.once('disconnect', onDisconnect);
 
       const handleAck = (ack?: ActivityAck) => {
         if (settled) {
           return;
         }
-        settled = true;
-        clearTimeout(timeout);
-
         if (this.options.debug) {
           console.log(`[execution-activity] ${eventName} ack:`, ack);
         }
 
-        resolve(ack ?? { ok: false });
+        finish(ack ?? { ok: false });
       };
 
       if (payload === undefined) {
-        this.socket!.emit(eventName, handleAck);
+        socket.emit(eventName, handleAck);
         return;
       }
 
-      this.socket!.emit(eventName, payload, handleAck);
+      socket.emit(eventName, payload, handleAck);
     });
   }
 
@@ -196,8 +211,8 @@ export class ExecutionActivityGatewayClient {
     const randomizationFactor = this.options.randomizationFactor ?? 0.5;
 
     if (this.socket) {
-      this.socket.removeAllListeners();
       this.socket.disconnect();
+      this.socket.removeAllListeners();
     }
 
     if (this.options.debug) {
@@ -227,6 +242,7 @@ export class ExecutionActivityGatewayClient {
       }
 
       this.reconnectAttempts = 0;
+      if (this.traceSpoolStarted) void this.traceSpool.resume();
       this.clearReconnectRetryTimer();
       this.scheduleTokenRefresh(credentials.expiresAt);
       this.startWorkerHeartbeatTimer();
