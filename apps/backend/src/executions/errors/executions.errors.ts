@@ -23,6 +23,12 @@ export class ActiveTaskExecutionNotFoundError extends ExecutionsError {
   }
 }
 
+export class TaskExecutionHistoryEntryNotFoundError extends ExecutionsError {
+  constructor(executionId: string) {
+    super('Finished execution was not found.', { executionId });
+  }
+}
+
 export class ActiveTaskExecutionWorkerMismatchError extends ExecutionsError {
   constructor(executionId: string) {
     super('Active execution is claimed by a different worker.', { executionId });

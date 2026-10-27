@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, FolderKanban, GitBranch, LayoutDashboard } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, GitBranch, LayoutDashboard } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DesktopShell } from "../../app/shells/DesktopShell";
@@ -10,6 +10,7 @@ import { ShippedCelebration } from "./ShippedCelebration";
 import { Button } from "../../ui/primitives";
 import { ScheduledTasksService } from "../scheduled-tasks/api";
 import type { ScheduledTaskResponseDto } from "@taico/client/v2";
+import { ProjectPicker } from "../projects/ProjectPicker";
 import "./TasksLayout.css";
 
 export function TasksLayout(): React.JSX.Element {
@@ -43,11 +44,13 @@ export function TasksLayout(): React.JSX.Element {
     />
   );
   const projectSelector = (
-    <ProjectSelector
+    <ProjectPicker
       projects={projects}
       projectsLoaded={projectsLoaded}
       selectedProjectId={selectedProjectId}
       onChange={setSelectedProjectId}
+      emptyLabel="All projects"
+      ariaLabel="Task project"
     />
   );
 
@@ -116,133 +119,6 @@ export function TasksLayout(): React.JSX.Element {
         </IosShell>}
     </div>
   )
-}
-
-function ProjectSelector({
-  projects,
-  projectsLoaded,
-  selectedProjectId,
-  onChange,
-}: {
-  projects: Array<{ id: string; slug: string; tagName: string }>;
-  projectsLoaded: boolean;
-  selectedProjectId: string | null;
-  onChange: (projectId: string | null) => void;
-}): React.JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
-  const normalizedQuery = query.trim().toLowerCase();
-  const filteredProjects = useMemo(() => {
-    if (!normalizedQuery) {
-      return projects;
-    }
-    return projects.filter((project) =>
-      project.slug.toLowerCase().includes(normalizedQuery) ||
-      project.tagName.toLowerCase().includes(normalizedQuery)
-    );
-  }, [normalizedQuery, projects]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    window.setTimeout(() => searchInputRef.current?.focus(), 0);
-
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [isOpen]);
-
-  const selectProject = (projectId: string | null) => {
-    onChange(projectId);
-    setQuery("");
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="tasks-layout__project-selector" ref={rootRef}>
-      <button
-        className="tasks-layout__project-trigger"
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-label="Task project"
-        disabled={!projectsLoaded}
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        <FolderKanban className="tasks-layout__project-selector-icon" size={15} strokeWidth={1.75} absoluteStrokeWidth />
-        <span className="tasks-layout__project-trigger-label">
-          {selectedProject?.slug ?? "All projects"}
-        </span>
-        <ChevronDown
-          className={`tasks-layout__project-selector-chevron${isOpen ? " tasks-layout__project-selector-chevron--open" : ""}`}
-          size={14}
-          strokeWidth={1.75}
-          absoluteStrokeWidth
-        />
-      </button>
-
-      {isOpen ? (
-        <div className="tasks-layout__project-menu">
-          <input
-            ref={searchInputRef}
-            className="tasks-layout__project-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search projects"
-            aria-label="Search projects"
-          />
-          <div className="tasks-layout__project-options" role="listbox" aria-label="Task project">
-            <button
-              className={`tasks-layout__project-option${selectedProjectId === null ? " tasks-layout__project-option--selected" : ""}`}
-              type="button"
-              role="option"
-              aria-selected={selectedProjectId === null}
-              onClick={() => selectProject(null)}
-            >
-              All projects
-            </button>
-            {filteredProjects.length === 0 ? (
-              <div className="tasks-layout__project-empty">No matching projects</div>
-            ) : (
-              filteredProjects.map((project) => (
-                <button
-                  key={project.id}
-                  className={`tasks-layout__project-option${selectedProjectId === project.id ? " tasks-layout__project-option--selected" : ""}`}
-                  type="button"
-                  role="option"
-                  aria-selected={selectedProjectId === project.id}
-                  onClick={() => selectProject(project.id)}
-                >
-                  <span className="tasks-layout__project-option-name">{project.slug}</span>
-                  <span className="tasks-layout__project-option-tag">{project.tagName}</span>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 function TaskViewToggle({

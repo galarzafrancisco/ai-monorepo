@@ -13,6 +13,7 @@ import type {
 } from "./types";
 import { useToast } from "../../shared/context/ToastContext";
 import { useExecutions } from "./useExecutions";
+import { useHistoryEntry } from "./useHistoryEntry";
 import "./ExecutionsPage.css";
 
 const POTENTIALLY_STALE_THRESHOLD_MS = 10 * 60 * 1000;
@@ -162,6 +163,10 @@ export function ExecutionDetailPage() {
 
   useDocumentTitle();
 
+  // The feed only holds the latest runs; an older finished run is fetched by id.
+  const inFeed = kind === "history" && history.some((candidate) => candidate.id === id);
+  const fetched = useHistoryEntry(id, kind === "history" && (hasLoadedOnce || Boolean(error)) && !inFeed);
+
   const detail = useMemo<ExecutionDetailResult | null>(() => {
     if (!kind || !id) {
       return null;
@@ -178,14 +183,14 @@ export function ExecutionDetailPage() {
     }
 
     if (kind === "history") {
-      const entry = history.find((candidate) => candidate.id === id);
+      const entry = history.find((candidate) => candidate.id === id) ?? fetched.entry;
       return entry ? { kind: "history", entry } : null;
     }
 
     return null;
-  }, [active, history, id, kind, queue]);
+  }, [active, fetched.entry, history, id, kind, queue]);
 
-  if (isLoading && !hasLoadedOnce) {
+  if ((isLoading && !hasLoadedOnce) || (!detail && fetched.status === "loading")) {
     return (
       <div className="executions-page">
         <Card className="executions-empty-card">
@@ -195,12 +200,24 @@ export function ExecutionDetailPage() {
     );
   }
 
-  if (error) {
+  // A run fetched on its own still shows when the feed failed.
+  if (error && !detail && fetched.status !== "loading") {
     return (
       <div className="executions-page">
         <Card className="executions-empty-card">
           <Text as="div" size="3" weight="medium">Could not load run</Text>
           <Text as="div" tone="muted" wrap>{error}</Text>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!detail && fetched.status === "error") {
+    return (
+      <div className="executions-page">
+        <Card className="executions-empty-card">
+          <Text as="div" size="3" weight="medium">Could not load run</Text>
+          <Button variant="secondary" onClick={fetched.retry}>Try again</Button>
         </Card>
       </div>
     );
@@ -227,6 +244,9 @@ export function ExecutionDetailPage() {
       <div className="executions-detail-topbar">
         <Button variant="secondary" onClick={() => navigate("/runs")}>Back to runs</Button>
         <Button variant="secondary" onClick={() => navigate(`/tasks/task/${detail.entry.taskId}`)}>Open task</Button>
+        {detail.kind !== "queue" ? (
+          <Button variant="primary" onClick={() => navigate(`/runs/${detail.kind}/${detail.entry.id}/traces`)}>View trace</Button>
+        ) : null}
       </div>
 
       <header className="executions-run-header">

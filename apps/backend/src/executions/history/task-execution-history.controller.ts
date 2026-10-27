@@ -1,10 +1,20 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { TaskExecutionHistoryEntryNotFoundError } from '../errors/executions.errors';
 import { AccessTokenGuard } from '../../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
@@ -49,5 +59,27 @@ export class TaskExecutionHistoryController {
       limit: result.limit,
       totalPages: Math.ceil(result.total / result.limit),
     };
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get one finished execution',
+    description:
+      'Returns a single execution history row by id, including runs older than the latest page of history.',
+  })
+  @ApiOkResponse({ type: TaskExecutionHistoryResponseDto })
+  @ApiNotFoundResponse({ description: 'Execution not found' })
+  async getHistoryEntry(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<TaskExecutionHistoryResponseDto> {
+    try {
+      return TaskExecutionHistoryResponseDto.fromResult(
+        await this.taskExecutionHistoryService.getHistoryEntry(id),
+      );
+    } catch (error) {
+      if (error instanceof TaskExecutionHistoryEntryNotFoundError)
+        throw new NotFoundException(error.message);
+      throw error;
+    }
   }
 }

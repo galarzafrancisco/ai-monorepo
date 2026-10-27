@@ -41,8 +41,10 @@ export function ExecutionSteps({
       </p>
     );
   const completed = steps.filter((step) => step.status === 'completed').length;
+  // A run that went smoothly doesn't need its steps on show; one still going, or
+  // one that stopped somewhere, does.
   return (
-    <details className="execution-steps" open>
+    <details className="execution-steps" open={completed < steps.length}>
       <summary>
         <ChevronRight size={14} />
         <Text size="2" weight="medium">

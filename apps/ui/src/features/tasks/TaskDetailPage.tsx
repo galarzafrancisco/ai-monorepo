@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
-import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer } from '../../ui/primitives';
 import { DeleteWithConfirmation, useCommandPalette } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
@@ -12,12 +12,8 @@ import { TagSearchPop } from './TagSearchPop';
 import { TaskSearchPop } from './TaskSearchPop';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
-import {
-  InputRequestResponseDto,
-  ActiveTaskExecutionResponseDto,
-  TaskExecutionHistoryResponseDto,
-} from "@taico/client/v2";
-import { GitBranch } from 'lucide-react';
+import { InputRequestResponseDto } from "@taico/client/v2";
+import { ExternalLink, GitBranch, GitPullRequest, Link2, MessagesSquare } from 'lucide-react';
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -28,8 +24,11 @@ import type { Task } from './types';
 import { useChatReadiness } from '../ai-models/useChatReadiness';
 import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
-import { getTaskStatusTag } from './taskStatusTag';
-import { TaskTracesPanel } from './traces/TaskTracesPanel';
+import { TaskRunsPanel } from './traces/TaskRunsPanel';
+import { RunList } from './traces/RunList';
+import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
+import { ProjectPicker } from '../projects/ProjectPicker';
+import { useProjects } from '../projects/useProjects';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './TaskDetailPage.css';
 
@@ -54,28 +53,15 @@ export type TaskDetailViewProps = {
   activityByTaskId?: Record<string, TaskActivityWireEvent>;
   handlers: TaskDetailHandlers;
   allTasks: Task[];
+  /** Scheduled-task blueprints have no status, so they hide the status controls. */
+  canChangeStatus?: boolean;
 };
 
-type TaskExecutionListItem = {
-  id: string;
-  executionId: string;
-  agentActorId: string;
-  status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'];
-  source: 'active' | 'history';
-  timestamp: string;
-  lastActivityAt: string;
-  runnerSessionId: string | null;
-  toolCallCount: number;
-  errorCode: TaskExecutionHistoryResponseDto['errorCode'] | null;
-  errorMessage: string | null;
-};
+/** Updates shown before "Show earlier updates": enough to see where the task stands. */
+const RECENT_UPDATE_COUNT = 4;
+const PROJECT_TAG_PREFIX = 'project:';
 
-const COLLAPSED_TIMELINE_COUNT = 3;
-const COLLAPSED_EXECUTION_COUNT = 3;
-const POTENTIALLY_STALE_THRESHOLD_MS = 10 * 60 * 1000;
-const POTENTIALLY_STALE_MESSAGE = "We haven't seen activity in a while. If the worker doesn't report back, we'll mark this run as stale and revert the task to its previous state, where another agent will pick it";
-
-export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
+export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks, canChangeStatus = true }: TaskDetailViewProps) {
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const { actors } = useActorsCtx();
@@ -84,7 +70,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const { registerCommands } = useCommandPalette();
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
-  const [tracesOpen, setTracesOpen] = useState(() => {
+  const [runsOpen, setRunsOpen] = useState(() => {
     try { return localStorage.getItem('taico.taskTraces.open') !== 'false' && window.innerWidth >= 1100; } catch { return window.innerWidth >= 1100; }
   });
   const [executionsTaskId, setExecutionsTaskId] = useState<string | null>(null);
@@ -93,7 +79,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
   const [showAllTimelineItems, setShowAllTimelineItems] = useState(false);
-  const [showAllExecutions, setShowAllExecutions] = useState(false);
+  const { projects, isLoading: isLoadingProjects, error: projectsError } = useProjects();
   const activityHideTimerRef = useRef<number | null>(null);
   const activityExitTimerRef = useRef<number | null>(null);
 
@@ -201,7 +187,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       [TaskStatus.DONE]: ['done', 'shipped', 'release', 'complete'],
     };
 
-    const statusCommands = Object.entries(TASKS_STATUS).map(([status, info]) => ({
+    const statusCommands = !canChangeStatus ? [] : Object.entries(TASKS_STATUS).map(([status, info]) => ({
       id: `task-status-${status}`,
       label: info.label,
       description: `Mark task as ${info.label.toLowerCase()}`,
@@ -252,7 +238,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     ];
 
     return registerCommands([...statusCommands, ...actionCommands]);
-  }, [task, registerCommands, handleChangeStatusForPalette, handlers, showError, threadId, handleOpenOrCreateThread]);
+  }, [task, canChangeStatus, registerCommands, handleChangeStatusForPalette, handlers, showError, threadId, handleOpenOrCreateThread]);
 
   useEffect(() => {
     if (isLoadingTask) {
@@ -279,11 +265,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [executions, setExecutions] = useState<TaskExecutionListItem[]>([]);
+  const [executions, setExecutions] = useState<TaskRun[]>([]);
   const [isLoadingExecutions, setIsLoadingExecutions] = useState(false);
   const [executionsError, setExecutionsError] = useState<string | null>(null);
-  const [stalenessNow, setStalenessNow] = useState(() => Date.now());
-  const [expandedExecutionErrorIds, setExpandedExecutionErrorIds] = useState<Set<string>>(new Set());
   const [interruptingExecutions, setInterruptingExecutions] = useState<Set<string>>(new Set());
 
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
@@ -292,19 +276,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [showDependencyPop, setShowDependencyPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
-  const toggleExecutionErrorDetails = useCallback((executionId: string) => {
-    setExpandedExecutionErrorIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(executionId)) {
-        next.delete(executionId);
-      } else {
-        next.add(executionId);
-      }
-      return next;
-    });
-  }, []);
-
-  const handleInterruptExecution = useCallback(async (executionId: string, taskName: string | undefined, taskId: string) => {
+  const handleInterruptExecution = useCallback(async (executionId: string, taskName: string | undefined) => {
     if (!confirm(`Are you sure you want to interrupt the active execution for "${taskName ?? "this task"}"?`)) {
       return;
     }
@@ -484,7 +456,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   useEffect(() => {
     setShowAllTimelineItems(false);
-    setShowAllExecutions(false);
     setExecutions([]);
     setExecutionsTaskId(null);
     setExecutionsError(null);
@@ -493,45 +464,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const loadExecutionsForTask = useCallback(async (taskId: string) => {
     setIsLoadingExecutions(true);
     try {
-      const [activeResponse, historyResponse] = await Promise.all([
-        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions({ taskId, limit: 100 }),
-        ExecutionsService.TaskExecutionHistoryController_listHistory({ taskId, limit: 100 }),
-      ]);
-
-      const taskActiveItems = activeResponse.items
-        .map((entry: ActiveTaskExecutionResponseDto): TaskExecutionListItem => ({
-          id: `active-${entry.id}`,
-          executionId: entry.id,
-          agentActorId: entry.agentActorId,
-          status: 'ACTIVE',
-          source: 'active',
-          timestamp: entry.claimedAt,
-          lastActivityAt: entry.lastHeartbeatAt ?? entry.claimedAt,
-          runnerSessionId: entry.runnerSessionId,
-          toolCallCount: entry.toolCallCount,
-          errorCode: null,
-          errorMessage: null,
-        }));
-
-      const taskHistoryItems = historyResponse.items
-        .map((entry: TaskExecutionHistoryResponseDto): TaskExecutionListItem => ({
-          id: `history-${entry.id}`,
-          executionId: entry.id,
-          agentActorId: entry.agentActorId,
-          status: entry.status,
-          source: 'history',
-          timestamp: entry.transitionedAt,
-          lastActivityAt: entry.transitionedAt,
-          runnerSessionId: entry.runnerSessionId,
-          toolCallCount: entry.toolCallCount,
-          errorCode: entry.errorCode,
-          errorMessage: entry.errorMessage,
-        }));
-
-      const sorted = [...taskActiveItems, ...taskHistoryItems].sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-
+      const sorted = await loadTaskRuns(taskId);
       if (currentTaskId.current !== taskId) return;
       setExecutionsTaskId(taskId);
       setExecutions(sorted);
@@ -570,38 +503,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       .sort((a, b) => a.timestamp - b.timestamp) as TimelineItem[];
   }, [task]);
 
-  const visibleTimelineItems = showAllTimelineItems
-    ? timelineItems
-    : timelineItems.slice(0, COLLAPSED_TIMELINE_COUNT);
-  const hasMoreTimelineItems = timelineItems.length > COLLAPSED_TIMELINE_COUNT;
-
-  const visibleExecutions = showAllExecutions
-    ? executions
-    : executions.slice(0, COLLAPSED_EXECUTION_COUNT);
-  const hasMoreExecutions = executions.length > COLLAPSED_EXECUTION_COUNT;
-
-  useEffect(() => {
-    if (!executions.some((execution) => execution.source === 'active')) {
-      return;
-    }
-
-    setStalenessNow(Date.now());
-    const intervalId = window.setInterval(() => {
-      setStalenessNow(Date.now());
-    }, 30 * 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, [executions]);
+  // The latest updates are what you open a task to read (did the reviewer run? what did it say?),
+  // so they're always shown; older ones expand above them, keeping the order chronological.
+  const hiddenTimelineCount = showAllTimelineItems ? 0 : Math.max(0, timelineItems.length - RECENT_UPDATE_COUNT);
+  const visibleTimelineItems = timelineItems.slice(hiddenTimelineCount);
 
   useEffect(() => {
     if (!task) {
       setExecutions([]);
       setExecutionsError(null);
-      setExpandedExecutionErrorIds(new Set());
       return;
     }
 
-    setExpandedExecutionErrorIds(new Set());
     void loadExecutionsForTask(task.id);
   }, [task, loadExecutionsForTask]);
 
@@ -670,17 +583,46 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     }
   };
 
-  const tracesPanel = (
-    <TaskTracesPanel key={task.id} runs={executionsTaskId === task.id ? executions : []}
-      open={tracesOpen} onToggle={() => setTracesOpen((value) => {
+  const projectTags = task.tags.filter((tag) => tag.name.startsWith(PROJECT_TAG_PREFIX));
+  const otherTags = task.tags.filter((tag) => !tag.name.startsWith(PROJECT_TAG_PREFIX));
+  const currentProject = projects.find((project) => projectTags.some((tag) => tag.id === project.tagId || tag.name === project.tagName)) ?? null;
+
+  // A task's project is its project:<slug> tag. Picking a project swaps that tag.
+  const changeProject = async (projectId: string | null) => {
+    const next = projects.find((project) => project.id === projectId) ?? null;
+    try {
+      if (next && !projectTags.some((tag) => tag.name === next.tagName)) {
+        await handlers.addTag({ taskId: task.id, tag: { name: next.tagName } as MetaTagResponseDto });
+      }
+      for (const tag of projectTags) {
+        if (tag.name !== next?.tagName) {
+          await handlers.removeTag({ taskId: task.id, tagId: tag.id });
+        }
+      }
+    } catch (err: unknown) {
+      showError(err);
+    }
+  };
+
+  const runsPanel = (
+    <TaskRunsPanel
+      key={task.id}
+      runs={executionsTaskId === task.id ? executions : []}
+      isLoadingRuns={isLoadingExecutions}
+      runsError={executionsError}
+      onRefreshRuns={() => void loadExecutionsForTask(task.id)}
+      open={runsOpen}
+      onToggle={() => setRunsOpen((value) => {
         try { localStorage.setItem('taico.taskTraces.open', String(!value)); } catch { /* Storage may be unavailable. */ }
         return !value;
-      })} onRefreshRuns={() => void loadExecutionsForTask(task.id)} isLoadingRuns={isLoadingExecutions}
-      runsError={executionsError} />
+      })}
+      onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
+      interruptingExecutionIds={interruptingExecutions}
+    />
   );
 
   return (
-    <div className={`task-detail-workspace${tracesOpen ? "" : " task-detail-workspace--traces-closed"}`}>
+    <div className={`task-detail-workspace${runsOpen ? "" : " task-detail-workspace--traces-closed"}`}>
     <div className="task-detail-main">
     <div className="task-detail-page">
 
@@ -691,160 +633,149 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </ErrorText>
       )}
 
-      <DataRowContainer className='task-detail-page__section'>
-        <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />}
-          tags={[
-            getTaskStatusTag(task.status as TaskStatus),
-            ...task.tags.map(tag => ({
-              label: tag.name,
-              onRemove: () => removeTag(tag.id),
-            })),
-            {
-              label: '+ add tag',
-              color: 'gray' as const,
-              onClick: () => setShowTagPop(true),
-              clickLabel: 'Add tag',
-            },
-          ]}
-          topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
-        >
-          <Text as='span' weight='medium' size='3'>
-            {task.createdByActor.displayName}
-          </Text>
-          <Text as='span' weight='normal' tone='muted' size='3'>
-            {` ${actorHandle(task.createdByActor)} created `}
-          </Text>
-          <Text as='span' tone='muted' style='mono'>
-            #{task.id.slice(0, 6)}
-          </Text>
-          {!task.assigneeActor ? (
-            <Text tone='muted'>
-              unassigned
-            </Text>
-          ) : (
-            null
-          )}
-        </DataRow>
-
-        {task.assigneeActor ? (
-          <DataRow
-            leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} inactive={isDeactivated(task.assigneeActor)} src={task.assigneeActor.avatarUrl || undefined} />}
-            onClick={() => setShowAssignPop(true)}
-          >
-            <Text as='span' weight='medium' size='3'>
-              {task.assigneeActor.displayName}
-            </Text>
-            <Text as='span' weight='normal' tone='muted' size='3'>
-              {` ${actorHandle(task.assigneeActor)} assigned`}
-            </Text>
-            <Text size='1' tone='muted'>tap to reassign</Text>
-          </DataRow>
-        ) : (
-          null
-        )}
-      </DataRowContainer >
-
-      {task.artefacts && task.artefacts.length > 0 && (
-        <DataRowContainer className='task-detail-page__section'>
-          {task.artefacts.map(artefact => (
-            <DataRow
-              key={artefact.id}
-
-            >
-              <Text as='span' weight='medium' size='3'>
-                {`${artefact.name}: `}
-              </Text>
-              <Text as='span'>
+      {/* Everything you act on, at the top and always in reach: move the task, open its PR, talk about it. */}
+      <div className="task-bar">
+        <div className="task-bar__row">
+          {canChangeStatus && <div className="task-bar__status" role="group" aria-label="Status">
+            {Object.entries(TASKS_STATUS).map(([status, info]) => {
+              const Icon = info.icon;
+              const isCurrent = status === task.status;
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  className={`task-bar__status-option${isCurrent ? ' task-bar__status-option--current' : ''}`}
+                  aria-pressed={isCurrent}
+                  onClick={() => { if (!isCurrent) void handleChangeStatus(status as TaskStatus); }}
+                  disabled={isLoading}
+                >
+                  <Icon size={15} strokeWidth={1.75} aria-hidden="true" />
+                  {info.label}
+                </button>
+              );
+            })}
+          </div>}
+          <div className="task-bar__actions">
+            {task.artefacts.map((artefact) => {
+              const { label, isPullRequest } = describeArtefactLink(artefact.link);
+              const Icon = isPullRequest ? GitPullRequest : Link2;
+              return (
                 <a
+                  key={artefact.id}
+                  className="task-bar__link"
                   href={artefact.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                  title={`${artefact.name}: ${artefact.link}`}
                 >
-                  {artefact.link}
+                  <Icon size={14} aria-hidden="true" />
+                  <span className="task-bar__link-label">{label}</span>
+                  <ExternalLink size={12} aria-hidden="true" className="task-bar__link-external" />
                 </a>
-              </Text>
-            </DataRow>
-          ))}
-        </DataRowContainer>
-      )}
-
-      {(dependencyTasks.length > 0 || task) && (
-        <DataRowContainer
-          title="Depends on"
-          className='task-detail-page__section'
-          action={dependencyTasks.length > 0 ? (
+              );
+            })}
             <Button
               size="sm"
-              variant="ghost"
-              className="task-detail-page__dependency-graph-button"
-              onClick={() => navigate(`/tasks/dependencies/${task.id}`)}
+              variant="secondary"
+              className="task-bar__thread"
+              onClick={() => { void handleOpenOrCreateThread(); }}
+              disabled={isResolvingThread || !isChatReady || isChatReadinessLoading}
+              title={threadId ? 'Open this task’s thread' : 'Start a thread about this task'}
             >
-              <GitBranch className="task-detail-page__dependency-graph-icon" size={14} strokeWidth={1.5} absoluteStrokeWidth />
-              View graph
+              <MessagesSquare size={14} aria-hidden="true" />
+              {threadId ? 'Thread' : 'New thread'}
             </Button>
-          ) : undefined}
-        >
-          {dependencyTasks.map(depTask => {
-            return (
-              <TaskRow
-                key={depTask.id}
-                task={depTask}
-                onClick={() => navigate(`/tasks/task/${depTask.id}`)}
-                additionalTags={[
-                  {
-                    label: '× remove',
-                    color: 'red' as const,
-                    onClick: () => removeDependency(depTask.id),
-                    clickLabel: 'Remove dependency',
-                  },
-                ]}
-              />
-            );
-          })}
-          <DataRow
-            tags={[
-              {
-                label: '+ add dependency',
-                color: 'gray' as const,
-                onClick: () => setShowDependencyPop(true),
-                clickLabel: 'Add dependency',
-              },
-            ]}
+          </div>
+        </div>
+        {liveActivity ? (
+          <div
+            className={`task-bar__activity ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
+            role="status"
           >
-            <Text tone='muted' size='2'>
-              {dependencyTasks.length === 0 ? 'No dependencies yet' : 'Add another dependency'}
-            </Text>
-          </DataRow>
-        </DataRowContainer>
-      )}
+            <span className="task-bar__activity-dot" aria-hidden="true" />
+            <span className="task-bar__activity-message">
+              {liveActivity.message?.replace(/\s+/g, ' ').trim() || 'Activity in progress...'}
+            </span>
+          </div>
+        ) : null}
+      </div>
 
-      <DataRowContainer className='task-detail-page__section' >
-        <DataRow
-          leading={<Avatar size={'sm'} name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />}
-          tags={[]}
-          topRight={<Text size='1' tone='muted'>{elapsedTime(task.createdAt)}</Text>}
-        >
-          <Text as='span' weight='medium' size='3'>
-            {task.createdByActor.displayName}
-          </Text>
-          <Text as='span' weight='normal' tone='muted' size='3'>
-            {` ${actorHandle(task.createdByActor)}`}
-          </Text>
-          <Text>
-            {task.description ? (
-              task.description
-            ) : (
-              'no description'
-            )}
-          </Text>
-        </DataRow>
-      </DataRowContainer >
+      <dl className="task-props">
+        <dt>Assignee</dt>
+        <dd>
+          {task.assigneeActor ? (
+            <button type="button" className="task-props__person" onClick={() => setShowAssignPop(true)} title="Reassign">
+              <Avatar size="xs" name={task.assigneeActor.displayName} inactive={isDeactivated(task.assigneeActor)} src={task.assigneeActor.avatarUrl || undefined} />
+              <span>{task.assigneeActor.displayName}</span>
+              <span className="task-props__muted">{actorHandle(task.assigneeActor)}</span>
+            </button>
+          ) : (
+            <span className="task-props__inline">
+              <span className="task-props__muted">Unassigned</span>
+              <Button size="sm" variant="secondary" onClick={() => setShowAssignPop(true)}>Assign</Button>
+              <Button size="sm" variant="secondary" onClick={() => { handlers.assignTaskToMe({ taskId: task.id }).catch(showError); }}>Assign to me</Button>
+            </span>
+          )}
+        </dd>
+
+        <dt>Project</dt>
+        <dd>
+          <ProjectPicker
+            projects={projects}
+            // Without the project list, "No project" would be the only choice and
+            // would strip the task's project, so the picker stays locked.
+            projectsLoaded={!isLoadingProjects && !projectsError}
+            selectedProjectId={currentProject?.id ?? null}
+            onChange={(projectId) => void changeProject(projectId)}
+            emptyLabel={!currentProject && projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : "No project"}
+            ariaLabel="Task project"
+            className="task-props__project"
+          />
+        </dd>
+
+        <dt>Tags</dt>
+        <dd className="task-props__tags">
+          {otherTags.map((tag) => (
+            <Chip key={tag.id} className="task-props__tag">
+              {tag.name}
+              <button type="button" className="chip__remove" onClick={() => void removeTag(tag.id)} aria-label={`Remove tag ${tag.name}`}>×</button>
+            </Chip>
+          ))}
+          <Chip onClick={() => setShowTagPop(true)} clickLabel="Add tag">+ add tag</Chip>
+        </dd>
+
+        <dt>Created</dt>
+        <dd className="task-props__inline">
+          <Avatar size="xs" name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />
+          <span>{task.createdByActor.displayName}</span>
+          <span className="task-props__muted">{elapsedTime(task.createdAt)} · <span className="task-props__mono">#{task.id.slice(0, 6)}</span></span>
+        </dd>
+      </dl>
+
+      <section className="task-detail-page__description" aria-label="Description">
+        {task.description ? (
+          <Text wrap>{task.description}</Text>
+        ) : (
+          <Text tone="muted">No description</Text>
+        )}
+      </section>
 
       <DataRowContainer title="Updates" className='task-detail-page__section' >
         {timelineItems.length === 0 ? (
           <Text className="task-detail-page__executions-state" tone='muted'>No updates yet.</Text>
+        ) : null}
+        {hiddenTimelineCount > 0 || showAllTimelineItems ? (
+          <div className='task-detail-page__section-toggle task-detail-page__section-toggle--top'>
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={() => setShowAllTimelineItems((prev) => !prev)}
+            >
+              {showAllTimelineItems
+                ? 'Show only recent updates'
+                : `Show ${hiddenTimelineCount} earlier ${hiddenTimelineCount === 1 ? 'update' : 'updates'}`}
+            </Button>
+          </div>
         ) : null}
         {visibleTimelineItems.map((item) => {
           if (item.type === 'comment') {
@@ -949,204 +880,80 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             </DataRow>
           );
         })}
-        {hasMoreTimelineItems ? (
-          <div className='task-detail-page__section-toggle'>
-            <Button
-              size='sm'
-              variant='secondary'
-              onClick={() => setShowAllTimelineItems((prev) => !prev)}
-            >
-              {showAllTimelineItems
-                ? 'Show fewer updates'
-                : `See ${timelineItems.length - COLLAPSED_TIMELINE_COUNT} more updates`}
-            </Button>
-          </div>
-        ) : null}
       </DataRowContainer>
 
-      {!isDesktop ? tracesPanel : (
-        <DataRowContainer className='task-detail-page__section'>
-          <div className="task-detail-page__activity">
-            <div className={`task-detail-page__activity-slot ${liveActivity ? 'task-detail-page__activity-slot--active' : ''}`}>
-              <div className="task-detail-page__activity-placeholder">
-                <Text size='2' tone='muted'>Live activity will show here</Text>
-              </div>
-              {liveActivity ? (
-                <div
-                  className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
-                >
-                  <Text size='2' className='task-detail-page__activity-message'>
-                    {liveActivity.message?.replace(/\s+/g, ' ').trim() || 'Activity in progress...'}
-                  </Text>
-                </div>
-              ) : null}
-            </div>
-          </div>
+      {/* On desktop runs live in the side panel; on phones they're listed here and open their trace page. */}
+      {!isDesktop ? (
+        <DataRowContainer title="Runs" className='task-detail-page__section task-detail-page__runs'>
+          <RunList
+            runs={executionsTaskId === task.id ? executions : []}
+            onSelect={(run) => navigate(runTracePath(run))}
+            onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
+            interruptingExecutionIds={interruptingExecutions}
+            isLoading={isLoadingExecutions}
+            error={executionsError}
+          />
         </DataRowContainer>
-      )}
+      ) : null}
 
-      <DataRowContainer title="Runs" className='task-detail-page__section'>
-        {isLoadingExecutions && executions.length === 0 ? (
-          <Text className="task-detail-page__executions-state" tone='muted'>Loading runs...</Text>
-        ) : null}
-        {executionsError ? (
-          <Text className="task-detail-page__executions-state" tone='muted'>Failed to load runs: {executionsError}</Text>
-        ) : null}
-        {!isLoadingExecutions && !executionsError && executions.length === 0 ? (
-          <Text className="task-detail-page__executions-state" tone='muted'>No runs yet for this task.</Text>
-        ) : null}
-        {visibleExecutions.map((execution) => {
-          const actor = actors.find((candidate) => candidate.id === execution.agentActorId);
-          const actorName = actor?.displayName ?? shortId(execution.agentActorId);
-          const actorHandleLabel = actor ? actorHandle(actor) : '';
-          const statusTag = getExecutionStatusTag(execution.status);
-          const hasFailureDetails =
-            execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
-          const isFailureDetailsExpanded = expandedExecutionErrorIds.has(execution.id);
-          const isActive = execution.source === 'active';
-          const isPotentiallyStale = isActive && isExecutionPotentiallyStale(execution, stalenessNow);
-          const isInterrupting = interruptingExecutions.has(execution.executionId);
-          const sourceTag: DataRowTag = {
-            label: isActive ? 'active' : 'history',
-            color: 'gray',
-          };
-          const staleTag: DataRowTag | null = isPotentiallyStale ? {
-            label: 'Potentially stale',
-            color: 'orange',
-            title: POTENTIALLY_STALE_MESSAGE,
-          } : null;
-
+      <DataRowContainer
+        title="Depends on"
+        className='task-detail-page__section'
+        action={dependencyTasks.length > 0 ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="task-detail-page__dependency-graph-button"
+            onClick={() => navigate(`/tasks/dependencies/${task.id}`)}
+          >
+            <GitBranch className="task-detail-page__dependency-graph-icon" size={14} strokeWidth={1.5} absoluteStrokeWidth />
+            View graph
+          </Button>
+        ) : undefined}
+      >
+        {dependencyTasks.map(depTask => {
           return (
-            <DataRow
-              key={execution.id}
-              leading={<Avatar size={'sm'} name={actorName} inactive={isDeactivated(actor)} src={actor?.avatarUrl || undefined} />}
-              tags={staleTag ? [statusTag, sourceTag, staleTag] : [statusTag, sourceTag]}
-              topRight={
-                isActive ? (
-                  <Button
-                    variant='danger'
-                    size='sm'
-                    disabled={isInterrupting}
-                    onClick={() => void handleInterruptExecution(execution.executionId, task?.name, task?.id ?? '')}
-                  >
-                    {isInterrupting ? 'Interrupting…' : 'Interrupt'}
-                  </Button>
-                ) : (
-                  <Text size='1' tone='muted'>{elapsedTime(execution.timestamp)}</Text>
-                )
-              }
-            >
-              <Stack spacing='1'>
-                <div>
-                  <Text as='span' weight='medium' size='3'>
-                    {actorName}
-                  </Text>
-                  <Text as='span' weight='normal' tone='muted' size='3'>
-                    {actorHandleLabel ? ` ${actorHandleLabel}` : ''}
-                  </Text>
-                </div>
-                <Text as='span' tone='muted' size='2'>
-                  <span className='task-detail-page__execution-meta'>
-                    run #{shortId(execution.executionId)}
-                    {hasFailureDetails ? (
-                      <button
-                        type='button'
-                        className='task-detail-page__execution-error-toggle'
-                        onClick={() => toggleExecutionErrorDetails(execution.id)}
-                        aria-label={isFailureDetailsExpanded ? 'Hide failure details' : 'Show failure details'}
-                        aria-expanded={isFailureDetailsExpanded}
-                        title={isFailureDetailsExpanded ? 'Hide failure details' : 'Show failure details'}
-                      >
-                        i
-                      </button>
-                    ) : null}
-                  </span>
-                </Text>
-                <Text as='span' size='1' tone='muted'>
-                  <span className='task-detail-page__execution-stats'>
-                    tools: {execution.toolCallCount}
-                    <span className='task-detail-page__execution-stats-separator'>|</span>
-                    session: {execution.runnerSessionId ? shortId(execution.runnerSessionId) : 'pending'}
-                    {isActive ? (
-                      <>
-                        <span className='task-detail-page__execution-stats-separator'>|</span>
-                        heartbeat {elapsedTime(execution.lastActivityAt)}
-                      </>
-                    ) : null}
-                  </span>
-                </Text>
-                {hasFailureDetails && isFailureDetailsExpanded ? (
-                  <div className='task-detail-page__execution-error-detail'>
-                    {execution.errorCode ? (
-                      <Text as='span' size='1' style='mono' className='task-detail-page__execution-error-code'>
-                        {execution.errorCode}
-                      </Text>
-                    ) : null}
-                    {execution.errorMessage ? (
-                      <Text as='span' size='2' wrap>
-                        {execution.errorMessage}
-                      </Text>
-                    ) : null}
-                  </div>
-                ) : null}
-              </Stack>
-            </DataRow>
+            <TaskRow
+              key={depTask.id}
+              task={depTask}
+              onClick={() => navigate(`/tasks/task/${depTask.id}`)}
+              additionalTags={[
+                {
+                  label: '× remove',
+                  color: 'red' as const,
+                  onClick: () => removeDependency(depTask.id),
+                  clickLabel: 'Remove dependency',
+                },
+              ]}
+            />
           );
         })}
-        {hasMoreExecutions ? (
-          <div className='task-detail-page__section-toggle'>
-            <Button
-              size='sm'
-              variant='secondary'
-              onClick={() => setShowAllExecutions((prev) => !prev)}
-            >
-              {showAllExecutions
-                ? 'Show fewer runs'
-                : `See ${executions.length - COLLAPSED_EXECUTION_COUNT} more runs`}
-            </Button>
-          </div>
-        ) : null}
+        <DataRow
+          tags={[
+            {
+              label: '+ add dependency',
+              color: 'gray' as const,
+              onClick: () => setShowDependencyPop(true),
+              clickLabel: 'Add dependency',
+            },
+          ]}
+        >
+          <Text tone='muted' size='2'>
+            {dependencyTasks.length === 0 ? 'No dependencies yet' : 'Add another dependency'}
+          </Text>
+        </DataRow>
       </DataRowContainer>
 
-      <DataRowContainer className='task-detail-page__status-buttons'>
-        {Object.entries(TASKS_STATUS).map(([status, info]) => {
-          const Icon = info.icon;
-          return (
-            <Button
-              key={status}
-              size='sm'
-              variant={status === task.status ? 'primary' : 'secondary'}
-              onClick={() => handleChangeStatus(status as TaskStatus)}
-              disabled={isLoading}
-            >
-              <Stack spacing='1' align='center'>
-                <Icon size={20} />
-                <div>{info.label}</div>
-              </Stack>
-            </Button>
-          );
-        })}
-      </DataRowContainer>
-
-      {!task.assigneeActor && (
-        <DataRowContainer className='task-detail-page__comment-buttons'>
-          <Button
-            size='lg'
-            onClick={() => setShowAssignPop(true)}
-          >
-            Assign
-          </Button>
-          <Button
-            size='lg'
-            variant='primary'
-            onClick={async () => {
-              await handlers.assignTaskToMe({ taskId: task.id });
-            }}
-          >
-            Assign to Me
-          </Button>
+      {!isChatReadinessLoading && readiness && !readiness.isReady ? (
+        <DataRowContainer className='task-detail-page__actions'>
+          <ChatSetupCallout
+            title={readiness.title}
+            description={readiness.description}
+            ctaLabel={readiness.ctaLabel}
+            onOpenSettings={() => navigate('/settings/models')}
+          />
         </DataRowContainer>
-      )}
+      ) : null}
 
       <DeleteWithConfirmation
         className='task-detail-page__comment-buttons'
@@ -1159,35 +966,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           }
         }}
       />
-
-      <DataRowContainer className='task-detail-page__actions'>
-        {!isChatReadinessLoading && readiness && !readiness.isReady ? (
-          <ChatSetupCallout
-            title={readiness.title}
-            description={readiness.description}
-            ctaLabel={readiness.ctaLabel}
-            onOpenSettings={() => navigate('/settings/models')}
-          />
-        ) : null}
-
-        <Button
-          size='lg'
-          variant={threadId ? 'primary' : 'secondary'}
-          onClick={() => {
-            void handleOpenOrCreateThread();
-          }}
-          disabled={isResolvingThread || !isChatReady || isChatReadinessLoading}
-        >
-          {threadId ? 'Go to thread' : 'Create thread'}
-        </Button>
-        <Button
-          size='lg'
-          variant='secondary'
-          onClick={() => navigate(backPath)}
-        >
-          Back to Tasks
-        </Button>
-      </DataRowContainer>
 
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
@@ -1218,7 +996,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         Add Comment
       </Button>
     </div>
-    {isDesktop ? tracesPanel : null}
+    {isDesktop ? runsPanel : null}
     </div>
   );
 }
@@ -1375,38 +1153,17 @@ function TaskDetailLoadingShell({ backPath }: { backPath: string }) {
   );
 }
 
-function getExecutionStatusTag(
-  status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'],
-): DataRowTag {
-  if (status === 'ACTIVE') {
-    return { label: 'active', color: 'blue' };
+/** A link's short name: "acme/api#412" for a GitHub PR, otherwise host and path. */
+function describeArtefactLink(link: string): { label: string; isPullRequest: boolean } {
+  try {
+    const url = new URL(link);
+    const pr = url.hostname === 'github.com' ? url.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)/) : null;
+    if (pr) return { label: `${pr[1]}/${pr[2]}#${pr[3]}`, isPullRequest: true };
+    const path = url.pathname.replace(/\/$/, '');
+    return { label: `${url.hostname}${path.length > 24 ? `${path.slice(0, 24)}…` : path}`, isPullRequest: false };
+  } catch {
+    return { label: link, isPullRequest: false };
   }
-
-  if (status === 'SUCCEEDED') {
-    return { label: 'succeeded', color: 'green' };
-  }
-
-  if (status === 'FAILED') {
-    return { label: 'failed', color: 'red' };
-  }
-
-  if (status === 'STALE') {
-    return { label: 'stale', color: 'orange' };
-  }
-
-  return { label: 'cancelled', color: 'gray' };
-}
-
-function isExecutionPotentiallyStale(execution: TaskExecutionListItem, now: number): boolean {
-  return now - new Date(execution.lastActivityAt).getTime() >= POTENTIALLY_STALE_THRESHOLD_MS;
-}
-
-function shortId(value: string): string {
-  if (value.length <= 12) {
-    return value;
-  }
-
-  return `${value.slice(0, 8)}…${value.slice(-4)}`;
 }
 
 function isTextInputTarget(target: EventTarget | null): boolean {

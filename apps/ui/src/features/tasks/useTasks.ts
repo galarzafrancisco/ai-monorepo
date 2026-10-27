@@ -138,9 +138,11 @@ export const useTasks = () => {
   };
 
   // Create task
+  // Callers that choose tags themselves (the new-task form picks a project) pass tagNames;
+  // otherwise the task lands in the project the board is filtered to.
   const createTask = async (task: CreateTaskDto) => {
     const projectTag = selectedProjectTagRef.current;
-    const body: CreateTaskDto = projectTag
+    const body: CreateTaskDto = projectTag && task.tagNames === undefined
       ? {
         ...task,
         tagNames: Array.from(new Set([...(task.tagNames ?? []), projectTag])),

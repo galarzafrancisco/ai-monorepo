@@ -1,0 +1,142 @@
+.run-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.run-list__items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.run-list__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--r-3);
+}
+
+.run-list__item:hover {
+  background: var(--surface);
+}
+
+.run-list__item--selected,
+.run-list__item--selected:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+
+.run-list__row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--r-3);
+}
+
+.run-list__row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.run-list__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.run-list__line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.run-list__name {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-2);
+}
+
+.run-list__live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: run-list-pulse 1.6s ease-in-out infinite;
+}
+
+.run-list__meta {
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}
+
+.run-list__id {
+  font-family: var(--font-mono);
+}
+
+.run-list__failure {
+  color: var(--danger);
+  font-size: var(--fs-1);
+  overflow-wrap: anywhere;
+}
+
+.run-list__chevron {
+  flex: none;
+  align-self: center;
+  color: var(--text-muted);
+}
+
+/* Interrupt sits beside the row, not inside it, so it isn't a nested button. */
+.run-list__interrupt {
+  flex: none;
+  margin-right: var(--space-2);
+}
+
+.run-list__item:has(.run-list__interrupt) .run-list__chevron {
+  display: none;
+}
+
+.run-list__more {
+  align-self: flex-start;
+  margin: var(--space-2) var(--space-3) 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--fs-1);
+  cursor: pointer;
+}
+
+.run-list__more:hover {
+  color: var(--text);
+}
+
+.run-list__state {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+}
+
+@keyframes run-list-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .run-list__live-dot { animation: none; }
+}
