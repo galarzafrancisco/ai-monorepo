@@ -69,22 +69,29 @@ export class ExecutionTracesService {
   ) {
     await this.resolveExecution(executionId);
     const backwards = options.latest || options.beforeSequence !== undefined;
-    const items = await this.traces.find({
-      where: {
-        executionId,
-        sequence:
-          options.beforeSequence !== undefined
-            ? LessThan(options.beforeSequence)
-            : MoreThan(afterSequence),
-      },
-      order: { sequence: backwards ? 'DESC' : 'ASC' },
-      take: limit + 1,
-    });
+    const [items, lifecycle] = await Promise.all([
+      this.traces.find({
+        where: {
+          executionId,
+          sequence:
+            options.beforeSequence !== undefined
+              ? LessThan(options.beforeSequence)
+              : MoreThan(afterSequence),
+        },
+        order: { sequence: backwards ? 'DESC' : 'ASC' },
+        take: limit + 1,
+      }),
+      this.traces.find({
+        where: { executionId, harness: 'worker' },
+        order: { sequence: 'ASC' },
+      }),
+    ]);
     const hasMore = items.length > limit;
     if (hasMore) items.pop();
     if (backwards) items.reverse();
     return {
       items,
+      lifecycle,
       nextAfterSequence: items.at(-1)?.sequence ?? afterSequence,
       hasMoreBefore: Boolean(backwards && hasMore),
     };

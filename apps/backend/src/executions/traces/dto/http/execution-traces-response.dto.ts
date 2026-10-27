@@ -35,6 +35,12 @@ export class ExecutionTraceResponseDto {
 export class ExecutionTracesResponseDto {
   @ApiProperty({ type: [ExecutionTraceResponseDto] })
   items!: ExecutionTraceResponseDto[];
+  @ApiProperty({
+    type: [ExecutionTraceResponseDto],
+    description:
+      'Worker lifecycle records across the entire execution, independent of the raw-event page',
+  })
+  lifecycle!: ExecutionTraceResponseDto[];
   @ApiProperty()
   hasMoreBefore!: boolean;
   @ApiProperty() nextAfterSequence!: number;

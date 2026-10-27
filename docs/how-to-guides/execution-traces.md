@@ -67,7 +67,7 @@ transcript permission or payload sanitization in this initial version.
 
 ## Task trace panel
 
-Task details show a collapsible **Agent traces** panel on wide desktop windows.
+Task details show a collapsible **Execution traces** panel on wide desktop windows.
 On phones, a compact entry between the task updates and runs replaces the live
 activity slot and opens a full-screen trace view with
 a Back to task control. The view traps focus, supports Escape, and restores focus
@@ -98,3 +98,26 @@ notification, subscription acknowledgement, reconnect and a ten-second fallback.
 It also subscribes to execution list changes to discover new runs. Collapsing
 unmounts its subscription and stops its trace reads. Raw output is never included
 in these notifications or broadcast to collection subscribers.
+
+
+## Worker execution progress
+
+New workers also record `taico.execution.step` JSON events with `harness: "worker"`.
+They share the execution's sequence and durable spool with unchanged harness
+payloads. The UI shows Prepare workspace, Set up agent, Run agent and Finish
+execution with the walkthrough's connected status indicators. Repository events
+report actual clone/fetch progress per project, including failures; remote URL
+credentials are excluded from the display name. A workspace with no repositories
+is reported explicitly.
+
+The Run agent step includes harness-specific shutdown. Finish execution covers
+saving the outcome (or returning an unsupported task to the queue); the workspace
+is retained. Failed, cancelled and interrupted steps retain their actual outcome,
+and finalization is recorded on those paths too. Missing completion events are
+not treated as success when a worker becomes stale.
+
+Every trace read includes `lifecycle`, the worker records for the entire execution,
+independent of the raw-event page. This keeps preparation visible after thousands
+of harness events without fetching the full transcript. New records use the same
+execution-scoped change notifications and read permissions. Older workers/runs
+without lifecycle events show that step details are unavailable.

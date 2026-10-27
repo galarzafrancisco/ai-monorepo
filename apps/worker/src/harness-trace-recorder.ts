@@ -2,6 +2,7 @@ import {
   EXECUTION_TRACE_BATCH_BYTES,
   EXECUTION_TRACE_BATCH_SIZE,
   type ExecutionTraceEvent,
+  type ExecutionStepEvent,
   type HarnessJson,
   type PostExecutionTracePayload,
 } from "@taico/events";
@@ -10,14 +11,18 @@ import {
 export class HarnessTraceRecorder {
   private sequence = 0;
   private sessionId: string | null = null;
-  private pending: Array<{ event: ExecutionTraceEvent; bytes: number }> = [];
+  private pending: Array<{
+    event: ExecutionTraceEvent;
+    bytes: number;
+    harness: string;
+  }> = [];
   private pendingBytes = 0;
   private flushing?: Promise<void>;
   private readonly timer: ReturnType<typeof setInterval>;
 
   constructor(
     private readonly executionId: string,
-    private readonly harness: string,
+    private harness: string,
     private readonly persist: (
       batch: PostExecutionTracePayload,
     ) => Promise<void>,
@@ -30,7 +35,15 @@ export class HarnessTraceRecorder {
     this.sessionId = sessionId;
   }
 
-  capture(payload: unknown): void {
+  setHarness(harness: string): void {
+    this.harness = harness;
+  }
+
+  workerStep(event: Omit<ExecutionStepEvent, "type">): void {
+    this.capture({ type: "taico.execution.step", ...event }, "worker");
+  }
+
+  capture(payload: unknown, harness = this.harness): void {
     let snapshot: HarnessJson;
     try {
       const serialized = JSON.stringify(payload);
@@ -51,7 +64,7 @@ export class HarnessTraceRecorder {
       payload: snapshot,
     };
     const bytes = Buffer.byteLength(JSON.stringify(event));
-    this.pending.push({ event, bytes });
+    this.pending.push({ event, bytes, harness });
     this.pendingBytes += bytes;
     if (
       this.pending.length >= EXECUTION_TRACE_BATCH_SIZE ||
@@ -91,8 +104,10 @@ export class HarnessTraceRecorder {
     while (this.pending.length) {
       let bytes = 0;
       let count = 0;
+      const harness = this.pending[0].harness;
       for (const item of this.pending) {
         if (
+          item.harness !== harness ||
           count >= EXECUTION_TRACE_BATCH_SIZE ||
           (count && bytes + item.bytes > EXECUTION_TRACE_BATCH_BYTES)
         )
@@ -103,7 +118,7 @@ export class HarnessTraceRecorder {
       const events = this.pending.slice(0, count).map(({ event }) => event);
       await this.persist({
         executionId: this.executionId,
-        harness: this.harness,
+        harness,
         events,
       });
       this.pending.splice(0, count);

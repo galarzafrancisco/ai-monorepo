@@ -1200,6 +1200,7 @@ export interface ExecutionTraceResponseDto {
 
 export interface ExecutionTracesResponseDto {
   items: ExecutionTraceResponseDto[];
+  lifecycle: ExecutionTraceResponseDto[];
   hasMoreBefore: boolean;
   nextAfterSequence: number;
 }

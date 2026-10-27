@@ -308,6 +308,38 @@ describe('Raw execution traces E2E', () => {
     expect(first.body.hasMoreBefore).toBe(false);
   });
 
+  it('returns worker progress outside the latest raw-event page, including late uploads', async () => {
+    const worker = payload(1);
+    worker.harness = 'worker';
+    worker.events[0].payload = {
+      type: 'taico.execution.step',
+      step: 'workspace',
+      status: 'completed',
+      message: 'No repositories configured.',
+    };
+    expect(await post(owner, worker)).toEqual({ ok: true });
+    const harness = payload(2);
+    harness.events = Array.from({ length: 100 }, (_, index) => ({
+      ...harness.events[0],
+      sequence: index + 2,
+    }));
+    expect(await post(owner, harness)).toEqual({ ok: true });
+    const final = { ...payload(102), harness: 'worker' };
+    final.events[0].payload = {
+      type: 'taico.execution.step',
+      step: 'finish',
+      status: 'completed',
+    };
+    expect(await post(owner, final)).toEqual({ ok: true });
+    const page = (await read('?latest=true&limit=2').expect(200)).body;
+    expect(page.items.map((item: any) => item.sequence)).toEqual([101, 102]);
+    expect(page.lifecycle.map((item: any) => item.sequence)).toEqual([1, 102]);
+    expect(page.lifecycle[0].payload).toEqual(worker.events[0].payload);
+    const incremental = (await read('?afterSequence=102').expect(200)).body;
+    expect(incremental.items).toEqual([]);
+    expect(incremental.lifecycle).toEqual(page.lifecycle);
+  });
+
   it('notifies authenticated viewers of saved trace changes without broadcasting raw content', async () => {
     const { port } = app.getHttpServer().address() as AddressInfo;
     const viewer = io(`http://127.0.0.1:${port}/executions`, {

@@ -36,7 +36,8 @@ describe('ExecutionTracesService', () => {
     service = new ExecutionTracesService(
       {
         query,
-        find,
+        find: (options: { where: { harness?: string } }) =>
+          options.where.harness ? Promise.resolve([]) : find(options),
       } as unknown as Repository<ExecutionTraceEntity>,
       { emit } as unknown as EventEmitter2,
     );
@@ -116,6 +117,7 @@ describe('ExecutionTracesService', () => {
   it('returns a stable cursor on an empty page and orders events by sequence', async () => {
     expect(await service.list(executionId, 5, 10)).toEqual({
       items: [],
+      lifecycle: [],
       nextAfterSequence: 5,
       hasMoreBefore: false,
     });
@@ -154,6 +156,7 @@ describe('ExecutionTracesService', () => {
     find.mockResolvedValue([{ sequence: 5 }, { sequence: 4 }, { sequence: 3 }]);
     expect(await service.list(executionId, 0, 2, { latest: true })).toEqual({
       items: [{ sequence: 4 }, { sequence: 5 }],
+      lifecycle: [],
       nextAfterSequence: 5,
       hasMoreBefore: true,
     });
