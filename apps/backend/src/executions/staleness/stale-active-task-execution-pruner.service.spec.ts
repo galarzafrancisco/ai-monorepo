@@ -71,6 +71,9 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
     expect(manager.save).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
+        id: execution.id,
+        runnerSessionId: execution.runnerSessionId,
+        toolCallCount: execution.toolCallCount,
         taskId: execution.taskId,
         status: TaskExecutionHistoryStatus.STALE,
       }),

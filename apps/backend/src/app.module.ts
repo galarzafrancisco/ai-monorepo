@@ -49,6 +49,8 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
 import { AccessRequests1762300000000 } from './migrations/1762300000000-AccessRequests';
 import { AccessRequestHeardFrom1762400000000 } from './migrations/1762400000000-AccessRequestHeardFrom';
 import { WalkthroughModule } from './walkthrough/walkthrough.module';
+import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
+import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
 
 @Module({
@@ -86,6 +88,8 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadHardDelete1762200000000,
         AccessRequests1762300000000,
         AccessRequestHeardFrom1762400000000,
+        ExecutionTraces1762500000000,
+        ExecutionTraceJson1762500000001,
       ],
     }),
     EventEmitterModule.forRoot(),

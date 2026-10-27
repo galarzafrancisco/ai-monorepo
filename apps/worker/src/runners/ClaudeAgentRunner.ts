@@ -97,6 +97,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             settingSources: ['user', 'project', 'local'],
             ...(this.model ? { model: this.model.modelId } : {}),
             ...(ctx.options ?? {}),
+            includePartialMessages: true,
             strictMcpConfig: true,
             ...(latestSessionId ? { resume: latestSessionId } : {}),
             mcpServers,
@@ -106,6 +107,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         });
 
         for await (const msg of stream) {
+          this.emitRawEvent(msg);
           // session capture
           if (
             msg?.type === 'system' &&

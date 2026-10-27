@@ -64,6 +64,9 @@ export class StaleActiveTaskExecutionPrunerService {
       await manager.save(
         TaskExecutionHistoryEntity,
         manager.create(TaskExecutionHistoryEntity, {
+          id: activeExecution.id,
+          runnerSessionId: activeExecution.runnerSessionId,
+          toolCallCount: activeExecution.toolCallCount,
           taskId: activeExecution.taskId,
           claimedAt: activeExecution.claimedAt,
           transitionedAt: new Date(),

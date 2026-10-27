@@ -461,6 +461,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
       console.log("--------- STARTING EVENT LOOP ---------");
       for await (const event of events.stream) {
+        this.emitRawEvent(event);
         emitHarnessHeartbeat();
 
         if (this.interruptRequested && await this.wasAbortApplied()) {

@@ -3,6 +3,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/postgres-adapter';
 import { Pool } from 'pg';
 import { Server, ServerOptions } from 'socket.io';
+import { EXECUTION_TRACE_MAX_BYTES } from '@taico/events';
 import { getConfig } from 'src/config/env.config';
 
 /**
@@ -27,7 +28,9 @@ export class PostgresIoAdapter extends IoAdapter {
   }
 
   createIOServer(port: number, options?: ServerOptions) {
-    const server = super.createIOServer(port, options);
+    // Namespaces share one Engine.IO server. Set the frame limit here so it
+    // does not depend on which gateway happens to initialize first.
+    const server = super.createIOServer(port, { ...options, maxHttpBufferSize: EXECUTION_TRACE_MAX_BYTES });
     server.adapter(
       createAdapter(this.pool, {
         errorHandler: (error: Error) => {

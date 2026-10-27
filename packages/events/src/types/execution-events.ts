@@ -21,6 +21,7 @@ export const ExecutionWireEvents = {
   EXECUTION_DELETED: 'execution.deleted',
   EXECUTION_ACTIVITY: 'execution.activity',
   EXECUTION_ACTIVITY_POST: 'execution.activity.post',
+  EXECUTION_TRACE_POST: 'execution.trace.post',
   EXECUTION_HEARTBEAT_POST: 'execution.heartbeat.post',
   WORKER_HEARTBEAT_POST: 'worker.heartbeat.post',
   WORKER_HARNESSES_REPORT_REQUESTED: 'worker.harnesses.report.requested',

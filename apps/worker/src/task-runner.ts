@@ -18,6 +18,7 @@ import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js'
 import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
+import { HarnessTraceRecorder } from './harness-trace-recorder.js';
 import { WORKER_VERSION } from './version.js';
 import {
   InterruptedExecutionError,
@@ -173,6 +174,10 @@ export async function executeTask({
 
     activeExecutionInterruptHandlers.set(executionId, () => runner?.cancel());
 
+    // Raw traces have their own durable path, independent of task activity.
+    const trace = new HarnessTraceRecorder(executionId, runner.kind,
+      (batch) => activityGatewayClient.queueTrace(batch));
+
     // Run and pipe results
     try {
       let latestRunnerSessionId: string | null = null;
@@ -195,6 +200,7 @@ export async function executeTask({
           abortSignal: abortController.signal,
         },
         {
+          onRawEvent: (event) => trace.capture(event),
           onHeartbeat: async () => {
             throwIfInterrupted();
             await activityGatewayClient.publishHeartbeat({ executionId });
@@ -214,6 +220,7 @@ export async function executeTask({
           onSession: (runnerSessionId: string) => {
             throwIfInterrupted();
             latestRunnerSessionId = runnerSessionId;
+            trace.setSession(runnerSessionId);
             return workerClient.executions
               .ActiveTaskExecutionController_updateRunnerSessionId({
                 executionId,
@@ -269,6 +276,13 @@ export async function executeTask({
       );
     } catch (error) {
       throw classifyRunnerError(error);
+    } finally {
+      try {
+        await trace.close();
+      } catch (error) {
+        // Trace failures must not replace a successful result or classified error.
+        console.warn('[worker] Unable to close execution trace', error);
+      }
     }
   } finally {
     // Clean up abort controller - this now runs no matter where we fail

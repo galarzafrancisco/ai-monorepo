@@ -2,11 +2,14 @@ import { io, Socket } from 'socket.io-client';
 import {
   ExecutionWireEvents,
   type PostExecutionActivityPayload,
+  type PostExecutionTracePayload,
+  type ExecutionTraceAck,
   type PostExecutionHeartbeatPayload,
   type PostWorkerHeartbeatPayload,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
+import { ExecutionTraceSpool } from './execution-trace-spool.js';
 import { WorkerAuth } from './auth/worker-auth.js';
 import { WORKER_VERSION } from './version.js';
 
@@ -15,13 +18,11 @@ const ACK_TIMEOUT_MS = 5_000;
 const WORKER_HEARTBEAT_INTERVAL_MS = 30_000;
 const RECONNECT_RETRY_DELAY_MS = 5_000;
 
-type ActivityAck = {
-  ok: boolean;
-  error?: string;
-};
+type ActivityAck = ExecutionTraceAck;
 
 export type ExecutionActivityGatewayClientOptions = {
   baseUrl: string;
+  traceDirectory: string;
   auth: WorkerAuth;
   debug?: boolean;
   reconnection?: boolean;
@@ -31,12 +32,16 @@ export type ExecutionActivityGatewayClientOptions = {
   randomizationFactor?: number;
   tokenRefreshSkewMs?: number;
   onTaskQueued?: (event: TaskExecutionQueuedWireEvent) => void;
-  onExecutionInterruptRequest?: (event: ExecutionInterruptRequestWireEvent) => void;
+  onExecutionInterruptRequest?: (
+    event: ExecutionInterruptRequestWireEvent,
+  ) => void;
 };
 
 export class ExecutionActivityGatewayClient {
   private socket?: Socket;
+  private readonly traceSpool: ExecutionTraceSpool;
   private started = false;
+  private traceSpoolStarted = false;
   private reconnectAttempts = 0;
   private tokenRefreshTimer?: ReturnType<typeof setTimeout>;
   private reconnectRetryTimer?: ReturnType<typeof setTimeout>;
@@ -45,9 +50,15 @@ export class ExecutionActivityGatewayClient {
   private reconnectPromise: Promise<void> | null = null;
   private resolveInitialConnect?: () => void;
 
-  constructor(
-    private readonly options: ExecutionActivityGatewayClientOptions,
-  ) {}
+  constructor(private readonly options: ExecutionActivityGatewayClientOptions) {
+    this.traceSpool = new ExecutionTraceSpool(options.traceDirectory, (batch) =>
+      this.emitAcknowledgement(ExecutionWireEvents.EXECUTION_TRACE_POST, batch),
+    );
+  }
+
+  async queueTrace(batch: PostExecutionTracePayload): Promise<void> {
+    await this.traceSpool.enqueue(batch);
+  }
 
   async start(): Promise<void> {
     if (this.started) {
@@ -61,23 +72,24 @@ export class ExecutionActivityGatewayClient {
 
     await this.connectWithFreshToken();
     await initialConnectPromise;
+    await this.traceSpool.start();
+    this.traceSpoolStarted = true;
   }
 
   async stop(): Promise<void> {
     this.started = false;
+    this.traceSpoolStarted = false;
     this.clearTokenRefreshTimer();
     this.clearReconnectRetryTimer();
     this.clearWorkerHeartbeatTimer();
     this.clearInitialConnectHandlers();
 
-    if (!this.socket) {
-      return;
-    }
-
     const socket = this.socket;
     this.socket = undefined;
-    socket.removeAllListeners();
-    socket.disconnect();
+    // Resolve outstanding ACK waits before removing their disconnect listeners.
+    socket?.disconnect();
+    socket?.removeAllListeners();
+    await this.traceSpool.stop();
   }
 
   async publishActivity(
@@ -99,10 +111,9 @@ export class ExecutionActivityGatewayClient {
   }
 
   async publishWorkerHeartbeat(): Promise<boolean> {
-    return this.emitWithAck(
-      ExecutionWireEvents.WORKER_HEARTBEAT_POST,
-      { workerVersion: WORKER_VERSION },
-    );
+    return this.emitWithAck(ExecutionWireEvents.WORKER_HEARTBEAT_POST, {
+      workerVersion: WORKER_VERSION,
+    });
   }
 
   private async emitWithAck(
@@ -112,46 +123,79 @@ export class ExecutionActivityGatewayClient {
       | PostExecutionHeartbeatPayload
       | PostWorkerHeartbeatPayload,
   ): Promise<boolean> {
+    return (await this.emitAcknowledgement(eventName, payload)).ok;
+  }
+
+  private async emitAcknowledgement(
+    eventName: string,
+    payload?:
+      | PostExecutionTracePayload
+      | PostExecutionActivityPayload
+      | PostExecutionHeartbeatPayload
+      | PostWorkerHeartbeatPayload,
+  ): Promise<ActivityAck> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
         console.warn(
           `[execution-activity] ${eventName} called while disconnected`,
-          payload,
+          eventName === ExecutionWireEvents.EXECUTION_TRACE_POST
+            ? {
+                executionId:
+                  payload && 'executionId' in payload
+                    ? payload.executionId
+                    : undefined,
+              }
+            : payload,
         );
       }
-      return false;
+      return { ok: false, retryable: 'disconnected' };
     }
 
-    return new Promise<boolean>((resolve) => {
+    const socket = this.socket;
+    // Allow transfer at 64 KiB/s plus server processing time for raw traces.
+    // Other activity and heartbeat acknowledgements retain their short timeout.
+    const timeoutMs =
+      eventName === ExecutionWireEvents.EXECUTION_TRACE_POST
+        ? Math.min(
+            300_000,
+            10_000 +
+              Math.ceil(
+                Buffer.byteLength(JSON.stringify(payload)) / (64 * 1024),
+              ) *
+                1_000,
+          )
+        : ACK_TIMEOUT_MS;
+    return new Promise<ActivityAck>((resolve) => {
       let settled = false;
-      const timeout = setTimeout(() => {
-        if (settled) {
-          return;
-        }
+      const finish = (ack: ActivityAck) => {
+        if (settled) return;
         settled = true;
-        resolve(false);
-      }, ACK_TIMEOUT_MS);
+        clearTimeout(timeout);
+        socket.off('disconnect', onDisconnect);
+        resolve(ack);
+      };
+      const onDisconnect = () =>
+        finish({ ok: false, retryable: 'disconnected' });
+      const timeout = setTimeout(() => finish({ ok: false }), timeoutMs);
+      socket.once('disconnect', onDisconnect);
 
       const handleAck = (ack?: ActivityAck) => {
         if (settled) {
           return;
         }
-        settled = true;
-        clearTimeout(timeout);
-
         if (this.options.debug) {
           console.log(`[execution-activity] ${eventName} ack:`, ack);
         }
 
-        resolve(Boolean(ack?.ok));
+        finish(ack ?? { ok: false });
       };
 
       if (payload === undefined) {
-        this.socket!.emit(eventName, handleAck);
+        socket.emit(eventName, handleAck);
         return;
       }
 
-      this.socket!.emit(eventName, payload, handleAck);
+      socket.emit(eventName, payload, handleAck);
     });
   }
 
@@ -167,8 +211,8 @@ export class ExecutionActivityGatewayClient {
     const randomizationFactor = this.options.randomizationFactor ?? 0.5;
 
     if (this.socket) {
-      this.socket.removeAllListeners();
       this.socket.disconnect();
+      this.socket.removeAllListeners();
     }
 
     if (this.options.debug) {
@@ -198,6 +242,7 @@ export class ExecutionActivityGatewayClient {
       }
 
       this.reconnectAttempts = 0;
+      if (this.traceSpoolStarted) void this.traceSpool.resume();
       this.clearReconnectRetryTimer();
       this.scheduleTokenRefresh(credentials.expiresAt);
       this.startWorkerHeartbeatTimer();
@@ -223,23 +268,38 @@ export class ExecutionActivityGatewayClient {
       );
     });
 
-    this.socket.on(ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED, () => {
-      this.handleHarnessesReportRequested();
-    });
+    this.socket.on(
+      ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED,
+      () => {
+        this.handleHarnessesReportRequested();
+      },
+    );
 
-    this.socket.on(ExecutionWireEvents.TASK_EXECUTION_QUEUED, (event: TaskExecutionQueuedWireEvent) => {
-      if (this.options.debug) {
-        console.log('[execution-activity] task queued event received:', event);
-      }
-      this.options.onTaskQueued?.(event);
-    });
+    this.socket.on(
+      ExecutionWireEvents.TASK_EXECUTION_QUEUED,
+      (event: TaskExecutionQueuedWireEvent) => {
+        if (this.options.debug) {
+          console.log(
+            '[execution-activity] task queued event received:',
+            event,
+          );
+        }
+        this.options.onTaskQueued?.(event);
+      },
+    );
 
-    this.socket.on(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, (event: ExecutionInterruptRequestWireEvent) => {
-      if (this.options.debug) {
-        console.log('[execution-activity] execution interrupt request received:', event);
-      }
-      this.options.onExecutionInterruptRequest?.(event);
-    });
+    this.socket.on(
+      ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST,
+      (event: ExecutionInterruptRequestWireEvent) => {
+        if (this.options.debug) {
+          console.log(
+            '[execution-activity] execution interrupt request received:',
+            event,
+          );
+        }
+        this.options.onExecutionInterruptRequest?.(event);
+      },
+    );
 
     this.socket.on('connect_error', (err: Error) => {
       this.reconnectAttempts++;
@@ -321,9 +381,7 @@ export class ExecutionActivityGatewayClient {
     this.resolveInitialConnect = undefined;
   }
 
-  private async reconnectWithFreshToken(
-    forceRefresh = false,
-  ): Promise<void> {
+  private async reconnectWithFreshToken(forceRefresh = false): Promise<void> {
     if (this.reconnectPromise) {
       return this.reconnectPromise;
     }
@@ -334,13 +392,7 @@ export class ExecutionActivityGatewayClient {
           await this.options.auth.refreshAccessToken();
         }
 
-        if (this.socket) {
-          this.clearWorkerHeartbeatTimer();
-          this.socket.removeAllListeners();
-          this.socket.disconnect();
-          this.socket = undefined;
-        }
-
+        // Socket replacement, including ACK cancellation, is handled in one place.
         await this.connectWithFreshToken();
       } finally {
         this.reconnectPromise = null;

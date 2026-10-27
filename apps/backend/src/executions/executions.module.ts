@@ -27,6 +27,9 @@ import { StaleActiveTaskExecutionPrunerService } from './staleness/stale-active-
 import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-active-task-execution-scheduler.service';
 import { WorkersModule } from '../workers/workers.module';
 import { ExecutionStatsEntity } from './stats/execution-stats.entity';
+import { ExecutionTraceEntity } from './traces/execution-trace.entity';
+import { ExecutionTracesService } from './traces/execution-traces.service';
+import { ExecutionTracesController } from './traces/execution-traces.controller';
 import { ExecutionsGateway } from './executions.gateway';
 
 @Module({
@@ -37,6 +40,7 @@ import { ExecutionsGateway } from './executions.gateway';
       ActiveTaskExecutionEntity,
       TaskExecutionHistoryEntity,
       ExecutionStatsEntity,
+      ExecutionTraceEntity,
       AgentRunEntity,
     ]),
     AgentsModule,
@@ -48,6 +52,7 @@ import { ExecutionsGateway } from './executions.gateway';
     TaskExecutionQueueController,
     ActiveTaskExecutionController,
     TaskExecutionHistoryController,
+    ExecutionTracesController,
   ],
   providers: [
     TaskExecutionQueueService,
@@ -55,6 +60,7 @@ import { ExecutionsGateway } from './executions.gateway';
     ActiveExecutionContextResolverService,
     TaskExecutionHistoryService,
     ExecutionActivityService,
+    ExecutionTracesService,
     TaskActivityProjectionService,
     ExecutionsWorkerGateway,
     ExecutionsGateway,

@@ -1,5 +1,7 @@
 import { setTimeout as sleep } from 'timers/promises';
 import { ApiClient } from '@taico/client/v2';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
 import { WorkerAuth } from './auth/worker-auth.js';
 import { runTaskClaimWorker, attemptClaimTask } from './task-claim-worker.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
@@ -55,6 +57,8 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
 
   const activityGatewayClient = new ExecutionActivityGatewayClient({
     baseUrl: auth.serverUrl,
+    traceDirectory: join(options.workingDirectory, '.taico', 'traces',
+      createHash('sha256').update(`${auth.serverUrl}\0${bootstrap.credentials.clientId}`).digest('hex')),
     auth,
     debug: true,
     onTaskQueued: (event) => {

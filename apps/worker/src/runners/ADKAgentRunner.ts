@@ -179,6 +179,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
       }
 
       for await (const msg of stream) {
+          this.emitRawEvent(msg);
         if (aborted) {
           console.log('[ADKAgentRunner] Breaking out of message loop due to abort');
           break;
