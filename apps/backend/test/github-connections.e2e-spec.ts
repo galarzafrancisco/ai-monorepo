@@ -163,7 +163,7 @@ describe('GitHub connections E2E', () => {
     expect(await resolve('https://github.com/alice/x')).toMatchObject({ connection: { id: alice.id }, match: 'owner' });
     expect(await resolve('https://github.com/someone/else')).toMatchObject({ connection: null, match: null });
     expect(await resolve('https://github.com/acme/api', alice.id)).toMatchObject({ connection: { id: alice.id }, match: 'project' });
-    expect(await resolve('https://gitlab.com/acme/api')).toEqual({ repository: null, connection: null, match: null });
+    expect(await resolve('https://gitlab.com/acme/api')).toEqual({ repository: null, connection: null, match: null, webhook: null });
   });
 
   it('lets a project name a connection and falls back to automatic when it is deleted', async () => {

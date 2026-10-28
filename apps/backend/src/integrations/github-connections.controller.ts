@@ -19,12 +19,15 @@ import { CreateGithubConnectionDto } from './dto/http/create-github-connection.d
 import { UpdateGithubConnectionDto } from './dto/http/update-github-connection.dto';
 import { GithubConnectionParamsDto } from './dto/http/github-connection-params.dto';
 import { GithubConnectionResponseDto } from './dto/http/github-connection-response.dto';
-import { GithubWebhookSettingsResponseDto } from './dto/http/github-webhook-settings-response.dto';
+import {
+  GithubWebhookSettingsResponseDto,
+  GithubWebhookSourceDto,
+} from './dto/http/github-webhook-settings-response.dto';
 import {
   ResolveGithubConnectionQueryDto,
   ResolvedGithubConnectionResponseDto,
 } from './dto/http/resolve-github-connection.dto';
-import { GithubConnectionResult } from './dto/service/github-connections.service.types';
+import { GithubConnectionResult, GithubWebhookSource } from './dto/service/github-connections.service.types';
 import { parseGithubRepoUrl } from './github/github-repo-ref';
 
 @ApiTags('Integrations - GitHub')
@@ -71,7 +74,7 @@ export class GithubConnectionsController {
     @Query() query: ResolveGithubConnectionQueryDto,
   ): Promise<ResolvedGithubConnectionResponseDto> {
     const repository = parseGithubRepoUrl(query.repoUrl);
-    if (!repository) return { repository: null, connection: null, match: null };
+    if (!repository) return { repository: null, connection: null, match: null, webhook: null };
     const resolved = await this.connections.resolveForRepository({
       owner: repository.owner,
       projectConnectionId: query.connectionId,
@@ -80,6 +83,7 @@ export class GithubConnectionsController {
       repository,
       connection: resolved ? this.mapToResponse(resolved.connection) : null,
       match: resolved?.match ?? null,
+      webhook: mapWebhookSource(await this.connections.findWebhookCoverage(repository.owner, repository.repo)),
     };
   }
 
@@ -137,6 +141,7 @@ export class GithubConnectionsController {
       url: settings.url,
       secret: settings.secret,
       lastDeliveryAt: settings.lastDeliveryAt?.toISOString() ?? null,
+      sources: settings.sources.map((source) => mapWebhookSource(source)!),
     };
   }
 
@@ -167,4 +172,15 @@ export class GithubConnectionsController {
       updatedAt: result.updatedAt.toISOString(),
     };
   }
+}
+
+function mapWebhookSource(source: GithubWebhookSource | null): GithubWebhookSourceDto | null {
+  if (!source) return null;
+  return {
+    owner: source.owner,
+    repo: source.repo,
+    lastDeliveryAt: source.lastDeliveryAt.toISOString(),
+    lastEvent: source.lastEvent,
+    active: source.active,
+  };
 }

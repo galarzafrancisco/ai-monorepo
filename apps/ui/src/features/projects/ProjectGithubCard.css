@@ -28,3 +28,10 @@
 .project-github__help:hover {
   color: var(--text);
 }
+
+.project-github__webhook {
+  padding: var(--space-3);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}

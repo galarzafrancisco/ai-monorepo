@@ -1451,7 +1451,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Pull requests linked from the thread's tasks or messages, oldest link first */
+        /** Pull requests attached as links to the thread's tasks, oldest link first */
         get: operations["ThreadsController_listPullRequests"];
         put?: never;
         post?: never;
@@ -6620,6 +6620,27 @@ export interface components {
          * @enum {string}
          */
         GithubConnectionMatch: "project" | "owner" | "only_connection";
+        GithubWebhookSourceDto: {
+            /** @example acme */
+            owner: string;
+            /**
+             * @description The repository, or null when the webhook covers every repository of the owner (organization or GitHub App webhook)
+             * @example api
+             */
+            repo: string | null;
+            /** @example 2026-01-01T00:00:00.000Z */
+            lastDeliveryAt: string;
+            /**
+             * @description Event of the last delivery; ping right after the webhook is set up
+             * @example pull_request
+             */
+            lastEvent: string | null;
+            /**
+             * @description Delivered in the last day: Taico counts on the webhook and polls this repository less
+             * @example true
+             */
+            active: boolean;
+        };
         ResolvedGithubConnectionResponseDto: {
             /** @description The repository, or null when the URL is not a github.com repository */
             repository: components["schemas"]["GithubRepositoryRefDto"] | null;
@@ -6627,6 +6648,8 @@ export interface components {
             connection: components["schemas"]["GithubConnectionResponseDto"] | null;
             /** @description Why: the project names it, it lists the repository owner, or it is the only connection */
             match: components["schemas"]["GithubConnectionMatch"] | null;
+            /** @description The most recent webhook covering the repository (set up on it, or on its whole owner), through any connection; null when GitHub never sent one */
+            webhook: components["schemas"]["GithubWebhookSourceDto"] | null;
         };
         UpdateGithubConnectionDto: {
             /**
@@ -6673,6 +6696,8 @@ export interface components {
              * @example null
              */
             lastDeliveryAt: string | null;
+            /** @description Repositories (or whole owners) deliveries came from, most recent first. Learned from the deliveries. */
+            sources: components["schemas"]["GithubWebhookSourceDto"][];
         };
         TaskExecutionQueueEntryResponseDto: {
             /**

@@ -245,7 +245,7 @@ export class ThreadsService {
         });
     }
     /**
-     * Pull requests linked from the thread's tasks or messages, oldest link first
+     * Pull requests attached as links to the thread's tasks, oldest link first
      * @param id Thread UUID
      * @returns PullRequestResponseDto
      * @throws ApiError

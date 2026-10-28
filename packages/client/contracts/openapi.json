@@ -4898,7 +4898,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Pull requests linked from the thread's tasks or messages, oldest link first",
+        "summary": "Pull requests attached as links to the thread's tasks, oldest link first",
         "tags": [
           "Threads"
         ]
@@ -14940,6 +14940,43 @@
         ],
         "description": "Why: the project names it, it lists the repository owner, or it is the only connection"
       },
+      "GithubWebhookSourceDto": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "example": "acme"
+          },
+          "repo": {
+            "type": "string",
+            "nullable": true,
+            "description": "The repository, or null when the webhook covers every repository of the owner (organization or GitHub App webhook)",
+            "example": "api"
+          },
+          "lastDeliveryAt": {
+            "type": "string",
+            "example": "2026-01-01T00:00:00.000Z"
+          },
+          "lastEvent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Event of the last delivery; ping right after the webhook is set up",
+            "example": "pull_request"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Delivered in the last day: Taico counts on the webhook and polls this repository less",
+            "example": true
+          }
+        },
+        "required": [
+          "owner",
+          "repo",
+          "lastDeliveryAt",
+          "lastEvent",
+          "active"
+        ]
+      },
       "ResolvedGithubConnectionResponseDto": {
         "type": "object",
         "properties": {
@@ -14971,12 +15008,23 @@
                 "$ref": "#/components/schemas/GithubConnectionMatch"
               }
             ]
+          },
+          "webhook": {
+            "nullable": true,
+            "description": "The most recent webhook covering the repository (set up on it, or on its whole owner), through any connection; null when GitHub never sent one",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubWebhookSourceDto"
+              }
+            ]
           }
         },
         "required": [
           "repository",
           "connection",
-          "match"
+          "match",
+          "webhook"
         ]
       },
       "UpdateGithubConnectionDto": {
@@ -15034,12 +15082,20 @@
             "nullable": true,
             "description": "When the last correctly signed delivery arrived",
             "example": null
+          },
+          "sources": {
+            "description": "Repositories (or whole owners) deliveries came from, most recent first. Learned from the deliveries.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GithubWebhookSourceDto"
+            }
           }
         },
         "required": [
           "url",
           "secret",
-          "lastDeliveryAt"
+          "lastDeliveryAt",
+          "sources"
         ]
       },
       "TaskExecutionQueueEntryResponseDto": {

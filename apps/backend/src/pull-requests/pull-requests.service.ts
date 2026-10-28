@@ -22,7 +22,6 @@ import { PullRequestReferenceInput } from './dto/service/pull-requests.service.t
 
 /** Pull requests looked at together when a page asks for ones Taico has never read. */
 const FIRST_FETCH_CONCURRENCY = 6;
-const WEBHOOK_ACTIVE_MS = 60 * 60 * 1000;
 
 /**
  * Keeps one up-to-date copy of each linked GitHub pull request. Reads are
@@ -217,11 +216,9 @@ export class PullRequestsService {
     const ref = { owner: row.owner, repo: row.repo, number: row.number };
     let webhooksActive = false;
     try {
+      webhooksActive = await this.connections.hasActiveWebhook(row.owner, row.repo);
       const resolved = await this.connections.resolveForRepositoryOfAnyProject(ref);
       const token = resolved ? (await this.connections.getAccessToken(resolved.connection.id)).token : null;
-      webhooksActive =
-        !!resolved?.connection.lastWebhookAt &&
-        Date.now() - resolved.connection.lastWebhookAt.getTime() < WEBHOOK_ACTIVE_MS;
 
       const before = row.lastFetchedAt ? { ...row } : null;
       const fetched = await fetchPullRequest(token, ref, row.etags, before);
