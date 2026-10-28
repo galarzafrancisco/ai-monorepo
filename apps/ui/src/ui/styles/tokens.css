@@ -20,6 +20,8 @@
   --nav-bar: var(--theme-nav-bar);
   --card-bg: var(--theme-bg);
   /* Cards default to same as bg, shells override as needed */
+  /* Dims the page behind dialogs and pop-ups, in every theme. */
+  --overlay: rgba(0, 0, 0, 0.4);
 
   /* Colors - Text */
   --text: #1f2328;
