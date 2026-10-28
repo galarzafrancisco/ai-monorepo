@@ -42,9 +42,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check auth status on mount
+  // Check auth status on mount. Refreshing first renews the access token, so
+  // permissions added by a new release apply on the next page load instead of
+  // when the old token next refreshes. Without a usable refresh token, fall
+  // back to the current session.
   useEffect(() => {
-    WebAuthenticationService.webAuthControllerMe()
+    WebAuthenticationService.webAuthControllerRefresh()
+      .then((response) => response.user)
+      .catch(() => WebAuthenticationService.webAuthControllerMe())
       .then((userData) => {
         setUser(userData);
       })
