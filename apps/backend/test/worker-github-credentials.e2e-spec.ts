@@ -52,6 +52,10 @@ describe('Worker GitHub credentials E2E', () => {
     ds = app.get(DataSource);
     await ensureTestUser(app);
     cookies = await getAuthCookies(http);
+    // Connections left by other suites hold secrets encrypted with their own key
+    // (each suite gets its own SECRETS_ENCRYPTION_KEY) and would match these owners first.
+    await ds.query(`UPDATE projects SET github_connection_id = NULL`);
+    await ds.query(`DELETE FROM github_connections`);
     agentActorId = (
       await app.get(AgentsService).createAgent({
         slug: `gh-${randomUUID()}`,
