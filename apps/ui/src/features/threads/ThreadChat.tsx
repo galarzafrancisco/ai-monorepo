@@ -13,6 +13,7 @@ import { useChatScrollFollow } from "./useChatScrollFollow";
 import Markdown from "marked-react";
 import { pullRequestMarkdownRenderer } from "../pull-requests";
 import { ArrowDown } from "lucide-react";
+import { TraceEntryView, isEntryWorking } from "../tasks/traces/RunTrace";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -32,13 +33,14 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const keepScrollPositionRef = useRef(false);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
-  const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
+  const { readiness, isLoading: isChatReadinessLoading } = useChatReadiness();
   const lockedKind = !isChatReadinessLoading && readiness && readiness.kind !== "ready" ? readiness.kind : null;
   const openModelSettings = () => navigate("/settings/models");
 
   const {
     messages,
     agentActivity,
+    activityEntries,
     agentResponseStream,
     sendMessage,
     chatIsSending,
@@ -73,7 +75,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const { hasNewMessages, scrollToBottom } = useChatScrollFollow({
     containerRef: messagesContainerRef,
     endRef: messagesEndRef,
-    followDeps: [messages, agentActivity, agentResponseStream?.content, chatIsLoading],
+    followDeps: [messages, activityEntries, agentResponseStream?.content, chatIsLoading],
     lastMessageId: lastMessage?.id ?? null,
     lastMessageIsOwn: Boolean(user?.actorId && lastMessage?.createdByActorId === user.actorId),
     resetKey: threadId,
@@ -193,6 +195,23 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             })
           )}
 
+          {activityEntries.length > 0 && (
+            <div className="thread-chat__trace task-traces" aria-label="Assistant activity" aria-live="polite">
+              <div className="task-traces__timeline">
+                {activityEntries.map((entry, index) => (
+                  <TraceEntryView
+                    key={entry.id}
+                    entry={entry}
+                    live={Boolean(agentActivity) && index === activityEntries.length - 1}
+                  />
+                ))}
+              </div>
+              {agentActivity && !isEntryWorking(activityEntries[activityEntries.length - 1]) && (
+                <div className="task-traces__working" role="status"><span className="shimmer-text">Working…</span></div>
+              )}
+            </div>
+          )}
+
           {agentResponseStream && (
             <div className="thread-chat__message thread-chat__message--streaming" role="status" aria-live="polite">
               <div className="thread-chat__message-header">
@@ -230,16 +249,6 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
           </button>
         )}
       </div>
-
-      {isChatReady && agentActivity && (
-        <div className="thread-chat__activity" role="status" aria-live="polite">
-          <Text size="1" tone="muted">
-            <span className="shimmer-text">
-              {agentActivity === "thinking" ? "Assistant is thinking…" : "Assistant is calling a tool…"}
-            </span>
-          </Text>
-        </div>
-      )}
 
       <div className="thread-chat__composer">
         {lockedKind && messages.length > 0 && (

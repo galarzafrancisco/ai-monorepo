@@ -228,8 +228,7 @@ export class ThreadsGateway
 
     const wireEvent: AgentActivityWireEvent = {
       payload: {
-        threadId: event.payload.threadId,
-        kind: event.payload.kind,
+        ...event.payload,
       },
       actor: { id: event.actor.id },
     };

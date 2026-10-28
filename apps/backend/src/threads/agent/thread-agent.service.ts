@@ -15,6 +15,7 @@ import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
   ThreadAgentActivityKind,
+  ThreadAgentActivityPayload,
   ThreadAgentResponseDeltaEvent,
   ThreadUpdatedEvent,
 } from '../events/threads.events';
@@ -280,12 +281,37 @@ export class ThreadAgentService {
       switch (part.type) {
         case 'start-step':
           streamId = randomUUID();
+          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'reasoning-delta':
-          this.emitActivity(threadId, self.actorId, 'thinking');
+          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'tool-call':
-          this.emitActivity(threadId, self.actorId, 'tool_calling');
+          this.emitActivity(threadId, self.actorId, 'tool_calling', {
+            turnId: turn.id,
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+            input: JSON.stringify(part.input),
+          });
+          break;
+        case 'tool-result':
+          this.emitActivity(threadId, self.actorId, 'tool_result', {
+            turnId: turn.id,
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+            output: JSON.stringify(part.output),
+          });
+          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
+          break;
+        case 'tool-error':
+          this.emitActivity(threadId, self.actorId, 'tool_result', {
+            turnId: turn.id,
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+            output: String(part.error),
+            failed: true,
+          });
+          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'text-delta':
           this.eventEmitter.emit(
@@ -392,10 +418,11 @@ export class ThreadAgentService {
     threadId: string,
     actorId: string,
     kind: ThreadAgentActivityKind,
+    details: Omit<ThreadAgentActivityPayload, 'threadId' | 'kind'> = {},
   ): void {
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
-      new ThreadAgentActivityEvent({ id: actorId }, { threadId, kind }),
+      new ThreadAgentActivityEvent({ id: actorId }, { threadId, kind, ...details }),
     );
   }
 

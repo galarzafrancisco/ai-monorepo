@@ -195,7 +195,7 @@ export interface ThreadPinnedWireEvent {
   actor: MinimalEventActor;
 }
 
-export type ThreadAgentActivityKind = 'thinking' | 'tool_calling';
+export type ThreadAgentActivityKind = 'thinking' | 'tool_calling' | 'tool_result';
 
 /**
  * Agent activity event
@@ -205,6 +205,12 @@ export interface AgentActivityWireEvent {
   payload: {
     threadId: string;
     kind: ThreadAgentActivityKind;
+    turnId?: string;
+    toolCallId?: string;
+    toolName?: string;
+    input?: string;
+    output?: string;
+    failed?: boolean;
   };
   actor: MinimalEventActor;
 }

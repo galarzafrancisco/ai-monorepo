@@ -57,11 +57,17 @@ export class MessageCreatedEvent extends ThreadDomainEvent<ThreadMessageEntity> 
   }
 }
 
-export type ThreadAgentActivityKind = 'thinking' | 'tool_calling';
+export type ThreadAgentActivityKind = 'thinking' | 'tool_calling' | 'tool_result';
 
 export type ThreadAgentActivityPayload = {
   threadId: string;
   kind: ThreadAgentActivityKind;
+  turnId?: string;
+  toolCallId?: string;
+  toolName?: string;
+  input?: string;
+  output?: string;
+  failed?: boolean;
 };
 
 export class ThreadAgentActivityEvent extends ThreadDomainEvent<ThreadAgentActivityPayload> {
