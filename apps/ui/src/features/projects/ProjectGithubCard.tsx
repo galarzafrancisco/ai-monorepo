@@ -3,15 +3,20 @@ import { Link } from 'react-router-dom';
 import { CircleHelp } from 'lucide-react';
 import type {
   GithubConnectionResponseDto,
+  GithubWebhookSettingsResponseDto,
   ResolvedGithubConnectionResponseDto,
 } from '@taico/client/v2';
-import { Card, ErrorText, Popover, Row, Stack, Switch, Text } from '../../ui/primitives';
+import { Button, Card, ErrorText, Popover, Row, Stack, Switch, Text } from '../../ui/primitives';
+import { GithubWebhookFields, GITHUB_WEBHOOK_EVENTS } from '../../shared/components/GithubWebhookFields';
+import { webhookDeliveryLabel, webhookSourceLabel } from '../../shared/helpers/githubWebhook';
 import { GithubConnectionsService } from './api';
 import { errorDetail } from './useProjects';
 import type { Project, UpdateProjectInput } from './types';
 import './ProjectGithubCard.css';
 
 const AUTOMATIC = '';
+/** While the setup panel is open, how often to check whether GitHub's ping arrived. */
+const PING_CHECK_MS = 4000;
 
 const MATCH_LABEL: Record<NonNullable<ResolvedGithubConnectionResponseDto['match']>, string> = {
   project: 'chosen for this project',
@@ -36,6 +41,8 @@ export function ProjectGithubCard({
   const [resolved, setResolved] = useState<ResolvedGithubConnectionResponseDto | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isSettingUpWebhook, setIsSettingUpWebhook] = useState(false);
+  const [resolveCount, setResolveCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,7 +61,15 @@ export function ProjectGithubCard({
       .then((data) => { if (!cancelled) setResolved(data); })
       .catch(() => { if (!cancelled) setResolved(null); });
     return () => { cancelled = true; };
-  }, [repoUrl, connectionId]);
+  }, [repoUrl, connectionId, resolveCount]);
+
+  // Setting up a webhook: GitHub pings it once saved, which the status picks up.
+  const waitingForPing = isSettingUpWebhook && !resolved?.webhook?.active;
+  useEffect(() => {
+    if (!waitingForPing) return;
+    const timer = window.setInterval(() => setResolveCount((count) => count + 1), PING_CHECK_MS);
+    return () => window.clearInterval(timer);
+  }, [waitingForPing]);
 
   const save = async (input: UpdateProjectInput) => {
     setIsSaving(true);
@@ -117,6 +132,16 @@ export function ProjectGithubCard({
           </Stack>
         )}
 
+        {isGithubRepo && resolved?.repository ? (
+          <WebhookStatus
+            resolved={resolved}
+            repository={resolved.repository}
+            connection={connection}
+            isSettingUp={isSettingUpWebhook}
+            onSetUp={setIsSettingUpWebhook}
+          />
+        ) : null}
+
         <Text size="1" tone="muted" className="project-github__notice">
           Taico uses this connection to check every pull request linked in Taico: in task links,
           descriptions, comments and threads. Everyone in this Taico sees their status, title and
@@ -158,5 +183,148 @@ export function ProjectGithubCard({
         {error ? <ErrorText size="2" weight="medium">{error}</ErrorText> : null}
       </Stack>
     </Card>
+  );
+}
+
+/**
+ * Whether GitHub tells Taico about this repository's pull requests (a webhook
+ * on the repository or its whole owner), or Taico polls for them; with a
+ * guided setup for a repository webhook.
+ */
+function WebhookStatus({
+  resolved,
+  repository,
+  connection,
+  isSettingUp,
+  onSetUp,
+}: {
+  resolved: ResolvedGithubConnectionResponseDto;
+  repository: { owner: string; repo: string };
+  connection: GithubConnectionResponseDto | null;
+  isSettingUp: boolean;
+  onSetUp: (open: boolean) => void;
+}) {
+  const webhook = resolved.webhook;
+  const active = webhook?.active ?? false;
+
+  return (
+    <Stack spacing="2">
+      <Row justify="space-between" align="center" spacing="3">
+        <Stack spacing="1">
+          <Text size="2" weight="medium">Updates</Text>
+          {active && webhook ? (
+            <Text size="1" tone="muted">
+              Webhook ({webhook.repo ? 'on this repository' : webhookSourceLabel(webhook)}): {webhookDeliveryLabel(webhook)}.
+              GitHub tells Taico within seconds; polling is a slow safety net.
+            </Text>
+          ) : (
+            <Text size="1" tone="muted">
+              Polling: every 30 s to 5 min depending on use.
+              {webhook ? ` The webhook has been ${webhookDeliveryLabel(webhook)}.` : ' Add a webhook for instant updates.'}
+            </Text>
+          )}
+        </Stack>
+        {!active && connection && !isSettingUp ? (
+          <Button variant="secondary" size="sm" onClick={() => onSetUp(true)}>
+            Set up webhook
+          </Button>
+        ) : null}
+      </Row>
+      {!active && !connection ? (
+        <Text size="1" tone="muted">
+          A webhook needs a GitHub connection: <Link to="/settings/integrations">connect GitHub</Link> first.
+        </Text>
+      ) : null}
+      {isSettingUp && connection ? (
+        <WebhookSetup
+          connection={connection}
+          repository={repository}
+          active={active}
+          onClose={() => onSetUp(false)}
+        />
+      ) : null}
+    </Stack>
+  );
+}
+
+function WebhookSetup({
+  connection,
+  repository,
+  active,
+  onClose,
+}: {
+  connection: GithubConnectionResponseDto;
+  repository: { owner: string; repo: string };
+  active: boolean;
+  onClose: () => void;
+}) {
+  const [settings, setSettings] = useState<GithubWebhookSettingsResponseDto | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    GithubConnectionsService.GithubConnectionsController_getWebhookSettings({ id: connection.id })
+      .then((data) => { if (!cancelled) setSettings(data); })
+      .catch((err) => {
+        if (cancelled) return;
+        if ((err as { status?: number })?.status === 403) setForbidden(true);
+        else setError(errorDetail(err, 'Failed to load the webhook settings'));
+      });
+    return () => { cancelled = true; };
+  }, [connection.id]);
+
+  const { owner, repo } = repository;
+  const newHookUrl = `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/settings/hooks/new`;
+  const orgHooksUrl = `https://github.com/organizations/${encodeURIComponent(owner)}/settings/hooks`;
+
+  return (
+    <Stack spacing="3" className="project-github__webhook">
+      {forbidden ? (
+        <Text size="2" tone="muted">
+          Only people who can manage integrations see the webhook secret. Ask one of them to add the
+          webhook from here or from Settings &gt; Integrations.
+        </Text>
+      ) : error ? (
+        <ErrorText size="2">{error}</ErrorText>
+      ) : !settings ? (
+        <Text size="2" tone="muted">Loading…</Text>
+      ) : connection.authType === 'app' ? (
+        <Text size="2" tone="muted">
+          {connection.name} is a GitHub App: its webhook is set up once, in the App&apos;s settings, and
+          covers every repository the app is installed on. See Settings &gt; Integrations &gt; Webhook.
+        </Text>
+      ) : (
+        <>
+          <Text size="2">
+            1. Open{' '}
+            <a href={newHookUrl} target="_blank" rel="noopener noreferrer">
+              {owner}/{repo} &gt; Settings &gt; Webhooks &gt; Add webhook
+            </a>{' '}
+            (you need admin rights on the repository).
+          </Text>
+          <Text size="2">2. Paste the payload URL, set the content type to application/json, and paste the secret:</Text>
+          <GithubWebhookFields url={settings.url} secret={settings.secret} />
+          <Text size="2">
+            3. Choose &quot;Let me select individual events&quot; and tick: {GITHUB_WEBHOOK_EVENTS.join(', ')}. Save.
+          </Text>
+          <Text size="1" tone="muted">
+            {active
+              ? 'GitHub pinged Taico: the webhook works.'
+              : "Waiting for GitHub's ping… It arrives as soon as the webhook is saved."}
+          </Text>
+          <Text size="1" tone="muted">
+            If {owner} is an organization, one{' '}
+            <a href={orgHooksUrl} target="_blank" rel="noopener noreferrer">organization webhook</a>{' '}
+            with the same URL and secret covers all its repositories instead.
+          </Text>
+        </>
+      )}
+      <Row>
+        <Button variant="secondary" size="sm" onClick={onClose}>
+          {active ? 'Done' : 'Close'}
+        </Button>
+      </Row>
+    </Stack>
   );
 }

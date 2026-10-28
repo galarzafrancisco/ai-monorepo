@@ -56,7 +56,7 @@ export class ThreadsResource extends BaseClient {
     return this.request('DELETE', `/api/v1/threads/${params.id}/watches/${params.watchId}`, { responseType: 'void', signal: params?.signal });
   }
 
-  /** Pull requests linked from the thread's tasks or messages, oldest link first */
+  /** Pull requests attached as links to the thread's tasks, oldest link first */
   async ThreadsController_listPullRequests(params: { id: string; signal?: AbortSignal }): Promise<PullRequestResponseDto[]> {
     return this.request('GET', `/api/v1/threads/${params.id}/pull-requests`, { signal: params?.signal });
   }

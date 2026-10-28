@@ -18,7 +18,10 @@ export type ScheduleInput = {
   lastViewedAt: Date | null;
   /** Linked from a task that is not done, or from a thread in the last day. */
   isReferencedByActiveWork: boolean;
-  /** GitHub delivered a webhook for the pull request's connection in the last hour. */
+  /**
+   * A webhook covers the pull request's repository (set up on it, its
+   * organization or a GitHub App) and delivered recently: see WEBHOOK_COVERAGE_MS.
+   */
   webhooksActive: boolean;
 };
 

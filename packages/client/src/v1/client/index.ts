@@ -98,6 +98,7 @@ export { GithubConnectionMatch } from './models/GithubConnectionMatch.js';
 export type { GithubConnectionResponseDto } from './models/GithubConnectionResponseDto.js';
 export type { GithubRepositoryRefDto } from './models/GithubRepositoryRefDto.js';
 export type { GithubWebhookSettingsResponseDto } from './models/GithubWebhookSettingsResponseDto.js';
+export type { GithubWebhookSourceDto } from './models/GithubWebhookSourceDto.js';
 export type { GlobalSearchResultDto } from './models/GlobalSearchResultDto.js';
 export type { ImportBlocksResponseDto } from './models/ImportBlocksResponseDto.js';
 export type { InputRequestResponseDto } from './models/InputRequestResponseDto.js';
