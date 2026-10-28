@@ -1,6 +1,6 @@
 # @taico/worker
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/worker/0.9.1)](https://badge.socket.dev/npm/package/@taico/worker/0.9.1)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/worker/0.9.2)](https://badge.socket.dev/npm/package/@taico/worker/0.9.2)
 
 Runtime for the current Taico worker.
 
