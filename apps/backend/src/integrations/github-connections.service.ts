@@ -143,6 +143,11 @@ export class GithubConnectionsService {
       this.credentials.forget(connection.id);
     }
 
+    // As on creation: no owners means the account the credential acts as.
+    if (connection.owners.length === 0 && connection.accountLogin) {
+      connection.owners = [connection.accountLogin];
+    }
+
     const saved = await this.repository.save(connection);
     return this.mapToResult(saved);
   }

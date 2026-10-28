@@ -154,6 +154,10 @@ describe('GitHub connections E2E', () => {
         .expect(201)
     ).body;
     expect(bob.owners).toEqual(['Acme']);
+    // Clearing the owners falls back to the account, like on creation.
+    const cleared = (await api('patch', `/integrations/github/connections/${bob.id}`).send({ owners: [] }).expect(200)).body;
+    expect(cleared.owners).toEqual(['bob']);
+    await api('patch', `/integrations/github/connections/${bob.id}`).send({ owners: ['Acme'] }).expect(200);
 
     expect(await resolve('https://github.com/acme/api')).toMatchObject({ repository: { owner: 'acme', repo: 'api' }, connection: { id: bob.id }, match: 'owner' });
     expect(await resolve('https://github.com/alice/x')).toMatchObject({ connection: { id: alice.id }, match: 'owner' });
