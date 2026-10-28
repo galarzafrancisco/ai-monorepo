@@ -16,6 +16,8 @@ export { Modal } from './Modal';
 export { Tabs } from './Tabs';
 export { ContextRail, RailSection } from './ContextRail';
 export { useRailOpen } from './useRailOpen';
+export { Popover } from './Popover';
+export { Switch } from './Switch';
 
 export type { AvatarProps } from './Avatar';
 export type { ChipProps } from './Chip';
@@ -33,3 +35,5 @@ export type { InsetGroupProps, InsetRowProps } from './InsetGroup';
 export type { ModalProps } from './Modal';
 export type { TabsProps, TabItem } from './Tabs';
 export type { ContextRailProps, RailSectionProps } from './ContextRail';
+export type { PopoverProps } from './Popover';
+export type { SwitchProps } from './Switch';

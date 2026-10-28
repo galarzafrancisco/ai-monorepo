@@ -1,9 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ProjectEntity } from './project.entity';
 import { MetaService } from './meta.service';
 import { SearchService } from '../search/search.service';
+import { GithubConnectionNotFoundError } from '../integrations/errors/integrations.errors';
 import {
   CreateProjectInput,
   UpdateProjectInput,
@@ -20,7 +21,17 @@ export class ProjectsService {
     private readonly projectRepository: Repository<ProjectEntity>,
     private readonly metaService: MetaService,
     private readonly searchService: SearchService,
+    private readonly dataSource: DataSource,
   ) {}
+
+  private async assertGithubConnectionExists(connectionId: string | null | undefined): Promise<void> {
+    if (!connectionId) return;
+    const rows: unknown[] = await this.dataSource.query(
+      'SELECT 1 FROM github_connections WHERE id = $1',
+      [connectionId],
+    );
+    if (rows.length === 0) throw new GithubConnectionNotFoundError(connectionId);
+  }
 
   /**
    * Create a new project with associated tag
@@ -30,6 +41,8 @@ export class ProjectsService {
       message: 'Creating project',
       slug: input.slug,
     });
+
+    await this.assertGithubConnectionExists(input.githubConnectionId);
 
     // Create tag with project: prefix
     const tagName = `project:${input.slug}`;
@@ -51,6 +64,8 @@ export class ProjectsService {
         slug: input.slug,
         description: input.description,
         repoUrl: input.repoUrl,
+        githubConnectionId: input.githubConnectionId ?? null,
+        githubForWorker: input.githubForWorker ?? false,
       });
       project = await this.projectRepository.save(project);
       project.tag = tag;
@@ -66,6 +81,12 @@ export class ProjectsService {
       project.slug = input.slug;
       project.description = input.description;
       project.repoUrl = input.repoUrl;
+      if (input.githubConnectionId !== undefined) {
+        project.githubConnectionId = input.githubConnectionId;
+      }
+      if (input.githubForWorker !== undefined) {
+        project.githubForWorker = input.githubForWorker;
+      }
       project = await this.projectRepository.save(project);
 
       this.logger.log({
@@ -177,12 +198,20 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
+    await this.assertGithubConnectionExists(input.githubConnectionId);
+
     // Update only provided fields
     if (input.description !== undefined) {
       project.description = input.description;
     }
     if (input.repoUrl !== undefined) {
       project.repoUrl = input.repoUrl;
+    }
+    if (input.githubConnectionId !== undefined) {
+      project.githubConnectionId = input.githubConnectionId;
+    }
+    if (input.githubForWorker !== undefined) {
+      project.githubForWorker = input.githubForWorker;
     }
 
     const updatedProject = await this.projectRepository.save(project);
@@ -237,6 +266,8 @@ export class ProjectsService {
       slug: project.slug,
       description: project.description,
       repoUrl: project.repoUrl,
+      githubConnectionId: project.githubConnectionId,
+      githubForWorker: project.githubForWorker,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     };

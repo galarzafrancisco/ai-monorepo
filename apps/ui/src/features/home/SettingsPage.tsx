@@ -24,6 +24,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   Palette,
+  Plug,
   Search,
   Server,
   Sparkles,
@@ -109,6 +110,13 @@ export function SettingsPage() {
         description: 'Tune search and see what is indexed',
         aliases: ['search', 'index', 'embeddings', 'semantic', 'reindex'],
         onSelect: () => navigate('/settings/search'),
+      },
+      {
+        id: 'settings-integrations',
+        label: 'Integrations',
+        description: 'Connect GitHub to see pull request status',
+        aliases: ['integrations', 'github', 'pull requests', 'prs', 'token', 'connections'],
+        onSelect: () => navigate('/settings/integrations'),
       },
       {
         id: 'settings-workers',
@@ -202,6 +210,15 @@ export function SettingsPage() {
       path: '/settings/workers',
       action: 'Open workers',
       detail: { label: 'Connected workers', value: areWorkersLoading ? 'Loading' : String(connectedWorkers), tone: 'default' },
+    },
+    {
+      title: 'Integrations',
+      description: 'GitHub connections for pull request status and workers.',
+      icon: Plug,
+      iconTone: 'neutral',
+      path: '/settings/integrations',
+      action: 'Configure',
+      detail: { label: 'Services', value: 'GitHub', tone: 'default' },
     },
     {
       title: 'Account',

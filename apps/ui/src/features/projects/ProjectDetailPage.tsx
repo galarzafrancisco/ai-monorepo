@@ -11,6 +11,7 @@ import { ProjectsService, TasksService } from './api';
 import { useProjectsCtx } from './ProjectsProvider';
 import { errorDetail } from './useProjects';
 import { toRepoLink } from './repoLink';
+import { ProjectGithubCard } from './ProjectGithubCard';
 import type { Project, ProjectTask } from './types';
 import '../../auth/LoginPage.css';
 import './ProjectsPage.css';
@@ -207,6 +208,7 @@ export function ProjectDetailPage() {
 
         <Stack spacing="4" className="projects-detail__side">
           <ProjectSettingsCard project={project} onSave={updateProject} onSaved={handleSaved} />
+          <ProjectGithubCard project={project} onSave={updateProject} onSaved={handleSaved} />
         </Stack>
       </div>
     </div>

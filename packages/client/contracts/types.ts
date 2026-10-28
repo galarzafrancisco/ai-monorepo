@@ -2381,6 +2381,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/github/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List GitHub connections */
+        get: operations["GithubConnectionsController_listConnections"];
+        put?: never;
+        /** Connect GitHub with a personal access token or a GitHub App installation */
+        post: operations["GithubConnectionsController_createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/github/connections/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which connection Taico would use for a repository, and why */
+        get: operations["GithubConnectionsController_resolveConnection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/github/connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a GitHub connection */
+        get: operations["GithubConnectionsController_getConnection"];
+        put?: never;
+        post?: never;
+        /** Delete a GitHub connection and its stored credential */
+        delete: operations["GithubConnectionsController_deleteConnection"];
+        options?: never;
+        head?: never;
+        /** Update a GitHub connection; a new credential is checked with GitHub before it is saved */
+        patch: operations["GithubConnectionsController_updateConnection"];
+        trace?: never;
+    };
+    "/api/v1/integrations/github/connections/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check the stored credential with GitHub again */
+        post: operations["GithubConnectionsController_verifyConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search/query": {
         parameters: {
             query?: never;
@@ -2613,6 +2684,16 @@ export interface components {
              */
             repoUrl?: string;
             /**
+             * @description GitHub connection for this project. Null picks one automatically from the repository owner.
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            githubConnectionId?: string | null;
+            /**
+             * @description Whether workers get a token from the project's GitHub connection to clone and push
+             * @example false
+             */
+            githubForWorker?: boolean;
+            /**
              * @description Tag color in hex format
              * @example #FF6B6B
              */
@@ -2655,6 +2736,16 @@ export interface components {
              */
             repoUrl?: string;
             /**
+             * @description GitHub connection for this project. Null picks one automatically from the repository owner.
+             * @example null
+             */
+            githubConnectionId: string | null;
+            /**
+             * @description Whether workers get a token from the project's GitHub connection to clone and push
+             * @example false
+             */
+            githubForWorker: boolean;
+            /**
              * @description Creation timestamp
              * @example 2024-01-01T00:00:00.000Z
              */
@@ -2676,6 +2767,16 @@ export interface components {
              * @example https://github.com/user/repo
              */
             repoUrl?: string;
+            /**
+             * @description GitHub connection for this project. Null picks one automatically from the repository owner.
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            githubConnectionId?: string | null;
+            /**
+             * @description Whether workers get a token from the project's GitHub connection to clone and push
+             * @example false
+             */
+            githubForWorker?: boolean;
         };
         RegisterClientDto: {
             /**
@@ -6873,6 +6974,124 @@ export interface components {
              * @example Tasks MCP API
              */
             resource_name: string;
+        };
+        /** @enum {string} */
+        GithubAuthType: "pat" | "app";
+        CreateGithubConnectionDto: {
+            /**
+             * @description Display name
+             * @example Acme GitHub
+             */
+            name: string;
+            /** @example pat */
+            authType: components["schemas"]["GithubAuthType"];
+            /**
+             * @description The personal access token (PAT), or the whole PEM private key of the GitHub App (App). Stored encrypted and never returned.
+             * @example github_pat_...
+             */
+            secret: string;
+            /**
+             * @description GitHub App id. Required for App connections.
+             * @example 123456
+             */
+            appId?: string | null;
+            /**
+             * @description GitHub App installation id. Required for App connections.
+             * @example 7890123
+             */
+            installationId?: string | null;
+            /**
+             * @description Repository owners (users or organisations) this connection is used for. Empty: the account the credential acts as.
+             * @example [
+             *       "acme"
+             *     ]
+             */
+            owners?: string[];
+        };
+        GithubConnectionResponseDto: {
+            /** @example 123e4567-e89b-12d3-a456-426614174000 */
+            id: string;
+            /** @example Acme GitHub */
+            name: string;
+            /** @example pat */
+            authType: components["schemas"]["GithubAuthType"];
+            /** @example 123456 */
+            appId: string | null;
+            /** @example 7890123 */
+            installationId: string | null;
+            /**
+             * @description Repository owners this connection is used for
+             * @example [
+             *       "acme"
+             *     ]
+             */
+            owners: string[];
+            /**
+             * @description Who GitHub says the connection acts as
+             * @example octocat
+             */
+            accountLogin: string | null;
+            /** @example 2026-01-01T00:00:00.000Z */
+            lastVerifiedAt: string | null;
+            /**
+             * @description Why the last check with GitHub failed; null when it worked
+             * @example null
+             */
+            lastError: string | null;
+            /** @example 1 */
+            rowVersion: number;
+            /** @example 2026-01-01T00:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-01-01T00:00:00.000Z */
+            updatedAt: string;
+        };
+        GithubRepositoryRefDto: {
+            /** @example acme */
+            owner: string;
+            /** @example api */
+            repo: string;
+        };
+        /**
+         * @description Why: the project names it, it lists the repository owner, or it is the only connection
+         * @enum {string}
+         */
+        GithubConnectionMatch: "project" | "owner" | "only_connection";
+        ResolvedGithubConnectionResponseDto: {
+            /** @description The repository, or null when the URL is not a github.com repository */
+            repository: components["schemas"]["GithubRepositoryRefDto"] | null;
+            /** @description The connection Taico would use, or null when none fits (public repositories are then read anonymously) */
+            connection: components["schemas"]["GithubConnectionResponseDto"] | null;
+            /** @description Why: the project names it, it lists the repository owner, or it is the only connection */
+            match: components["schemas"]["GithubConnectionMatch"] | null;
+        };
+        UpdateGithubConnectionDto: {
+            /**
+             * @description Display name
+             * @example Acme GitHub
+             */
+            name?: string;
+            /**
+             * @description A new token or private key. Leave out to keep the current one.
+             * @example github_pat_...
+             */
+            secret?: string;
+            /**
+             * @description GitHub App id
+             * @example 123456
+             */
+            appId?: string | null;
+            /**
+             * @description GitHub App installation id
+             * @example 7890123
+             */
+            installationId?: string | null;
+            /**
+             * @description Repository owners this connection is used for
+             * @example [
+             *       "acme"
+             *     ]
+             */
+            owners?: string[];
         };
         /** @enum {string} */
         SearchResultType: "task" | "context_block" | "thread" | "tool" | "agent" | "project";
@@ -12647,6 +12866,191 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
                 };
+            };
+        };
+    };
+    GithubConnectionsController_listConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubConnectionResponseDto"][];
+                };
+            };
+        };
+    };
+    GithubConnectionsController_createConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGithubConnectionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    GithubConnectionsController_resolveConnection: {
+        parameters: {
+            query: {
+                /** @description Repository URL (web or clone URL) */
+                repoUrl: string;
+                /** @description The connection the project names, if any */
+                connectionId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolvedGithubConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    GithubConnectionsController_getConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description GitHub connection id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubConnectionResponseDto"];
+                };
+            };
+            /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GithubConnectionsController_deleteConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description GitHub connection id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GithubConnectionsController_updateConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description GitHub connection id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGithubConnectionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubConnectionResponseDto"];
+                };
+            };
+            /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GithubConnectionsController_verifyConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description GitHub connection id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubConnectionResponseDto"];
+                };
+            };
+            /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

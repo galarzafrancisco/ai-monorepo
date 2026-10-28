@@ -11,5 +11,13 @@ export type PatchProjectDto = {
      * Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)
      */
     repoUrl?: string;
+    /**
+     * GitHub connection for this project. Null picks one automatically from the repository owner.
+     */
+    githubConnectionId?: string | null;
+    /**
+     * Whether workers get a token from the project's GitHub connection to clone and push
+     */
+    githubForWorker?: boolean;
 };
 

@@ -7,11 +7,16 @@ export type CreateProjectInput = {
   description?: string;
   repoUrl?: string;
   color?: string;
+  githubConnectionId?: string | null;
+  githubForWorker?: boolean;
 };
 
 export type UpdateProjectInput = {
   description?: string;
   repoUrl?: string;
+  /** Null: pick the connection automatically. */
+  githubConnectionId?: string | null;
+  githubForWorker?: boolean;
 };
 
 export type ProjectResult = {
@@ -22,6 +27,8 @@ export type ProjectResult = {
   slug: string;
   description?: string;
   repoUrl?: string;
+  githubConnectionId: string | null;
+  githubForWorker: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

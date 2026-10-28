@@ -32,6 +32,17 @@ export class ProjectEntity {
   @Column({ type: 'text', nullable: true })
   repoUrl?: string;
 
+  /**
+   * The GitHub connection used for this project's repository and pull
+   * requests. Null: picked automatically from the repository's owner.
+   */
+  @Column({ type: 'uuid', nullable: true, name: 'github_connection_id' })
+  githubConnectionId!: string | null;
+
+  /** Whether workers get a token from the project's GitHub connection to clone and push. */
+  @Column({ type: 'boolean', default: false, name: 'github_for_worker' })
+  githubForWorker!: boolean;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

@@ -399,6 +399,24 @@ export const ErrorCatalog: Record<
     type: '/errors/access-requests/busy',
     retryable: true,
   },
+  [ErrorCodes.GITHUB_CONNECTION_NOT_FOUND]: {
+    status: 404,
+    title: 'GitHub connection not found',
+    type: '/errors/integrations/github-connection-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.GITHUB_CONNECTION_INVALID]: {
+    status: 400,
+    title: 'GitHub connection is not valid',
+    type: '/errors/integrations/github-connection-invalid',
+    retryable: false,
+  },
+  [ErrorCodes.GITHUB_REQUEST_FAILED]: {
+    status: 502,
+    title: 'GitHub request failed',
+    type: '/errors/integrations/github-request-failed',
+    retryable: true,
+  },
   [ErrorCodes.INTERNAL_ERROR]: {
     status: 500,
     title: 'Internal server error',
