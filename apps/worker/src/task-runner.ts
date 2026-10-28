@@ -5,6 +5,8 @@ import {
 } from '@taico/client/v2';
 import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
+import { removeTokenDir, tokenDir } from './helpers/githubCredentials.js';
+import { issueGithubCredentials } from './helpers/issueGithubCredentials.js';
 import {
   getProjectSlugsFromTags,
   resolveProjectRepos,
@@ -76,6 +78,7 @@ export async function executeTask({
 
   let step: ExecutionStep = 'workspace';
   trace.workerStep({ step, status: 'running' });
+  const githubTokenDir = tokenDir(baseDir, executionId);
   // Wrap entire execution in try/finally to ensure cleanup
   try {
     throwIfInterrupted();
@@ -113,11 +116,20 @@ export async function executeTask({
       );
     }
 
+    // GitHub tokens for projects that let workers use their connection.
+    const github = await issueGithubCredentials({
+      workerClient,
+      executionId,
+      tokenDirectory: githubTokenDir,
+      repos: projectRepos,
+    });
+    const reposToPrepare = github.repos;
+
     const workspace = await prepareWorkspace({
       taskId,
       agentId: agent.actorId,
       baseDir,
-      repos: projectRepos,
+      repos: reposToPrepare,
       onRepository: (repository) =>
         trace.workerStep({ step: 'workspace', status: 'running', repository }),
     });
@@ -240,6 +252,7 @@ export async function executeTask({
           cwd: workDir,
           baseUrl,
           accessToken: agentToken.token,
+          env: github.env,
           executionId,
           resume: undefined,
           agentSlug: agent.slug,
@@ -346,6 +359,8 @@ export async function executeTask({
     });
     throw error;
   } finally {
+    // Tokens never outlive the execution.
+    removeTokenDir(githubTokenDir);
     // Clean up abort controller - this now runs no matter where we fail
     activeExecutionAbortControllers.delete(executionId);
     activeExecutionInterruptHandlers.delete(executionId);

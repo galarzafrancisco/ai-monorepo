@@ -6,12 +6,13 @@ import { GithubConnectionEntity } from './github-connection.entity';
 import { GithubConnectionsService } from './github-connections.service';
 import { GithubConnectionsController } from './github-connections.controller';
 import { GithubCredentialsService } from './github/github-credentials.service';
+import { WorkerGithubCredentialsService } from './github/worker-github-credentials.service';
 
 /** Connections to outside services. Today: GitHub. */
 @Module({
   imports: [TypeOrmModule.forFeature([GithubConnectionEntity]), SecretsModule, AuthGuardsModule],
   controllers: [GithubConnectionsController],
-  providers: [GithubConnectionsService, GithubCredentialsService],
-  exports: [GithubConnectionsService, GithubCredentialsService],
+  providers: [GithubConnectionsService, GithubCredentialsService, WorkerGithubCredentialsService],
+  exports: [GithubConnectionsService, GithubCredentialsService, WorkerGithubCredentialsService],
 })
 export class IntegrationsModule {}

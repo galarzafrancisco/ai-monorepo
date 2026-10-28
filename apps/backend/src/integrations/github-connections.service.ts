@@ -11,7 +11,11 @@ import {
   GithubConnectionNotFoundError,
   IntegrationsDomainError,
 } from './errors/integrations.errors';
-import { GithubAccessToken, GithubCredentialsService } from './github/github-credentials.service';
+import {
+  GithubAccessToken,
+  GithubCredentialSource,
+  GithubCredentialsService,
+} from './github/github-credentials.service';
 import { parseGithubRepoUrl } from './github/github-repo-ref';
 import {
   CreateGithubConnectionInput,
@@ -265,6 +269,18 @@ export class GithubConnectionsService {
     if (expected.length !== received.length || !timingSafeEqual(expected, received)) return false;
     await this.repository.update({ id }, { lastWebhookAt: new Date() });
     return true;
+  }
+
+  /** What it takes to mint tokens for this connection (never the credential itself). */
+  async getCredentialSource(id: string): Promise<GithubCredentialSource> {
+    const connection = await this.findEntity(id);
+    return {
+      id: connection.id,
+      authType: connection.authType,
+      secretId: connection.secretId,
+      appId: connection.appId,
+      installationId: connection.installationId,
+    };
   }
 
   /** A token for Taico's own calls to GitHub through this connection. */

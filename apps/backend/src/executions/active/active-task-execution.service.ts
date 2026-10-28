@@ -276,6 +276,23 @@ export class ActiveTaskExecutionService {
     return this.mapHistoryEntryToResult(historyEntry);
   }
 
+  /**
+   * The task of an execution, for the worker that claimed it. Throws when the
+   * execution is not active or belongs to another worker.
+   */
+  async getTaskIdForWorker(input: { executionId: string; workerClientId: string }): Promise<string> {
+    const execution = await this.dataSource.getRepository(ActiveTaskExecutionEntity).findOne({
+      where: { id: input.executionId },
+    });
+    if (!execution) {
+      throw new ActiveTaskExecutionNotFoundError(input.executionId);
+    }
+    if (execution.workerClientId !== input.workerClientId) {
+      throw new ActiveTaskExecutionWorkerMismatchError(input.executionId);
+    }
+    return execution.taskId;
+  }
+
   async unclaimTask(input: UnclaimTaskExecutionInput): Promise<void> {
     const execution = await this.dataSource.transaction(async (manager) => {
       const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {

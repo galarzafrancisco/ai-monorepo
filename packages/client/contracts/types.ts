@@ -2259,6 +2259,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/executions/active/{executionId}/github-credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * GitHub tokens for the projects of a claimed execution
+         * @description Only the worker that claimed the execution may ask. Returns a token for each project of the task that lets workers use its GitHub connection: a one-hour installation token limited to the repository for a GitHub App, or the personal access token.
+         */
+        post: operations["ActiveTaskExecutionController_issueGithubCredentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/executions/active/{executionId}/session": {
         parameters: {
             query?: never;
@@ -6921,6 +6941,38 @@ export interface components {
             errorMessage: string | null;
             /** @description Execution metadata and usage stats */
             stats: components["schemas"]["ExecutionStatsResponseDto"] | null;
+        };
+        WorkerGithubCredentialDto: {
+            /** @example taico */
+            projectSlug: string;
+            /**
+             * @description HTTPS clone URL the token works with
+             * @example https://github.com/acme/api.git
+             */
+            cloneUrl: string;
+            /** @example acme */
+            owner: string;
+            /** @example api */
+            repo: string;
+            /**
+             * @description Token for git over HTTPS and the GitHub API. Never log or store it.
+             * @example ghs_...
+             */
+            token: string;
+            /**
+             * @description When the token stops working; null for a personal access token
+             * @example 2026-01-01T01:00:00.000Z
+             */
+            expiresAt: string | null;
+            /**
+             * @example app
+             * @enum {string}
+             */
+            authType: "pat" | "app";
+        };
+        WorkerGithubCredentialsResponseDto: {
+            /** @description One per project of the task whose GitHub connection may be used by workers. Empty when none is: the worker then uses the machine's own credentials. */
+            credentials: components["schemas"]["WorkerGithubCredentialDto"][];
         };
         UpdateRunnerSessionIdDto: {
             /**
@@ -12886,6 +12938,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ActiveTaskExecutionController_issueGithubCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Execution ID */
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkerGithubCredentialsResponseDto"];
+                };
             };
         };
     };

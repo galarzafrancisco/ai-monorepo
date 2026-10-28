@@ -42,6 +42,13 @@ export type AgentRunContext = {
   /** Short-lived agent execution token for MCP access */
   accessToken: string;
 
+  /**
+   * Extra environment for the harness and the commands it runs (e.g. GH_TOKEN),
+   * on top of the worker's own. Per run, so concurrent runs never see each
+   * other's values.
+   */
+  env?: Record<string, string>;
+
   /** Resume a previous run if supported */
   resume?: string;
 

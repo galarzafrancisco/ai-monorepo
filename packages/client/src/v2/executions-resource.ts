@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { ActiveTaskExecutionListResponseDto, ActiveTaskExecutionResponseDto, ExecutionTracesResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryListResponseDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueListResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto } from './types.js';
+import type { ActiveTaskExecutionListResponseDto, ActiveTaskExecutionResponseDto, ExecutionTracesResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryListResponseDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueListResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto, WorkerGithubCredentialsResponseDto } from './types.js';
 
 export class ExecutionsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -29,6 +29,11 @@ export class ExecutionsResource extends BaseClient {
   /** Unclaim an active task execution and return it to the queue */
   async ActiveTaskExecutionController_unclaimTaskExecution(params: { executionId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('POST', `/api/v1/executions/active/${params.executionId}/unclaim`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** GitHub tokens for the projects of a claimed execution */
+  async ActiveTaskExecutionController_issueGithubCredentials(params: { executionId: string; signal?: AbortSignal }): Promise<WorkerGithubCredentialsResponseDto> {
+    return this.request('POST', `/api/v1/executions/active/${params.executionId}/github-credentials`, { signal: params?.signal });
   }
 
   /** Attach the runner session id to an active execution */

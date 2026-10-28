@@ -52,8 +52,10 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     return new Promise(async (resolve, reject) => {
       try {
         // Init client
+        const env = this.harnessEnv(ctx);
         this.client = new CopilotClient({
           workingDirectory: ctx.cwd,
+          ...(env ? { env } : {}),
         });
         await this.client.start();
 
