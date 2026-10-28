@@ -31,6 +31,7 @@ export type GithubConnectionResult = {
   accountLogin: string | null;
   lastVerifiedAt: Date | null;
   lastError: string | null;
+  lastWebhookAt: Date | null;
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;
@@ -42,4 +43,12 @@ export type GithubConnectionMatch = 'project' | 'owner' | 'only_connection';
 export type ResolvedGithubConnection = {
   connection: GithubConnectionResult;
   match: GithubConnectionMatch;
+};
+
+export type GithubWebhookSettings = {
+  /** Where GitHub should send deliveries. */
+  url: string;
+  /** The secret to paste into GitHub. */
+  secret: string;
+  lastDeliveryAt: Date | null;
 };

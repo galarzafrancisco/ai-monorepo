@@ -39,6 +39,14 @@ export class GithubConnectionResponseDto {
   })
   lastError!: string | null;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'When GitHub last delivered a correctly signed webhook through this connection',
+    example: null,
+  })
+  lastWebhookAt!: string | null;
+
   @ApiProperty({ example: 1 })
   rowVersion!: number;
 

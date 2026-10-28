@@ -2452,6 +2452,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/github/connections/{id}/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Webhook address and secret for the connection (the secret is created on first request) */
+        get: operations["GithubConnectionsController_getWebhookSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pull-requests/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Status of linked pull requests, in the order asked
+         * @description Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.
+         */
+        post: operations["PullRequestsController_lookup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pull-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stored status of one pull request */
+        get: operations["PullRequestsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pull-requests/{id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read the pull request from GitHub now */
+        post: operations["PullRequestsController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search/query": {
         parameters: {
             query?: never;
@@ -7038,6 +7109,11 @@ export interface components {
              * @example null
              */
             lastError: string | null;
+            /**
+             * @description When GitHub last delivered a correctly signed webhook through this connection
+             * @example null
+             */
+            lastWebhookAt: string | null;
             /** @example 1 */
             rowVersion: number;
             /** @example 2026-01-01T00:00:00.000Z */
@@ -7092,6 +7168,130 @@ export interface components {
              *     ]
              */
             owners?: string[];
+        };
+        GithubWebhookSettingsResponseDto: {
+            /**
+             * @description Payload URL to enter in GitHub (repository, organization or app webhook settings)
+             * @example https://taico.example.com/api/v1/integrations/github/webhooks/123e4567-e89b-12d3-a456-426614174000
+             */
+            url: string;
+            /**
+             * @description Secret to enter in GitHub. GitHub signs every delivery with it.
+             * @example 5f2c…
+             */
+            secret: string;
+            /**
+             * @description When the last correctly signed delivery arrived
+             * @example null
+             */
+            lastDeliveryAt: string | null;
+        };
+        LookupPullRequestsDto: {
+            /**
+             * @description Pull request links or owner/repo#number references, at most 50
+             * @example [
+             *       "https://github.com/acme/api/pull/12",
+             *       "acme/web#3"
+             *     ]
+             */
+            refs: string[];
+        };
+        /**
+         * @description Null until Taico has read the pull request
+         * @enum {string}
+         */
+        PullRequestState: "open" | "closed" | "merged";
+        /**
+         * @description CI of the latest commit
+         * @enum {string}
+         */
+        ChecksStatus: "none" | "pending" | "success" | "failure";
+        /** @enum {string} */
+        ReviewDecision: "none" | "approved" | "changes_requested";
+        PullRequestResponseDto: {
+            /** @example 123e4567-e89b-12d3-a456-426614174000 */
+            id: string;
+            /**
+             * @description owner/repo#number, lower case
+             * @example acme/api#12
+             */
+            key: string;
+            /** @example acme */
+            owner: string;
+            /** @example api */
+            repo: string;
+            /** @example 12 */
+            number: number;
+            /** @example https://github.com/acme/api/pull/12 */
+            url: string;
+            /**
+             * @description Null until Taico has read the pull request
+             * @example Add search
+             */
+            title: string | null;
+            /** @description Null until Taico has read the pull request */
+            state: components["schemas"]["PullRequestState"] | null;
+            /** @example false */
+            draft: boolean;
+            /** @example octocat */
+            authorLogin: string | null;
+            /** @example feature/search */
+            headRef: string | null;
+            /** @example main */
+            baseRef: string | null;
+            /** @example 123 */
+            additions: number | null;
+            /** @example 32 */
+            deletions: number | null;
+            /** @example 4 */
+            changedFiles: number | null;
+            /**
+             * @description Conversation and review comments
+             * @example 3
+             */
+            commentCount: number | null;
+            /** @description CI of the latest commit */
+            checksStatus: components["schemas"]["ChecksStatus"];
+            /** @example 5 */
+            checksTotal: number;
+            /** @example 3 */
+            checksPassed: number;
+            /** @example 1 */
+            checksFailed: number;
+            /** @example 1 */
+            checksPending: number;
+            /**
+             * @description Names of the failing checks
+             * @example [
+             *       "build"
+             *     ]
+             */
+            failedChecks: string[];
+            reviewDecision: components["schemas"]["ReviewDecision"];
+            /**
+             * @description Reviewers whose latest review approves
+             * @example 1
+             */
+            approvals: number;
+            /** @example null */
+            mergedAt: string | null;
+            /** @example null */
+            closedAt: string | null;
+            /**
+             * @description When GitHub says it last changed
+             * @example null
+             */
+            githubUpdatedAt: string | null;
+            /**
+             * @description When Taico last read it from GitHub
+             * @example null
+             */
+            lastFetchedAt: string | null;
+            /**
+             * @description Why the last read failed; null when it worked
+             * @example null
+             */
+            lastError: string | null;
         };
         /** @enum {string} */
         SearchResultType: "task" | "context_block" | "thread" | "tool" | "agent" | "project";
@@ -13046,6 +13246,114 @@ export interface operations {
                 };
             };
             /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GithubConnectionsController_getWebhookSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description GitHub connection id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubWebhookSettingsResponseDto"];
+                };
+            };
+            /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PullRequestsController_lookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupPullRequestsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullRequestResponseDto"][];
+                };
+            };
+        };
+    };
+    PullRequestsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullRequestResponseDto"];
+                };
+            };
+            /** @description Pull request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PullRequestsController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullRequestResponseDto"];
+                };
+            };
+            /** @description Pull request not found */
             404: {
                 headers: {
                     [name: string]: unknown;

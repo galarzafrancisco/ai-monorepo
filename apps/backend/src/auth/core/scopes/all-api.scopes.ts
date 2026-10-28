@@ -12,6 +12,7 @@ import { ALL_AI_PROVIDERS_SCOPES } from 'src/ai-providers/ai-providers.scopes';
 import { ALL_WORKERS_SCOPES } from 'src/executions/workers.scopes';
 import { ALL_SEARCH_SCOPES } from 'src/search/search.scopes';
 import { ALL_INTEGRATIONS_SCOPES } from 'src/integrations/integrations.scopes';
+import { ALL_PULL_REQUESTS_SCOPES } from 'src/pull-requests/pull-requests.scopes';
 
 export const ALL_API_SCOPES: Scope[] = [
   // Metadata
@@ -40,4 +41,6 @@ export const ALL_API_SCOPES: Scope[] = [
   ...ALL_SEARCH_SCOPES,
   // Integrations
   ...ALL_INTEGRATIONS_SCOPES,
+  // Pull requests
+  ...ALL_PULL_REQUESTS_SCOPES,
 ];

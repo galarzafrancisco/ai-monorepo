@@ -19,6 +19,7 @@ import { CreateGithubConnectionDto } from './dto/http/create-github-connection.d
 import { UpdateGithubConnectionDto } from './dto/http/update-github-connection.dto';
 import { GithubConnectionParamsDto } from './dto/http/github-connection-params.dto';
 import { GithubConnectionResponseDto } from './dto/http/github-connection-response.dto';
+import { GithubWebhookSettingsResponseDto } from './dto/http/github-webhook-settings-response.dto';
 import {
   ResolveGithubConnectionQueryDto,
   ResolvedGithubConnectionResponseDto,
@@ -120,6 +121,25 @@ export class GithubConnectionsController {
     return this.mapToResponse(await this.connections.verifyConnection(params.id));
   }
 
+  @Get(':id/webhook')
+  @RequireScopes(IntegrationsScopes.WRITE.id)
+  @ApiOperation({
+    summary: 'Webhook address and secret for the connection (the secret is created on first request)',
+  })
+  @ApiOkResponse({ type: GithubWebhookSettingsResponseDto })
+  @ApiNotFoundResponse({ description: 'GitHub connection not found' })
+  async getWebhookSettings(
+    @Param() params: GithubConnectionParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<GithubWebhookSettingsResponseDto> {
+    const settings = await this.connections.getWebhookSettings(params.id, user.actorId);
+    return {
+      url: settings.url,
+      secret: settings.secret,
+      lastDeliveryAt: settings.lastDeliveryAt?.toISOString() ?? null,
+    };
+  }
+
   @Delete(':id')
   @HttpCode(204)
   @RequireScopes(IntegrationsScopes.DELETE.id)
@@ -141,6 +161,7 @@ export class GithubConnectionsController {
       accountLogin: result.accountLogin,
       lastVerifiedAt: result.lastVerifiedAt?.toISOString() ?? null,
       lastError: result.lastError,
+      lastWebhookAt: result.lastWebhookAt?.toISOString() ?? null,
       rowVersion: result.rowVersion,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),

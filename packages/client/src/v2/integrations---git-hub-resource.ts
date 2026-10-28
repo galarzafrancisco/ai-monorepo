@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { CreateGithubConnectionDto, GithubConnectionResponseDto, ResolvedGithubConnectionResponseDto, UpdateGithubConnectionDto } from './types.js';
+import type { CreateGithubConnectionDto, GithubConnectionResponseDto, GithubWebhookSettingsResponseDto, ResolvedGithubConnectionResponseDto, UpdateGithubConnectionDto } from './types.js';
 
 export class IntegrationsGithubResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -39,6 +39,11 @@ export class IntegrationsGithubResource extends BaseClient {
   /** Check the stored credential with GitHub again */
   async GithubConnectionsController_verifyConnection(params: { id: string; signal?: AbortSignal }): Promise<GithubConnectionResponseDto> {
     return this.request('POST', `/api/v1/integrations/github/connections/${params.id}/verify`, { signal: params?.signal });
+  }
+
+  /** Webhook address and secret for the connection (the secret is created on first request) */
+  async GithubConnectionsController_getWebhookSettings(params: { id: string; signal?: AbortSignal }): Promise<GithubWebhookSettingsResponseDto> {
+    return this.request('GET', `/api/v1/integrations/github/connections/${params.id}/webhook`, { signal: params?.signal });
   }
 
 }

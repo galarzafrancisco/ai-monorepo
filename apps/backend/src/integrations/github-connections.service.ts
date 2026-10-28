@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { getConfig } from '../config/env.config';
 import { SecretsService } from '../secrets/secrets.service';
 import { GithubConnectionEntity } from './github-connection.entity';
 import { GithubAuthType } from './enums';
@@ -10,9 +12,11 @@ import {
   IntegrationsDomainError,
 } from './errors/integrations.errors';
 import { GithubAccessToken, GithubCredentialsService } from './github/github-credentials.service';
+import { parseGithubRepoUrl } from './github/github-repo-ref';
 import {
   CreateGithubConnectionInput,
   GithubConnectionResult,
+  GithubWebhookSettings,
   ResolvedGithubConnection,
   UpdateGithubConnectionInput,
 } from './dto/service/github-connections.service.types';
@@ -44,6 +48,7 @@ export class GithubConnectionsService {
     private readonly repository: Repository<GithubConnectionEntity>,
     private readonly secretsService: SecretsService,
     private readonly credentials: GithubCredentialsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /** Checks the credential with GitHub first: a connection that does not work is never saved. */
@@ -147,6 +152,7 @@ export class GithubConnectionsService {
     const connection = await this.findEntity(id);
     await this.repository.delete(id);
     await this.secretsService.deleteSecret(connection.secretId);
+    if (connection.webhookSecretId) await this.secretsService.deleteSecret(connection.webhookSecretId);
     this.credentials.forget(id);
     this.logger.log({ message: 'GitHub connection deleted', connectionId: id });
   }
@@ -196,6 +202,66 @@ export class GithubConnectionsService {
     return null;
   }
 
+  /**
+   * Like resolveForRepository, but for a repository Taico meets outside a
+   * project (a pull request link): the first project whose repository it is
+   * decides, if that project names a connection.
+   */
+  async resolveForRepositoryOfAnyProject(input: { owner: string; repo: string }): Promise<ResolvedGithubConnection | null> {
+    const projects: Array<{ repo_url: string; github_connection_id: string }> = await this.dataSource.query(
+      `SELECT "repoUrl" AS repo_url, github_connection_id FROM projects
+        WHERE github_connection_id IS NOT NULL AND "repoUrl" IS NOT NULL AND deleted_at IS NULL
+        ORDER BY created_at ASC`,
+    );
+    const owner = input.owner.toLowerCase();
+    const repo = input.repo.toLowerCase();
+    const project = projects.find((row) => {
+      const ref = parseGithubRepoUrl(row.repo_url);
+      return ref?.owner.toLowerCase() === owner && ref.repo.toLowerCase() === repo;
+    });
+    return this.resolveForRepository({ owner: input.owner, projectConnectionId: project?.github_connection_id });
+  }
+
+  /** Webhook address and secret for this connection; the secret is created on first use. */
+  async getWebhookSettings(id: string, createdByActorId: string): Promise<GithubWebhookSettings> {
+    const connection = await this.findEntity(id);
+    let secret: string;
+    if (connection.webhookSecretId) {
+      secret = (await this.secretsService.getSecretValue(connection.webhookSecretId)).value;
+    } else {
+      secret = randomBytes(32).toString('hex');
+      const stored = await this.secretsService.createSecret({
+        name: `GitHub connection webhook: ${connection.name} (${Date.now()})`,
+        description: `Webhook secret for the GitHub connection "${connection.name}"`,
+        value: secret,
+        createdByActorId,
+      });
+      connection.webhookSecretId = stored.id;
+      await this.repository.save(connection);
+    }
+    return {
+      url: `${getConfig().issuerUrl.replace(/\/+$/, '')}/api/v1/integrations/github/webhooks/${connection.id}`,
+      secret,
+      lastDeliveryAt: connection.lastWebhookAt,
+    };
+  }
+
+  /**
+   * Checks GitHub's `X-Hub-Signature-256` over the exact bytes received, and
+   * records the delivery when it matches. False for an unknown connection, a
+   * connection without webhook secret, or a bad signature.
+   */
+  async acceptWebhookDelivery(id: string, rawBody: Buffer, signature: string | undefined): Promise<boolean> {
+    const connection = await this.repository.findOne({ where: { id } });
+    if (!connection?.webhookSecretId || !signature?.startsWith('sha256=')) return false;
+    const secret = (await this.secretsService.getSecretValue(connection.webhookSecretId)).value;
+    const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(rawBody).digest('hex')}`);
+    const received = Buffer.from(signature);
+    if (expected.length !== received.length || !timingSafeEqual(expected, received)) return false;
+    await this.repository.update({ id }, { lastWebhookAt: new Date() });
+    return true;
+  }
+
   /** A token for Taico's own calls to GitHub through this connection. */
   async getAccessToken(id: string): Promise<GithubAccessToken> {
     return this.credentials.getAccessToken(await this.findEntity(id));
@@ -218,6 +284,7 @@ export class GithubConnectionsService {
       accountLogin: connection.accountLogin,
       lastVerifiedAt: connection.lastVerifiedAt,
       lastError: connection.lastError,
+      lastWebhookAt: connection.lastWebhookAt,
       rowVersion: connection.rowVersion,
       createdAt: connection.createdAt,
       updatedAt: connection.updatedAt,

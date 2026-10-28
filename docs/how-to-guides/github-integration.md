@@ -43,3 +43,60 @@ Access is Taico-wide. Anyone who can see a task, comment or thread with a pull r
 ## Workers
 
 Each project has a "Workers use this connection" switch, off by default. When off, workers use whatever git and `gh` credentials the machine they run on already has.
+
+## Pull requests
+
+Taico keeps one copy of each linked pull request in `pull_requests`, however many places link to it, keyed by `owner/repo#number` in lower case.
+
+### Noticing links
+
+`PullRequestReferencesListener` reads pull request links (`https://github.com/<owner>/<repo>/pull/<n>`, including `/files`, `/commits` and `#comment` anchors) from:
+
+| Where | Recorded as | Belongs to |
+|---|---|---|
+| Task links (artefacts) | `task_artefact` | the task |
+| Task name and description | `task_description` | the task |
+| Task comments | `task_comment` | the task |
+| Thread messages | `thread_message` | the thread |
+
+Each source's links replace the ones it had, so editing a description drops pull requests it no longer mentions. The `PullRequests` migration records links that already existed, without reading them from GitHub until someone looks.
+
+### Reading from GitHub
+
+A look at a pull request is four conditional requests: the pull request, its reviews, and the check runs and commit statuses of its head commit. GitHub answers 304 for anything unchanged, which costs nothing against the rate limit, and Taico reuses what it stored.
+
+- **CI** (`checksStatus`): check runs and commit statuses together. Any failure (failed, cancelled, timed out, action required) wins: `failure`. Otherwise anything queued or running: `pending`. Otherwise any success: `success`. Nothing reported: `none`. Skipped and neutral runs do not count.
+- **Reviews** (`reviewDecision`, `approvals`): the latest approving or changes-requesting review of each reviewer; a dismissed review clears that reviewer. Any "changes requested" wins over approvals. Required reviewers and branch protection are not considered.
+- **Comments** (`commentCount`): conversation comments plus review comments.
+
+The connection used is the one of the first project whose repository it is, if that project names one, then the usual resolution order. Without a connection the request is anonymous.
+
+### When Taico looks again
+
+`PullRequestPollerService` runs on every backend process every 5 seconds and claims up to 20 due pull requests (`next_fetch_at <= now()`, `FOR UPDATE SKIP LOCKED`, a 2-minute lease). After each look, `nextFetchDelayMs` (`pull-request-schedule.ts`) picks the next one from demand:
+
+| Demand | Without webhooks | With webhooks |
+|---|---|---|
+| A thread is watching it (`watched_until`) | 30 s | 5 min |
+| Someone viewed it in the last 10 minutes | 1 min | 10 min |
+| Linked from a task that is not done, or a thread in the last day | 5 min | 30 min |
+| Anything else | not polled | not polled |
+| Merged or closed | never again | never again |
+
+"With webhooks" means the connection received a valid delivery in the last hour. A pull request that is not polled is read again when someone views it and the copy is older than 2 minutes, when a webhook names it, or when it is watched. Failures back off from 30 seconds to an hour; a pull request GitHub says does not exist is not retried until something asks for it.
+
+### Webhooks (optional)
+
+Settings > Integrations > Webhook shows a payload URL (`/api/v1/integrations/github/webhooks/<connection id>`, built from `ISSUER_URL`) and a secret, created the first time it is asked for. Add them to the repository or organization webhooks (token connections) or to the GitHub App, with these events: pull requests, pull request reviews and review comments, issue comments, check runs, check suites and statuses.
+
+Each delivery must carry a valid `X-Hub-Signature-256`; anything else gets 401. A delivery only marks the pull requests it names (by number, or by head commit for CI events) for a fresh look within 5 seconds: Taico then reads them through the API, so a payload can never write state directly. GitHub must be able to reach Taico for webhooks to work.
+
+### API and events
+
+- `POST /pull-requests/lookup` `{ refs: [...] }` (links or `owner/repo#n`, at most 50): the stored state in the order asked. Pull requests never read before are read first; stale ones are refreshed in the background. Marks them as viewed.
+- `GET /pull-requests/:id`, `POST /pull-requests/:id/refresh`.
+- Scopes: `pull_request:read`, `pull_request:write` (refresh).
+- `PullRequestUpdatedEvent` (internal) fires when the stored copy changes, with the `changes` since the last look: `merged`, `closed`, `reopened`, `ready_for_review`, `converted_to_draft`, `new_commits`, `checks_started`, `checks_passed`, `checks_failed`, `approved`, `changes_requested`, `new_comments`. The first look has none.
+- Socket.io namespace `/pull-requests`: `pull_requests.subscribe` joins one room; `pull_request.updated` carries the new state and the changes.
+
+Code: `apps/backend/src/pull-requests/`.

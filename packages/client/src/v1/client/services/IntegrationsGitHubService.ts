@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { CreateGithubConnectionDto } from '../models/CreateGithubConnectionDto.js';
 import type { GithubConnectionResponseDto } from '../models/GithubConnectionResponseDto.js';
+import type { GithubWebhookSettingsResponseDto } from '../models/GithubWebhookSettingsResponseDto.js';
 import type { ResolvedGithubConnectionResponseDto } from '../models/ResolvedGithubConnectionResponseDto.js';
 import type { UpdateGithubConnectionDto } from '../models/UpdateGithubConnectionDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -140,6 +141,27 @@ export class IntegrationsGitHubService {
         return __request(config, {
             method: 'POST',
             url: '/api/v1/integrations/github/connections/{id}/verify',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `GitHub connection not found`,
+            },
+        });
+    }
+    /**
+     * Webhook address and secret for the connection (the secret is created on first request)
+     * @param id GitHub connection id
+     * @returns GithubWebhookSettingsResponseDto
+     * @throws ApiError
+     */
+    public static githubConnectionsControllerGetWebhookSettings(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<GithubWebhookSettingsResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/integrations/github/connections/{id}/webhook',
             path: {
                 'id': id,
             },
