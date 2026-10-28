@@ -5,6 +5,8 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { getConfig } from '../config/env.config';
 import { SecretsService } from '../secrets/secrets.service';
 import { GithubConnectionEntity } from './github-connection.entity';
+import { GithubWebhookSourceEntity } from './github-webhook-source.entity';
+import { webhookCoverageOf } from './github/webhook-coverage';
 import { GithubAuthType } from './enums';
 import {
   GithubConnectionInvalidError,
@@ -21,7 +23,9 @@ import { githubHostOf, isGithubCom, normalizeGithubUrl } from './github/github-h
 import {
   CreateGithubConnectionInput,
   GithubConnectionResult,
+  GithubWebhookDelivery,
   GithubWebhookSettings,
+  GithubWebhookSource,
   ResolvedGithubConnection,
   UpdateGithubConnectionInput,
 } from './dto/service/github-connections.service.types';
@@ -49,6 +53,13 @@ function normalizeBaseUrl(value: string | null | undefined): string {
   return baseUrl;
 }
 
+/**
+ * How long after its last delivery a webhook is counted on. Repositories go
+ * quiet for days, so this is generous; polling stays on as a slow safety net,
+ * and a webhook that stops working only costs freshness until this runs out.
+ */
+export const WEBHOOK_COVERAGE_MS = 24 * 60 * 60 * 1000;
+
 function normalizeOptionalText(value: string | null | undefined): string | null | undefined {
   if (value === undefined) return undefined;
   return value?.trim() || null;
@@ -61,6 +72,8 @@ export class GithubConnectionsService {
   constructor(
     @InjectRepository(GithubConnectionEntity)
     private readonly repository: Repository<GithubConnectionEntity>,
+    @InjectRepository(GithubWebhookSourceEntity)
+    private readonly webhookSources: Repository<GithubWebhookSourceEntity>,
     private readonly secretsService: SecretsService,
     private readonly credentials: GithubCredentialsService,
     private readonly dataSource: DataSource,
@@ -299,22 +312,83 @@ export class GithubConnectionsService {
       url: `${getConfig().issuerUrl.replace(/\/+$/, '')}/api/v1/integrations/github/webhooks/${connection.id}`,
       secret,
       lastDeliveryAt: connection.lastWebhookAt,
+      sources: await this.listWebhookSources(connection.id),
     };
+  }
+
+  /** Repositories and owners this connection received webhooks for, most recent first. */
+  async listWebhookSources(connectionId: string): Promise<GithubWebhookSource[]> {
+    const rows = await this.webhookSources.find({
+      where: { connectionId },
+      order: { lastDeliveryAt: 'DESC' },
+    });
+    return rows.map((row) => this.mapWebhookSource(row));
+  }
+
+  /**
+   * The most recent webhook that covers a repository, through any connection
+   * to the repository's GitHub (github.com or an Enterprise host): one set up
+   * on the repository itself, or on its whole owner. Null when GitHub never
+   * sent one.
+   */
+  async findWebhookCoverage(ref: { host: string; owner: string; repo: string }): Promise<GithubWebhookSource | null> {
+    const rows = await this.webhookSources
+      .createQueryBuilder('source')
+      .innerJoinAndSelect('source.connection', 'connection')
+      .where('source.ownerKey = :owner', { owner: ref.owner.toLowerCase() })
+      .andWhere(`source.repoKey IN (:repo, '')`, { repo: ref.repo.toLowerCase() })
+      .orderBy('source.lastDeliveryAt', 'DESC')
+      .getMany();
+    const host = ref.host.toLowerCase();
+    const row = rows.find((candidate) => githubHostOf(candidate.connection!.baseUrl) === host);
+    return row ? this.mapWebhookSource(row) : null;
+  }
+
+  /** Whether a recent webhook covers the repository, so polling can slow down. */
+  async hasActiveWebhook(ref: { host: string; owner: string; repo: string }): Promise<boolean> {
+    return (await this.findWebhookCoverage(ref))?.active ?? false;
   }
 
   /**
    * Checks GitHub's `X-Hub-Signature-256` over the exact bytes received, and
-   * records the delivery when it matches. False for an unknown connection, a
-   * connection without webhook secret, or a bad signature.
+   * records the delivery when it matches: when it arrived, and which
+   * repository (or whole owner) the webhook covers. False for an unknown
+   * connection, a connection without webhook secret, or a bad signature.
    */
-  async acceptWebhookDelivery(id: string, rawBody: Buffer, signature: string | undefined): Promise<boolean> {
+  async acceptWebhookDelivery(id: string, delivery: GithubWebhookDelivery): Promise<boolean> {
     const connection = await this.repository.findOne({ where: { id } });
-    if (!connection?.webhookSecretId || !signature?.startsWith('sha256=')) return false;
+    if (!connection?.webhookSecretId || !delivery.signature?.startsWith('sha256=')) return false;
     const secret = (await this.secretsService.getSecretValue(connection.webhookSecretId)).value;
-    const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(rawBody).digest('hex')}`);
-    const received = Buffer.from(signature);
+    const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(delivery.rawBody).digest('hex')}`);
+    const received = Buffer.from(delivery.signature);
     if (expected.length !== received.length || !timingSafeEqual(expected, received)) return false;
-    await this.repository.update({ id }, { lastWebhookAt: new Date() });
+
+    const now = new Date();
+    await this.repository.update({ id }, { lastWebhookAt: now });
+
+    // A GitHub App's ping names no account: the installation's is the one the connection acts as.
+    const coverage =
+      webhookCoverageOf(delivery.targetType, delivery.body) ??
+      (delivery.targetType === 'integration' && connection.authType === GithubAuthType.APP && connection.accountLogin
+        ? { owner: connection.accountLogin, repo: null }
+        : null);
+    if (coverage) {
+      await this.webhookSources
+        .createQueryBuilder()
+        .insert()
+        .into(GithubWebhookSourceEntity)
+        .values({
+          connectionId: id,
+          owner: coverage.owner,
+          repo: coverage.repo,
+          ownerKey: coverage.owner.toLowerCase(),
+          repoKey: coverage.repo?.toLowerCase() ?? '',
+          lastDeliveryAt: now,
+          lastEvent: delivery.event ?? null,
+        })
+        .orUpdate(['owner', 'repo', 'last_delivery_at', 'last_event'], ['connection_id', 'owner_key', 'repo_key'])
+        .execute();
+    }
     return true;
   }
 
@@ -340,6 +414,16 @@ export class GithubConnectionsService {
     const connection = await this.repository.findOne({ where: { id } });
     if (!connection) throw new GithubConnectionNotFoundError(id);
     return connection;
+  }
+
+  private mapWebhookSource(row: GithubWebhookSourceEntity): GithubWebhookSource {
+    return {
+      owner: row.owner,
+      repo: row.repo,
+      lastDeliveryAt: row.lastDeliveryAt,
+      lastEvent: row.lastEvent,
+      active: Date.now() - row.lastDeliveryAt.getTime() < WEBHOOK_COVERAGE_MS,
+    };
   }
 
   private mapToResult(connection: GithubConnectionEntity): GithubConnectionResult {

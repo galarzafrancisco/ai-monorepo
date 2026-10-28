@@ -33,7 +33,6 @@ import { PullRequestReferenceInput } from './dto/service/pull-requests.service.t
 
 /** Pull requests looked at together when a page asks for ones Taico has never read. */
 const FIRST_FETCH_CONCURRENCY = 6;
-const WEBHOOK_ACTIVE_MS = 60 * 60 * 1000;
 
 /**
  * Keeps one up-to-date copy of each linked GitHub pull request. Reads are
@@ -252,6 +251,7 @@ export class PullRequestsService {
     const ref = { host: row.host, owner: row.owner, repo: row.repo, number: row.number };
     let webhooksActive = false;
     try {
+      webhooksActive = await this.connections.hasActiveWebhook(ref);
       const resolved = await this.connections.resolveForRepositoryOfAnyProject(ref);
       if (!resolved && !isGithubCom(row.host)) {
         throw new GithubConnectionInvalidError(`No GitHub connection is set up for ${row.host}.`);
@@ -260,9 +260,6 @@ export class PullRequestsService {
         apiUrl: githubApiUrlFor(resolved?.connection.baseUrl ?? GITHUB_COM_URL),
         credential: resolved ? (await this.connections.getAccessToken(resolved.connection.id)).token : null,
       };
-      webhooksActive =
-        !!resolved?.connection.lastWebhookAt &&
-        Date.now() - resolved.connection.lastWebhookAt.getTime() < WEBHOOK_ACTIVE_MS;
 
       const before = row.lastFetchedAt ? { ...row } : null;
       const fetched = await fetchPullRequest(api, ref, row.etags, before);

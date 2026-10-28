@@ -52,10 +52,35 @@ export type ResolvedGithubConnection = {
   match: GithubConnectionMatch;
 };
 
+/** A repository, or a whole owner, a connection receives webhooks for. */
+export type GithubWebhookSource = {
+  owner: string;
+  /** Null: every repository of the owner (an organization or GitHub App webhook). */
+  repo: string | null;
+  lastDeliveryAt: Date;
+  /** The last delivery's event: `ping` right after the webhook is set up. */
+  lastEvent: string | null;
+  /** Delivered recently enough that Taico counts on the webhook and polls less. */
+  active: boolean;
+};
+
 export type GithubWebhookSettings = {
   /** Where GitHub should send deliveries. */
   url: string;
   /** The secret to paste into GitHub. */
   secret: string;
   lastDeliveryAt: Date | null;
+  /** Where deliveries came from, most recent first. */
+  sources: GithubWebhookSource[];
+};
+
+/** A delivery as GitHub sent it: what the webhook covers is read from it. */
+export type GithubWebhookDelivery = {
+  rawBody: Buffer;
+  signature: string | undefined;
+  /** X-GitHub-Event */
+  event: string | undefined;
+  /** X-GitHub-Hook-Installation-Target-Type: repository, organization or integration. */
+  targetType: string | undefined;
+  body: unknown;
 };

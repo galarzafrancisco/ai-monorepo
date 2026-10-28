@@ -211,9 +211,11 @@ describe('Pull requests E2E', () => {
           ? dotcomRoutes({ ...req, path: req.path.slice('/api/v3'.length) })
           : undefined,
     ];
-    await api('post', '/integrations/github/connections')
-      .send({ name: 'Work', authType: 'pat', secret: 'ghes', baseUrl: github.url })
-      .expect(201);
+    const work = (
+      await api('post', '/integrations/github/connections')
+        .send({ name: 'Work', authType: 'pat', secret: 'ghes', baseUrl: github.url })
+        .expect(201)
+    ).body;
 
     // Before the connection is known, the link is not GitHub's: nothing is recorded.
     const task = (
@@ -239,6 +241,22 @@ describe('Pull requests E2E', () => {
     // github.com's copy of acme/api#7 is a different pull request.
     const [dotcom] = (await api('post', '/pull-requests/lookup').send({ refs: ['acme/api#7'] }).expect(200)).body;
     expect(dotcom.id).not.toBe(found[0].id);
+
+    // A webhook on the Enterprise acme/api covers that repository, not github.com's acme/api.
+    const { secret } = (await api('get', `/integrations/github/connections/${work.id}/webhook`).expect(200)).body;
+    const ping = JSON.stringify({ zen: 'Hi.', repository: { name: 'api', owner: { login: 'acme' } } });
+    await request(http)
+      .post(`/api/v1/integrations/github/webhooks/${work.id}`)
+      .set('Content-Type', 'application/json')
+      .set('X-GitHub-Event', 'ping')
+      .set('X-GitHub-Hook-Installation-Target-Type', 'repository')
+      .set('X-Hub-Signature-256', `sha256=${createHmac('sha256', secret).update(ping).digest('hex')}`)
+      .send(ping)
+      .expect(202);
+    const resolveWebhook = async (repoUrl: string) =>
+      (await api('get', '/integrations/github/connections/resolve').query({ repoUrl }).expect(200)).body.webhook;
+    expect(await resolveWebhook(`${github.url}/acme/api`)).toMatchObject({ owner: 'acme', repo: 'api', active: true });
+    expect(await resolveWebhook('https://github.com/acme/api')).toBeNull();
   });
 
   it('reads due pull requests on the poll and leaves the rest alone', async () => {
@@ -286,5 +304,56 @@ describe('Pull requests E2E', () => {
     expect(marked).not.toBeNull();
     const after = (await api('get', `/integrations/github/connections/${connection.id}`).expect(200)).body;
     expect(after.lastWebhookAt).not.toBeNull();
+  });
+
+  it('slows polling only for repositories a webhook covers, and learns them from the deliveries', async () => {
+    const web = { ...openPull(), title: 'Fix header' };
+    github.routes.push(pullRequestRoutes('acme', 'web', 3, () => web));
+    const connection = (
+      await api('post', '/integrations/github/connections').send({ name: 'Acme', authType: 'pat', secret: 'token', owners: ['acme'] }).expect(201)
+    ).body;
+    const { secret } = (await api('get', `/integrations/github/connections/${connection.id}/webhook`).expect(200)).body;
+    const deliver = (event: string, targetType: string, payload: unknown) => {
+      const body = JSON.stringify(payload);
+      return request(http)
+        .post(`/api/v1/integrations/github/webhooks/${connection.id}`)
+        .set('Content-Type', 'application/json')
+        .set('X-GitHub-Event', event)
+        .set('X-GitHub-Hook-Installation-Target-Type', targetType)
+        .set('X-Hub-Signature-256', `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`)
+        .send(body)
+        .expect(202);
+    };
+    /** Minutes until the next look, after a look by someone who has it on screen. */
+    const minutesToNextLook = async (ref: string): Promise<number> => {
+      const [pr] = (await api('post', '/pull-requests/lookup').send({ refs: [ref] }).expect(200)).body;
+      await app.get(PullRequestsService).refresh(pr.id);
+      const [{ next_fetch_at }] = await ds.query(`SELECT next_fetch_at FROM pull_requests WHERE id = $1`, [pr.id]);
+      return Math.round((new Date(next_fetch_at).getTime() - Date.now()) / 60_000);
+    };
+    const resolveWebhook = async (repoUrl: string) =>
+      (await api('get', '/integrations/github/connections/resolve').query({ repoUrl }).expect(200)).body.webhook;
+
+    // A repository webhook: GitHub pings it as soon as it is saved.
+    await deliver('ping', 'repository', { zen: 'Keep it simple.', repository: { name: 'api', owner: { login: 'acme' } } });
+    expect(await minutesToNextLook('acme/api#7')).toBe(10);
+    expect(await minutesToNextLook('acme/web#3')).toBe(1);
+    expect(await resolveWebhook('https://github.com/acme/api')).toMatchObject({ owner: 'acme', repo: 'api', lastEvent: 'ping', active: true });
+    expect(await resolveWebhook('https://github.com/acme/web')).toBeNull();
+
+    // An organization webhook covers every repository of the organization.
+    await deliver('ping', 'organization', { zen: 'Hi.', organization: { login: 'acme' } });
+    expect(await minutesToNextLook('acme/web#3')).toBe(10);
+    expect(await resolveWebhook('https://github.com/acme/web')).toMatchObject({ owner: 'acme', repo: null, active: true });
+
+    const settings = (await api('get', `/integrations/github/connections/${connection.id}/webhook`).expect(200)).body;
+    expect(settings.sources).toEqual([
+      expect.objectContaining({ owner: 'acme', repo: null, lastEvent: 'ping', active: true }),
+      expect.objectContaining({ owner: 'acme', repo: 'api', lastEvent: 'ping', active: true }),
+    ]);
+
+    // A webhook that has been quiet for over a day is no longer counted on.
+    await ds.query(`UPDATE github_webhook_sources SET last_delivery_at = now() - interval '25 hours'`);
+    expect(await minutesToNextLook('acme/api#7')).toBe(1);
   });
 });

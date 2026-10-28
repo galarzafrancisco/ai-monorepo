@@ -9,6 +9,8 @@ import { Stack, Text, Card, Button, Modal, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useHomeCtx } from './HomeProvider';
+import { GithubWebhookFields, GITHUB_WEBHOOK_EVENTS } from '../../shared/components/GithubWebhookFields';
+import { webhookDeliveryLabel, webhookSourceLabel } from '../../shared/helpers/githubWebhook';
 import './SettingsPage.css';
 import './SettingsModelsPage.css';
 import './SettingsIntegrationsPage.css';
@@ -544,24 +546,14 @@ function ConnectionRow({
   );
 }
 
-const WEBHOOK_EVENTS = [
-  'Pull requests',
-  'Pull request reviews',
-  'Pull request review comments',
-  'Issue comments',
-  'Check runs',
-  'Check suites',
-  'Statuses',
-];
-
 /**
  * Optional: with a webhook, GitHub tells Taico the moment a pull request
- * changes, and polling slows down to a safety net.
+ * changes, and polling of the repositories it covers slows down to a safety net.
+ * Taico learns which repositories a webhook covers from the deliveries.
  */
 function WebhookPanel({ connection }: { connection: GithubConnectionResponseDto }) {
   const [settings, setSettings] = useState<GithubWebhookSettingsResponseDto | null>(null);
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState<'url' | 'secret' | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -571,83 +563,41 @@ function WebhookPanel({ connection }: { connection: GithubConnectionResponseDto 
     return () => { cancelled = true; };
   }, [connection.id]);
 
-  const copy = async (what: 'url' | 'secret', value: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(what);
-      window.setTimeout(() => setCopied(null), 1600);
-    } catch {
-      setCopied(null);
-    }
-  };
-
   if (error) return <ErrorText size="2">{error}</ErrorText>;
   if (!settings) return <Text size="2" tone="muted">Loading…</Text>;
 
   const where =
     connection.authType === 'app'
       ? 'In the GitHub App settings, turn on Webhook, paste the URL and secret, and subscribe to:'
-      : 'In the repository or organization settings on GitHub, add a webhook with content type application/json, paste the URL and secret, and pick these events:';
+      : 'On GitHub, add a webhook to a repository or an organization with content type application/json, paste the URL and secret, and pick these events:';
+  const reach =
+    connection.authType === 'app'
+      ? 'An App webhook covers every repository the app is installed on.'
+      : 'A repository webhook covers that repository; an organization webhook (organization Settings > Webhooks) covers all its repositories at once. Repositories under a personal account can only be added one by one; the project page has a shortcut for each.';
 
   return (
     <Stack spacing="3" className="settings-integrations__webhook">
       <Text size="2" tone="muted">
         Optional. Without a webhook Taico polls GitHub; with one, it hears about changes within
-        seconds and polls much less. {where} {WEBHOOK_EVENTS.join(', ')}.
+        seconds and polls the repositories it covers much less. {where} {GITHUB_WEBHOOK_EVENTS.join(', ')}.
       </Text>
-      <WebhookField
-        label="Payload URL"
-        value={settings.url}
-        copied={copied === 'url'}
-        onCopy={() => void copy('url', settings.url)}
-      />
-      <WebhookField
-        label="Secret"
-        value={settings.secret}
-        secret
-        copied={copied === 'secret'}
-        onCopy={() => void copy('secret', settings.secret)}
-      />
-      <Text size="1" tone="muted">
-        {settings.lastDeliveryAt
-          ? `Last delivery ${new Date(settings.lastDeliveryAt).toLocaleString()}.`
-          : 'No delivery received yet. GitHub has to be able to reach this address.'}
-      </Text>
-    </Stack>
-  );
-}
-
-function WebhookField({
-  label,
-  value,
-  secret = false,
-  copied,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  secret?: boolean;
-  copied: boolean;
-  onCopy: () => void;
-}) {
-  return (
-    <Stack spacing="1">
-      <Text size="1" weight="medium">
-        {label}
-      </Text>
-      <Row spacing="2" align="center">
-        <input
-          readOnly
-          type={secret ? 'password' : 'text'}
-          value={value}
-          className="settings-models__control settings-integrations__webhook-value"
-          aria-label={label}
-          onFocus={(event) => event.target.select()}
-        />
-        <Button variant="secondary" size="sm" onClick={onCopy}>
-          {copied ? 'Copied' : 'Copy'}
-        </Button>
-      </Row>
+      <Text size="1" tone="muted">{reach}</Text>
+      <GithubWebhookFields url={settings.url} secret={settings.secret} />
+      <Stack spacing="1">
+        <Text size="1" weight="medium">Receiving from</Text>
+        {settings.sources.length === 0 ? (
+          <Text size="1" tone="muted">
+            Nothing yet. GitHub sends a ping when a webhook is saved, so it shows up here straight
+            away; if it does not, GitHub cannot reach this address or the secret differs.
+          </Text>
+        ) : (
+          settings.sources.map((source) => (
+            <Text key={`${source.owner}/${source.repo ?? ''}`} size="1" tone={source.active ? 'default' : 'muted'}>
+              <strong>{webhookSourceLabel(source)}</strong>: {webhookDeliveryLabel(source)}
+            </Text>
+          ))
+        )}
+      </Stack>
     </Stack>
   );
 }

@@ -30,10 +30,20 @@ export class GithubWebhooksController {
     @Param('connectionId', new ParseUUIDPipe()) connectionId: string,
     @Headers('x-hub-signature-256') signature: string | undefined,
     @Headers('x-github-event') event: string | undefined,
+    @Headers('x-github-hook-installation-target-type') targetType: string | undefined,
     @Req() request: RawBodyRequest<Request>,
   ): Promise<{ accepted: true }> {
     const rawBody = request.rawBody;
-    if (!rawBody || !(await this.connections.acceptWebhookDelivery(connectionId, rawBody, signature))) {
+    const accepted =
+      !!rawBody &&
+      (await this.connections.acceptWebhookDelivery(connectionId, {
+        rawBody,
+        signature,
+        event,
+        targetType,
+        body: request.body,
+      }));
+    if (!accepted) {
       throw new UnauthorizedException('Invalid webhook signature');
     }
 

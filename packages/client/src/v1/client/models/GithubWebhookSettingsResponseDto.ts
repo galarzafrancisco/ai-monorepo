@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { GithubWebhookSourceDto } from './GithubWebhookSourceDto.js';
 export type GithubWebhookSettingsResponseDto = {
     /**
      * Payload URL to enter in GitHub (repository, organization or app webhook settings)
@@ -15,5 +16,9 @@ export type GithubWebhookSettingsResponseDto = {
      * When the last correctly signed delivery arrived
      */
     lastDeliveryAt: string | null;
+    /**
+     * Repositories (or whole owners) deliveries came from, most recent first. Learned from the deliveries.
+     */
+    sources: Array<GithubWebhookSourceDto>;
 };
 

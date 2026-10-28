@@ -1192,10 +1192,19 @@ export interface GithubRepositoryRefDto {
 
 export type GithubConnectionMatch = 'project' | 'owner' | 'only_connection';
 
+export interface GithubWebhookSourceDto {
+  owner: string;
+  repo: string | null;
+  lastDeliveryAt: string;
+  lastEvent: string | null;
+  active: boolean;
+}
+
 export interface ResolvedGithubConnectionResponseDto {
   repository: GithubRepositoryRefDto | null;
   connection: GithubConnectionResponseDto | null;
   match: GithubConnectionMatch | null;
+  webhook: GithubWebhookSourceDto | null;
 }
 
 export interface UpdateGithubConnectionDto {
@@ -1211,6 +1220,7 @@ export interface GithubWebhookSettingsResponseDto {
   url: string;
   secret: string;
   lastDeliveryAt: string | null;
+  sources: GithubWebhookSourceDto[];
 }
 
 export interface TaskExecutionQueueEntryResponseDto {

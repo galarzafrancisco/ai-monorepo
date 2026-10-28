@@ -5,6 +5,7 @@
 import type { GithubConnectionMatch } from './GithubConnectionMatch.js';
 import type { GithubConnectionResponseDto } from './GithubConnectionResponseDto.js';
 import type { GithubRepositoryRefDto } from './GithubRepositoryRefDto.js';
+import type { GithubWebhookSourceDto } from './GithubWebhookSourceDto.js';
 export type ResolvedGithubConnectionResponseDto = {
     /**
      * The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to
@@ -18,5 +19,9 @@ export type ResolvedGithubConnectionResponseDto = {
      * Why: the project names it, it lists the repository owner, or it is the only connection
      */
     match: GithubConnectionMatch | null;
+    /**
+     * The most recent webhook covering the repository (set up on it, or on its whole owner), through any connection; null when GitHub never sent one
+     */
+    webhook: GithubWebhookSourceDto | null;
 };
 

@@ -125,11 +125,26 @@ The connection used is the one of the first project whose repository it is, if t
 | Anything else | not polled | not polled |
 | Merged or closed | never again | never again |
 
-"With webhooks" means the connection received a valid delivery in the last hour. A pull request that is not polled is read again when someone views it and the copy is older than 2 minutes, when a webhook names it, or when it is watched. Failures back off from 30 seconds to an hour; a pull request GitHub says does not exist is not retried until something asks for it.
+"With webhooks" means a webhook covers the pull request's repository and delivered something in the last 24 hours (see Webhooks below). It is per repository: a webhook on one repository does not slow down polling of the others. A pull request that is not polled is read again when someone views it and the copy is older than 2 minutes, when a webhook names it, or when it is watched. Failures back off from 30 seconds to an hour; a pull request GitHub says does not exist is not retried until something asks for it.
 
 ### Webhooks (optional)
 
-Settings > Integrations > Webhook shows a payload URL (`/api/v1/integrations/github/webhooks/<connection id>`, built from `ISSUER_URL`) and a secret, created the first time it is asked for. Add them to the repository or organization webhooks (token connections) or to the GitHub App, with these events: pull requests, pull request reviews and review comments, issue comments, check runs, check suites and statuses.
+Settings > Integrations > Webhook shows a payload URL (`/api/v1/integrations/github/webhooks/<connection id>`, built from `ISSUER_URL`) and a secret, created the first time it is asked for. One URL and secret per connection: paste the same pair into as many webhooks as needed, with these events: pull requests, pull request reviews and review comments, issue comments, check runs, check suites and statuses. Where to add it:
+
+| Where on GitHub | Covers | Who can add it |
+|---|---|---|
+| Repository: Settings > Webhooks | That repository | Repository admins |
+| Organization: Settings > Webhooks | Every repository of the organization, including new ones | Organization owners |
+| GitHub App settings (App connections) | Every repository the app is installed on | The app's owner |
+
+Repositories under a personal account have no account-wide webhook: each needs its own.
+
+Nobody tells Taico which repositories have a webhook: it learns them from the deliveries (`github_webhook_sources`). GitHub's `X-GitHub-Hook-Installation-Target-Type` header says where the webhook is set up: `repository` records that repository, `organization` the whole organization, `integration` (a GitHub App) the installation's account (for the App's ping, which names none, the account the connection acts as). Without the header, a payload with a repository records the repository. GitHub sends a `ping` the moment a webhook is saved, so a new webhook shows up straight away. A repository counts as covered while the last delivery for it, or for its owner, is under 24 hours old; after that it is polled as if there were no webhook, so a webhook that stops working only costs freshness.
+
+Where it shows:
+
+- Settings > Integrations > Webhook: "Receiving from", each repository or "all of <owner>", with the last delivery.
+- The project page's GitHub card: "Updates" says whether a webhook covers the project's repository or Taico polls it. "Set up webhook" walks through adding a repository webhook: a link to the repository's new-webhook page, the URL and secret to copy, the events, and it waits for GitHub's ping. The secret is only shown to people with `integration:write`; others are asked to find someone who has it. `GET /integrations/github/connections/resolve` returns the covering webhook (`webhook`) for this.
 
 Each delivery must carry a valid `X-Hub-Signature-256`; anything else gets 401. A delivery only marks the pull requests it names (by number, or by head commit for CI events) for a fresh look within 5 seconds: Taico then reads them through the API, so a payload can never write state directly. GitHub must be able to reach Taico for webhooks to work.
 
@@ -174,7 +189,7 @@ The threads agent can watch a pull request and be woken when something happens t
 - A watch notifies on the changes it asked for. Merging or closing always notifies and ends the watch.
 - With `once` (the default) the watch ends after its first notification; otherwise it lasts until the pull request is merged or closed, or the watch expires.
 - Every watch expires. An expired watch sends a last notification so the agent can tell the user it stopped waiting.
-- While watched, a pull request is polled every 30 seconds (every 5 minutes once webhooks arrive for its connection). The notification reaches the agent within about 5 seconds of the change being seen.
+- While watched, a pull request is polled every 30 seconds (every 5 minutes while a webhook covers its repository). The notification reaches the agent within about 5 seconds of the change being seen.
 - Notifications reach the agent as `<watch-notification>` messages carrying the thread key, like task notifications. The user never sees them, only the agent's reply.
 - The thread sidebar shows "Watching pull requests" (each with a trash icon: `DELETE /threads/:id/watches/:watchId`) and "Pull requests": those attached as links (artefacts) to the thread's tasks; mentions in descriptions, comments and messages are not listed (`GET /threads/:id/pull-requests`). Each section only appears when it has something in it.
 

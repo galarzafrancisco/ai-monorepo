@@ -1,0 +1,17 @@
+.github-webhook-fields__value {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-input-mobile-safe); /* Prevent iOS zoom on focus */
+  color: var(--text);
+  background-color: var(--card-bg);
+}
+
+.github-webhook-fields__value:focus {
+  outline: none;
+  border-color: var(--accent);
+}

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { GithubConnectionResponseDto } from './github-connection-response.dto';
+import { GithubWebhookSourceDto } from './github-webhook-settings-response.dto';
 
 export class ResolveGithubConnectionQueryDto {
   @ApiProperty({ description: 'Repository URL (web or clone URL)', example: 'https://github.com/acme/api' })
@@ -53,4 +54,12 @@ export class ResolvedGithubConnectionResponseDto {
       'Why: the project names it, it lists the repository owner, or it is the only connection',
   })
   match!: (typeof GITHUB_CONNECTION_MATCHES)[number] | null;
+
+  @ApiProperty({
+    type: GithubWebhookSourceDto,
+    nullable: true,
+    description:
+      'The most recent webhook covering the repository (set up on it, or on its whole owner), through any connection; null when GitHub never sent one',
+  })
+  webhook!: GithubWebhookSourceDto | null;
 }
