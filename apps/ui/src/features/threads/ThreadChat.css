@@ -82,17 +82,6 @@
   padding: var(--space-2) var(--space-3);
   margin-top: calc(var(--space-2) * -1);
   background: color-mix(in srgb, var(--surface) 70%, transparent);
-  animation: thread-chat-activity-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes thread-chat-activity-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 .thread-chat__input-form {
@@ -324,11 +313,6 @@
   height: auto;
   border-radius: var(--space-1);
   margin: var(--space-2) 0;
-}
-
-.thread-chat__older {
-  display: flex;
-  justify-content: center;
 }
 
 /* Shown when a new message arrives while the reader is scrolled up */

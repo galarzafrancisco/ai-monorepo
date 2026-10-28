@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildTraceEntries,
   mergeTraceEvents,
+  summarizeToolInput,
   type TraceEvent,
 } from './traceEntries';
 const event = (
@@ -466,5 +467,19 @@ describe('trace presentation', () => {
     });
     expect(entries[0].input).toContain('/file');
     expect(entries[0].text).toContain('result');
+  });
+});
+
+describe('summarizeToolInput', () => {
+  it('prefers the most telling argument', () => {
+    expect(summarizeToolInput(JSON.stringify({ path: 'src', pattern: 'useThread' }))).toBe('useThread');
+    expect(summarizeToolInput(JSON.stringify({ file_path: 'apps/ui/src/main.tsx', limit: 20 }))).toBe('apps/ui/src/main.tsx');
+  });
+  it('falls back to the first string, then to plain text, and shortens', () => {
+    expect(summarizeToolInput(JSON.stringify({ count: 3, label: 'hello' }))).toBe('hello');
+    expect(summarizeToolInput('ls   -la\n/tmp')).toBe('ls -la /tmp');
+    expect(summarizeToolInput(JSON.stringify({ command: 'x'.repeat(100) }), 10)).toBe('xxxxxxxxx…');
+    expect(summarizeToolInput(JSON.stringify({ count: 3 }))).toBe('');
+    expect(summarizeToolInput(undefined)).toBe('');
   });
 });

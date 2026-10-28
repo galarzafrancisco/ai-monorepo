@@ -78,10 +78,10 @@
     font-size: var(--fs-3);
   }
 
-  .run-trace-page__trace .task-traces__tool > summary,
+  .run-trace-page__trace .task-traces__call > summary,
   .run-trace-page__trace .task-traces__raw > summary,
   .run-trace-page__trace .task-traces__footer .btn,
-  .run-trace-page__trace .task-traces__earlier {
+  .run-trace-page__trace .load-earlier__button {
     min-height: 44px;
   }
 }

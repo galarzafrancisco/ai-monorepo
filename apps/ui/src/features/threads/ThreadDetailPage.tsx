@@ -508,7 +508,7 @@ function ThreadDetailPageDesktop({
         </div>
       </div>
 
-      <ContextRail title="Details" icon={Info} open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+      <ContextRail title="Details" icon={Info} size="narrow" open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         {thread.participants.length > 0 && (
           <RailSection title="Participants" count={participantsSummary(thread.participants)}>
             {thread.participants.map((participant) => (

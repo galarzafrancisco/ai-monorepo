@@ -352,7 +352,7 @@ function OptimisticDesktopThread({
         </div>
       </div>
 
-      <ContextRail title="Details" icon={Info} className="threads-page-desktop__optimistic-sidebar">
+      <ContextRail title="Details" icon={Info} size="narrow" className="threads-page-desktop__optimistic-sidebar">
         <RailSection title="Context" count="1 block">
           <ThreadContextCard
             contextBlock={{

@@ -383,3 +383,31 @@ export function mergeTraceEvents(
   for (const event of incoming) merged.set(event.sequence, event);
   return [...merged.values()].sort((a, b) => a.sequence - b.sequence);
 }
+
+/** Argument keys that usually say what a tool call is about, most telling first. */
+const SUMMARY_KEYS = ['command', 'pattern', 'query', 'file_path', 'filePath', 'path', 'url', 'description', 'prompt', 'name', 'id'];
+
+/**
+ * A one-line hint of what a tool was called with, e.g. the command or file,
+ * for the collapsed row. Empty when nothing short and telling is found.
+ */
+export function summarizeToolInput(input: string | undefined, maxLength = 80): string {
+  if (!input) return '';
+  let value: unknown = input;
+  try {
+    value = JSON.parse(input);
+  } catch {
+    // Not JSON: use the text itself.
+  }
+  let summary = '';
+  if (typeof value === 'string') {
+    summary = value;
+  } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const args = value as Record<string, unknown>;
+    const key = SUMMARY_KEYS.find((candidate) => typeof args[candidate] === 'string' && args[candidate] !== '');
+    const fallback = Object.values(args).find((candidate): candidate is string => typeof candidate === 'string' && candidate !== '');
+    summary = key ? (args[key] as string) : fallback ?? '';
+  }
+  summary = summary.replace(/\s+/g, ' ').trim();
+  return summary.length > maxLength ? `${summary.slice(0, maxLength - 1)}…` : summary;
+}

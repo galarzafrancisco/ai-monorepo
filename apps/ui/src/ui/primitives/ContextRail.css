@@ -12,6 +12,10 @@
   color: var(--text);
 }
 
+.context-rail--narrow {
+  width: clamp(255px, 22.5vw, 360px);
+}
+
 .context-rail--collapsed {
   width: 48px;
 }
