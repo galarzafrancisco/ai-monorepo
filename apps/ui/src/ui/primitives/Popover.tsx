@@ -32,6 +32,7 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
   const triggerRef = useRef<HTMLButtonElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const timer = useRef<number | undefined>(undefined);
+  const pointerOverCard = useRef(false);
   const id = useId();
 
   const schedule = useCallback((next: boolean) => {
@@ -79,6 +80,8 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
+      // The card is gone, so it gets no pointerleave.
+      pointerOverCard.current = false;
     };
   }, [open]);
 
@@ -110,7 +113,13 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
         onFocus={(event) => {
           if (event.target.matches(':focus-visible')) schedule(true);
         }}
-        onBlur={() => schedule(false)}
+        onBlur={(event) => {
+          // Pressing inside the card takes focus off the trigger; closing then would
+          // remove the card before the click lands on its links.
+          const next = event.relatedTarget as Node | null;
+          if (pointerOverCard.current || (next && cardRef.current?.contains(next))) return;
+          schedule(false);
+        }}
         {...hoverHandlers}
       >
         {trigger}
@@ -124,7 +133,14 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
               className={className ? `popover__card ${className}` : 'popover__card'}
               style={position ? { top: position.top, left: position.left } : { visibility: 'hidden', top: 0, left: 0 }}
               onClick={(event) => event.stopPropagation()}
-              {...hoverHandlers}
+              onPointerEnter={(event) => {
+                pointerOverCard.current = true;
+                hoverHandlers.onPointerEnter(event);
+              }}
+              onPointerLeave={(event) => {
+                pointerOverCard.current = false;
+                hoverHandlers.onPointerLeave(event);
+              }}
             >
               {children}
             </div>,

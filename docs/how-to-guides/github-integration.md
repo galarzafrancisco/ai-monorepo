@@ -153,7 +153,7 @@ The threads agent can watch a pull request and be woken when something happens t
 - Every watch expires. An expired watch sends a last notification so the agent can tell the user it stopped waiting.
 - While watched, a pull request is polled every 30 seconds (every 5 minutes once webhooks arrive for its connection). The notification reaches the agent within about 5 seconds of the change being seen.
 - Notifications reach the agent as `<watch-notification>` messages carrying the thread key, like task notifications. The user never sees them, only the agent's reply.
-- The thread sidebar shows "Watching pull requests" (each with a trash icon: `DELETE /threads/:id/watches/:watchId`) and "Pull requests": those linked from the thread's tasks or written in its messages (`GET /threads/:id/pull-requests`). Each section only appears when it has something in it.
+- The thread sidebar shows "Watching pull requests" (each with a trash icon: `DELETE /threads/:id/watches/:watchId`) and "Pull requests": those attached as links (artefacts) to the thread's tasks; mentions in descriptions, comments and messages are not listed (`GET /threads/:id/pull-requests`). Each section only appears when it has something in it.
 
 ### Generic thread watches
 

@@ -354,15 +354,15 @@ export class ThreadsService {
   }
 
   /**
-   * Pull requests linked from the thread's tasks (their links, descriptions and
-   * comments) or written in its messages, oldest link first.
+   * Pull requests attached as links to the thread's tasks, oldest link first.
+   * Mentions in descriptions, comments and messages are left out.
    */
   async listPullRequests(threadId: string): Promise<PullRequestEntity[]> {
     const thread = await this.threadRepository.findOne({ where: { id: threadId }, relations: ['tasks'] });
     if (!thread) {
       throw new ThreadNotFoundError(threadId);
     }
-    return this.pullRequests.listForThread(threadId, (thread.tasks ?? []).map((task) => task.id));
+    return this.pullRequests.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
   }
 
   private async assertThreadExists(threadId: string): Promise<void> {

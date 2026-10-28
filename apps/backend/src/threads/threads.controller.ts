@@ -252,7 +252,7 @@ export class ThreadsController {
   @Get(':id/pull-requests')
   @RequireScopes(ThreadsScopes.READ.id, PullRequestsScopes.READ.id)
   @ApiOperation({
-    summary: "Pull requests linked from the thread's tasks or messages, oldest link first",
+    summary: "Pull requests attached as links to the thread's tasks, oldest link first",
   })
   @ApiOkResponse({ type: [PullRequestResponseDto] })
   @ApiNotFoundResponse({ description: 'Thread not found' })

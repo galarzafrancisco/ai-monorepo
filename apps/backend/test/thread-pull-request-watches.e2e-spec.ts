@@ -274,23 +274,29 @@ describe('Thread pull request watches E2E', () => {
     expect(await ds.query(`SELECT 1 FROM thread_watches WHERE thread_id = $1`, [expiring])).toEqual([]);
   });
 
-  it("lists the pull requests of a thread's tasks and messages", async () => {
+  it("lists the pull requests attached as links to a thread's tasks, not ones only mentioned", async () => {
     const threadId = await createThread();
-    const task = (await api('post', '/tasks/tasks').send({ name: 'Ship it', description: 'x' }).expect(201)).body;
+    const task = (
+      await api('post', '/tasks/tasks').send({ name: 'Ship it', description: 'see https://github.com/acme/api/pull/9' }).expect(201)
+    ).body;
     await api('post', `/threads/${threadId}/tasks`).send({ taskId: task.id }).expect(201);
+    await api('post', `/tasks/tasks/${task.id}/comments`).send({ content: 'and https://github.com/acme/api/pull/10' }).expect(201);
     await api('post', `/tasks/tasks/${task.id}/artefacts`).send({ name: 'PR', link: PR_URL }).expect(201);
     script.push({ text: 'Noted.' });
     await sendMessage(threadId, 'also see https://github.com/acme/api/pull/8');
     await waitForTurns(threadId, 1);
 
-    for (let attempt = 0; attempt < 100; attempt++) {
-      const listed = (await api('get', `/threads/${threadId}/pull-requests`).expect(200)).body;
-      if (listed.length === 2) {
-        expect(listed.map((pr: { key: string }) => pr.key)).toEqual(['acme/api#7', 'acme/api#8']);
-        return;
-      }
+    // Wait until every link is recorded, so the list below is final.
+    for (let attempt = 0; ; attempt++) {
+      const [{ count }] = await ds.query(
+        `SELECT count(*)::int AS count FROM pull_request_references WHERE task_id = $1 OR thread_id = $2`,
+        [task.id, threadId],
+      );
+      if (count === 4) break;
+      if (attempt === 100) throw new Error(`Only ${count} of 4 links were recorded`);
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    throw new Error('Thread pull requests never showed up');
+    const listed = (await api('get', `/threads/${threadId}/pull-requests`).expect(200)).body;
+    expect(listed.map((pr: { key: string }) => pr.key)).toEqual(['acme/api#7']);
   });
 });
