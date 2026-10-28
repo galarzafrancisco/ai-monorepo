@@ -123,13 +123,27 @@
   gap: 6px;
 }
 
+/* Live activity sits on the bar's bottom border, in the gap above the details,
+   so it comes and goes without moving anything. */
 .task-bar__activity {
+  position: absolute;
+  left: var(--space-3);
+  bottom: 0;
+  /* translate, not transform, so the enter and exit animations still apply */
+  translate: 0 50%;
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  max-width: calc(100% - 2 * var(--space-3));
   min-width: 0;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg);
   color: var(--text-muted);
   font-size: var(--fs-1);
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .task-bar__activity-dot {
