@@ -47,6 +47,7 @@ export class TaskService {
      * @param assignee Filter tasks by assignee name
      * @param sessionId Filter tasks by session ID
      * @param tag Filter tasks by tag name
+     * @param idPrefix Only tasks whose ID starts with this (at least 4 hex digits, as shown in "#5fc5ec")
      * @param page Page number (1-indexed)
      * @param limit Items per page (1-100)
      * @returns TaskListResponseDto Paginated list of tasks
@@ -56,6 +57,7 @@ export class TaskService {
         assignee?: string,
         sessionId?: string,
         tag?: string,
+        idPrefix?: string,
         page: number = 1,
         limit: number = 20,
         config: OpenAPIConfig = OpenAPI,
@@ -67,6 +69,7 @@ export class TaskService {
                 'assignee': assignee,
                 'sessionId': sessionId,
                 'tag': tag,
+                'idPrefix': idPrefix,
                 'page': page,
                 'limit': limit,
             },

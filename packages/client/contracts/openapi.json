@@ -3379,6 +3379,16 @@
             }
           },
           {
+            "name": "idPrefix",
+            "required": false,
+            "in": "query",
+            "description": "Only tasks whose ID starts with this (at least 4 hex digits, as shown in \"#5fc5ec\")",
+            "schema": {
+              "example": "5fc5ec",
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",

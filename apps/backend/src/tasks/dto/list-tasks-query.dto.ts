@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -26,6 +26,17 @@ export class ListTasksQueryDto {
   @IsString()
   @IsOptional()
   tag?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Only tasks whose ID starts with this (at least 4 hex digits, as shown in "#5fc5ec")',
+    example: '5fc5ec',
+  })
+  @IsOptional()
+  @Matches(/^[0-9a-fA-F-]{4,36}$/, {
+    message: 'idPrefix must be 4 to 36 hex digits',
+  })
+  idPrefix?: string;
 
   @ApiPropertyOptional({
     description: 'Page number (1-indexed)',

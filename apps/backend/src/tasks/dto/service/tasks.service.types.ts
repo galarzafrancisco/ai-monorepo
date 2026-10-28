@@ -66,6 +66,8 @@ export type ListTasksInput = {
   assignee?: string;
   sessionId?: string;
   tag?: string;
+  /** Start of the task's ID, as shown in the UI ("#5fc5ec"). */
+  idPrefix?: string;
   status?: TaskStatus;
   updatedAfter?: Date;
   page: number;

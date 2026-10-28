@@ -214,6 +214,7 @@ export class TasksController {
       assignee: query.assignee,
       sessionId: query.sessionId,
       tag: query.tag,
+      idPrefix: query.idPrefix,
       page: query.page ?? 1,
       limit: query.limit ?? 200,
     });

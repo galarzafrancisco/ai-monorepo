@@ -86,8 +86,16 @@ export function DependencyPicker({
     setSearchState('searching');
     const timeout = window.setTimeout(async () => {
       try {
-        const results = await TasksService.TasksController_searchTasks({ query: trimmed, limit: SEARCH_LIMIT });
+        // A #id can belong to any task, not just the loaded ones, and the search index has no ids.
+        const prefix = idPrefixFromQuery(trimmed);
+        const [results, idMatches] = await Promise.all([
+          TasksService.TasksController_searchTasks({ query: trimmed, limit: SEARCH_LIMIT }),
+          prefix
+            ? TasksService.TasksController_listTasks({ idPrefix: prefix, limit: SEARCH_LIMIT }).then((response) => response.items).catch(() => [])
+            : Promise.resolve([]),
+        ]);
         if (searchRequest.current !== requestId) return;
+        addToPool(idMatches);
         setHits(results ?? []);
         setSearchState('done');
       } catch {
@@ -97,7 +105,7 @@ export function DependencyPicker({
       }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [trimmed]);
+  }, [trimmed, addToPool]);
 
   // Search hits outside the pool: fetch them so their rows show assignee and project too.
   useEffect(() => {
