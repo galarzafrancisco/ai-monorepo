@@ -500,6 +500,7 @@ export class TasksService {
         assignee: input.assignee,
         sessionId: input.sessionId,
         tag: input.tag,
+        idPrefix: input.idPrefix,
         status: input.status,
         updatedAfter: input.updatedAfter,
       },
@@ -620,6 +621,11 @@ export class TasksService {
     if (input.sessionId) {
       queryBuilder.andWhere('task.sessionId = :sessionId', {
         sessionId: input.sessionId,
+      });
+    }
+    if (input.idPrefix) {
+      queryBuilder.andWhere('CAST(task.id AS text) LIKE :idPrefix', {
+        idPrefix: `${input.idPrefix.toLowerCase()}%`,
       });
     }
 

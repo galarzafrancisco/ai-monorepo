@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
@@ -9,11 +9,11 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
-import { TaskSearchPop } from './TaskSearchPop';
+import { DependencyPicker } from './DependencyPicker';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto } from "@taico/client/v2";
-import { ExternalLink, GitBranch, GitPullRequest, Link2, MessagesSquare } from 'lucide-react';
+import { ExternalLink, GitBranch, GitPullRequest, Link2, MessagesSquare, X } from 'lucide-react';
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -23,7 +23,6 @@ import { ExecutionsService } from '../executions/api';
 import type { Task } from './types';
 import { useChatReadiness } from '../ai-models/useChatReadiness';
 import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
-import { TaskRow } from './TaskRow';
 import { TaskRunsPanel } from './traces/TaskRunsPanel';
 import { RunList } from './traces/RunList';
 import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
@@ -745,6 +744,34 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           <Chip onClick={() => setShowTagPop(true)} clickLabel="Add tag">+ add tag</Chip>
         </dd>
 
+        <dt>Depends on</dt>
+        <dd className="task-props__deps">
+          {(task.dependsOnIds ?? []).map((depId) => {
+            const depTask = dependencyTasks.find((candidate) => candidate.id === depId);
+            const depStatus = depTask ? TASKS_STATUS[depTask.status] : null;
+            const DepIcon = depStatus?.icon;
+            const depName = depTask?.name ?? `#${depId.slice(0, 6)}`;
+            return (
+              <span key={depId} className={`task-dep task-dep--${depTask?.status ?? 'loading'}`}>
+                <Link className="task-dep__link" to={`/tasks/task/${depId}`} title={depStatus ? `${depName} · ${depStatus.label}` : depName}>
+                  {DepIcon ? <DepIcon size={13} aria-label={depStatus.label} /> : null}
+                  <span className="task-dep__name">{depName}</span>
+                </Link>
+                <button type="button" className="task-dep__remove" onClick={() => void removeDependency(depId)} aria-label={`Remove dependency ${depName}`} title="Remove dependency">
+                  <X size={12} aria-hidden="true" />
+                </button>
+              </span>
+            );
+          })}
+          <Chip onClick={() => setShowDependencyPop(true)} clickLabel="Add dependency">+ add</Chip>
+          {(task.dependsOnIds ?? []).length > 0 && (
+            <Link className="task-props__graph" to={`/tasks/dependencies/${task.id}`} title="View dependency graph">
+              <GitBranch size={13} strokeWidth={1.75} aria-hidden="true" />
+              graph
+            </Link>
+          )}
+        </dd>
+
         <dt>Created</dt>
         <dd className="task-props__inline">
           <Avatar size="xs" name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />
@@ -897,53 +924,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </DataRowContainer>
       ) : null}
 
-      <DataRowContainer
-        title="Depends on"
-        className='task-detail-page__section'
-        action={dependencyTasks.length > 0 ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="task-detail-page__dependency-graph-button"
-            onClick={() => navigate(`/tasks/dependencies/${task.id}`)}
-          >
-            <GitBranch className="task-detail-page__dependency-graph-icon" size={14} strokeWidth={1.5} absoluteStrokeWidth />
-            View graph
-          </Button>
-        ) : undefined}
-      >
-        {dependencyTasks.map(depTask => {
-          return (
-            <TaskRow
-              key={depTask.id}
-              task={depTask}
-              onClick={() => navigate(`/tasks/task/${depTask.id}`)}
-              additionalTags={[
-                {
-                  label: '× remove',
-                  color: 'red' as const,
-                  onClick: () => removeDependency(depTask.id),
-                  clickLabel: 'Remove dependency',
-                },
-              ]}
-            />
-          );
-        })}
-        <DataRow
-          tags={[
-            {
-              label: '+ add dependency',
-              color: 'gray' as const,
-              onClick: () => setShowDependencyPop(true),
-              clickLabel: 'Add dependency',
-            },
-          ]}
-        >
-          <Text tone='muted' size='2'>
-            {dependencyTasks.length === 0 ? 'No dependencies yet' : 'Add another dependency'}
-          </Text>
-        </DataRow>
-      </DataRowContainer>
 
       {!isChatReadinessLoading && readiness && !readiness.isReady ? (
         <DataRowContainer className='task-detail-page__actions'>
@@ -984,11 +964,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
       {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
       {showDependencyPop ? (
-        <TaskSearchPop
-          onCancel={cancelDependency}
-          onSave={saveDependency}
-          excludeTaskIds={[task.id, ...(task.dependsOnIds || [])]}
-        />
+        <DependencyPicker task={task} onPick={saveDependency} onClose={cancelDependency} />
       ) : null}
       {respondingToInputRequest ? (
         <AnswerInputRequestPop

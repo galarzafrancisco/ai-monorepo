@@ -9592,6 +9592,8 @@ export interface operations {
                 sessionId?: string;
                 /** @description Filter tasks by tag name */
                 tag?: string;
+                /** @description Only tasks whose ID starts with this (at least 4 hex digits, as shown in "#5fc5ec") */
+                idPrefix?: string;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (1-100) */

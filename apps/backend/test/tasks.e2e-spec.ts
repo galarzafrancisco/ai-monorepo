@@ -222,6 +222,25 @@ describe('Tasks E2E Tests', () => {
       expect(taskIds).toContain(taskWithAssigneeId);
     });
 
+    it('should list only tasks whose ID starts with idPrefix', async () => {
+      const prefix = taskWithAssigneeId.slice(0, 6).toUpperCase();
+      const response = await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .query({ idPrefix: prefix })
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      const taskIds = response.body.items.map((task: any) => task.id);
+      expect(taskIds).toContain(taskWithAssigneeId);
+      expect(taskIds.every((id: string) => id.startsWith(prefix.toLowerCase()))).toBe(true);
+
+      await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .query({ idPrefix: 'abc' })
+        .set('Cookie', authCookies)
+        .expect(400);
+    });
+
     it('should fetch task by ID and see one task', async () => {
       const response = await request(httpServer)
         .get(`/api/v1/tasks/tasks/${taskWithAssigneeId}`)

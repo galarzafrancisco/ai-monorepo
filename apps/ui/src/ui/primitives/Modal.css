@@ -2,7 +2,10 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: color-mix(in srgb, var(--text) 40%, transparent);
+  /* Same dimming as PopShell, so every dialog darkens the page alike. */
+  background: var(--overlay);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 .modal__content {

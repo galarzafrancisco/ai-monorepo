@@ -12,8 +12,8 @@ export class TaskResource extends BaseClient {
   }
 
   /** List tasks with optional filtering and pagination */
-  async TasksController_listTasks(params?: { assignee?: string; sessionId?: string; tag?: string; page?: number; limit?: number; signal?: AbortSignal }): Promise<TaskListResponseDto> {
-    return this.request('GET', '/api/v1/tasks/tasks', { params: { assignee: params?.assignee, sessionId: params?.sessionId, tag: params?.tag, page: params?.page, limit: params?.limit }, signal: params?.signal });
+  async TasksController_listTasks(params?: { assignee?: string; sessionId?: string; tag?: string; idPrefix?: string; page?: number; limit?: number; signal?: AbortSignal }): Promise<TaskListResponseDto> {
+    return this.request('GET', '/api/v1/tasks/tasks', { params: { assignee: params?.assignee, sessionId: params?.sessionId, tag: params?.tag, idPrefix: params?.idPrefix, page: params?.page, limit: params?.limit }, signal: params?.signal });
   }
 
   /** Update task description */
