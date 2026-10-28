@@ -3,7 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
-import { hasToolCall, isStepCount, ModelMessage, streamText, ToolSet } from 'ai';
+import {
+  hasToolCall,
+  isStepCount,
+  ModelMessage,
+  streamText,
+  ToolSet,
+} from 'ai';
 import { AgentsService } from 'src/agents/agents.service';
 import { THREAD_AGENT_SLUG } from 'src/agents/protected-agents';
 import { AiModelJob } from 'src/ai-providers/enums';
@@ -22,9 +28,15 @@ import {
 import { buildModelMessages, withThreadSecret } from './agent-context.utils';
 import { ChatModelFactory, ResolvedChatModel } from './chat-model.factory';
 import { TaicoMcpToolsFactory } from './taico-mcp-tools.factory';
-import { AgentMessageDraft, ThreadAgentLogService } from './thread-agent-log.service';
+import {
+  AgentMessageDraft,
+  ThreadAgentLogService,
+} from './thread-agent-log.service';
 import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
-import { buildThreadScopedInstructions, STAY_SILENT_TOOL } from './thread-agent.prompts';
+import {
+  buildThreadScopedInstructions,
+  STAY_SILENT_TOOL,
+} from './thread-agent.prompts';
 import { ThreadAgentToolsFactory } from './thread-agent-tools.factory';
 import { ClaimedTurn, ThreadTurnsService } from './thread-turns.service';
 import { ThreadAgentHooksRunner } from './hooks/thread-agent-hooks.runner';
@@ -73,7 +85,10 @@ export class ThreadAgentService {
    * message or a task notification. Returns immediately.
    */
   requestTurn(threadId: string): void {
-    this.requestedTurns.set(threadId, (this.requestedTurns.get(threadId) ?? 0) + 1);
+    this.requestedTurns.set(
+      threadId,
+      (this.requestedTurns.get(threadId) ?? 0) + 1,
+    );
     void this.drain(threadId).catch((error) => {
       this.logger.error({
         message: 'Thread agent run failed',
@@ -88,8 +103,9 @@ export class ThreadAgentService {
    * holds the thread, that turn's owner picks up the new messages when it is done.
    */
   async drain(threadId: string): Promise<void> {
-    const self = await this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
-    let watermarkFallbackUsed = false;
+    const self = await this.agentsService.getAgentBySlug({
+      slug: THREAD_AGENT_SLUG,
+    });
 
     for (;;) {
       const turn = await this.turns.tryClaim(threadId);
@@ -101,15 +117,22 @@ export class ThreadAgentService {
       const requestsAtClaim = this.requestedTurns.get(threadId) ?? 0;
       let ingested = false;
       let failed = false;
+      let requestsDuringTurn = 0;
       try {
         const outcome = await this.runTurn(turn, self, () => {
           ingested = true;
         });
         if (outcome) {
           // The reply is already with the user; maintenance runs before the thread is released.
-          await this.hooks.runAfterTurn({ threadId, turnId: turn.id, ...outcome });
+          await this.hooks.runAfterTurn({
+            threadId,
+            turnId: turn.id,
+            ...outcome,
+          });
         }
-        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
+        this.emitActivity(threadId, self.actorId, 'turn_end', {
+          turnId: turn.id,
+        });
         await this.turns.finish(turn.id, ThreadTurnStatus.COMPLETED);
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
@@ -134,31 +157,27 @@ export class ThreadAgentService {
             error: this.describeError(reportError),
           });
         } finally {
-          this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
-          await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
+          this.emitActivity(threadId, self.actorId, 'turn_end', {
+            turnId: turn.id,
+          });
+          requestsDuringTurn = await this.turns.finish(
+            turn.id,
+            ThreadTurnStatus.FAILED,
+            reason,
+          );
         }
         failed = true;
       } finally {
         stopHeartbeat();
       }
 
-      const locallyRequested = (this.requestedTurns.get(threadId) ?? 0) !== requestsAtClaim;
-      if (failed && !ingested && !locallyRequested) {
-        try {
-          // Compare with the claim's database timestamp, not a later snapshot:
-          // another instance may enqueue work before the first read starts.
-          if (!(await this.agentLog.hasPendingSinceClaim(threadId, self.actorId, turn.id))) return;
-        } catch (error) {
-          // A failed watermark read gets one bounded attempt, not an error loop.
-          if (watermarkFallbackUsed) return;
-          watermarkFallbackUsed = true;
-          this.logger.warn({
-            message: 'Could not check pending work since claim',
-            threadId,
-            error: this.describeError(error),
-          });
-        }
-      }
+      const locallyRequested =
+        (this.requestedTurns.get(threadId) ?? 0) !== requestsAtClaim;
+      // A conflicting claim atomically records a request on the running turn,
+      // including one from another instance before any ingestion starts. Do
+      // not retry the original failed input without a newly requested turn.
+      if (failed && !ingested && !locallyRequested && requestsDuringTurn === 0)
+        return;
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.
       if (
@@ -180,36 +199,36 @@ export class ThreadAgentService {
   ): Promise<TurnOutcome | null> {
     const { threadId } = turn;
 
-    const { triggerActor: author, newUserMessages } = await this.agentLog.ingestPending({
+    const {
+      messages: ingestedMessages,
+      notifications,
+      firings,
+      watchDeliveries,
+    } = await this.agentLog.ingestTurn({
       threadId,
       agentActorId: self.actorId,
       turnId: turn.id,
     });
-    const notifications = await this.agentLog.ingestTaskNotifications({
-      threadId,
-      turnId: turn.id,
-    });
-    const firings = await this.agentLog.ingestTimerFirings({
-      threadId,
-      turnId: turn.id,
-    });
-    const watchDeliveries = await this.agentLog.ingestWatchDeliveries({
-      threadId,
-      turnId: turn.id,
-    });
+    const { triggerActor: author, newUserMessages } = ingestedMessages;
     onIngested();
     // A turn started by a task notification, a timer or a watch acts for
     // whoever the agent subscribed, set the timer or started the watch for.
     const triggerActor =
-      author ?? notifications.triggerActor ?? firings.triggerActor ?? watchDeliveries.triggerActor;
+      author ??
+      notifications.triggerActor ??
+      firings.triggerActor ??
+      watchDeliveries.triggerActor;
     if (!triggerActor) {
       return null;
     }
 
-    const thread = await this.threadRepository.findOne({ where: { id: threadId } });
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+    });
     if (
       thread &&
-      (notifications.notifiedTaskIds.length > 0 || firings.firedTimerIds.length > 0)
+      (notifications.notifiedTaskIds.length > 0 ||
+        firings.firedTimerIds.length > 0)
     ) {
       // A done task ended its subscription and a finished timer is gone;
       // viewers of the thread see the lists change.
@@ -238,13 +257,18 @@ export class ThreadAgentService {
       rows = await this.agentLog.loadContext(threadId);
     }
     const threadSecret = await this.agentLog.getOrCreateThreadSecret(threadId);
-    const messages = buildModelMessages(withThreadSecret(rows, threadSecret), resolved, (row) => {
-      this.logger.warn({
-        message: 'Skipping agent log row that does not match the message schema',
-        threadId,
-        agentMessageId: row.id,
-      });
-    });
+    const messages = buildModelMessages(
+      withThreadSecret(rows, threadSecret),
+      resolved,
+      (row) => {
+        this.logger.warn({
+          message:
+            'Skipping agent log row that does not match the message schema',
+          threadId,
+          agentMessageId: row.id,
+        });
+      },
+    );
 
     const mcp = await this.mcpToolsFactory.open({
       subject: {
@@ -297,7 +321,11 @@ export class ThreadAgentService {
 
     const result = streamText({
       model: resolved.model,
-      instructions: buildThreadScopedInstructions(self.systemPrompt, threadId, input.threadSecret),
+      instructions: buildThreadScopedInstructions(
+        self.systemPrompt,
+        threadId,
+        input.threadSecret,
+      ),
       messages: input.messages,
       tools: input.tools,
       providerOptions: resolved.providerOptions,
@@ -315,7 +343,9 @@ export class ThreadAgentService {
           usage: step.usage,
         };
         lastInputTokens = step.usage?.inputTokens ?? lastInputTokens;
-        persisted = persisted.then(() => this.persistStep(turn, self, resolved, output));
+        persisted = persisted.then(() =>
+          this.persistStep(turn, self, resolved, output),
+        );
       },
     });
 
@@ -325,7 +355,9 @@ export class ThreadAgentService {
       switch (part.type) {
         case 'start-step':
           streamId = randomUUID();
-          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
+          this.emitActivity(threadId, self.actorId, 'thinking', {
+            turnId: turn.id,
+          });
           break;
         case 'reasoning-delta':
           break;
@@ -358,7 +390,9 @@ export class ThreadAgentService {
           });
           break;
         case 'finish-step':
-          this.emitActivity(threadId, self.actorId, 'step_end', { turnId: turn.id });
+          this.emitActivity(threadId, self.actorId, 'step_end', {
+            turnId: turn.id,
+          });
           break;
         case 'text-delta':
           this.eventEmitter.emit(
@@ -371,7 +405,9 @@ export class ThreadAgentService {
           break;
         case 'error':
           await persisted;
-          throw part.error instanceof Error ? part.error : new Error(String(part.error));
+          throw part.error instanceof Error
+            ? part.error
+            : new Error(String(part.error));
       }
     }
 
@@ -380,7 +416,8 @@ export class ThreadAgentService {
     const repeated = findRepeatedToolCall(await result.steps);
     if (repeated) {
       this.logger.warn({
-        message: 'Thread agent turn stopped: the model kept making the same tool call',
+        message:
+          'Thread agent turn stopped: the model kept making the same tool call',
         threadId,
         turnId: turn.id,
         toolNames: repeated.toolNames,
@@ -415,7 +452,10 @@ export class ThreadAgentService {
         modelId: resolved.modelId,
         usage:
           message.role === 'assistant'
-            ? (JSON.parse(JSON.stringify(step.usage ?? null)) as Record<string, unknown> | null)
+            ? (JSON.parse(JSON.stringify(step.usage ?? null)) as Record<
+                string,
+                unknown
+              > | null)
             : null,
       }),
     );
@@ -423,7 +463,9 @@ export class ThreadAgentService {
     const saved = await this.agentLog.append(turn.threadId, drafts);
 
     const text = step.text.trim();
-    const assistantRow = saved.find((row) => row.role === ThreadAgentMessageRole.ASSISTANT);
+    const assistantRow = saved.find(
+      (row) => row.role === ThreadAgentMessageRole.ASSISTANT,
+    );
     if (text && assistantRow) {
       await this.saveDisplayMessage({
         threadId: turn.threadId,
@@ -469,7 +511,10 @@ export class ThreadAgentService {
   ): void {
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
-      new ThreadAgentActivityEvent({ id: actorId }, { threadId, kind, ...details }),
+      new ThreadAgentActivityEvent(
+        { id: actorId },
+        { threadId, kind, ...details },
+      ),
     );
   }
 

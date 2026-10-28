@@ -12,16 +12,29 @@ import { ThreadAgentMessageRole, ThreadTurnStatus } from './thread-agent.enums';
 // own dependency graphs out of this unit test.
 jest.mock('src/agents/agents.service', () => ({ AgentsService: class {} }));
 jest.mock('./chat-model.factory', () => ({ ChatModelFactory: class {} }));
-jest.mock('./taico-mcp-tools.factory', () => ({ TaicoMcpToolsFactory: class {} }));
-jest.mock('./thread-agent-tools.factory', () => ({ ThreadAgentToolsFactory: class {} }));
-jest.mock('./thread-agent-log.service', () => ({ ThreadAgentLogService: class {} }));
-jest.mock('./hooks/thread-agent-hooks.runner', () => ({ ThreadAgentHooksRunner: class {} }));
+jest.mock('./taico-mcp-tools.factory', () => ({
+  TaicoMcpToolsFactory: class {},
+}));
+jest.mock('./thread-agent-tools.factory', () => ({
+  ThreadAgentToolsFactory: class {},
+}));
+jest.mock('./thread-agent-log.service', () => ({
+  ThreadAgentLogService: class {},
+}));
+jest.mock('./hooks/thread-agent-hooks.runner', () => ({
+  ThreadAgentHooksRunner: class {},
+}));
 
 const THREAD_ID = 'thread-1';
 const AGENT_ACTOR_ID = 'agent-actor';
 
 const usage = {
-  inputTokens: { total: 3, noCache: 3, cacheRead: undefined, cacheWrite: undefined },
+  inputTokens: {
+    total: 3,
+    noCache: 3,
+    cacheRead: undefined,
+    cacheWrite: undefined,
+  },
   outputTokens: { total: 5, text: 5, reasoning: undefined },
 };
 
@@ -42,12 +55,22 @@ const toolCallStep = [
   { type: 'text-start' as const, id: 't' },
   { type: 'text-delta' as const, id: 't', delta: 'Let me check.' },
   { type: 'text-end' as const, id: 't' },
-  { type: 'tool-call' as const, toolCallId: 'c1', toolName: 'tasks__fetch', input: '{"id":"1"}' },
+  {
+    type: 'tool-call' as const,
+    toolCallId: 'c1',
+    toolName: 'tasks__fetch',
+    input: '{"id":"1"}',
+  },
   finish('tool-calls'),
 ];
 
 const staySilentStep = [
-  { type: 'tool-call' as const, toolCallId: 'c2', toolName: 'stay_silent', input: '{}' },
+  {
+    type: 'tool-call' as const,
+    toolCallId: 'c2',
+    toolName: 'stay_silent',
+    input: '{}',
+  },
   finish('tool-calls'),
 ];
 
@@ -67,13 +90,22 @@ function createHarness(steps: unknown[][]) {
     },
   });
 
-  const appended: Array<{ id: string; role: string; message: unknown; providerType: unknown }> = [];
-  const displayMessages: Array<{ id: string; content: string; agentMessageId: string | null }> = [];
+  const appended: Array<{
+    id: string;
+    role: string;
+    message: unknown;
+    providerType: unknown;
+  }> = [];
+  const displayMessages: Array<{
+    id: string;
+    content: string;
+    agentMessageId: string | null;
+  }> = [];
   const emitted: Array<{ event: symbol; payload: unknown }> = [];
   const finished: Array<{ status: ThreadTurnStatus; error?: string }> = [];
 
   const agentLog = {
-    hasPendingSinceClaim: jest.fn().mockResolvedValue(false),
+    ingestTurn: jest.fn(),
     ingestPending: jest.fn().mockResolvedValue({
       triggerActor: USER,
       newUserMessages: ['hello'],
@@ -87,7 +119,9 @@ function createHarness(steps: unknown[][]) {
       .fn()
       .mockResolvedValue({ triggerActor: null, firedTimerIds: [] }),
     hasPendingTimerFirings: jest.fn().mockResolvedValue(false),
-    ingestWatchDeliveries: jest.fn().mockResolvedValue({ triggerActor: null, deliveredCount: 0 }),
+    ingestWatchDeliveries: jest
+      .fn()
+      .mockResolvedValue({ triggerActor: null, deliveredCount: 0 }),
     hasPendingWatchDeliveries: jest.fn().mockResolvedValue(false),
     getOrCreateThreadSecret: jest.fn().mockResolvedValue('a1b2c3'),
     loadContext: jest.fn().mockResolvedValue([
@@ -101,29 +135,46 @@ function createHarness(steps: unknown[][]) {
         modelId: null,
       },
     ]),
-    append: jest.fn(async (_threadId: string, drafts: Array<Record<string, unknown>>) =>
-      drafts.map((draft) => {
-        const row = { id: `agent-msg-${appended.length + 1}`, ...draft } as (typeof appended)[number];
-        appended.push(row);
-        return row;
-      }),
+    append: jest.fn(
+      async (_threadId: string, drafts: Array<Record<string, unknown>>) =>
+        drafts.map((draft) => {
+          const row = {
+            id: `agent-msg-${appended.length + 1}`,
+            ...draft,
+          } as (typeof appended)[number];
+          appended.push(row);
+          return row;
+        }),
+    ),
+  };
+  agentLog.ingestTurn.mockImplementation(async (input) => ({
+    messages: await agentLog.ingestPending(input),
+    notifications: await agentLog.ingestTaskNotifications(input),
+    firings: await agentLog.ingestTimerFirings(input),
+    watchDeliveries: await agentLog.ingestWatchDeliveries(input),
+  }));
+
+  const turns = {
+    tryClaim: jest
+      .fn()
+      .mockResolvedValue({ id: 'turn-1', threadId: THREAD_ID }),
+    startHeartbeat: jest.fn().mockReturnValue(() => undefined),
+    finish: jest.fn(
+      async (_id: string, status: ThreadTurnStatus, error?: string) => {
+        finished.push({ status, error });
+        return 0;
+      },
     ),
   };
 
-  const turns = {
-    tryClaim: jest.fn().mockResolvedValue({ id: 'turn-1', threadId: THREAD_ID }),
-    startHeartbeat: jest.fn().mockReturnValue(() => undefined),
-    finish: jest.fn(async (_id: string, status: ThreadTurnStatus, error?: string) => {
-      finished.push({ status, error });
-    }),
-  };
-
   const messageWriter = {
-    write: jest.fn(async (input: { content: string; agentMessageId: string | null }) => {
-      const saved = { id: `display-${displayMessages.length + 1}`, ...input };
-      displayMessages.push(saved);
-      return saved;
-    }),
+    write: jest.fn(
+      async (input: { content: string; agentMessageId: string | null }) => {
+        const saved = { id: `display-${displayMessages.length + 1}`, ...input };
+        displayMessages.push(saved);
+        return saved;
+      },
+    ),
   };
 
   const mcpClose = jest.fn().mockResolvedValue(undefined);
@@ -135,7 +186,10 @@ function createHarness(steps: unknown[][]) {
   const mcpOpen = jest.fn().mockResolvedValue({
     tools: {
       tasks__fetch: {
-        inputSchema: jsonSchema({ type: 'object', properties: { id: { type: 'string' } } }),
+        inputSchema: jsonSchema({
+          type: 'object',
+          properties: { id: { type: 'string' } },
+        }),
         execute: async () => ({ name: 'Ship it' }),
       },
     },
@@ -152,10 +206,22 @@ function createHarness(steps: unknown[][]) {
 
   const resolveModel = jest
     .fn()
-    .mockResolvedValue({ model, providerType: 'mock', modelId: 'mock-model-id' });
+    .mockResolvedValue({
+      model,
+      providerType: 'mock',
+      modelId: 'mock-model-id',
+    });
 
   const service = new ThreadAgentService(
-    { findOne: jest.fn().mockResolvedValue({ id: THREAD_ID, aiProviderId: null, modelId: null }) } as never,
+    {
+      findOne: jest
+        .fn()
+        .mockResolvedValue({
+          id: THREAD_ID,
+          aiProviderId: null,
+          modelId: null,
+        }),
+    } as never,
     messageWriter as never,
     {
       getAgentBySlug: jest.fn().mockResolvedValue({
@@ -172,10 +238,28 @@ function createHarness(steps: unknown[][]) {
     { open: mcpOpen } as never,
     threadTools as never,
     hooks as never,
-    { emit: (event: symbol, payload: unknown) => emitted.push({ event, payload }) } as never,
+    {
+      emit: (event: symbol, payload: unknown) =>
+        emitted.push({ event, payload }),
+    } as never,
   );
 
-  return { hooks, service, resolveModel, mcpOpen, threadTools, agentLog, turns, messageWriter, appended, displayMessages, emitted, finished, prompts, mcpClose };
+  return {
+    hooks,
+    service,
+    resolveModel,
+    mcpOpen,
+    threadTools,
+    agentLog,
+    turns,
+    messageWriter,
+    appended,
+    displayMessages,
+    emitted,
+    finished,
+    prompts,
+    mcpClose,
+  };
 }
 
 describe('ThreadAgentService', () => {
@@ -191,19 +275,36 @@ describe('ThreadAgentService', () => {
     ]);
     expect(h.appended.every((row) => row.providerType === 'mock')).toBe(true);
     expect(h.displayMessages).toEqual([
-      expect.objectContaining({ content: 'Let me check.', agentMessageId: 'agent-msg-1' }),
-      expect.objectContaining({ content: 'All done.', agentMessageId: 'agent-msg-3' }),
+      expect.objectContaining({
+        content: 'Let me check.',
+        agentMessageId: 'agent-msg-1',
+      }),
+      expect.objectContaining({
+        content: 'All done.',
+        agentMessageId: 'agent-msg-3',
+      }),
     ]);
-    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+    expect(h.finished).toEqual([
+      { status: ThreadTurnStatus.COMPLETED, error: undefined },
+    ]);
     expect(h.mcpClose).toHaveBeenCalledTimes(1);
     expect(h.hooks.runBeforeTurn).toHaveBeenCalledWith(
-      expect.objectContaining({ threadId: THREAD_ID, newUserMessages: ['hello'] }),
+      expect.objectContaining({
+        threadId: THREAD_ID,
+        newUserMessages: ['hello'],
+      }),
     );
     expect(h.hooks.runAfterTurn).toHaveBeenCalledWith(
-      expect.objectContaining({ threadId: THREAD_ID, turnId: 'turn-1', lastInputTokens: 3 }),
+      expect.objectContaining({
+        threadId: THREAD_ID,
+        turnId: 'turn-1',
+        lastInputTokens: 3,
+      }),
     );
 
-    const deltas = h.emitted.filter((e) => e.event === ThreadAgentResponseDeltaEvent.INTERNAL);
+    const deltas = h.emitted.filter(
+      (e) => e.event === ThreadAgentResponseDeltaEvent.INTERNAL,
+    );
     expect(deltas).toHaveLength(2);
     expect(
       h.emitted.filter((e) => e.event === MessageCreatedEvent.INTERNAL),
@@ -217,7 +318,10 @@ describe('ThreadAgentService', () => {
 
     expect(h.prompts[0]).toEqual([
       expect.objectContaining({ role: 'system' }),
-      { role: 'user', content: [{ type: 'text', text: '[Fran @fran] says:\nhello' }] },
+      {
+        role: 'user',
+        content: [{ type: 'text', text: '[Fran @fran] says:\nhello' }],
+      },
     ]);
   });
 
@@ -238,7 +342,10 @@ describe('ThreadAgentService', () => {
     await h.service.drain(THREAD_ID);
 
     expect(h.turns.tryClaim).toHaveBeenCalledTimes(2);
-    expect(h.displayMessages.map((m) => m.content)).toEqual(['First.', 'Second.']);
+    expect(h.displayMessages.map((m) => m.content)).toEqual([
+      'First.',
+      'Second.',
+    ]);
   });
 
   it('fails the turn and tells the user when the model call fails', async () => {
@@ -247,7 +354,10 @@ describe('ThreadAgentService', () => {
     await h.service.drain(THREAD_ID);
 
     expect(h.finished).toEqual([
-      { status: ThreadTurnStatus.FAILED, error: expect.stringContaining('model unavailable') },
+      {
+        status: ThreadTurnStatus.FAILED,
+        error: expect.stringContaining('model unavailable'),
+      },
     ]);
     expect(h.displayMessages).toEqual([
       expect.objectContaining({
@@ -296,6 +406,7 @@ describe('ThreadAgentService', () => {
     h.turns.finish.mockImplementation(async (_id, status, error) => {
       h.finished.push({ status, error });
       held = false;
+      return 0;
     });
 
     const draining = h.service.drain(THREAD_ID);
@@ -323,7 +434,9 @@ describe('ThreadAgentService', () => {
 
   it('does not retry unconsumed input when ingestion fails without new arrivals', async () => {
     const h = createHarness([]);
-    h.agentLog.ingestPending.mockRejectedValue(new Error('ingestion unavailable'));
+    h.agentLog.ingestPending.mockRejectedValue(
+      new Error('ingestion unavailable'),
+    );
     h.agentLog.hasPending.mockResolvedValue(true);
 
     await h.service.drain(THREAD_ID);
@@ -335,9 +448,16 @@ describe('ThreadAgentService', () => {
 
   it('drains a new remote arrival during a failed ingestion without a local request', async () => {
     const h = createHarness([textStep('Remote work answered.')]);
-    h.agentLog.ingestPending.mockRejectedValueOnce(new Error('ingestion unavailable'));
-    h.agentLog.hasPendingSinceClaim.mockResolvedValueOnce(true);
-    h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
+    h.agentLog.ingestPending.mockRejectedValueOnce(
+      new Error('ingestion unavailable'),
+    );
+    h.turns.finish.mockImplementation(async (_id, status, error) => {
+      h.finished.push({ status, error });
+      return status === ThreadTurnStatus.FAILED ? 1 : 0;
+    });
+    h.agentLog.hasPendingTimerFirings
+      .mockResolvedValueOnce(true)
+      .mockResolvedValue(false);
 
     await h.service.drain(THREAD_ID);
 
@@ -348,7 +468,7 @@ describe('ThreadAgentService', () => {
     expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
   });
 
-  it('drains remote work arriving immediately after the claim when ingestion fails', async () => {
+  it('drains a remote request between claim and ingestion failure', async () => {
     const h = createHarness([textStep('Remote work answered.')]);
     let failIngestion!: (error: Error) => void;
     const ingestion = new Promise<never>((_resolve, reject) => {
@@ -356,7 +476,10 @@ describe('ThreadAgentService', () => {
     });
     h.agentLog.ingestPending.mockImplementationOnce(() => ingestion);
     let remotePending = false;
-    h.agentLog.hasPendingSinceClaim.mockImplementation(async () => remotePending);
+    h.turns.finish.mockImplementation(async (_id, status, error) => {
+      h.finished.push({ status, error });
+      return status === ThreadTurnStatus.FAILED && remotePending ? 1 : 0;
+    });
     h.agentLog.hasPendingTimerFirings.mockImplementation(async () => {
       const pending = remotePending;
       remotePending = false;
@@ -365,7 +488,7 @@ describe('ThreadAgentService', () => {
 
     const draining = h.service.drain(THREAD_ID);
     await new Promise<void>((resolve) => setImmediate(resolve));
-    // The remote source is committed before ingestion fails, with no local generation.
+    // The remote claim conflicts with the first turn, before ingestion finishes.
     remotePending = true;
     failIngestion(new Error('ingestion unavailable'));
     await draining;
@@ -378,56 +501,41 @@ describe('ThreadAgentService', () => {
     expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
   });
 
-  it('makes one bounded retry if the post-failure watermark check fails', async () => {
-    const h = createHarness([textStep('Remote work answered.')]);
-    h.agentLog.ingestPending.mockRejectedValueOnce(new Error('ingestion unavailable'));
-    h.agentLog.hasPendingSinceClaim.mockRejectedValueOnce(new Error('database read unavailable'));
-    h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
-
-    await h.service.drain(THREAD_ID);
-
-    expect(h.finished.map((turn) => turn.status)).toEqual([
-      ThreadTurnStatus.FAILED,
-      ThreadTurnStatus.COMPLETED,
-    ]);
-    expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
-  });
-
-  it('stops after one fallback attempt when ingestion and watermark reads keep failing', async () => {
-    const h = createHarness([]);
-    h.agentLog.ingestPending.mockRejectedValue(new Error('ingestion unavailable'));
-    h.agentLog.hasPendingSinceClaim.mockRejectedValue(new Error('database read unavailable'));
-    h.agentLog.hasPending.mockResolvedValue(true);
-
-    await h.service.drain(THREAD_ID);
-
-    expect(h.finished).toHaveLength(2);
-    expect(h.agentLog.ingestPending).toHaveBeenCalledTimes(2);
-    expect(h.turns.tryClaim).toHaveBeenCalledTimes(2);
-  });
-
   it.each(['first', 'fourth'] as const)(
     'drains a new request arriving during reporting when the %s ingestion fails',
     async (source) => {
       const h = createHarness([textStep('New work answered.')]);
       if (source === 'fourth') {
-        h.agentLog.ingestWatchDeliveries.mockRejectedValueOnce(new Error('ingestion unavailable'));
+        h.agentLog.ingestWatchDeliveries.mockRejectedValueOnce(
+          new Error('ingestion unavailable'),
+        );
       }
       let pending = false;
       h.agentLog.hasPending.mockImplementation(async () => pending);
-      h.agentLog.ingestPending.mockImplementationOnce(
-        source === 'first'
-          ? async () => { throw new Error('ingestion unavailable'); }
-          : async () => ({ triggerActor: USER, newUserMessages: ['original'] }),
-      ).mockImplementation(async () => {
-        pending = false;
-        return { triggerActor: USER, newUserMessages: ['new work'] };
-      });
+      h.agentLog.ingestPending
+        .mockImplementationOnce(
+          source === 'first'
+            ? async () => {
+                throw new Error('ingestion unavailable');
+              }
+            : async () => ({
+                triggerActor: USER,
+                newUserMessages: ['original'],
+              }),
+        )
+        .mockImplementation(async () => {
+          pending = false;
+          return { triggerActor: USER, newUserMessages: ['new work'] };
+        });
 
       let releaseWrite!: () => void;
       let writing!: () => void;
-      const started = new Promise<void>((resolve) => { writing = resolve; });
-      const allowed = new Promise<void>((resolve) => { releaseWrite = resolve; });
+      const started = new Promise<void>((resolve) => {
+        writing = resolve;
+      });
+      const allowed = new Promise<void>((resolve) => {
+        releaseWrite = resolve;
+      });
       const originalWrite = h.messageWriter.write.getMockImplementation()!;
       h.messageWriter.write.mockImplementation(async (input) => {
         if (input.agentMessageId === null) {
@@ -446,6 +554,7 @@ describe('ThreadAgentService', () => {
       h.turns.finish.mockImplementation(async (_id, status, error) => {
         h.finished.push({ status, error });
         held = false;
+        return 0;
       });
 
       const draining = h.service.drain(THREAD_ID);
@@ -469,7 +578,9 @@ describe('ThreadAgentService', () => {
   it('finishes and releases a failed turn even if reporting the error fails', async () => {
     const h = createHarness([textStep('Recovered.')]);
     h.resolveModel.mockRejectedValueOnce(new Error('model unavailable'));
-    h.messageWriter.write.mockRejectedValueOnce(new Error('display unavailable'));
+    h.messageWriter.write.mockRejectedValueOnce(
+      new Error('display unavailable'),
+    );
     let held = false;
     let nextId = 0;
     h.turns.tryClaim.mockImplementation(async () => {
@@ -480,6 +591,7 @@ describe('ThreadAgentService', () => {
     h.turns.finish.mockImplementation(async (_id, status, error) => {
       h.finished.push({ status, error });
       held = false;
+      return 0;
     });
 
     await h.service.drain(THREAD_ID);
@@ -495,7 +607,10 @@ describe('ThreadAgentService', () => {
 
   it('runs a turn for a task notification when there is no new user message', async () => {
     const h = createHarness([textStep('The holidays task is done.')]);
-    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+    h.agentLog.ingestPending.mockResolvedValue({
+      triggerActor: null,
+      newUserMessages: [],
+    });
     h.agentLog.ingestTaskNotifications.mockResolvedValue({
       triggerActor: USER,
       notifiedTaskIds: ['task-1'],
@@ -504,15 +619,23 @@ describe('ThreadAgentService', () => {
     await h.service.drain(THREAD_ID);
 
     // The turn acts for whoever the agent subscribed for.
-    expect(h.mcpOpen).toHaveBeenCalledWith(expect.objectContaining({ issuedBy: USER }));
+    expect(h.mcpOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ issuedBy: USER }),
+    );
     expect(h.threadTools.build).toHaveBeenCalledWith({
       threadId: THREAD_ID,
       agentActorId: AGENT_ACTOR_ID,
       forActorId: USER.id,
     });
-    expect(h.displayMessages.map((m) => m.content)).toEqual(['The holidays task is done.']);
-    expect(h.emitted.filter((e) => e.event === ThreadUpdatedEvent.INTERNAL)).toHaveLength(1);
-    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+    expect(h.displayMessages.map((m) => m.content)).toEqual([
+      'The holidays task is done.',
+    ]);
+    expect(
+      h.emitted.filter((e) => e.event === ThreadUpdatedEvent.INTERNAL),
+    ).toHaveLength(1);
+    expect(h.finished).toEqual([
+      { status: ThreadTurnStatus.COMPLETED, error: undefined },
+    ]);
   });
 
   it('resolves the model for the author of the message, as a turn somebody asked for', async () => {
@@ -530,7 +653,10 @@ describe('ThreadAgentService', () => {
 
   it('resolves the model as an automated turn when only a task notification started it', async () => {
     const h = createHarness([textStep('The holidays task is done.')]);
-    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+    h.agentLog.ingestPending.mockResolvedValue({
+      triggerActor: null,
+      newUserMessages: [],
+    });
     h.agentLog.ingestTaskNotifications.mockResolvedValue({
       triggerActor: USER,
       notifiedTaskIds: ['task-1'],
@@ -539,14 +665,18 @@ describe('ThreadAgentService', () => {
     await h.service.drain(THREAD_ID);
 
     expect(h.resolveModel).toHaveBeenCalledWith(
-      expect.objectContaining({ onBehalfOf: { actorId: USER.id, automated: true } }),
+      expect.objectContaining({
+        onBehalfOf: { actorId: USER.id, automated: true },
+      }),
     );
   });
 
   it('tells the thread why and calls no model when the person\u2019s plan cannot be used', async () => {
     const h = createHarness([textStep('never sent')]);
     h.resolveModel.mockRejectedValue(
-      new Error('This thread answers with the ChatGPT plan of the person who wrote the message, who has not connected a ChatGPT account. No other provider was used.'),
+      new Error(
+        'This thread answers with the ChatGPT plan of the person who wrote the message, who has not connected a ChatGPT account. No other provider was used.',
+      ),
     );
 
     await h.service.drain(THREAD_ID);
@@ -554,27 +684,39 @@ describe('ThreadAgentService', () => {
     expect(h.prompts).toHaveLength(0);
     expect(h.resolveModel).toHaveBeenCalledTimes(1);
     expect(h.displayMessages).toEqual([
-      expect.objectContaining({ content: expect.stringContaining('No other provider was used.') }),
+      expect.objectContaining({
+        content: expect.stringContaining('No other provider was used.'),
+      }),
     ]);
     expect(h.finished).toEqual([
-      { status: ThreadTurnStatus.FAILED, error: expect.stringContaining('has not connected') },
+      {
+        status: ThreadTurnStatus.FAILED,
+        error: expect.stringContaining('has not connected'),
+      },
     ]);
   });
 
   it('does not call the model when there is neither a message nor a notification', async () => {
     const h = createHarness([textStep('Hi.')]);
-    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+    h.agentLog.ingestPending.mockResolvedValue({
+      triggerActor: null,
+      newUserMessages: [],
+    });
 
     await h.service.drain(THREAD_ID);
 
     expect(h.prompts).toEqual([]);
     expect(h.displayMessages).toEqual([]);
-    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+    expect(h.finished).toEqual([
+      { status: ThreadTurnStatus.COMPLETED, error: undefined },
+    ]);
   });
 
   it('runs another turn when a task notification arrived while the first one was running', async () => {
     const h = createHarness([textStep('First.'), textStep('Second.')]);
-    h.agentLog.hasPendingTaskNotifications.mockResolvedValueOnce(true).mockResolvedValue(false);
+    h.agentLog.hasPendingTaskNotifications
+      .mockResolvedValueOnce(true)
+      .mockResolvedValue(false);
 
     await h.service.drain(THREAD_ID);
 
@@ -583,7 +725,10 @@ describe('ThreadAgentService', () => {
 
   it('runs a turn for a reminder or schedule firing, as an automated turn', async () => {
     const h = createHarness([textStep('Trying the deployment again.')]);
-    h.agentLog.ingestPending.mockResolvedValue({ triggerActor: null, newUserMessages: [] });
+    h.agentLog.ingestPending.mockResolvedValue({
+      triggerActor: null,
+      newUserMessages: [],
+    });
     h.agentLog.ingestTimerFirings.mockResolvedValue({
       triggerActor: USER,
       firedTimerIds: ['timer-1'],
@@ -591,17 +736,27 @@ describe('ThreadAgentService', () => {
 
     await h.service.drain(THREAD_ID);
 
-    expect(h.mcpOpen).toHaveBeenCalledWith(expect.objectContaining({ issuedBy: USER }));
-    expect(h.resolveModel).toHaveBeenCalledWith(
-      expect.objectContaining({ onBehalfOf: { actorId: USER.id, automated: true } }),
+    expect(h.mcpOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ issuedBy: USER }),
     );
-    expect(h.displayMessages.map((m) => m.content)).toEqual(['Trying the deployment again.']);
-    expect(h.emitted.filter((e) => e.event === ThreadUpdatedEvent.INTERNAL)).toHaveLength(1);
+    expect(h.resolveModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onBehalfOf: { actorId: USER.id, automated: true },
+      }),
+    );
+    expect(h.displayMessages.map((m) => m.content)).toEqual([
+      'Trying the deployment again.',
+    ]);
+    expect(
+      h.emitted.filter((e) => e.event === ThreadUpdatedEvent.INTERNAL),
+    ).toHaveLength(1);
   });
 
   it('runs another turn when a timer fired while the first one was running', async () => {
     const h = createHarness([textStep('First.'), textStep('Second.')]);
-    h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
+    h.agentLog.hasPendingTimerFirings
+      .mockResolvedValueOnce(true)
+      .mockResolvedValue(false);
 
     await h.service.drain(THREAD_ID);
 
@@ -620,6 +775,8 @@ describe('ThreadAgentService', () => {
       ThreadAgentMessageRole.ASSISTANT,
       ThreadAgentMessageRole.TOOL,
     ]);
-    expect(h.finished).toEqual([{ status: ThreadTurnStatus.COMPLETED, error: undefined }]);
+    expect(h.finished).toEqual([
+      { status: ThreadTurnStatus.COMPLETED, error: undefined },
+    ]);
   });
 });

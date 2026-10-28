@@ -15,6 +15,7 @@ import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadTurnsService } from '../src/threads/agent/thread-turns.service';
 import { ThreadAgentLogService } from '../src/threads/agent/thread-agent-log.service';
+import { ThreadAgentService } from '../src/threads/agent/thread-agent.service';
 import { ThreadNotFoundError } from '../src/threads/errors/threads.errors';
 import { ThreadTurnStatus } from '../src/threads/agent/thread-agent.enums';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
@@ -33,7 +34,12 @@ describe('Thread agent E2E', () => {
   let replyCount = 0;
 
   const usage = {
-    inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+    inputTokens: {
+      total: 1,
+      noCache: 1,
+      cacheRead: undefined,
+      cacheWrite: undefined,
+    },
     outputTokens: { total: 1, text: 1, reasoning: undefined },
   };
 
@@ -74,7 +80,10 @@ describe('Thread agent E2E', () => {
     return response.body.id;
   };
 
-  const sendMessage = async (threadId: string, content: string): Promise<void> => {
+  const sendMessage = async (
+    threadId: string,
+    content: string,
+  ): Promise<void> => {
     await request(httpServer)
       .post(`/api/v1/threads/${threadId}/messages`)
       .set('Cookie', authCookies)
@@ -106,7 +115,9 @@ describe('Thread agent E2E', () => {
     prompt
       .filter((message) => message.role !== 'system')
       .map((message) =>
-        (message.content as Array<{ text: string }>).map((part) => part.text).join(''),
+        (message.content as Array<{ text: string }>)
+          .map((part) => part.text)
+          .join(''),
       );
 
   beforeAll(async () => {
@@ -115,16 +126,26 @@ describe('Thread agent E2E', () => {
     })
       .overrideProvider(ChatModelFactory)
       .useValue({
-        resolve: async () => ({ model, providerType: 'mock', modelId: 'mock-model-id' }),
+        resolve: async () => ({
+          model,
+          providerType: 'mock',
+          modelId: 'mock-model-id',
+        }),
       })
       .overrideProvider(TaicoMcpToolsFactory)
-      .useValue({ open: async () => ({ tools: {}, close: async () => undefined }) })
+      .useValue({
+        open: async () => ({ tools: {}, close: async () => undefined }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser());
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
     );
     app.useGlobalFilters(new ProblemDetailsFilter());
     app.setGlobalPrefix('api/v1');
@@ -135,12 +156,181 @@ describe('Thread agent E2E', () => {
 
     userActorId = await ensureTestUser(app);
     authCookies = await getAuthCookies(httpServer);
-    agentActorId = (await app.get(AgentsService).getAgentBySlug({ slug: 'taico' })).actorId;
+    agentActorId = (
+      await app.get(AgentsService).getAgentBySlug({ slug: 'taico' })
+    ).actorId;
   }, 30000);
 
   afterAll(async () => {
     await app.close();
   });
+
+  it('atomically hands a conflicting request to the running turn', async () => {
+    const threadId = await createThread();
+    const owner = app.get(ThreadTurnsService);
+    const otherInstance = new ThreadTurnsService(dataSource);
+    const first = await owner.tryClaim(threadId);
+    expect(first).not.toBeNull();
+
+    expect(await otherInstance.tryClaim(threadId)).toBeNull();
+    expect(
+      await owner.finish(
+        first!.id,
+        ThreadTurnStatus.FAILED,
+        'ingestion failed',
+      ),
+    ).toBe(1);
+
+    const next = await otherInstance.tryClaim(threadId);
+    expect(next).not.toBeNull();
+    expect(next!.id).not.toBe(first!.id);
+    expect(
+      await otherInstance.finish(next!.id, ThreadTurnStatus.COMPLETED),
+    ).toBe(0);
+  });
+
+  it('drains a remote request committed after the claim even when its row predates the claim', async () => {
+    const threadId = await createThread();
+    // An existing log keeps a later failure notice out of the backfill path.
+    await sendMessage(threadId, 'Initial message');
+    await waitForAgentReplies(threadId, 1);
+    const transaction = dataSource.createQueryRunner();
+    await transaction.connect();
+    await transaction.startTransaction();
+    const agentLog = app.get(ThreadAgentLogService);
+    const originalIngest = agentLog.ingestPending.bind(agentLog);
+    let ingestionStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      ingestionStarted = resolve;
+    });
+    let failIngestion!: (error: Error) => void;
+    const ingestion = new Promise<never>((_resolve, reject) => {
+      failIngestion = reject;
+    });
+    const ingestSpy = jest
+      .spyOn(agentLog, 'ingestPending')
+      .mockImplementationOnce(async () => {
+        ingestionStarted();
+        return ingestion;
+      })
+      .mockImplementation((input) => originalIngest(input));
+
+    try {
+      await transaction.query(
+        `INSERT INTO thread_messages (thread_id, created_by_actor_id, content, created_at)
+           VALUES ($1, $2, $3, now() - interval '1 minute')`,
+        [threadId, userActorId, 'Committed after the claim'],
+      );
+
+      const draining = app.get(ThreadAgentService).drain(threadId);
+      await started;
+      const [claim]: Array<{ started_at: Date }> = await dataSource.query(
+        `SELECT started_at FROM thread_turns WHERE thread_id = $1 AND status = 'running'`,
+        [threadId],
+      );
+      expect(claim).toBeDefined();
+      await transaction.commitTransaction();
+
+      // A different instance loses the running claim and records the request.
+      const otherInstance = new ThreadTurnsService(dataSource);
+      expect(await otherInstance.tryClaim(threadId)).toBeNull();
+      failIngestion(new Error('ingestion unavailable'));
+      await draining;
+
+      const replies = await waitForAgentReplies(threadId, 3);
+      expect(replies.at(-1)?.content).toMatch(/^Reply \d+$/);
+      const [message]: Array<{
+        created_at: Date;
+        agent_message_id: string | null;
+      }> = await dataSource.query(
+        `SELECT created_at, agent_message_id FROM thread_messages
+            WHERE thread_id = $1 AND content = $2`,
+        [threadId, 'Committed after the claim'],
+      );
+      expect(new Date(message.created_at).getTime()).toBeLessThan(
+        new Date(claim.started_at).getTime(),
+      );
+      expect(message.agent_message_id).not.toBeNull();
+    } finally {
+      ingestSpy.mockRestore();
+      if (transaction.isTransactionActive)
+        await transaction.rollbackTransaction();
+      await transaction.release();
+    }
+  }, 15000);
+
+  it('rolls back consumed messages when a later ingestion fails, then answers a conflicting remote request', async () => {
+    const threadId = await createThread();
+    await sendMessage(threadId, 'Initial message');
+    await waitForAgentReplies(threadId, 1);
+
+    const agentLog = app.get(ThreadAgentLogService);
+    const originalPending = agentLog.ingestPending.bind(agentLog);
+    const originalWatch = agentLog.ingestWatchDeliveries.bind(agentLog);
+    let ingestStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      ingestStarted = resolve;
+    });
+    let allowIngest!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      allowIngest = resolve;
+    });
+    let rolledBackBeforeRetry = false;
+    const pendingSpy = jest
+      .spyOn(agentLog, 'ingestPending')
+      .mockImplementationOnce(async (input, manager) => {
+        ingestStarted();
+        await gate;
+        return originalPending(input, manager);
+      })
+      .mockImplementation(async (input, manager) => {
+        const [message]: Array<{ agent_message_id: string | null }> = await manager!.query(
+          `SELECT agent_message_id FROM thread_messages WHERE thread_id = $1 AND content = $2`,
+          [threadId, 'Remote partially consumed message'],
+        );
+        rolledBackBeforeRetry = message.agent_message_id === null;
+        return originalPending(input, manager);
+      });
+    const watchSpy = jest
+      .spyOn(agentLog, 'ingestWatchDeliveries')
+      .mockRejectedValueOnce(new Error('watch ingestion unavailable'))
+      .mockImplementation((input, manager) => originalWatch(input, manager));
+
+    try {
+      await dataSource.query(
+        `INSERT INTO thread_messages (thread_id, created_by_actor_id, content)
+           VALUES ($1, $2, $3)`,
+        [threadId, userActorId, 'Remote partially consumed message'],
+      );
+      const draining = app.get(ThreadAgentService).drain(threadId);
+      await started;
+      // A remote request conflicts before ingestion commits; the later source
+      // failure rolls back the linked message and the bounded retry answers it.
+      expect(
+        await new ThreadTurnsService(dataSource).tryClaim(threadId),
+      ).toBeNull();
+      allowIngest();
+      await draining;
+
+      const replies = await waitForAgentReplies(threadId, 3);
+      expect(rolledBackBeforeRetry).toBe(true);
+      expect(replies.at(-1)?.content).toMatch(/^Reply \d+$/);
+      const [message]: Array<{ agent_message_id: string | null }> =
+        await dataSource.query(
+          `SELECT agent_message_id FROM thread_messages WHERE thread_id = $1 AND content = $2`,
+          [threadId, 'Remote partially consumed message'],
+        );
+      expect(message.agent_message_id).not.toBeNull();
+      expect(
+        userTexts(prompts.at(-1)!).some((text) =>
+          text.includes('Remote partially consumed message'),
+        ),
+      ).toBe(true);
+    } finally {
+      pendingSpy.mockRestore();
+      watchSpy.mockRestore();
+    }
+  }, 15000);
 
   it('stores the conversation in the agent log and links visible messages to it', async () => {
     const threadId = await createThread();
@@ -148,12 +338,17 @@ describe('Thread agent E2E', () => {
     await sendMessage(threadId, 'hello');
     const [reply] = await waitForAgentReplies(threadId, 1);
 
-    const log: Array<{ id: string; parent_id: string | null; role: string; source: string; provider_type: string | null }> =
-      await dataSource.query(
-        `SELECT id, parent_id, role, source, provider_type FROM thread_agent_messages
+    const log: Array<{
+      id: string;
+      parent_id: string | null;
+      role: string;
+      source: string;
+      provider_type: string | null;
+    }> = await dataSource.query(
+      `SELECT id, parent_id, role, source, provider_type FROM thread_agent_messages
           WHERE thread_id = $1 ORDER BY created_at ASC`,
-        [threadId],
-      );
+      [threadId],
+    );
     const [userRow, assistantRow] = log;
 
     expect(log.map((row) => [row.role, row.source])).toEqual([
@@ -222,7 +417,9 @@ describe('Thread agent E2E', () => {
     const threads = dataSource.getRepository(ThreadEntity);
 
     // What title generation does: load the thread, do slow work, save it.
-    const staleThread = await threads.findOneOrFail({ where: { id: threadId } });
+    const staleThread = await threads.findOneOrFail({
+      where: { id: threadId },
+    });
     await sendMessage(threadId, 'first question');
     await waitForAgentReplies(threadId, 1);
     staleThread.title = 'Renamed while the agent was answering';
@@ -279,7 +476,10 @@ describe('Thread agent E2E', () => {
   it('answers every message when several arrive at once', async () => {
     const threadId = await createThread();
 
-    await Promise.all([sendMessage(threadId, 'one'), sendMessage(threadId, 'two')]);
+    await Promise.all([
+      sendMessage(threadId, 'one'),
+      sendMessage(threadId, 'two'),
+    ]);
     await waitForAgentReplies(threadId, 1);
 
     const unseen: unknown[] = await dataSource.query(
@@ -319,15 +519,23 @@ describe('Thread agent E2E', () => {
       [threadId],
     );
     expect(visible).toHaveLength(2);
-    expect(visible.some((message) => message.content.includes('<context'))).toBe(false);
+    expect(
+      visible.some((message) => message.content.includes('<context')),
+    ).toBe(false);
 
     // The system prompt names the key but never carries hook output: it has to
     // stay identical between turns for the prompt cache to hold.
     const system = (prompt: PromptMessage[]) =>
-      prompt.filter((message) => message.role === 'system').map((message) => message.content);
+      prompt
+        .filter((message) => message.role === 'system')
+        .map((message) => message.content);
     const withHook = system(prompts[prompts.length - 1]);
-    expect(JSON.stringify(withHook)).toContain(`<context key=\\"${key}\\" source=\\"...\\">`);
-    expect(JSON.stringify(withHook)).not.toContain('The owl only hoots at midnight.');
+    expect(JSON.stringify(withHook)).toContain(
+      `<context key=\\"${key}\\" source=\\"...\\">`,
+    );
+    expect(JSON.stringify(withHook)).not.toContain(
+      'The owl only hoots at midnight.',
+    );
 
     await sendMessage(threadId, 'anything else?');
     await waitForAgentReplies(threadId, 2);
@@ -371,7 +579,9 @@ describe('Thread agent E2E', () => {
 
   it('refuses to create a thread key for a thread that does not exist', async () => {
     await expect(
-      app.get(ThreadAgentLogService).getOrCreateThreadSecret('00000000-0000-4000-8000-000000000000'),
+      app
+        .get(ThreadAgentLogService)
+        .getOrCreateThreadSecret('00000000-0000-4000-8000-000000000000'),
     ).rejects.toBeInstanceOf(ThreadNotFoundError);
   });
 
@@ -457,7 +667,10 @@ describe('Thread agent E2E', () => {
     );
 
     expect(await turns.tryClaim(threadId)).not.toBeNull();
-    const [row] = await dataSource.query(`SELECT status FROM thread_turns WHERE id = $1`, [stale!.id]);
+    const [row] = await dataSource.query(
+      `SELECT status FROM thread_turns WHERE id = $1`,
+      [stale!.id],
+    );
     expect(row.status).toBe(ThreadTurnStatus.FAILED);
   });
 });

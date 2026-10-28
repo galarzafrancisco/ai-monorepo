@@ -87,6 +87,13 @@ export type IngestWatchDeliveriesResult = {
   deliveredCount: number;
 };
 
+export type IngestTurnResult = {
+  messages: IngestPendingResult;
+  notifications: IngestTaskNotificationsResult;
+  firings: IngestTimerFiringsResult;
+  watchDeliveries: IngestWatchDeliveriesResult;
+};
+
 type PendingWatchDeliveryRow = {
   id: string;
   kind: string;
@@ -129,6 +136,27 @@ type PendingDisplayRow = {
 export class ThreadAgentLogService {
   constructor(private readonly dataSource: DataSource) {}
 
+  /** Consume all sources together, so a failure cannot strand already-linked input. */
+  async ingestTurn(input: {
+    threadId: string;
+    agentActorId: string;
+    turnId: string;
+  }): Promise<IngestTurnResult> {
+    return this.dataSource.transaction(async (manager) => ({
+      messages: await this.ingestPending(input, manager),
+      notifications: await this.ingestTaskNotifications(input, manager),
+      firings: await this.ingestTimerFirings(input, manager),
+      watchDeliveries: await this.ingestWatchDeliveries(input, manager),
+    }));
+  }
+
+  private withManager<T>(
+    manager: EntityManager | undefined,
+    work: (manager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return manager ? work(manager) : this.dataSource.transaction(work);
+  }
+
   /** Appends messages after the thread head and moves the head to the last one. */
   async append(
     threadId: string,
@@ -146,12 +174,15 @@ export class ThreadAgentLogService {
    * A thread with no agent log yet (created before the log existed) gets its
    * whole visible history imported, with the agent's own messages as assistant turns.
    */
-  async ingestPending(input: {
-    threadId: string;
-    agentActorId: string;
-    turnId: string;
-  }): Promise<IngestPendingResult> {
-    return this.dataSource.transaction(async (manager) => {
+  async ingestPending(
+    input: {
+      threadId: string;
+      agentActorId: string;
+      turnId: string;
+    },
+    transactionManager?: EntityManager,
+  ): Promise<IngestPendingResult> {
+    return this.withManager(transactionManager, async (manager) => {
       const headId = await this.lockHead(manager, input.threadId);
       const isBackfill = headId === null;
 
@@ -198,7 +229,11 @@ export class ThreadAgentLogService {
             };
       });
 
-      const saved = await this.appendWithManager(manager, input.threadId, drafts);
+      const saved = await this.appendWithManager(
+        manager,
+        input.threadId,
+        drafts,
+      );
 
       for (const [index, row] of pending.entries()) {
         await manager.query(
@@ -223,7 +258,9 @@ export class ThreadAgentLogService {
           type: last.actor_type,
           displayName: last.actor_display_name,
         },
-        newUserMessages: pending.slice(lastAgentIndex + 1).map((row) => row.content),
+        newUserMessages: pending
+          .slice(lastAgentIndex + 1)
+          .map((row) => row.content),
       };
     });
   }
@@ -239,30 +276,6 @@ export class ThreadAgentLogService {
     return rows.length > 0;
   }
 
-  /** Detect undelivered work created since the claim, including on other backend instances. */
-  async hasPendingSinceClaim(
-    threadId: string,
-    agentActorId: string,
-    turnId: string,
-  ): Promise<boolean> {
-    const rows: unknown[] = await this.dataSource.query(
-      `SELECT 1 FROM thread_turns t
-        WHERE t.id = $3 AND t.thread_id = $1 AND (
-          EXISTS (SELECT 1 FROM thread_messages m
-                   WHERE m.thread_id = $1 AND m.agent_message_id IS NULL
-                     AND m.created_by_actor_id <> $2 AND m.created_at >= t.started_at)
-          OR EXISTS (SELECT 1 FROM thread_task_subscriptions s
-                       WHERE s.thread_id = $1 AND s.triggered_at >= t.started_at)
-          OR EXISTS (SELECT 1 FROM thread_timer_firings f
-                       WHERE f.thread_id = $1 AND f.fired_at >= t.started_at)
-          OR EXISTS (SELECT 1 FROM thread_watch_deliveries d
-                       WHERE d.thread_id = $1 AND d.created_at >= t.started_at)
-        ) LIMIT 1`,
-      [threadId, agentActorId, turnId],
-    );
-    return rows.length > 0;
-  }
-
   /**
    * Tells the agent about subscribed tasks that went to review or were done,
    * as messages the user never sees. A done task ends the subscription; a task
@@ -270,11 +283,14 @@ export class ThreadAgentLogService {
    *
    * One transaction: a notification is delivered exactly once.
    */
-  async ingestTaskNotifications(input: {
-    threadId: string;
-    turnId: string;
-  }): Promise<IngestTaskNotificationsResult> {
-    return this.dataSource.transaction(async (manager) => {
+  async ingestTaskNotifications(
+    input: {
+      threadId: string;
+      turnId: string;
+    },
+    transactionManager?: EntityManager,
+  ): Promise<IngestTaskNotificationsResult> {
+    return this.withManager(transactionManager, async (manager) => {
       // Same lock order as every other writer to the log: the thread first.
       await this.lockHead(manager, input.threadId);
 
@@ -296,21 +312,23 @@ export class ThreadAgentLogService {
       await this.appendWithManager(
         manager,
         input.threadId,
-        pending.map((row): AgentMessageDraft => ({
-          role: ThreadAgentMessageRole.USER,
-          kind: ThreadAgentMessageKind.INJECTION,
-          source: TASK_NOTIFICATION_SOURCE,
-          turnId: input.turnId,
-          message: {
-            role: 'user',
-            content: formatTaskNotification({
-              id: row.task_id,
-              name: row.triggered_task_name,
-              status: row.triggered_status,
-              waitingFor: row.waiting_for,
-            }),
-          },
-        })),
+        pending.map(
+          (row): AgentMessageDraft => ({
+            role: ThreadAgentMessageRole.USER,
+            kind: ThreadAgentMessageKind.INJECTION,
+            source: TASK_NOTIFICATION_SOURCE,
+            turnId: input.turnId,
+            message: {
+              role: 'user',
+              content: formatTaskNotification({
+                id: row.task_id,
+                name: row.triggered_task_name,
+                status: row.triggered_status,
+                waitingFor: row.waiting_for,
+              }),
+            },
+          }),
+        ),
       );
 
       // Only the rows read above: one triggered since then waits for the next turn.
@@ -366,11 +384,14 @@ export class ThreadAgentLogService {
    * exactly once, however many processes try. Firings queued after the read
    * wait for the next turn.
    */
-  async ingestTimerFirings(input: {
-    threadId: string;
-    turnId: string;
-  }): Promise<IngestTimerFiringsResult> {
-    return this.dataSource.transaction(async (manager) => {
+  async ingestTimerFirings(
+    input: {
+      threadId: string;
+      turnId: string;
+    },
+    transactionManager?: EntityManager,
+  ): Promise<IngestTimerFiringsResult> {
+    return this.withManager(transactionManager, async (manager) => {
       // Same lock order as every other writer to the log: the thread first.
       await this.lockHead(manager, input.threadId);
 
@@ -394,24 +415,26 @@ export class ThreadAgentLogService {
       await this.appendWithManager(
         manager,
         input.threadId,
-        pending.map((row): AgentMessageDraft => ({
-          role: ThreadAgentMessageRole.USER,
-          kind: ThreadAgentMessageKind.INJECTION,
-          source: TIMER_FIRING_SOURCE,
-          turnId: input.turnId,
-          message: {
-            role: 'user',
-            content:
-              row.kind === ThreadTimerKind.REMINDER
-                ? formatReminderFiring({ id: row.id, reason: row.reason })
-                : formatScheduleFiring({
-                    id: row.id,
-                    reason: row.reason,
-                    iteration: row.iteration,
-                    maxIterations: row.max_iterations,
-                  }),
-          },
-        })),
+        pending.map(
+          (row): AgentMessageDraft => ({
+            role: ThreadAgentMessageRole.USER,
+            kind: ThreadAgentMessageKind.INJECTION,
+            source: TIMER_FIRING_SOURCE,
+            turnId: input.turnId,
+            message: {
+              role: 'user',
+              content:
+                row.kind === ThreadTimerKind.REMINDER
+                  ? formatReminderFiring({ id: row.id, reason: row.reason })
+                  : formatScheduleFiring({
+                      id: row.id,
+                      reason: row.reason,
+                      iteration: row.iteration,
+                      maxIterations: row.max_iterations,
+                    }),
+            },
+          }),
+        ),
       );
 
       const timerIds = [...new Set(pending.map((row) => row.id))];
@@ -447,11 +470,14 @@ export class ThreadAgentLogService {
    * oldest first, as messages the user never sees. The kind's handler already
    * wrote the text. One transaction: each is delivered exactly once.
    */
-  async ingestWatchDeliveries(input: {
-    threadId: string;
-    turnId: string;
-  }): Promise<IngestWatchDeliveriesResult> {
-    return this.dataSource.transaction(async (manager) => {
+  async ingestWatchDeliveries(
+    input: {
+      threadId: string;
+      turnId: string;
+    },
+    transactionManager?: EntityManager,
+  ): Promise<IngestWatchDeliveriesResult> {
+    return this.withManager(transactionManager, async (manager) => {
       // Same lock order as every other writer to the log: the thread first.
       await this.lockHead(manager, input.threadId);
 
@@ -473,18 +499,21 @@ export class ThreadAgentLogService {
       await this.appendWithManager(
         manager,
         input.threadId,
-        pending.map((row): AgentMessageDraft => ({
-          role: ThreadAgentMessageRole.USER,
-          kind: ThreadAgentMessageKind.INJECTION,
-          source: `${WATCH_NOTIFICATION_SOURCE_PREFIX}${row.kind}`,
-          turnId: input.turnId,
-          message: { role: 'user', content: row.message },
-        })),
+        pending.map(
+          (row): AgentMessageDraft => ({
+            role: ThreadAgentMessageRole.USER,
+            kind: ThreadAgentMessageKind.INJECTION,
+            source: `${WATCH_NOTIFICATION_SOURCE_PREFIX}${row.kind}`,
+            turnId: input.turnId,
+            message: { role: 'user', content: row.message },
+          }),
+        ),
       );
 
-      await manager.query(`DELETE FROM thread_watch_deliveries WHERE id = ANY($1::uuid[])`, [
-        pending.map((row) => row.id),
-      ]);
+      await manager.query(
+        `DELETE FROM thread_watch_deliveries WHERE id = ANY($1::uuid[])`,
+        [pending.map((row) => row.id)],
+      );
 
       const last = pending[pending.length - 1];
       return {
@@ -613,11 +642,12 @@ export class ThreadAgentLogService {
     // TypeORM's Postgres query runner answers a raw UPDATE with
     // [rows, affected count], unlike SELECT and INSERT which answer rows only.
     // thread-agent.e2e-spec.ts runs this against a real database.
-    const [rows]: [Array<{ secret: string }>, number] = await this.dataSource.query(
-      `UPDATE threads SET secret = COALESCE(secret, $2)
+    const [rows]: [Array<{ secret: string }>, number] =
+      await this.dataSource.query(
+        `UPDATE threads SET secret = COALESCE(secret, $2)
         WHERE id = $1 RETURNING secret`,
-      [threadId, generateThreadSecret()],
-    );
+        [threadId, generateThreadSecret()],
+      );
 
     if (rows.length === 0) {
       throw new ThreadNotFoundError(threadId);
