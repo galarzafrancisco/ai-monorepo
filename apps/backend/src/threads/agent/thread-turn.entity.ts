@@ -37,6 +37,10 @@ export class ThreadTurnEntity {
   })
   status!: ThreadTurnStatus;
 
+  /** Conflicting claims while this turn is running, including on other instances. */
+  @Column({ type: 'integer', name: 'request_count', default: 0 })
+  requestCount!: number;
+
   @Column({ type: 'text', nullable: true })
   error!: string | null;
 

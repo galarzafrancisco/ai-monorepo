@@ -89,7 +89,6 @@ export class ThreadAgentService {
    */
   async drain(threadId: string): Promise<void> {
     const self = await this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
-    let watermarkFallbackUsed = false;
 
     for (;;) {
       const turn = await this.turns.tryClaim(threadId);
@@ -101,6 +100,7 @@ export class ThreadAgentService {
       const requestsAtClaim = this.requestedTurns.get(threadId) ?? 0;
       let ingested = false;
       let failed = false;
+      let requestsDuringTurn = 0;
       try {
         const outcome = await this.runTurn(turn, self, () => {
           ingested = true;
@@ -135,7 +135,7 @@ export class ThreadAgentService {
           });
         } finally {
           this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
-          await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
+          requestsDuringTurn = await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
         }
         failed = true;
       } finally {
@@ -143,22 +143,10 @@ export class ThreadAgentService {
       }
 
       const locallyRequested = (this.requestedTurns.get(threadId) ?? 0) !== requestsAtClaim;
-      if (failed && !ingested && !locallyRequested) {
-        try {
-          // Compare with the claim's database timestamp, not a later snapshot:
-          // another instance may enqueue work before the first read starts.
-          if (!(await this.agentLog.hasPendingSinceClaim(threadId, self.actorId, turn.id))) return;
-        } catch (error) {
-          // A failed watermark read gets one bounded attempt, not an error loop.
-          if (watermarkFallbackUsed) return;
-          watermarkFallbackUsed = true;
-          this.logger.warn({
-            message: 'Could not check pending work since claim',
-            threadId,
-            error: this.describeError(error),
-          });
-        }
-      }
+      // A conflicting claim atomically records a request on the running turn,
+      // including one from another instance before any ingestion starts. Do
+      // not retry the original failed input without a newly requested turn.
+      if (failed && !ingested && !locallyRequested && requestsDuringTurn === 0) return;
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.
       if (

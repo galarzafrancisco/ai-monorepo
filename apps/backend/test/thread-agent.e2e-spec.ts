@@ -142,6 +142,22 @@ describe('Thread agent E2E', () => {
     await app.close();
   });
 
+  it('atomically hands a conflicting request to the running turn', async () => {
+    const threadId = await createThread();
+    const owner = app.get(ThreadTurnsService);
+    const otherInstance = new ThreadTurnsService(dataSource);
+    const first = await owner.tryClaim(threadId);
+    expect(first).not.toBeNull();
+
+    expect(await otherInstance.tryClaim(threadId)).toBeNull();
+    expect(await owner.finish(first!.id, ThreadTurnStatus.FAILED, 'ingestion failed')).toBe(1);
+
+    const next = await otherInstance.tryClaim(threadId);
+    expect(next).not.toBeNull();
+    expect(next!.id).not.toBe(first!.id);
+    expect(await otherInstance.finish(next!.id, ThreadTurnStatus.COMPLETED)).toBe(0);
+  });
+
   it('stores the conversation in the agent log and links visible messages to it', async () => {
     const threadId = await createThread();
 

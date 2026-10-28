@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { randomUUID } from 'node:crypto';
 import { ThreadTurnStatus } from './thread-agent.enums';
 
 const HEARTBEAT_INTERVAL_MS = 10_000;
@@ -29,14 +30,16 @@ export class ThreadTurnsService {
       [threadId, ThreadTurnStatus.FAILED, ThreadTurnStatus.RUNNING, STALE_AFTER_SECONDS],
     );
 
+    const id = randomUUID();
     const rows: Array<{ id: string }> = await this.dataSource.query(
-      `INSERT INTO thread_turns (thread_id, status) VALUES ($1, $2)
-       ON CONFLICT (thread_id) WHERE status = 'running' DO NOTHING
+      `INSERT INTO thread_turns (id, thread_id, status) VALUES ($1, $2, $3)
+       ON CONFLICT (thread_id) WHERE status = 'running'
+         DO UPDATE SET request_count = thread_turns.request_count + 1
        RETURNING id`,
-      [threadId, ThreadTurnStatus.RUNNING],
+      [id, threadId, ThreadTurnStatus.RUNNING],
     );
 
-    return rows.length > 0 ? { id: rows[0].id, threadId } : null;
+    return rows[0].id === id ? { id, threadId } : null;
   }
 
   /** Keeps the claim alive while the turn runs. Returns a function that stops it. */
@@ -55,11 +58,12 @@ export class ThreadTurnsService {
     turnId: string,
     status: ThreadTurnStatus.COMPLETED | ThreadTurnStatus.FAILED,
     error?: string,
-  ): Promise<void> {
-    await this.dataSource.query(
+  ): Promise<number> {
+    const [rows]: [Array<{ request_count: string }>, number] = await this.dataSource.query(
       `UPDATE thread_turns SET status = $2, error = $3, finished_at = now()
-        WHERE id = $1 AND status = $4`,
+        WHERE id = $1 AND status = $4 RETURNING request_count`,
       [turnId, status, error ?? null, ThreadTurnStatus.RUNNING],
     );
+    return Number(rows[0]?.request_count ?? 0);
   }
 }

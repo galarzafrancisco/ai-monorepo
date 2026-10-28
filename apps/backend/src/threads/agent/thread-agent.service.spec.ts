@@ -73,7 +73,6 @@ function createHarness(steps: unknown[][]) {
   const finished: Array<{ status: ThreadTurnStatus; error?: string }> = [];
 
   const agentLog = {
-    hasPendingSinceClaim: jest.fn().mockResolvedValue(false),
     ingestPending: jest.fn().mockResolvedValue({
       triggerActor: USER,
       newUserMessages: ['hello'],
@@ -115,6 +114,7 @@ function createHarness(steps: unknown[][]) {
     startHeartbeat: jest.fn().mockReturnValue(() => undefined),
     finish: jest.fn(async (_id: string, status: ThreadTurnStatus, error?: string) => {
       finished.push({ status, error });
+      return 0;
     }),
   };
 
@@ -296,6 +296,7 @@ describe('ThreadAgentService', () => {
     h.turns.finish.mockImplementation(async (_id, status, error) => {
       h.finished.push({ status, error });
       held = false;
+      return 0;
     });
 
     const draining = h.service.drain(THREAD_ID);
@@ -336,7 +337,10 @@ describe('ThreadAgentService', () => {
   it('drains a new remote arrival during a failed ingestion without a local request', async () => {
     const h = createHarness([textStep('Remote work answered.')]);
     h.agentLog.ingestPending.mockRejectedValueOnce(new Error('ingestion unavailable'));
-    h.agentLog.hasPendingSinceClaim.mockResolvedValueOnce(true);
+    h.turns.finish.mockImplementation(async (_id, status, error) => {
+      h.finished.push({ status, error });
+      return status === ThreadTurnStatus.FAILED ? 1 : 0;
+    });
     h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
 
     await h.service.drain(THREAD_ID);
@@ -348,7 +352,7 @@ describe('ThreadAgentService', () => {
     expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
   });
 
-  it('drains remote work arriving immediately after the claim when ingestion fails', async () => {
+  it('drains a remote request between claim and ingestion failure', async () => {
     const h = createHarness([textStep('Remote work answered.')]);
     let failIngestion!: (error: Error) => void;
     const ingestion = new Promise<never>((_resolve, reject) => {
@@ -356,7 +360,10 @@ describe('ThreadAgentService', () => {
     });
     h.agentLog.ingestPending.mockImplementationOnce(() => ingestion);
     let remotePending = false;
-    h.agentLog.hasPendingSinceClaim.mockImplementation(async () => remotePending);
+    h.turns.finish.mockImplementation(async (_id, status, error) => {
+      h.finished.push({ status, error });
+      return status === ThreadTurnStatus.FAILED && remotePending ? 1 : 0;
+    });
     h.agentLog.hasPendingTimerFirings.mockImplementation(async () => {
       const pending = remotePending;
       remotePending = false;
@@ -365,7 +372,7 @@ describe('ThreadAgentService', () => {
 
     const draining = h.service.drain(THREAD_ID);
     await new Promise<void>((resolve) => setImmediate(resolve));
-    // The remote source is committed before ingestion fails, with no local generation.
+    // The remote claim conflicts with the first turn, before ingestion finishes.
     remotePending = true;
     failIngestion(new Error('ingestion unavailable'));
     await draining;
@@ -376,34 +383,6 @@ describe('ThreadAgentService', () => {
     ]);
     expect(h.agentLog.ingestPending).toHaveBeenCalledTimes(2);
     expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
-  });
-
-  it('makes one bounded retry if the post-failure watermark check fails', async () => {
-    const h = createHarness([textStep('Remote work answered.')]);
-    h.agentLog.ingestPending.mockRejectedValueOnce(new Error('ingestion unavailable'));
-    h.agentLog.hasPendingSinceClaim.mockRejectedValueOnce(new Error('database read unavailable'));
-    h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
-
-    await h.service.drain(THREAD_ID);
-
-    expect(h.finished.map((turn) => turn.status)).toEqual([
-      ThreadTurnStatus.FAILED,
-      ThreadTurnStatus.COMPLETED,
-    ]);
-    expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
-  });
-
-  it('stops after one fallback attempt when ingestion and watermark reads keep failing', async () => {
-    const h = createHarness([]);
-    h.agentLog.ingestPending.mockRejectedValue(new Error('ingestion unavailable'));
-    h.agentLog.hasPendingSinceClaim.mockRejectedValue(new Error('database read unavailable'));
-    h.agentLog.hasPending.mockResolvedValue(true);
-
-    await h.service.drain(THREAD_ID);
-
-    expect(h.finished).toHaveLength(2);
-    expect(h.agentLog.ingestPending).toHaveBeenCalledTimes(2);
-    expect(h.turns.tryClaim).toHaveBeenCalledTimes(2);
   });
 
   it.each(['first', 'fourth'] as const)(
@@ -446,6 +425,7 @@ describe('ThreadAgentService', () => {
       h.turns.finish.mockImplementation(async (_id, status, error) => {
         h.finished.push({ status, error });
         held = false;
+        return 0;
       });
 
       const draining = h.service.drain(THREAD_ID);
@@ -480,6 +460,7 @@ describe('ThreadAgentService', () => {
     h.turns.finish.mockImplementation(async (_id, status, error) => {
       h.finished.push({ status, error });
       held = false;
+      return 0;
     });
 
     await h.service.drain(THREAD_ID);
