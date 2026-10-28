@@ -1,6 +1,6 @@
 # Backend
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/taico/0.9.2)](https://badge.socket.dev/npm/package/@taico/taico/0.9.2)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/taico/0.10.0)](https://badge.socket.dev/npm/package/@taico/taico/0.10.0)
 
 NestJS backend for Taico.
 
