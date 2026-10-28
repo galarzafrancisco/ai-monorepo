@@ -15,7 +15,6 @@ type GithubIssue = {
   comments: number;
   closed_at: string | null;
   updated_at: string;
-  repository_url?: string;
   pull_request?: unknown;
 };
 
@@ -32,13 +31,14 @@ export async function fetchIssue(api: GithubApi, ref: IssueRef, etags: IssueEtag
   const nextEtags: IssueEtags = { issue: response.etag ?? undefined };
   if (!response.data) return { snapshot: null, etags: nextEtags };
 
+  // A transferred issue answers from its new repository, maybe under a new
+  // number: GitHub redirects the old address, so the link's own owner, repo
+  // and number stay the ones Taico reads and keys by.
   const data = response.data;
-  // A transferred issue answers from its new repository.
-  const [owner, repo] = data.repository_url?.split('/').slice(-2) ?? [];
   return {
     snapshot: {
-      owner: owner || ref.owner,
-      repo: repo || ref.repo,
+      owner: ref.owner,
+      repo: ref.repo,
       title: data.title,
       state: data.state === 'closed' ? IssueState.CLOSED : IssueState.OPEN,
       stateReason: toStateReason(data.state_reason),

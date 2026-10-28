@@ -29,6 +29,8 @@ const REVIEW_INTERVAL_MS = 4 * 60 * 1000;
 class IssueStore {
   private entries = new Map<string, IssueEntry>();
   private shown = new Map<string, number>();
+  /** Keys this page has looked up. A seeded copy may never have been read from GitHub, or be stale. */
+  private lookedUp = new Set<string>();
   private pending = new Set<string>();
   private listeners = new Set<() => void>();
   private timer: number | undefined;
@@ -55,10 +57,10 @@ class IssueStore {
   show(ref: IssueRef): () => void {
     const key = issueKey(ref);
     this.shown.set(key, (this.shown.get(key) ?? 0) + 1);
-    if (!this.entries.has(key)) {
-      this.entries.set(key, { status: 'loading' });
-      this.queue(key);
-    }
+    if (!this.entries.has(key)) this.entries.set(key, { status: 'loading' });
+    // Seeded copies are looked up too: the lookup reads issues never read
+    // before, refreshes stale ones and counts as a view.
+    if (!this.lookedUp.has(key)) this.queue(key);
     this.connect();
     return () => {
       const count = (this.shown.get(key) ?? 1) - 1;
@@ -68,6 +70,7 @@ class IssueStore {
   }
 
   private queue(key: string) {
+    this.lookedUp.add(key);
     this.pending.add(key);
     window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => void this.flush(), BATCH_DELAY_MS);

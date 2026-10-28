@@ -167,6 +167,8 @@ export type FakeIssue = {
   assignees: string[];
   /** GitHub serves pull requests at /issues/:n too, with a `pull_request` key. */
   pullRequest?: boolean;
+  /** `owner/repo` it was moved to: GitHub answers the old address from there. */
+  transferredTo?: string;
 };
 
 /** Serves one issue the way GitHub does, with ETags and 304s. */
@@ -186,7 +188,7 @@ export function issueRoutes(owner: string, repo: string, number: number, issue: 
       comments: current.comments,
       closed_at: current.state === 'closed' ? '2026-01-02T00:00:00Z' : null,
       updated_at: '2026-01-01T00:00:00Z',
-      repository_url: `https://api.github.com/repos/${owner}/${repo}`,
+      repository_url: `https://api.github.com/repos/${current.transferredTo ?? `${owner}/${repo}`}`,
       ...(current.pullRequest ? { pull_request: { url: 'x' } } : {}),
     };
     const etag = `"${createHmac('sha1', 'etag').update(JSON.stringify(body)).digest('hex')}"`;

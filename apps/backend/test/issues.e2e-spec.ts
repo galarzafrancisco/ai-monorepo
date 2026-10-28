@@ -94,10 +94,11 @@ describe('Issues E2E', () => {
     expect(found).toMatchObject({
       key: 'acme/api#5',
       host: 'github.com',
-      owner: 'acme',
-      repo: 'api',
+      // As it was linked: the key ignores case, GitHub does too.
+      owner: 'Acme',
+      repo: 'API',
       number: 5,
-      url: 'https://github.com/acme/api/issues/5',
+      url: 'https://github.com/Acme/API/issues/5',
       title: 'Search is slow',
       state: 'open',
       stateReason: null,
@@ -192,6 +193,16 @@ describe('Issues E2E', () => {
     issue.pullRequest = true;
     const [found] = (await api('post', '/issues/lookup').send({ refs: ['acme/api#5'] }).expect(200)).body;
     expect(found.isPullRequest).toBe(true);
+  });
+
+  it('keeps reading a transferred issue at the address it was linked by', async () => {
+    issue.transferredTo = 'acme/web';
+    const [found] = (await api('post', '/issues/lookup').send({ refs: ['acme/api#5'] }).expect(200)).body;
+    expect(found).toMatchObject({ key: 'acme/api#5', owner: 'acme', repo: 'api', number: 5, title: 'Search is slow' });
+
+    github.requests.length = 0;
+    await app.get(IssuesService).refresh(found.id);
+    expect(github.requests.filter((r) => r.path.startsWith('/repos')).map((r) => r.path)).toEqual(['/repos/acme/api/issues/5']);
   });
 
   it('leaves out issues on hosts Taico has no connection to', async () => {
