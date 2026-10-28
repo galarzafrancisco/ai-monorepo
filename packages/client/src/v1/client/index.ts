@@ -171,6 +171,8 @@ export type { ThreadStateResponseDto } from './models/ThreadStateResponseDto.js'
 export { ThreadTimerKind } from './models/ThreadTimerKind.js';
 export type { ThreadTimerResponseDto } from './models/ThreadTimerResponseDto.js';
 export type { ThreadTokenUsageResponseDto } from './models/ThreadTokenUsageResponseDto.js';
+export { ThreadWatchKind } from './models/ThreadWatchKind.js';
+export type { ThreadWatchResponseDto } from './models/ThreadWatchResponseDto.js';
 export { TokenExchangeRequestDto } from './models/TokenExchangeRequestDto.js';
 export type { TokenExchangeResponseDto } from './models/TokenExchangeResponseDto.js';
 export { TokenRequestDto } from './models/TokenRequestDto.js';

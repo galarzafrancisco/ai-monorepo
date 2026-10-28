@@ -1,0 +1,25 @@
+.thread-pull-requests {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread-pull-requests__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.thread-pull-requests__row .pr-chip {
+  flex: none;
+}
+
+.thread-pull-requests__title {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}

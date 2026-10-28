@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, ThreadTokenUsageResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
+import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, PullRequestResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, ThreadTokenUsageResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
 
 export class ThreadsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -49,6 +49,16 @@ export class ThreadsResource extends BaseClient {
   /** Cancel a reminder or schedule of the threads agent */
   async ThreadsController_cancelTimer(params: { id: string; timerId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('DELETE', `/api/v1/threads/${params.id}/timers/${params.timerId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Stop the threads agent watching something (a pull request) */
+  async ThreadsController_cancelWatch(params: { id: string; watchId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/threads/${params.id}/watches/${params.watchId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Pull requests linked from the thread's tasks or messages, oldest link first */
+  async ThreadsController_listPullRequests(params: { id: string; signal?: AbortSignal }): Promise<PullRequestResponseDto[]> {
+    return this.request('GET', `/api/v1/threads/${params.id}/pull-requests`, { signal: params?.signal });
   }
 
   /** Stop the threads agent watching a task */

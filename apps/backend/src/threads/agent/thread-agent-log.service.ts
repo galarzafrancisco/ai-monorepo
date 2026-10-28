@@ -26,6 +26,8 @@ import {
 export const TASK_NOTIFICATION_SOURCE = 'subscription:task';
 /** `source` of the agent-log rows that carry a reminder or schedule firing. */
 export const TIMER_FIRING_SOURCE = 'timer';
+/** `source` of the agent-log rows that carry a watch notification, followed by the watch kind. */
+export const WATCH_NOTIFICATION_SOURCE_PREFIX = 'watch:';
 
 export type AgentMessageDraft = {
   role: ThreadAgentMessageRole;
@@ -76,6 +78,23 @@ export type IngestTimerFiringsResult = {
   triggerActor: TriggerActor | null;
   /** Timers the agent has just been told about, oldest firing first. */
   firedTimerIds: string[];
+};
+
+export type IngestWatchDeliveriesResult = {
+  /** Who the agent was answering when it started watching, or null when nothing was waiting. */
+  triggerActor: TriggerActor | null;
+  /** Notifications the agent has just been told, oldest first. */
+  deliveredCount: number;
+};
+
+type PendingWatchDeliveryRow = {
+  id: string;
+  kind: string;
+  message: string;
+  actor_id: string;
+  actor_slug: string;
+  actor_type: ActorType;
+  actor_display_name: string;
 };
 
 type PendingTimerFiringRow = {
@@ -397,6 +416,72 @@ export class ThreadAgentLogService {
         firedTimerIds: timerIds,
       };
     });
+  }
+
+  /**
+   * Tells the agent about watch notifications (any kind: pull requests today),
+   * oldest first, as messages the user never sees. The kind's handler already
+   * wrote the text. One transaction: each is delivered exactly once.
+   */
+  async ingestWatchDeliveries(input: {
+    threadId: string;
+    turnId: string;
+  }): Promise<IngestWatchDeliveriesResult> {
+    return this.dataSource.transaction(async (manager) => {
+      // Same lock order as every other writer to the log: the thread first.
+      await this.lockHead(manager, input.threadId);
+
+      const pending: PendingWatchDeliveryRow[] = await manager.query(
+        `SELECT d.id, d.kind, d.message, a.id AS actor_id, a.slug AS actor_slug, a.type AS actor_type,
+                a.display_name AS actor_display_name
+           FROM thread_watch_deliveries d
+           JOIN actors a ON a.id = d.for_actor_id
+          WHERE d.thread_id = $1
+          ORDER BY d.created_at ASC, d.id ASC
+            FOR UPDATE OF d`,
+        [input.threadId],
+      );
+
+      if (pending.length === 0) {
+        return { triggerActor: null, deliveredCount: 0 };
+      }
+
+      await this.appendWithManager(
+        manager,
+        input.threadId,
+        pending.map((row): AgentMessageDraft => ({
+          role: ThreadAgentMessageRole.USER,
+          kind: ThreadAgentMessageKind.INJECTION,
+          source: `${WATCH_NOTIFICATION_SOURCE_PREFIX}${row.kind}`,
+          turnId: input.turnId,
+          message: { role: 'user', content: row.message },
+        })),
+      );
+
+      await manager.query(`DELETE FROM thread_watch_deliveries WHERE id = ANY($1::uuid[])`, [
+        pending.map((row) => row.id),
+      ]);
+
+      const last = pending[pending.length - 1];
+      return {
+        triggerActor: {
+          id: last.actor_id,
+          slug: last.actor_slug,
+          type: last.actor_type,
+          displayName: last.actor_display_name,
+        },
+        deliveredCount: pending.length,
+      };
+    });
+  }
+
+  /** True when a watch has a notification the agent has not been told yet. */
+  async hasPendingWatchDeliveries(threadId: string): Promise<boolean> {
+    const rows: unknown[] = await this.dataSource.query(
+      `SELECT 1 FROM thread_watch_deliveries WHERE thread_id = $1 LIMIT 1`,
+      [threadId],
+    );
+    return rows.length > 0;
   }
 
   /** True when a reminder or schedule fired and the agent has not been told yet. */

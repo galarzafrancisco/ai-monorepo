@@ -126,7 +126,8 @@ export class ThreadAgentService {
       if (
         !(await this.agentLog.hasPending(threadId, self.actorId)) &&
         !(await this.agentLog.hasPendingTaskNotifications(threadId)) &&
-        !(await this.agentLog.hasPendingTimerFirings(threadId))
+        !(await this.agentLog.hasPendingTimerFirings(threadId)) &&
+        !(await this.agentLog.hasPendingWatchDeliveries(threadId))
       ) {
         return;
       }
@@ -150,9 +151,14 @@ export class ThreadAgentService {
       threadId,
       turnId: turn.id,
     });
-    // A turn started by a task notification or a timer acts for whoever the
-    // agent subscribed or set the timer for.
-    const triggerActor = author ?? notifications.triggerActor ?? firings.triggerActor;
+    const watchDeliveries = await this.agentLog.ingestWatchDeliveries({
+      threadId,
+      turnId: turn.id,
+    });
+    // A turn started by a task notification, a timer or a watch acts for
+    // whoever the agent subscribed, set the timer or started the watch for.
+    const triggerActor =
+      author ?? notifications.triggerActor ?? firings.triggerActor ?? watchDeliveries.triggerActor;
     if (!triggerActor) {
       return null;
     }

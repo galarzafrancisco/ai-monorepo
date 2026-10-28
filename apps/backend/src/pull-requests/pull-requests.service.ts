@@ -97,6 +97,21 @@ export class PullRequestsService {
   }
 
   /**
+   * Pull requests of a thread: linked from its tasks (links, descriptions,
+   * comments) or written in its messages, oldest link first.
+   */
+  async listForThread(threadId: string, taskIds: string[]): Promise<PullRequestEntity[]> {
+    const ids: Array<{ pull_request_id: string }> = await this.dataSource.query(
+      `SELECT pull_request_id FROM pull_request_references
+        WHERE thread_id = $1 OR task_id = ANY($2::uuid[])
+        GROUP BY pull_request_id
+        ORDER BY min(created_at) ASC`,
+      [threadId, taskIds],
+    );
+    return this.inOrder(ids.map((row) => row.pull_request_id));
+  }
+
+  /**
    * Records where links to pull requests appear. The links a source holds now
    * replace the ones it held before, so an edited description drops the pull
    * requests it no longer mentions. New pull requests are read soon.
@@ -149,12 +164,18 @@ export class PullRequestsService {
     return result[1];
   }
 
-  /** Keeps a pull request polled often until the given time (a thread is waiting on it). */
-  async watchUntil(id: string, until: Date): Promise<void> {
+  /**
+   * Until when something waits on the pull request (null: nothing does). While
+   * watched it is polled often, starting now.
+   */
+  async setWatchedUntil(id: string, until: Date | null): Promise<void> {
     await this.dataSource.query(
       `UPDATE pull_requests
-          SET watched_until = GREATEST(COALESCE(watched_until, $2), $2),
-              next_fetch_at = LEAST(COALESCE(next_fetch_at, now()), now())
+          SET watched_until = $2,
+              next_fetch_at = CASE
+                WHEN $2::timestamptz IS NOT NULL AND state = 'open' THEN LEAST(COALESCE(next_fetch_at, now()), now())
+                ELSE next_fetch_at
+              END
         WHERE id = $1`,
       [id, until],
     );
