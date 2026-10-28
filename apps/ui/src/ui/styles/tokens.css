@@ -42,6 +42,13 @@
   --warning: #9a6700;
   --danger: #d1242f;
 
+  /* Colors - Pull request states, after GitHub's. Derived, so every theme gets them. */
+  --pr-open: var(--success);
+  /* GitHub's purple, pulled towards the text color so it reads on light and dark themes. */
+  --pr-merged: color-mix(in srgb, #8957e5 80%, var(--text));
+  --pr-draft: var(--text-muted);
+  --pr-closed: var(--danger);
+
   /* Colors - Focus */
   --focus-ring: #0969da;
 

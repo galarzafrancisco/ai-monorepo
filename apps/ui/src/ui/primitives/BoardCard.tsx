@@ -18,6 +18,9 @@ export interface BoardCardProps {
   /** Chips under content */
   tags?: CardTag[];
 
+  /** Richer chips after the tags, e.g. live pull request chips */
+  tagExtras?: ReactNode;
+
   /** Top-right meta (date, points, etc.) */
   topRight?: ReactNode;
 
@@ -43,6 +46,7 @@ export function BoardCard({
   leading,
   children,
   tags = [],
+  tagExtras,
   topRight,
   footer,
   trailing,
@@ -87,13 +91,14 @@ export function BoardCard({
 
         <div className="board-card__main">{children}</div>
 
-        {tags.length ? (
+        {tags.length || tagExtras ? (
           <div className="board-card__tags" aria-label="tags">
             {tags.map((t) => (
               <span key={t.label} className={`chip chip--${t.color ?? "gray"}`}>
                 {t.label}
               </span>
             ))}
+            {tagExtras}
           </div>
         ) : null}
 
