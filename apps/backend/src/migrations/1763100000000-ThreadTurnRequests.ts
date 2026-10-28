@@ -6,7 +6,7 @@ export class ThreadTurnRequests1763100000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "thread_turns" ADD COLUMN "request_count" integer NOT NULL DEFAULT 0`,
+      `ALTER TABLE "thread_turns" ADD COLUMN IF NOT EXISTS "request_count" integer NOT NULL DEFAULT 0`,
     );
   }
 
