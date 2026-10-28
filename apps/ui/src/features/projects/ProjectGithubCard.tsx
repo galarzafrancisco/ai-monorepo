@@ -117,7 +117,7 @@ export function ProjectGithubCard({
               ))}
             </select>
             {repoUrl && !isGithubRepo && resolved ? (
-              <Text size="1" tone="muted">The repository is not on github.com, so no connection is used.</Text>
+              <Text size="1" tone="muted">The repository is not on github.com or a GitHub Enterprise Taico has a connection to, so no connection is used.</Text>
             ) : !repoUrl ? (
               <Text size="1" tone="muted">Link a GitHub repository above to use a connection for it.</Text>
             ) : connection && resolved?.match ? (
@@ -126,7 +126,7 @@ export function ProjectGithubCard({
               </Text>
             ) : resolved ? (
               <Text size="1" tone="muted">
-                No connection fits this repository. Taico reads it anonymously, which only works if it is public.
+                No connection fits this repository. On github.com Taico reads it anonymously, which only works if it is public.
               </Text>
             ) : null}
           </Stack>
@@ -275,8 +275,8 @@ function WebhookSetup({
   }, [connection.id]);
 
   const { owner, repo } = repository;
-  const newHookUrl = `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/settings/hooks/new`;
-  const orgHooksUrl = `https://github.com/organizations/${encodeURIComponent(owner)}/settings/hooks`;
+  const newHookUrl = `${connection.baseUrl}/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/settings/hooks/new`;
+  const orgHooksUrl = `${connection.baseUrl}/organizations/${encodeURIComponent(owner)}/settings/hooks`;
 
   return (
     <Stack spacing="3" className="project-github__webhook">

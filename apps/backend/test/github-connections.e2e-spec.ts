@@ -199,4 +199,51 @@ describe('GitHub connections E2E', () => {
     expect(updated.lastError).toBeNull();
     expect((await app.get(GithubConnectionsService).getAccessToken(connection.id)).token).toBe('fresh');
   });
+
+  it('talks to a GitHub Enterprise Server at its own address and keeps it apart from github.com', async () => {
+    const host = new URL(github.url).host;
+    github.routes = [
+      patUsers({ dotcom: 'alice' }),
+      (req) =>
+        req.method === 'GET' && req.path === '/api/v3/user' && req.authorization === 'Bearer ghes-token'
+          ? { status: 200, body: { login: 'corp-alice' } }
+          : undefined,
+    ];
+
+    const enterprise = (
+      await api('post', '/integrations/github/connections')
+        .send({ name: 'Work', authType: 'pat', secret: 'ghes-token', baseUrl: `${github.url}/some/page` })
+        .expect(201)
+    ).body;
+    expect(enterprise).toMatchObject({ baseUrl: github.url, host, accountLogin: 'corp-alice' });
+    expect(github.requests.map((r) => r.path)).toEqual(['/api/v3/user']);
+
+    const dotcom = (await api('post', '/integrations/github/connections').send({ name: 'Mine', authType: 'pat', secret: 'dotcom' }).expect(201)).body;
+    expect(dotcom).toMatchObject({ baseUrl: 'https://github.com', host: 'github.com' });
+
+    const resolve = async (repoUrl: string) =>
+      (await api('get', '/integrations/github/connections/resolve').query({ repoUrl }).expect(200)).body;
+    expect(await resolve(`${github.url}/someone/api.git`)).toMatchObject({
+      repository: { host, owner: 'someone', repo: 'api' },
+      connection: { id: enterprise.id },
+      match: 'only_connection',
+    });
+    expect(await resolve('https://github.com/someone/api')).toMatchObject({ connection: { id: dotcom.id } });
+    expect(await resolve('https://github.unknown.example/someone/api')).toEqual({ repository: null, connection: null, match: null, webhook: null });
+
+    await api('post', '/integrations/github/connections')
+      .send({ name: 'Bad', authType: 'pat', secret: 'x', baseUrl: 'ftp://github.acme.com' })
+      .expect(400);
+  });
+
+  it('says why GitHub could not be reached', async () => {
+    const down = new FakeGithub();
+    await down.start();
+    await down.stop();
+    const response = await api('post', '/integrations/github/connections')
+      .send({ name: 'Down', authType: 'pat', secret: 'x', baseUrl: down.url })
+      .expect(502);
+    expect(response.body.detail).toContain(`Could not reach GitHub at ${down.url}/api/v3: connect ECONNREFUSED`);
+    expect(response.body.detail).toContain('HTTPS_PROXY');
+  });
 });

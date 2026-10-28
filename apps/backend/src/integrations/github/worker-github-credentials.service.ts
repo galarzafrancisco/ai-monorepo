@@ -3,12 +3,13 @@ import { DataSource } from 'typeorm';
 import { GithubConnectionsService } from '../github-connections.service';
 import { GithubAuthType } from '../enums';
 import { GithubCredentialsService } from './github-credentials.service';
-import { parseGithubRepoUrl } from './github-repo-ref';
 
 export type WorkerGithubCredential = {
   projectSlug: string;
   /** HTTPS clone URL: a token works over HTTPS, not SSH. */
   cloneUrl: string;
+  /** github.com, or the host of a GitHub Enterprise. */
+  host: string;
   owner: string;
   repo: string;
   token: string;
@@ -20,7 +21,7 @@ export type WorkerGithubCredential = {
 
 /**
  * Tokens a worker may use for a task: one per project of the task that has a
- * github.com repository, opts in to worker use (`github_for_worker`) and
+ * repository on github.com or a GitHub Enterprise Taico knows, opts in to worker use (`github_for_worker`) and
  * resolves to a connection. A GitHub App gives a fresh installation token
  * limited to that one repository; a personal access token is handed over as is.
  */
@@ -47,9 +48,10 @@ export class WorkerGithubCredentialsService {
 
     const issued: WorkerGithubCredential[] = [];
     for (const project of projects) {
-      const ref = parseGithubRepoUrl(project.repo_url);
+      const ref = await this.connections.parseRepoUrl(project.repo_url);
       if (!ref) continue;
       const resolved = await this.connections.resolveForRepository({
+        host: ref.host,
         owner: ref.owner,
         projectConnectionId: project.github_connection_id,
       });
@@ -63,7 +65,8 @@ export class WorkerGithubCredentialsService {
 
       issued.push({
         projectSlug: project.slug,
-        cloneUrl: `https://github.com/${ref.owner}/${ref.repo}.git`,
+        cloneUrl: `${resolved.connection.baseUrl}/${ref.owner}/${ref.repo}.git`,
+        host: ref.host,
         owner: ref.owner,
         repo: ref.repo,
         token: token.token,
@@ -77,7 +80,7 @@ export class WorkerGithubCredentialsService {
         executionId: audit.executionId,
         workerClientId: audit.workerClientId,
         project: project.slug,
-        repository: `${ref.owner}/${ref.repo}`,
+        repository: `${ref.host}/${ref.owner}/${ref.repo}`,
         connectionId: resolved.connection.id,
         authType: source.authType,
       });

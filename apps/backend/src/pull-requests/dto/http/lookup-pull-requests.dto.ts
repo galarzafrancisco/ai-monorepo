@@ -6,7 +6,7 @@ export const MAX_LOOKUP_REFS = 50;
 export class LookupPullRequestsDto {
   @ApiProperty({
     type: [String],
-    description: `Pull request links or owner/repo#number references, at most ${MAX_LOOKUP_REFS}`,
+    description: `Pull request links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most ${MAX_LOOKUP_REFS}`,
     example: ['https://github.com/acme/api/pull/12', 'acme/web#3'],
   })
   @IsArray()

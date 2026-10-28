@@ -809,6 +809,7 @@ export type ReviewDecision = 'none' | 'approved' | 'changes_requested';
 export interface PullRequestResponseDto {
   id: string;
   key: string;
+  host: string;
   owner: string;
   repo: string;
   number: number;
@@ -1157,6 +1158,7 @@ export type GithubAuthType = 'pat' | 'app';
 
 export interface CreateGithubConnectionDto {
   name: string;
+  baseUrl?: string | null;
   authType: GithubAuthType;
   secret: string;
   appId?: string | null;
@@ -1167,6 +1169,8 @@ export interface CreateGithubConnectionDto {
 export interface GithubConnectionResponseDto {
   id: string;
   name: string;
+  baseUrl: string;
+  host: string;
   authType: GithubAuthType;
   appId: string | null;
   installationId: string | null;
@@ -1181,6 +1185,7 @@ export interface GithubConnectionResponseDto {
 }
 
 export interface GithubRepositoryRefDto {
+  host: string;
   owner: string;
   repo: string;
 }
@@ -1204,6 +1209,7 @@ export interface ResolvedGithubConnectionResponseDto {
 
 export interface UpdateGithubConnectionDto {
   name?: string;
+  baseUrl?: string;
   secret?: string;
   appId?: string | null;
   installationId?: string | null;
@@ -1297,6 +1303,7 @@ export interface TaskExecutionHistoryResponseDto {
 export interface WorkerGithubCredentialDto {
   projectSlug: string;
   cloneUrl: string;
+  host: string;
   owner: string;
   repo: string;
   token: string;

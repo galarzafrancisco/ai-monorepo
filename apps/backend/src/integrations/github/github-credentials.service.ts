@@ -2,12 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SecretsService } from '../../secrets/secrets.service';
 import { GithubAuthType } from '../enums';
 import { GithubConnectionInvalidError, GithubRequestFailedError } from '../errors/integrations.errors';
-import { createAppJwt, githubRequest } from './github-api';
+import { createAppJwt, GithubApi, githubRequest } from './github-api';
+import { githubApiUrlFor } from './github-host';
 
 /** What a connection needs to authenticate. Mirrors the columns of github_connections. */
 export type GithubCredentialSource = {
   id: string;
   authType: GithubAuthType;
+  /** `https://github.com`, or the address of a GitHub Enterprise. */
+  baseUrl: string;
   secretId: string;
   appId: string | null;
   installationId: string | null;
@@ -73,20 +76,21 @@ export class GithubCredentialsService {
    */
   async identify(input: {
     authType: GithubAuthType;
+    baseUrl: string;
     secret: string;
     appId?: string | null;
     installationId?: string | null;
   }): Promise<string> {
     try {
       if (input.authType === GithubAuthType.PAT) {
-        const { data } = await githubRequest<{ login: string }>(input.secret, '/user');
+        const { data } = await githubRequest<{ login: string }>(apiFor(input.baseUrl, input.secret), '/user');
         return data!.login;
       }
 
       const { appId, installationId } = requireAppSettings(input);
       const jwt = signAppJwt(appId, input.secret);
       const { data } = await githubRequest<{ account: { login: string } | null }>(
-        jwt,
+        apiFor(input.baseUrl, jwt),
         `/app/installations/${encodeURIComponent(installationId)}`,
       );
       return data!.account?.login ?? `installation ${installationId}`;
@@ -106,7 +110,7 @@ export class GithubCredentialsService {
     const { appId, installationId } = requireAppSettings(connection);
     const jwt = signAppJwt(appId, privateKey);
     const { data } = await githubRequest<{ token: string; expires_at: string }>(
-      jwt,
+      apiFor(connection.baseUrl, jwt),
       `/app/installations/${encodeURIComponent(installationId)}/access_tokens`,
       { method: 'POST', body: repositories ? { repositories } : undefined },
     );
@@ -117,6 +121,10 @@ export class GithubCredentialsService {
     });
     return { token: data!.token, expiresAt: new Date(data!.expires_at) };
   }
+}
+
+function apiFor(baseUrl: string, credential: string): GithubApi {
+  return { apiUrl: githubApiUrlFor(baseUrl), credential };
 }
 
 function requireAppSettings(input: { appId?: string | null; installationId?: string | null }): {

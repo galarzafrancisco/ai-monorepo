@@ -19,6 +19,9 @@ export class ResolveGithubConnectionQueryDto {
 }
 
 export class GithubRepositoryRefDto {
+  @ApiProperty({ description: 'github.com, or the host of a GitHub Enterprise', example: 'github.com' })
+  host!: string;
+
   @ApiProperty({ example: 'acme' })
   owner!: string;
 
@@ -32,14 +35,14 @@ export class ResolvedGithubConnectionResponseDto {
   @ApiProperty({
     type: GithubRepositoryRefDto,
     nullable: true,
-    description: 'The repository, or null when the URL is not a github.com repository',
+    description: 'The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to',
   })
   repository!: GithubRepositoryRefDto | null;
 
   @ApiProperty({
     type: GithubConnectionResponseDto,
     nullable: true,
-    description: 'The connection Taico would use, or null when none fits (public repositories are then read anonymously)',
+    description: 'The connection Taico would use, or null when none fits (public github.com repositories are then read anonymously)',
   })
   connection!: GithubConnectionResponseDto | null;
 

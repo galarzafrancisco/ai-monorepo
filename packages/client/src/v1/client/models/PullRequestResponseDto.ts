@@ -8,9 +8,13 @@ import type { ReviewDecision } from './ReviewDecision.js';
 export type PullRequestResponseDto = {
     id: string;
     /**
-     * owner/repo#number, lower case
+     * owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case
      */
     key: string;
+    /**
+     * github.com, or the host of a GitHub Enterprise
+     */
+    host: string;
     owner: string;
     repo: string;
     number: number;

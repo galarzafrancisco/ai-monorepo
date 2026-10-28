@@ -8,6 +8,10 @@ export type CreateGithubConnectionDto = {
      * Display name
      */
     name: string;
+    /**
+     * The address of the GitHub to connect to: https://github.com (the default), a GitHub Enterprise Server (https://github.acme.com) or a GitHub Enterprise Cloud with data residency (https://acme.ghe.com).
+     */
+    baseUrl?: string | null;
     authType: GithubAuthType;
     /**
      * The personal access token (PAT), or the whole PEM private key of the GitHub App (App). Stored encrypted and never returned.

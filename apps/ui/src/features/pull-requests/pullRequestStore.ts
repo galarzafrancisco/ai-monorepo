@@ -8,7 +8,9 @@ import { pullRequestKey, type PullRequestRef } from './pullRequestLinks';
 export type PullRequestEntry =
   | { status: 'loading' }
   | { status: 'ready'; pullRequest: PullRequest }
-  | { status: 'error' };
+  | { status: 'error' }
+  /** Not on github.com or a GitHub Enterprise Taico has a connection to: shown as a plain link. */
+  | { status: 'unsupported' };
 
 /** The API takes at most this many per lookup. */
 const LOOKUP_BATCH = 50;
@@ -82,6 +84,11 @@ class PullRequestStore {
       try {
         const found = await PullRequestsService.PullRequestsController_lookup({ body: { refs: batch } });
         found.forEach((pullRequest) => this.set(pullRequest.key, { status: 'ready', pullRequest }));
+        // The answer leaves out pull requests on hosts Taico has no connection to.
+        const answered = new Set(found.map((pullRequest) => pullRequest.key));
+        for (const key of batch) {
+          if (!answered.has(key)) this.set(key, { status: 'unsupported' });
+        }
       } catch {
         for (const key of batch) {
           if (this.entries.get(key)?.status !== 'ready') this.set(key, { status: 'error' });
@@ -126,12 +133,13 @@ export const pullRequestStore = new PullRequestStore();
 /** The state of a pull request, fetched once and kept live while the component is mounted. */
 export function usePullRequest(ref: PullRequestRef | null): PullRequestEntry | undefined {
   const key = ref ? pullRequestKey(ref) : null;
+  const host = ref?.host;
   const owner = ref?.owner;
   const repo = ref?.repo;
   const number = ref?.number;
   useEffect(() => {
     if (!owner || !repo || !number) return;
-    return pullRequestStore.show({ owner, repo, number });
-  }, [owner, repo, number]);
+    return pullRequestStore.show({ host, owner, repo, number });
+  }, [host, owner, repo, number]);
   return useSyncExternalStore(pullRequestStore.subscribe, () => (key ? pullRequestStore.get(key) : undefined));
 }

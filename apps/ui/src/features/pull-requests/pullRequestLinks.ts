@@ -1,28 +1,41 @@
-/** A pull request on github.com. Mirrors apps/backend/src/pull-requests/github/pull-request-ref.ts. */
+/**
+ * A pull request on github.com or a GitHub Enterprise. Mirrors
+ * apps/backend/src/pull-requests/github/pull-request-ref.ts.
+ */
 export type PullRequestRef = {
+  /** Left out on github.com; the host of a GitHub Enterprise otherwise. */
+  host?: string;
   owner: string;
   repo: string;
   number: number;
 };
 
+/**
+ * Any host: links on a GitHub Enterprise look the same as on github.com. The
+ * backend leaves out pull requests on hosts it has no connection to, and those
+ * are then drawn as plain links.
+ */
 const PULL_REQUEST_URL =
-  /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)\/pull\/(\d{1,9})(?:[/?#].*)?$/;
+  /^https?:\/\/(?:www\.)?([A-Za-z0-9.-]+(?::\d{1,5})?)\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)\/pull\/(\d{1,9})(?:[/?#].*)?$/;
 
 /** The pull request a URL points at (including its tabs and comment anchors), or null. */
 export function parsePullRequestUrl(url: string): PullRequestRef | null {
   const match = url.trim().match(PULL_REQUEST_URL);
   if (!match) return null;
-  const number = Number(match[3]);
-  return number >= 1 ? { owner: match[1], repo: match[2], number } : null;
+  const number = Number(match[4]);
+  if (number < 1) return null;
+  const host = match[1].toLowerCase();
+  const ref: PullRequestRef = { owner: match[2], repo: match[3], number };
+  return host === 'github.com' ? ref : { host, ...ref };
 }
 
-/** The lower-case key the backend stores a pull request under. */
+/** The lower-case key the backend stores a pull request under: the host goes first on a GitHub Enterprise. */
 export function pullRequestKey(ref: PullRequestRef): string {
-  return `${ref.owner}/${ref.repo}#${ref.number}`.toLowerCase();
+  return pullRequestLabel(ref).toLowerCase();
 }
 
 export function pullRequestLabel(ref: PullRequestRef): string {
-  return `${ref.owner}/${ref.repo}#${ref.number}`;
+  return `${ref.host ? `${ref.host}/` : ''}${ref.owner}/${ref.repo}#${ref.number}`;
 }
 
 /** URLs in plain text, with the punctuation that usually ends a sentence left out. */

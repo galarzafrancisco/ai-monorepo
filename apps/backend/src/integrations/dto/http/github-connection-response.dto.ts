@@ -8,6 +8,15 @@ export class GithubConnectionResponseDto {
   @ApiProperty({ example: 'Acme GitHub' })
   name!: string;
 
+  @ApiProperty({
+    description: 'The GitHub this connection talks to: https://github.com or the address of a GitHub Enterprise',
+    example: 'https://github.com',
+  })
+  baseUrl!: string;
+
+  @ApiProperty({ description: 'The host of baseUrl', example: 'github.com' })
+  host!: string;
+
   @ApiProperty({ enum: GithubAuthType, enumName: 'GithubAuthType', example: GithubAuthType.PAT })
   authType!: GithubAuthType;
 

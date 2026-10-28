@@ -8,6 +8,8 @@ Taico can connect to GitHub. A connection does three things:
 
 Taico stays agnostic: agents keep adding PR links to tasks, comments and threads as usual. Taico notices the links on its own.
 
+It works with github.com and with GitHub Enterprise: GitHub Enterprise Server (self-hosted, `https://github.acme.com`) and GitHub Enterprise Cloud with data residency (`https://acme.ghe.com`). GitHub Enterprise Cloud on github.com is plain github.com.
+
 ## Connections
 
 Settings > Integrations lists the GitHub connections. There are two kinds:
@@ -17,22 +19,43 @@ Settings > Integrations lists the GitHub connections. There are two kinds:
 | Personal access token | The token | The person who made it | The token itself, reaching everything it can |
 | GitHub App | App id, installation id and the app's PEM private key | The app's installation | A one-hour installation token limited to the project's repository |
 
+Each connection has a **GitHub address**: empty (github.com) or the address you open your GitHub Enterprise at. The API address follows from it:
+
+| GitHub | Address | API |
+|---|---|---|
+| github.com | (empty) | `https://api.github.com` (`GITHUB_API_URL` overrides it, for tests) |
+| Enterprise Cloud with data residency | `https://acme.ghe.com` | `https://api.acme.ghe.com` |
+| Enterprise Server | `https://github.acme.com` | `https://github.acme.com/api/v3` |
+
 A personal access token is the quickest to set up and needs no admin rights. A GitHub App needs someone who can create and install apps on the account or organization, but gives short-lived, narrowly scoped tokens.
 
 Suggested permissions (fine-grained token or app): Pull requests read, Commit statuses read, Checks read, Metadata read. Add Contents read and write, and Pull requests write, if workers should clone, push and open pull requests.
 
-Before a connection is saved, Taico checks the credential with GitHub (`GET /user` for a token, `GET /app/installations/:id` with an app JWT) and records the login it acts as. A credential GitHub rejects is never saved. "Check again" re-runs the check and shows why it failed, if it did.
+Before a connection is saved, Taico checks the credential with its GitHub (`GET /user` for a token, `GET /app/installations/:id` with an app JWT) and records the login it acts as. A credential GitHub rejects is never saved. "Check again" re-runs the check and shows why it failed, if it did.
 
 The credential is stored with the secrets feature (encrypted, never returned by the API). Deleting a connection deletes its secret. Connections need the `integration:read`, `integration:write` and `integration:delete` scopes.
 
 Code: `apps/backend/src/integrations/`.
 
+### "Could not reach GitHub"
+
+The check is made from the machine the Taico backend runs on, not from your browser. "Could not reach GitHub at <api>: <reason>" means no answer came back, and the reason says why:
+
+- `ENOTFOUND`, `ECONNREFUSED`, `ETIMEDOUT`, no answer within 15 seconds: the backend cannot reach that address. On a company network, the address may only be reachable through a proxy: set `HTTPS_PROXY` (and `NO_PROXY`) and `NODE_USE_ENV_PROXY=1` for the backend (Node 22.21+ or 24.5+); Node's `fetch` ignores proxy variables otherwise.
+- `SELF_SIGNED_CERT_IN_CHAIN`, `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` and other certificate errors: a company proxy that inspects TLS, or a GitHub Enterprise Server with an internal CA. Give Node the CA with `NODE_EXTRA_CA_CERTS=/path/to/ca.pem`, or `NODE_OPTIONS=--use-system-ca` to trust the operating system's store (mount it into the container).
+
+A rejected credential is a different message ("GitHub rejected the credential", with GitHub's own reason). A GitHub Enterprise token used without the connection's GitHub address is checked against github.com and rejected there.
+
 ## Which connection a repository uses
+
+Only connections to the repository's own GitHub count: a github.com repository never uses a GitHub Enterprise connection, and the other way round. Among those:
 
 1. The connection the repository's project names (project page > GitHub > Connection).
 2. Otherwise the connection whose **repository owners** include the repository's owner (matched without case). A new connection's owners default to the account it acts as.
 3. Otherwise the only connection, if there is exactly one.
-4. Otherwise none: Taico reads public repositories anonymously, within GitHub's limit of 60 requests an hour.
+4. Otherwise none: Taico reads public github.com repositories anonymously, within GitHub's limit of 60 requests an hour. A GitHub Enterprise repository without a connection is not read.
+
+A repository URL or pull request link on a host that is neither github.com nor the address of a connection is not treated as GitHub at all.
 
 `GET /integrations/github/connections/resolve?repoUrl=…&connectionId=…` answers which one applies and why. Deleting a connection a project names puts the project back on automatic.
 
@@ -44,7 +67,7 @@ Access is Taico-wide. Anyone who can see a task, comment or thread with a pull r
 
 Each project has a "Workers use this connection" switch, off by default. When off, workers use whatever git and `gh` credentials the machine they run on already has.
 
-When it is on, a worker that picks up a task asks for tokens before preparing the workspace: `POST /executions/active/:executionId/github-credentials` (scope `workers:connect`). Only the worker that claimed the execution may ask (others get 403). The answer has one entry per project of the task that has a github.com repository, has the switch on, and resolves to a connection:
+When it is on, a worker that picks up a task asks for tokens before preparing the workspace: `POST /executions/active/:executionId/github-credentials` (scope `workers:connect`). Only the worker that claimed the execution may ask (others get 403). The answer has one entry per project of the task that has a repository on github.com or a connected GitHub Enterprise, has the switch on, and resolves to a connection. Each entry carries the HTTPS clone URL on that GitHub and its `host`:
 
 | Connection | Token |
 |---|---|
@@ -57,19 +80,19 @@ On the worker (`apps/worker/src/helpers/`):
 
 - Each token goes in its own file under `<baseDir>/.taico-credentials/<executionId>/`: the directory is 0700, the file 0600, outside every repository and the agent's working directory. The directory is deleted when the execution ends, whatever the outcome.
 - The repository is cloned or fetched over HTTPS (an SSH project URL is replaced by the HTTPS one, and an existing SSH clone's `origin` is switched).
-- The repository's local git config gets a credential helper for `https://github.com` that reads the token file when git asks. The agent's own `git push` uses it too. The token never appears in git config, remote URLs, process arguments or logs. A later run of a project without a token removes the helper again.
-- The harness gets `GH_TOKEN` for the `gh` CLI, per run, through the harness's own environment option (Claude, Copilot and OpenCode). With several projects, it is the first project's token.
+- The repository's local git config gets a credential helper for the clone URL's host (`https://github.com`, or `https://github.acme.com`) that reads the token file when git asks. The agent's own `git push` uses it too. The token never appears in git config, remote URLs, process arguments or logs. A later run of a project without a token removes the helper again.
+- The harness gets `GH_TOKEN` for the `gh` CLI (plus `GH_HOST` and `GH_ENTERPRISE_TOKEN` on a GitHub Enterprise), per run, through the harness's own environment option (Claude, Copilot and OpenCode). With several projects, it is the first project's token.
 - If the request fails, the run goes on with the machine's own credentials.
 
 An App token expires after an hour; runs longer than that lose GitHub access until they finish. This is the contract containerised workers will use too: the claim hands over credentials, the runtime injects them.
 
 ## Pull requests
 
-Taico keeps one copy of each linked pull request in `pull_requests`, however many places link to it, keyed by `owner/repo#number` in lower case.
+Taico keeps one copy of each linked pull request in `pull_requests`, however many places link to it, keyed by `owner/repo#number` in lower case (`host/owner/repo#number` on a GitHub Enterprise, with the host in `host`).
 
 ### Noticing links
 
-`PullRequestReferencesListener` reads pull request links (`https://github.com/<owner>/<repo>/pull/<n>`, including `/files`, `/commits` and `#comment` anchors) from:
+`PullRequestReferencesListener` reads pull request links (`https://github.com/<owner>/<repo>/pull/<n>`, or the same on the host of a GitHub Enterprise connection, including `/files`, `/commits` and `#comment` anchors) from:
 
 | Where | Recorded as | Belongs to |
 |---|---|---|
@@ -127,7 +150,7 @@ Each delivery must carry a valid `X-Hub-Signature-256`; anything else gets 401. 
 
 ### API and events
 
-- `POST /pull-requests/lookup` `{ refs: [...] }` (links or `owner/repo#n`, at most 50): the stored state in the order asked. Pull requests never read before are read first; stale ones are refreshed in the background. Marks them as viewed.
+- `POST /pull-requests/lookup` `{ refs: [...] }` (links, `owner/repo#n` or `host/owner/repo#n`, at most 50): the stored state in the order asked. Pull requests on hosts with no connection are left out; the UI draws those links as plain links. Pull requests never read before are read first; stale ones are refreshed in the background. Marks them as viewed.
 - `GET /pull-requests/:id`, `POST /pull-requests/:id/refresh`.
 - Scopes: `pull_request:read`, `pull_request:write` (refresh).
 - `PullRequestUpdatedEvent` (internal) fires when the stored copy changes, with the `changes` since the last look: `merged`, `closed`, `reopened`, `ready_for_review`, `converted_to_draft`, `new_commits`, `checks_started`, `checks_passed`, `checks_failed`, `approved`, `changes_requested`, `new_comments`. The first look has none.

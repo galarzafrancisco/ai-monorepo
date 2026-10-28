@@ -5,7 +5,13 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync, existsSync 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ensureRepo } from '../helpers/ensureRepo.js';
-import { GITHUB_CREDENTIAL_KEY, removeTokenDir, tokenDir, writeTokenFile } from '../helpers/githubCredentials.js';
+import {
+  credentialKeyFor,
+  GITHUB_CREDENTIAL_KEY,
+  removeTokenDir,
+  tokenDir,
+  writeTokenFile,
+} from '../helpers/githubCredentials.js';
 
 let root: string;
 let origin: string;
@@ -72,4 +78,10 @@ test("answers git with the token, without putting it in the repository's config 
   await ensureRepo({ repo: origin, dir });
   assert.throws(() => git(['-C', dir, 'config', '--local', '--get-all', GITHUB_CREDENTIAL_KEY]));
   removeTokenDir(tokens);
+});
+
+test('keys the helper to the host the repository is cloned from', () => {
+  assert.equal(credentialKeyFor('https://github.com/acme/api.git'), 'credential.https://github.com.helper');
+  assert.equal(credentialKeyFor('https://github.acme.com/acme/api.git'), 'credential.https://github.acme.com.helper');
+  assert.equal(credentialKeyFor('git@github.com:acme/api.git'), GITHUB_CREDENTIAL_KEY);
 });

@@ -8,6 +8,10 @@ export type UpdateGithubConnectionDto = {
      */
     name?: string;
     /**
+     * The address of the GitHub to connect to. Changing it checks the credential again.
+     */
+    baseUrl?: string;
+    /**
      * A new token or private key. Leave out to keep the current one.
      */
     secret?: string;

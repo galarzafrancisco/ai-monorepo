@@ -10,6 +10,16 @@ export class UpdateGithubConnectionDto {
   name?: string;
 
   @ApiPropertyOptional({
+    description: 'The address of the GitHub to connect to. Changing it checks the credential again.',
+    example: 'https://github.acme.com',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  @IsOptional()
+  baseUrl?: string;
+
+  @ApiPropertyOptional({
     description: 'A new token or private key. Leave out to keep the current one.',
     example: 'github_pat_...',
   })

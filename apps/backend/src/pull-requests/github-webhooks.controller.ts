@@ -47,8 +47,9 @@ export class GithubWebhooksController {
       throw new UnauthorizedException('Invalid webhook signature');
     }
 
+    const { host } = await this.connections.getConnection(connectionId);
     for (const target of pullRequestTargetsOf(event, request.body)) {
-      const marked = await this.pullRequests.markChanged(target);
+      const marked = await this.pullRequests.markChanged({ host, ...target });
       if (marked > 0) {
         this.logger.log({ message: 'Webhook marked pull requests for a fresh look', event, ...target, marked });
       }
