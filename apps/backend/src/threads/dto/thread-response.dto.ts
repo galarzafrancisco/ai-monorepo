@@ -1,3 +1,4 @@
+import { ThreadWatchResponseDto } from './thread-watch-response.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 import { MetaTagResponseDto } from '../../meta/dto/tag-response.dto';
@@ -77,6 +78,12 @@ export class ThreadResponseDto {
   timers!: ThreadTimerResponseDto[];
 
   @ApiProperty({
+    description: 'Things outside the thread the threads agent is watching, such as pull requests, oldest first',
+    type: [ThreadWatchResponseDto],
+  })
+  watches!: ThreadWatchResponseDto[];
+
+  @ApiProperty({
     description: 'Row version for optimistic locking',
     example: 1,
   })
@@ -117,6 +124,7 @@ export class ThreadResponseDto {
         TaskSubscriptionResponseDto.fromResult(s),
       ),
       timers: result.timers.map((t) => ThreadTimerResponseDto.fromResult(t)),
+      watches: result.watches.map((w) => ThreadWatchResponseDto.fromResult(w)),
       rowVersion: result.rowVersion,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),

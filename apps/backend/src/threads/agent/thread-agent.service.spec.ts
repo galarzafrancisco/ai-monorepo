@@ -86,6 +86,8 @@ function createHarness(steps: unknown[][]) {
       .fn()
       .mockResolvedValue({ triggerActor: null, firedTimerIds: [] }),
     hasPendingTimerFirings: jest.fn().mockResolvedValue(false),
+    ingestWatchDeliveries: jest.fn().mockResolvedValue({ triggerActor: null, deliveredCount: 0 }),
+    hasPendingWatchDeliveries: jest.fn().mockResolvedValue(false),
     getOrCreateThreadSecret: jest.fn().mockResolvedValue('a1b2c3'),
     loadContext: jest.fn().mockResolvedValue([
       {

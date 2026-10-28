@@ -742,6 +742,21 @@ export interface ThreadTimerResponseDto {
   createdAt: string;
 }
 
+export type ThreadWatchKind = 'pull_request';
+
+export interface ThreadWatchResponseDto {
+  id: string;
+  kind: ThreadWatchKind;
+  targetId: string;
+  targetLabel: string;
+  targetUrl: string | null;
+  conditions: string[];
+  once: boolean;
+  waitingFor: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
 export interface ThreadResponseDto {
   id: string;
   title: string;
@@ -754,6 +769,7 @@ export interface ThreadResponseDto {
   participants: ActorResponseDto[];
   taskSubscriptions: TaskSubscriptionResponseDto[];
   timers: ThreadTimerResponseDto[];
+  watches: ThreadWatchResponseDto[];
   rowVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -782,6 +798,44 @@ export interface ThreadListResponseDto {
 
 export interface AttachTaskDto {
   taskId: string;
+}
+
+export type PullRequestState = 'open' | 'closed' | 'merged';
+
+export type ChecksStatus = 'none' | 'pending' | 'success' | 'failure';
+
+export type ReviewDecision = 'none' | 'approved' | 'changes_requested';
+
+export interface PullRequestResponseDto {
+  id: string;
+  key: string;
+  owner: string;
+  repo: string;
+  number: number;
+  url: string;
+  title: string | null;
+  state: PullRequestState | null;
+  draft: boolean;
+  authorLogin: string | null;
+  headRef: string | null;
+  baseRef: string | null;
+  additions: number | null;
+  deletions: number | null;
+  changedFiles: number | null;
+  commentCount: number | null;
+  checksStatus: ChecksStatus;
+  checksTotal: number;
+  checksPassed: number;
+  checksFailed: number;
+  checksPending: number;
+  failedChecks: string[];
+  reviewDecision: ReviewDecision;
+  approvals: number;
+  mergedAt: string | null;
+  closedAt: string | null;
+  githubUpdatedAt: string | null;
+  lastFetchedAt: string | null;
+  lastError: string | null;
 }
 
 export interface ReferenceContextBlockDto {
@@ -1095,6 +1149,64 @@ export interface MoveBlockDto {
   newParentId: Record<string, any> | null;
 }
 
+export interface LookupPullRequestsDto {
+  refs: string[];
+}
+
+export type GithubAuthType = 'pat' | 'app';
+
+export interface CreateGithubConnectionDto {
+  name: string;
+  authType: GithubAuthType;
+  secret: string;
+  appId?: string | null;
+  installationId?: string | null;
+  owners?: string[];
+}
+
+export interface GithubConnectionResponseDto {
+  id: string;
+  name: string;
+  authType: GithubAuthType;
+  appId: string | null;
+  installationId: string | null;
+  owners: string[];
+  accountLogin: string | null;
+  lastVerifiedAt: string | null;
+  lastError: string | null;
+  lastWebhookAt: string | null;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GithubRepositoryRefDto {
+  owner: string;
+  repo: string;
+}
+
+export type GithubConnectionMatch = 'project' | 'owner' | 'only_connection';
+
+export interface ResolvedGithubConnectionResponseDto {
+  repository: GithubRepositoryRefDto | null;
+  connection: GithubConnectionResponseDto | null;
+  match: GithubConnectionMatch | null;
+}
+
+export interface UpdateGithubConnectionDto {
+  name?: string;
+  secret?: string;
+  appId?: string | null;
+  installationId?: string | null;
+  owners?: string[];
+}
+
+export interface GithubWebhookSettingsResponseDto {
+  url: string;
+  secret: string;
+  lastDeliveryAt: string | null;
+}
+
 export interface TaskExecutionQueueEntryResponseDto {
   taskId: string;
   taskName: string | null;
@@ -1310,102 +1422,6 @@ export interface ProtectedResourceMetadataResponseDto {
   scopes_supported: string[];
   bearer_methods_supported: string[];
   resource_name: string;
-}
-
-export type GithubAuthType = 'pat' | 'app';
-
-export interface CreateGithubConnectionDto {
-  name: string;
-  authType: GithubAuthType;
-  secret: string;
-  appId?: string | null;
-  installationId?: string | null;
-  owners?: string[];
-}
-
-export interface GithubConnectionResponseDto {
-  id: string;
-  name: string;
-  authType: GithubAuthType;
-  appId: string | null;
-  installationId: string | null;
-  owners: string[];
-  accountLogin: string | null;
-  lastVerifiedAt: string | null;
-  lastError: string | null;
-  lastWebhookAt: string | null;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface GithubRepositoryRefDto {
-  owner: string;
-  repo: string;
-}
-
-export type GithubConnectionMatch = 'project' | 'owner' | 'only_connection';
-
-export interface ResolvedGithubConnectionResponseDto {
-  repository: GithubRepositoryRefDto | null;
-  connection: GithubConnectionResponseDto | null;
-  match: GithubConnectionMatch | null;
-}
-
-export interface UpdateGithubConnectionDto {
-  name?: string;
-  secret?: string;
-  appId?: string | null;
-  installationId?: string | null;
-  owners?: string[];
-}
-
-export interface GithubWebhookSettingsResponseDto {
-  url: string;
-  secret: string;
-  lastDeliveryAt: string | null;
-}
-
-export interface LookupPullRequestsDto {
-  refs: string[];
-}
-
-export type PullRequestState = 'open' | 'closed' | 'merged';
-
-export type ChecksStatus = 'none' | 'pending' | 'success' | 'failure';
-
-export type ReviewDecision = 'none' | 'approved' | 'changes_requested';
-
-export interface PullRequestResponseDto {
-  id: string;
-  key: string;
-  owner: string;
-  repo: string;
-  number: number;
-  url: string;
-  title: string | null;
-  state: PullRequestState | null;
-  draft: boolean;
-  authorLogin: string | null;
-  headRef: string | null;
-  baseRef: string | null;
-  additions: number | null;
-  deletions: number | null;
-  changedFiles: number | null;
-  commentCount: number | null;
-  checksStatus: ChecksStatus;
-  checksTotal: number;
-  checksPassed: number;
-  checksFailed: number;
-  checksPending: number;
-  failedChecks: string[];
-  reviewDecision: ReviewDecision;
-  approvals: number;
-  mergedAt: string | null;
-  closedAt: string | null;
-  githubUpdatedAt: string | null;
-  lastFetchedAt: string | null;
-  lastError: string | null;
 }
 
 export type SearchResultType = 'task' | 'context_block' | 'thread' | 'tool' | 'agent' | 'project';

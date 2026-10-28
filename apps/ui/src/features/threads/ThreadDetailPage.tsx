@@ -32,6 +32,8 @@ import {
   ThreadTaskSubscriptionList,
 } from "./ThreadWaitLists";
 import { EditableThreadTitle } from "./EditableThreadTitle";
+import { ThreadPullRequestList, ThreadPullRequestWatchList } from "./ThreadPullRequests";
+import { isPullRequestWatch, useThreadPullRequests } from "./useThreadPullRequests";
 import { ThreadChat } from "./ThreadChat";
 import { ThreadPinControl } from "./ThreadPinControl";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
@@ -64,8 +66,8 @@ const STATUS_ORDER = [
 ] as const;
 
 /**
- * Reminders, schedules and watched tasks, in that order, leaving out empty
- * ones. Shown near the top of the thread's details (below participants on
+ * Reminders, schedules, watched tasks and watched pull requests, in that
+ * order, leaving out empty ones. Shown near the top of the thread's details (below participants on
  * desktop).
  */
 const waitSections = (thread: Thread) => {
@@ -90,6 +92,14 @@ const waitSections = (thread: Thread) => {
       count: thread.taskSubscriptions.length,
       list: (
         <ThreadTaskSubscriptionList threadId={thread.id} subscriptions={thread.taskSubscriptions} />
+      ),
+    },
+    {
+      key: "watching-pull-requests",
+      title: "Watching pull requests",
+      count: thread.watches.filter(isPullRequestWatch).length,
+      list: (
+        <ThreadPullRequestWatchList threadId={thread.id} watches={thread.watches.filter(isPullRequestWatch)} />
       ),
     },
   ].filter((section) => section.count > 0);
@@ -468,6 +478,7 @@ function ThreadDetailPageDesktop({
   };
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
+  const pullRequests = useThreadPullRequests(thread);
 
   return (
     <div className="thread-detail-page thread-detail-page--desktop">
@@ -539,6 +550,13 @@ function ThreadDetailPageDesktop({
           </RailSection>
         ))}
 
+        {/* Only shown when the thread's tasks or messages link pull requests */}
+        {pullRequests.length > 0 && (
+          <RailSection title="Pull requests" count={pullRequests.length}>
+            <ThreadPullRequestList pullRequests={pullRequests} />
+          </RailSection>
+        )}
+
         {/* Tasks grouped by status */}
         {taskGroups.map((group) => (
           <RailSection
@@ -607,6 +625,7 @@ function ThreadDetailPageMobile({
   const navigate = useNavigate();
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
+  const pullRequests = useThreadPullRequests(thread);
   const [mobileView, setMobileView] = useState<"chat" | "tasks" | "context" | "more">("chat");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -699,6 +718,13 @@ function ThreadDetailPageMobile({
                 <DataRowContainer title={section.title}>{section.list}</DataRowContainer>
               </div>
             ))}
+            {pullRequests.length > 0 && (
+              <div className="thread-detail-page__mobile-section">
+                <DataRowContainer title="Pull requests">
+                  <ThreadPullRequestList pullRequests={pullRequests} />
+                </DataRowContainer>
+              </div>
+            )}
             {taskGroups.length > 0 ? (
               taskGroups.map((group) => (
                 <div key={group.status} className="thread-detail-page__mobile-section">

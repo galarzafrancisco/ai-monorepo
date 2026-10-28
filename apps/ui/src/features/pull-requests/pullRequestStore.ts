@@ -43,6 +43,14 @@ class PullRequestStore {
     return this.entries.get(key);
   }
 
+  /** Stores pull requests a page already fetched, so their chips need no lookup of their own. */
+  seed(pullRequests: PullRequest[]) {
+    for (const pullRequest of pullRequests) {
+      this.entries.set(pullRequest.key, { status: 'ready', pullRequest });
+    }
+    this.listeners.forEach((listener) => listener());
+  }
+
   /** Marks a pull request as on screen; returns the call that takes it off. */
   show(ref: PullRequestRef): () => void {
     const key = pullRequestKey(ref);

@@ -6,6 +6,15 @@ import { ThreadTimersService } from '../timers/thread-timers.service';
 import { ThreadTimerKind } from '../timers/thread-timer.enums';
 import { ThreadRenameService } from '../thread-rename.service';
 import { ThreadTimeService } from '../time/thread-time.service';
+import { ThreadWatchesService } from '../watches/thread-watches.service';
+import {
+  DEFAULT_WATCH_HOURS,
+  MAX_WATCH_HOURS,
+  PullRequestWatchService,
+} from '../watches/pull-request-watch.service';
+import { PULL_REQUEST_WATCH_CONDITIONS } from '../watches/pull-request-watch.conditions';
+import { PullRequestsService } from '../../pull-requests/pull-requests.service';
+import { parsePullRequestRef, pullRequestUrl } from '../../pull-requests/github/pull-request-ref';
 import {
   describeDuration,
   MAX_ITERATIONS,
@@ -16,8 +25,11 @@ import {
 import {
   CANCEL_REMINDER_TOOL,
   CANCEL_SCHEDULE_TOOL,
+  GET_PULL_REQUEST_TOOL,
   GET_TIME_TOOL,
   LIST_WAITS_TOOL,
+  STOP_WATCHING_TOOL,
+  WATCH_PULL_REQUEST_TOOL,
   REMIND_TOOL,
   RENAME_THREAD_TOOL,
   SCHEDULE_TOOL,
@@ -43,6 +55,9 @@ export class ThreadAgentToolsFactory {
     private readonly timers: ThreadTimersService,
     private readonly time: ThreadTimeService,
     private readonly renamer: ThreadRenameService,
+    private readonly watches: ThreadWatchesService,
+    private readonly pullRequestWatches: PullRequestWatchService,
+    private readonly pullRequests: PullRequestsService,
   ) {}
 
   build(input: {
@@ -223,12 +238,13 @@ export class ThreadAgentToolsFactory {
       }),
       [LIST_WAITS_TOOL]: tool({
         description:
-          'List everything that will wake you up in this thread: reminders, recurring schedules, and tasks you are watching for review or completion. Use the IDs to cancel.',
+          'List everything that will wake you up in this thread: reminders, recurring schedules, tasks you are watching for review or completion, and pull requests you are watching. Use the IDs to cancel.',
         inputSchema: z.object({}),
         execute: async () => {
-          const [timers, watched] = await Promise.all([
+          const [timers, watched, watches] = await Promise.all([
             this.timers.listActive(threadId),
             this.subscriptions.listForThread(threadId),
+            this.watches.listForThread(threadId),
           ]);
           return {
             now: new Date().toISOString(),
@@ -258,6 +274,108 @@ export class ThreadAgentToolsFactory {
               waitingFor: task.waitingFor,
               cancelWith: UNSUBSCRIBE_FROM_TASK_TOOL,
             })),
+            watches: watches.map((watch) => ({
+              watchId: watch.id,
+              kind: watch.kind,
+              target: watch.targetLabel,
+              url: watch.targetUrl,
+              waitingFor: watch.waitingFor,
+              for: watch.conditions,
+              stopsAfterFirstNotification: watch.once,
+              expiresAt: watch.expiresAt.toISOString(),
+              cancelWith: STOP_WATCHING_TOOL,
+            })),
+          };
+        },
+      }),
+      [WATCH_PULL_REQUEST_TOOL]: tool({
+        description:
+          'Get notified in this thread when something happens to a GitHub pull request: CI finishes or fails, it is approved, gets comments or commits, or is merged or closed. Use it when the user asks you to watch, keep an eye on, or wait for a pull request. Merging or closing always notifies you and ends the watch. Answers with the current state, so you can tell the user straight away if it already happened.',
+        inputSchema: z.object({
+          pullRequest: z
+            .string()
+            .describe('Link to the pull request (https://github.com/owner/repo/pull/123) or owner/repo#123.'),
+          for: z
+            .array(z.enum(PULL_REQUEST_WATCH_CONDITIONS))
+            .min(1)
+            .describe(
+              'What to be notified about. checks_finished means CI passed or failed. Merged and closed are always included.',
+            ),
+          waitingFor: z
+            .string()
+            .describe('What the user wants from this pull request, in one sentence. You get it back with each notification.'),
+          once: z
+            .boolean()
+            .optional()
+            .describe(
+              'Stop after the first notification (default true). Set false to keep watching (for example, every CI run) until it is merged, closed or the watch expires.',
+            ),
+          hours: z
+            .number()
+            .int()
+            .optional()
+            .describe(`How long to watch, in hours. Default ${DEFAULT_WATCH_HOURS}, at most ${MAX_WATCH_HOURS}.`),
+        }),
+        execute: async (args) => {
+          const { pullRequest, for: conditions, waitingFor, once, hours } = args;
+          const ref = parsePullRequestRef(pullRequest);
+          if (!ref) {
+            return { error: `"${pullRequest}" is not a GitHub pull request link or owner/repo#number.` };
+          }
+          const watchHours = Math.min(Math.max(1, hours ?? DEFAULT_WATCH_HOURS), MAX_WATCH_HOURS);
+          const outcome = await this.pullRequestWatches.watch({
+            threadId,
+            forActorId,
+            ref,
+            conditions,
+            once: once ?? true,
+            waitingFor,
+            hours: watchHours,
+          });
+          const now = this.pullRequestWatches.describe(outcome.pullRequest);
+          return outcome.watching
+            ? {
+                message: `Watching ${outcome.watch.targetLabel} for ${conditions.join(', ')} until ${outcome.watch.expiresAt.toISOString()}. It is now: ${now}.`,
+                watchId: outcome.watch.id,
+                cancelWith: STOP_WATCHING_TOOL,
+              }
+            : { message: `Not watching ${pullRequest}. ${outcome.reason} It is now: ${now}.` };
+        },
+      }),
+      [STOP_WATCHING_TOOL]: tool({
+        description: `Stop a watch started with ${WATCH_PULL_REQUEST_TOOL}, by its watch ID. Stopping one that already ended is harmless.`,
+        inputSchema: z.object({ watchId: z.string() }),
+        execute: async ({ watchId }) => {
+          const removed = await this.pullRequestWatches.stop({ threadId, watchId, actorId: agentActorId });
+          return removed
+            ? `Stopped watching ${removed.targetLabel}.`
+            : `There is no active watch ${watchId} in this thread; it may have ended already. Nothing to do.`;
+        },
+      }),
+      [GET_PULL_REQUEST_TOOL]: tool({
+        description:
+          'Get the current state of a GitHub pull request: open, draft, merged or closed; CI and which checks failed; reviews; size and comments.',
+        inputSchema: z.object({
+          pullRequest: z
+            .string()
+            .describe('Link to the pull request (https://github.com/owner/repo/pull/123) or owner/repo#123.'),
+        }),
+        execute: async ({ pullRequest }) => {
+          const ref = parsePullRequestRef(pullRequest);
+          if (!ref) {
+            return { error: `"${pullRequest}" is not a GitHub pull request link or owner/repo#number.` };
+          }
+          const [found] = await this.pullRequests.lookup([ref]);
+          return {
+            pullRequest: `${found.owner}/${found.repo}#${found.number}`,
+            url: pullRequestUrl(found),
+            title: found.title,
+            summary: this.pullRequestWatches.describe(found),
+            failedChecks: found.failedChecks,
+            branch: found.headRef && found.baseRef ? `${found.headRef} into ${found.baseRef}` : null,
+            author: found.authorLogin,
+            lastReadFromGithubAt: found.lastFetchedAt?.toISOString() ?? null,
+            error: found.lastError,
           };
         },
       }),

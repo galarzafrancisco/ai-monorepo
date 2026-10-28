@@ -1,3 +1,4 @@
+import { ThreadWatchResult } from '../../watches/thread-watches.service';
 import { ActorType } from '../../../identity-provider/enums';
 import { TaskStatus } from '../../../tasks/enums';
 import { ThreadTimerKind } from '../../timers/thread-timer.enums';
@@ -108,6 +109,8 @@ export type ThreadResult = {
   taskSubscriptions: TaskSubscriptionResult[];
   /** Reminders and schedules that will still fire, soonest first. */
   timers: ThreadTimerResult[];
+  /** Things outside the thread the agent is watching (pull requests), oldest first. */
+  watches: ThreadWatchResult[];
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;

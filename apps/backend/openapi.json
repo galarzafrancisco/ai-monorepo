@@ -4815,6 +4815,95 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/watches/{watchId}": {
+      "delete": {
+        "description": "Idempotent: stopping a watch that already ended succeeds.",
+        "operationId": "ThreadsController_cancelWatch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "watchId",
+            "required": true,
+            "in": "path",
+            "description": "Watch ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Watch stopped, or already gone"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Stop the threads agent watching something (a pull request)",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/pull-requests": {
+      "get": {
+        "operationId": "ThreadsController_listPullRequests",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PullRequestResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Pull requests linked from the thread's tasks or messages, oldest link first",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
       "delete": {
         "description": "Idempotent: removing a watch that does not exist succeeds.",
@@ -6758,6 +6847,444 @@
         ]
       }
     },
+    "/api/v1/pull-requests/lookup": {
+      "post": {
+        "description": "Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.",
+        "operationId": "PullRequestsController_lookup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupPullRequestsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PullRequestResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Status of linked pull requests, in the order asked",
+        "tags": [
+          "Pull requests"
+        ]
+      }
+    },
+    "/api/v1/pull-requests/{id}": {
+      "get": {
+        "operationId": "PullRequestsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequestResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pull request not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Stored status of one pull request",
+        "tags": [
+          "Pull requests"
+        ]
+      }
+    },
+    "/api/v1/pull-requests/{id}/refresh": {
+      "post": {
+        "operationId": "PullRequestsController_refresh",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequestResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pull request not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Read the pull request from GitHub now",
+        "tags": [
+          "Pull requests"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections": {
+      "post": {
+        "operationId": "GithubConnectionsController_createConnection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGithubConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Connect GitHub with a personal access token or a GitHub App installation",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      },
+      "get": {
+        "operationId": "GithubConnectionsController_listConnections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List GitHub connections",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/resolve": {
+      "get": {
+        "operationId": "GithubConnectionsController_resolveConnection",
+        "parameters": [
+          {
+            "name": "repoUrl",
+            "required": true,
+            "in": "query",
+            "description": "Repository URL (web or clone URL)",
+            "schema": {
+              "example": "https://github.com/acme/api",
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": false,
+            "in": "query",
+            "description": "The connection the project names, if any",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedGithubConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Which connection Taico would use for a repository, and why",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/{id}": {
+      "get": {
+        "operationId": "GithubConnectionsController_getConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a GitHub connection",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      },
+      "patch": {
+        "operationId": "GithubConnectionsController_updateConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGithubConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a GitHub connection; a new credential is checked with GitHub before it is saved",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      },
+      "delete": {
+        "operationId": "GithubConnectionsController_deleteConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a GitHub connection and its stored credential",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/{id}/verify": {
+      "post": {
+        "operationId": "GithubConnectionsController_verifyConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Check the stored credential with GitHub again",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/{id}/webhook": {
+      "get": {
+        "operationId": "GithubConnectionsController_getWebhookSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubWebhookSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Webhook address and secret for the connection (the secret is created on first request)",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
     "/api/v1/executions/queue": {
       "get": {
         "description": "Returns the tasks currently present in the execution queue with pagination. Presence means the task is ready to be picked by the executor.",
@@ -7917,444 +8444,6 @@
         },
         "tags": [
           "Discovery"
-        ]
-      }
-    },
-    "/api/v1/integrations/github/connections": {
-      "post": {
-        "operationId": "GithubConnectionsController_createConnection",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateGithubConnectionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Connect GitHub with a personal access token or a GitHub App installation",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      },
-      "get": {
-        "operationId": "GithubConnectionsController_listConnections",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GithubConnectionResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List GitHub connections",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      }
-    },
-    "/api/v1/integrations/github/connections/resolve": {
-      "get": {
-        "operationId": "GithubConnectionsController_resolveConnection",
-        "parameters": [
-          {
-            "name": "repoUrl",
-            "required": true,
-            "in": "query",
-            "description": "Repository URL (web or clone URL)",
-            "schema": {
-              "example": "https://github.com/acme/api",
-              "type": "string"
-            }
-          },
-          {
-            "name": "connectionId",
-            "required": false,
-            "in": "query",
-            "description": "The connection the project names, if any",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResolvedGithubConnectionResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Which connection Taico would use for a repository, and why",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      }
-    },
-    "/api/v1/integrations/github/connections/{id}": {
-      "get": {
-        "operationId": "GithubConnectionsController_getConnection",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "GitHub connection id",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "GitHub connection not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get a GitHub connection",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      },
-      "patch": {
-        "operationId": "GithubConnectionsController_updateConnection",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "GitHub connection id",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateGithubConnectionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "GitHub connection not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update a GitHub connection; a new credential is checked with GitHub before it is saved",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      },
-      "delete": {
-        "operationId": "GithubConnectionsController_deleteConnection",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "GitHub connection id",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Deleted"
-          },
-          "404": {
-            "description": "GitHub connection not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a GitHub connection and its stored credential",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      }
-    },
-    "/api/v1/integrations/github/connections/{id}/verify": {
-      "post": {
-        "operationId": "GithubConnectionsController_verifyConnection",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "GitHub connection id",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "GitHub connection not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Check the stored credential with GitHub again",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      }
-    },
-    "/api/v1/integrations/github/connections/{id}/webhook": {
-      "get": {
-        "operationId": "GithubConnectionsController_getWebhookSettings",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "GitHub connection id",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GithubWebhookSettingsResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "GitHub connection not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Webhook address and secret for the connection (the secret is created on first request)",
-        "tags": [
-          "Integrations - GitHub"
-        ]
-      }
-    },
-    "/api/v1/pull-requests/lookup": {
-      "post": {
-        "description": "Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.",
-        "operationId": "PullRequestsController_lookup",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LookupPullRequestsDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PullRequestResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Status of linked pull requests, in the order asked",
-        "tags": [
-          "Pull requests"
-        ]
-      }
-    },
-    "/api/v1/pull-requests/{id}": {
-      "get": {
-        "operationId": "PullRequestsController_get",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PullRequestResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Pull request not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Stored status of one pull request",
-        "tags": [
-          "Pull requests"
-        ]
-      }
-    },
-    "/api/v1/pull-requests/{id}/refresh": {
-      "post": {
-        "operationId": "PullRequestsController_refresh",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PullRequestResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Pull request not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Read the pull request from GitHub now",
-        "tags": [
-          "Pull requests"
         ]
       }
     },
@@ -12474,6 +12563,84 @@
           "createdAt"
         ]
       },
+      "ThreadWatchKind": {
+        "type": "string",
+        "enum": [
+          "pull_request"
+        ]
+      },
+      "ThreadWatchResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "kind": {
+            "example": "pull_request",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThreadWatchKind"
+              }
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "description": "What is watched, e.g. a pull request id",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "targetLabel": {
+            "type": "string",
+            "description": "How to show what is watched",
+            "example": "acme/api#12"
+          },
+          "targetUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://github.com/acme/api/pull/12"
+          },
+          "conditions": {
+            "description": "What the agent is waiting for",
+            "example": [
+              "checks_finished"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "once": {
+            "type": "boolean",
+            "description": "The watch ends after its first notification",
+            "example": true
+          },
+          "waitingFor": {
+            "type": "string",
+            "nullable": true,
+            "example": "Tell me when CI passes so I can merge"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-01-04T10:30:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-01-01T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "targetLabel",
+          "targetUrl",
+          "conditions",
+          "once",
+          "waitingFor",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
       "ThreadResponseDto": {
         "type": "object",
         "properties": {
@@ -12548,6 +12715,13 @@
               "$ref": "#/components/schemas/ThreadTimerResponseDto"
             }
           },
+          "watches": {
+            "description": "Things outside the thread the threads agent is watching, such as pull requests, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadWatchResponseDto"
+            }
+          },
           "rowVersion": {
             "type": "number",
             "description": "Row version for optimistic locking",
@@ -12575,6 +12749,7 @@
           "participants",
           "taskSubscriptions",
           "timers",
+          "watches",
           "rowVersion",
           "createdAt",
           "updatedAt"
@@ -12683,6 +12858,223 @@
         },
         "required": [
           "taskId"
+        ]
+      },
+      "PullRequestState": {
+        "type": "string",
+        "enum": [
+          "open",
+          "closed",
+          "merged"
+        ],
+        "description": "Null until Taico has read the pull request"
+      },
+      "ChecksStatus": {
+        "type": "string",
+        "enum": [
+          "none",
+          "pending",
+          "success",
+          "failure"
+        ],
+        "description": "CI of the latest commit"
+      },
+      "ReviewDecision": {
+        "type": "string",
+        "enum": [
+          "none",
+          "approved",
+          "changes_requested"
+        ]
+      },
+      "PullRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "key": {
+            "type": "string",
+            "description": "owner/repo#number, lower case",
+            "example": "acme/api#12"
+          },
+          "owner": {
+            "type": "string",
+            "example": "acme"
+          },
+          "repo": {
+            "type": "string",
+            "example": "api"
+          },
+          "number": {
+            "type": "number",
+            "example": 12
+          },
+          "url": {
+            "type": "string",
+            "example": "https://github.com/acme/api/pull/12"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null until Taico has read the pull request",
+            "example": "Add search"
+          },
+          "state": {
+            "nullable": true,
+            "description": "Null until Taico has read the pull request",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PullRequestState"
+              }
+            ]
+          },
+          "draft": {
+            "type": "boolean",
+            "example": false
+          },
+          "authorLogin": {
+            "type": "string",
+            "nullable": true,
+            "example": "octocat"
+          },
+          "headRef": {
+            "type": "string",
+            "nullable": true,
+            "example": "feature/search"
+          },
+          "baseRef": {
+            "type": "string",
+            "nullable": true,
+            "example": "main"
+          },
+          "additions": {
+            "type": "number",
+            "nullable": true,
+            "example": 123
+          },
+          "deletions": {
+            "type": "number",
+            "nullable": true,
+            "example": 32
+          },
+          "changedFiles": {
+            "type": "number",
+            "nullable": true,
+            "example": 4
+          },
+          "commentCount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Conversation and review comments",
+            "example": 3
+          },
+          "checksStatus": {
+            "description": "CI of the latest commit",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChecksStatus"
+              }
+            ]
+          },
+          "checksTotal": {
+            "type": "number",
+            "example": 5
+          },
+          "checksPassed": {
+            "type": "number",
+            "example": 3
+          },
+          "checksFailed": {
+            "type": "number",
+            "example": 1
+          },
+          "checksPending": {
+            "type": "number",
+            "example": 1
+          },
+          "failedChecks": {
+            "description": "Names of the failing checks",
+            "example": [
+              "build"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reviewDecision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewDecision"
+              }
+            ]
+          },
+          "approvals": {
+            "type": "number",
+            "description": "Reviewers whose latest review approves",
+            "example": 1
+          },
+          "mergedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "githubUpdatedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When GitHub says it last changed",
+            "example": null
+          },
+          "lastFetchedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When Taico last read it from GitHub",
+            "example": null
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last read failed; null when it worked",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "owner",
+          "repo",
+          "number",
+          "url",
+          "title",
+          "state",
+          "draft",
+          "authorLogin",
+          "headRef",
+          "baseRef",
+          "additions",
+          "deletions",
+          "changedFiles",
+          "commentCount",
+          "checksStatus",
+          "checksTotal",
+          "checksPassed",
+          "checksFailed",
+          "checksPending",
+          "failedChecks",
+          "reviewDecision",
+          "approvals",
+          "mergedAt",
+          "closedAt",
+          "githubUpdatedAt",
+          "lastFetchedAt",
+          "lastError"
         ]
       },
       "ReferenceContextBlockDto": {
@@ -14317,6 +14709,301 @@
           "newParentId"
         ]
       },
+      "LookupPullRequestsDto": {
+        "type": "object",
+        "properties": {
+          "refs": {
+            "description": "Pull request links or owner/repo#number references, at most 50",
+            "example": [
+              "https://github.com/acme/api/pull/12",
+              "acme/web#3"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "refs"
+        ]
+      },
+      "GithubAuthType": {
+        "type": "string",
+        "enum": [
+          "pat",
+          "app"
+        ]
+      },
+      "CreateGithubConnectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "example": "Acme GitHub"
+          },
+          "authType": {
+            "example": "pat",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubAuthType"
+              }
+            ]
+          },
+          "secret": {
+            "type": "string",
+            "description": "The personal access token (PAT), or the whole PEM private key of the GitHub App (App). Stored encrypted and never returned.",
+            "example": "github_pat_..."
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App id. Required for App connections.",
+            "example": "123456"
+          },
+          "installationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App installation id. Required for App connections.",
+            "example": "7890123"
+          },
+          "owners": {
+            "description": "Repository owners (users or organisations) this connection is used for. Empty: the account the credential acts as.",
+            "example": [
+              "acme"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "authType",
+          "secret"
+        ]
+      },
+      "GithubConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "Acme GitHub"
+          },
+          "authType": {
+            "example": "pat",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubAuthType"
+              }
+            ]
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true,
+            "example": "123456"
+          },
+          "installationId": {
+            "type": "string",
+            "nullable": true,
+            "example": "7890123"
+          },
+          "owners": {
+            "description": "Repository owners this connection is used for",
+            "example": [
+              "acme"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountLogin": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who GitHub says the connection acts as",
+            "example": "octocat"
+          },
+          "lastVerifiedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-01-01T00:00:00.000Z"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last check with GitHub failed; null when it worked",
+            "example": null
+          },
+          "lastWebhookAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When GitHub last delivered a correctly signed webhook through this connection",
+            "example": null
+          },
+          "rowVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "authType",
+          "appId",
+          "installationId",
+          "owners",
+          "accountLogin",
+          "lastVerifiedAt",
+          "lastError",
+          "lastWebhookAt",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "GithubRepositoryRefDto": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "example": "acme"
+          },
+          "repo": {
+            "type": "string",
+            "example": "api"
+          }
+        },
+        "required": [
+          "owner",
+          "repo"
+        ]
+      },
+      "GithubConnectionMatch": {
+        "type": "string",
+        "enum": [
+          "project",
+          "owner",
+          "only_connection"
+        ],
+        "description": "Why: the project names it, it lists the repository owner, or it is the only connection"
+      },
+      "ResolvedGithubConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "nullable": true,
+            "description": "The repository, or null when the URL is not a github.com repository",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubRepositoryRefDto"
+              }
+            ]
+          },
+          "connection": {
+            "nullable": true,
+            "description": "The connection Taico would use, or null when none fits (public repositories are then read anonymously)",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubConnectionResponseDto"
+              }
+            ]
+          },
+          "match": {
+            "nullable": true,
+            "description": "Why: the project names it, it lists the repository owner, or it is the only connection",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubConnectionMatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "repository",
+          "connection",
+          "match"
+        ]
+      },
+      "UpdateGithubConnectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "example": "Acme GitHub"
+          },
+          "secret": {
+            "type": "string",
+            "description": "A new token or private key. Leave out to keep the current one.",
+            "example": "github_pat_..."
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App id",
+            "example": "123456"
+          },
+          "installationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App installation id",
+            "example": "7890123"
+          },
+          "owners": {
+            "description": "Repository owners this connection is used for",
+            "example": [
+              "acme"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "GithubWebhookSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Payload URL to enter in GitHub (repository, organization or app webhook settings)",
+            "example": "https://taico.example.com/api/v1/integrations/github/webhooks/123e4567-e89b-12d3-a456-426614174000"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Secret to enter in GitHub. GitHub signs every delivery with it.",
+            "example": "5f2c…"
+          },
+          "lastDeliveryAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the last correctly signed delivery arrived",
+            "example": null
+          }
+        },
+        "required": [
+          "url",
+          "secret",
+          "lastDeliveryAt"
+        ]
+      },
       "TaskExecutionQueueEntryResponseDto": {
         "type": "object",
         "properties": {
@@ -15522,518 +16209,6 @@
           "scopes_supported",
           "bearer_methods_supported",
           "resource_name"
-        ]
-      },
-      "GithubAuthType": {
-        "type": "string",
-        "enum": [
-          "pat",
-          "app"
-        ]
-      },
-      "CreateGithubConnectionDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name",
-            "example": "Acme GitHub"
-          },
-          "authType": {
-            "example": "pat",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GithubAuthType"
-              }
-            ]
-          },
-          "secret": {
-            "type": "string",
-            "description": "The personal access token (PAT), or the whole PEM private key of the GitHub App (App). Stored encrypted and never returned.",
-            "example": "github_pat_..."
-          },
-          "appId": {
-            "type": "string",
-            "nullable": true,
-            "description": "GitHub App id. Required for App connections.",
-            "example": "123456"
-          },
-          "installationId": {
-            "type": "string",
-            "nullable": true,
-            "description": "GitHub App installation id. Required for App connections.",
-            "example": "7890123"
-          },
-          "owners": {
-            "description": "Repository owners (users or organisations) this connection is used for. Empty: the account the credential acts as.",
-            "example": [
-              "acme"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "name",
-          "authType",
-          "secret"
-        ]
-      },
-      "GithubConnectionResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "example": "Acme GitHub"
-          },
-          "authType": {
-            "example": "pat",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GithubAuthType"
-              }
-            ]
-          },
-          "appId": {
-            "type": "string",
-            "nullable": true,
-            "example": "123456"
-          },
-          "installationId": {
-            "type": "string",
-            "nullable": true,
-            "example": "7890123"
-          },
-          "owners": {
-            "description": "Repository owners this connection is used for",
-            "example": [
-              "acme"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "accountLogin": {
-            "type": "string",
-            "nullable": true,
-            "description": "Who GitHub says the connection acts as",
-            "example": "octocat"
-          },
-          "lastVerifiedAt": {
-            "type": "string",
-            "nullable": true,
-            "example": "2026-01-01T00:00:00.000Z"
-          },
-          "lastError": {
-            "type": "string",
-            "nullable": true,
-            "description": "Why the last check with GitHub failed; null when it worked",
-            "example": null
-          },
-          "lastWebhookAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "When GitHub last delivered a correctly signed webhook through this connection",
-            "example": null
-          },
-          "rowVersion": {
-            "type": "number",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "example": "2026-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "example": "2026-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "authType",
-          "appId",
-          "installationId",
-          "owners",
-          "accountLogin",
-          "lastVerifiedAt",
-          "lastError",
-          "lastWebhookAt",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "GithubRepositoryRefDto": {
-        "type": "object",
-        "properties": {
-          "owner": {
-            "type": "string",
-            "example": "acme"
-          },
-          "repo": {
-            "type": "string",
-            "example": "api"
-          }
-        },
-        "required": [
-          "owner",
-          "repo"
-        ]
-      },
-      "GithubConnectionMatch": {
-        "type": "string",
-        "enum": [
-          "project",
-          "owner",
-          "only_connection"
-        ],
-        "description": "Why: the project names it, it lists the repository owner, or it is the only connection"
-      },
-      "ResolvedGithubConnectionResponseDto": {
-        "type": "object",
-        "properties": {
-          "repository": {
-            "nullable": true,
-            "description": "The repository, or null when the URL is not a github.com repository",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GithubRepositoryRefDto"
-              }
-            ]
-          },
-          "connection": {
-            "nullable": true,
-            "description": "The connection Taico would use, or null when none fits (public repositories are then read anonymously)",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GithubConnectionResponseDto"
-              }
-            ]
-          },
-          "match": {
-            "nullable": true,
-            "description": "Why: the project names it, it lists the repository owner, or it is the only connection",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GithubConnectionMatch"
-              }
-            ]
-          }
-        },
-        "required": [
-          "repository",
-          "connection",
-          "match"
-        ]
-      },
-      "UpdateGithubConnectionDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name",
-            "example": "Acme GitHub"
-          },
-          "secret": {
-            "type": "string",
-            "description": "A new token or private key. Leave out to keep the current one.",
-            "example": "github_pat_..."
-          },
-          "appId": {
-            "type": "string",
-            "nullable": true,
-            "description": "GitHub App id",
-            "example": "123456"
-          },
-          "installationId": {
-            "type": "string",
-            "nullable": true,
-            "description": "GitHub App installation id",
-            "example": "7890123"
-          },
-          "owners": {
-            "description": "Repository owners this connection is used for",
-            "example": [
-              "acme"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "GithubWebhookSettingsResponseDto": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "description": "Payload URL to enter in GitHub (repository, organization or app webhook settings)",
-            "example": "https://taico.example.com/api/v1/integrations/github/webhooks/123e4567-e89b-12d3-a456-426614174000"
-          },
-          "secret": {
-            "type": "string",
-            "description": "Secret to enter in GitHub. GitHub signs every delivery with it.",
-            "example": "5f2c…"
-          },
-          "lastDeliveryAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "When the last correctly signed delivery arrived",
-            "example": null
-          }
-        },
-        "required": [
-          "url",
-          "secret",
-          "lastDeliveryAt"
-        ]
-      },
-      "LookupPullRequestsDto": {
-        "type": "object",
-        "properties": {
-          "refs": {
-            "description": "Pull request links or owner/repo#number references, at most 50",
-            "example": [
-              "https://github.com/acme/api/pull/12",
-              "acme/web#3"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "refs"
-        ]
-      },
-      "PullRequestState": {
-        "type": "string",
-        "enum": [
-          "open",
-          "closed",
-          "merged"
-        ],
-        "description": "Null until Taico has read the pull request"
-      },
-      "ChecksStatus": {
-        "type": "string",
-        "enum": [
-          "none",
-          "pending",
-          "success",
-          "failure"
-        ],
-        "description": "CI of the latest commit"
-      },
-      "ReviewDecision": {
-        "type": "string",
-        "enum": [
-          "none",
-          "approved",
-          "changes_requested"
-        ]
-      },
-      "PullRequestResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "key": {
-            "type": "string",
-            "description": "owner/repo#number, lower case",
-            "example": "acme/api#12"
-          },
-          "owner": {
-            "type": "string",
-            "example": "acme"
-          },
-          "repo": {
-            "type": "string",
-            "example": "api"
-          },
-          "number": {
-            "type": "number",
-            "example": 12
-          },
-          "url": {
-            "type": "string",
-            "example": "https://github.com/acme/api/pull/12"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true,
-            "description": "Null until Taico has read the pull request",
-            "example": "Add search"
-          },
-          "state": {
-            "nullable": true,
-            "description": "Null until Taico has read the pull request",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PullRequestState"
-              }
-            ]
-          },
-          "draft": {
-            "type": "boolean",
-            "example": false
-          },
-          "authorLogin": {
-            "type": "string",
-            "nullable": true,
-            "example": "octocat"
-          },
-          "headRef": {
-            "type": "string",
-            "nullable": true,
-            "example": "feature/search"
-          },
-          "baseRef": {
-            "type": "string",
-            "nullable": true,
-            "example": "main"
-          },
-          "additions": {
-            "type": "number",
-            "nullable": true,
-            "example": 123
-          },
-          "deletions": {
-            "type": "number",
-            "nullable": true,
-            "example": 32
-          },
-          "changedFiles": {
-            "type": "number",
-            "nullable": true,
-            "example": 4
-          },
-          "commentCount": {
-            "type": "number",
-            "nullable": true,
-            "description": "Conversation and review comments",
-            "example": 3
-          },
-          "checksStatus": {
-            "description": "CI of the latest commit",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ChecksStatus"
-              }
-            ]
-          },
-          "checksTotal": {
-            "type": "number",
-            "example": 5
-          },
-          "checksPassed": {
-            "type": "number",
-            "example": 3
-          },
-          "checksFailed": {
-            "type": "number",
-            "example": 1
-          },
-          "checksPending": {
-            "type": "number",
-            "example": 1
-          },
-          "failedChecks": {
-            "description": "Names of the failing checks",
-            "example": [
-              "build"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "reviewDecision": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ReviewDecision"
-              }
-            ]
-          },
-          "approvals": {
-            "type": "number",
-            "description": "Reviewers whose latest review approves",
-            "example": 1
-          },
-          "mergedAt": {
-            "type": "string",
-            "nullable": true,
-            "example": null
-          },
-          "closedAt": {
-            "type": "string",
-            "nullable": true,
-            "example": null
-          },
-          "githubUpdatedAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "When GitHub says it last changed",
-            "example": null
-          },
-          "lastFetchedAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "When Taico last read it from GitHub",
-            "example": null
-          },
-          "lastError": {
-            "type": "string",
-            "nullable": true,
-            "description": "Why the last read failed; null when it worked",
-            "example": null
-          }
-        },
-        "required": [
-          "id",
-          "key",
-          "owner",
-          "repo",
-          "number",
-          "url",
-          "title",
-          "state",
-          "draft",
-          "authorLogin",
-          "headRef",
-          "baseRef",
-          "additions",
-          "deletions",
-          "changedFiles",
-          "commentCount",
-          "checksStatus",
-          "checksTotal",
-          "checksPassed",
-          "checksFailed",
-          "checksPending",
-          "failedChecks",
-          "reviewDecision",
-          "approvals",
-          "mergedAt",
-          "closedAt",
-          "githubUpdatedAt",
-          "lastFetchedAt",
-          "lastError"
         ]
       },
       "SearchResultType": {

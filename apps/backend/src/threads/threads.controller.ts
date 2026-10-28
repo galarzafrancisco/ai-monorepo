@@ -23,6 +23,10 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { ThreadsService } from './threads.service';
+import { ThreadWatchParamsDto } from './dto/thread-watch-params.dto';
+import { PullRequestResponseDto } from '../pull-requests/dto/http/pull-request-response.dto';
+import { toPullRequestResponse } from '../pull-requests/dto/http/pull-request.mapper';
+import { PullRequestsScopes } from '../pull-requests/pull-requests.scopes';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadPinsService } from './pins/thread-pins.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
@@ -227,6 +231,33 @@ export class ThreadsController {
     @CurrentUser() user: UserContext,
   ): Promise<void> {
     await this.threadsService.cancelTimer(params.id, params.timerId, user.actorId);
+  }
+
+  @Delete(':id/watches/:watchId')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Stop the threads agent watching something (a pull request)',
+    description: 'Idempotent: stopping a watch that already ended succeeds.',
+  })
+  @ApiNoContentResponse({ description: 'Watch stopped, or already gone' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async cancelWatch(
+    @Param() params: ThreadWatchParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadsService.cancelWatch(params.id, params.watchId, user.actorId);
+  }
+
+  @Get(':id/pull-requests')
+  @RequireScopes(ThreadsScopes.READ.id, PullRequestsScopes.READ.id)
+  @ApiOperation({
+    summary: "Pull requests linked from the thread's tasks or messages, oldest link first",
+  })
+  @ApiOkResponse({ type: [PullRequestResponseDto] })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async listPullRequests(@Param() params: ThreadParamsDto): Promise<PullRequestResponseDto[]> {
+    return (await this.threadsService.listPullRequests(params.id)).map(toPullRequestResponse);
   }
 
   @Delete(':id/task-subscriptions/:taskId')

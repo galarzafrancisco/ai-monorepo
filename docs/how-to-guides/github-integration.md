@@ -117,3 +117,31 @@ Colors follow GitHub: open green (`--pr-open`), draft gray (`--pr-draft`), merge
 Hovering a chip (or tapping it on touch screens) opens a card with the title, branches, author, lines added and removed, files, comments, which checks failed, and the review state. The card is a `Popover` in a portal, so board columns never clip it.
 
 `pullRequestStore` keeps one copy of every pull request on screen: requests made in the same render share one `POST /pull-requests/lookup`, the `/pull-requests` socket keeps them live, and pull requests still on screen are looked up again every 4 minutes (which keeps them in the backend's "viewed" polling tier) and after a reconnect.
+
+## Threads watching pull requests
+
+The threads agent can watch a pull request and be woken when something happens to it ("watch this PR", "tell me when CI passes", "let me know when it's merged").
+
+| Tool | What it does |
+|---|---|
+| `watch_pull_request` | Start watching: `pullRequest` (link or `owner/repo#n`), `for` (one or more of `checks_finished`, `checks_failed`, `checks_passed`, `approved`, `changes_requested`, `new_comments`, `new_commits`, `ready_for_review`, `merged`, `closed`), `waitingFor`, `once` (default true), `hours` (default 72, at most 336). Answers with the current state; refuses a pull request that is already merged or closed. |
+| `stop_watching` | Stop a watch by its id. |
+| `get_pull_request` | The current state: open, draft, merged or closed, CI and failing checks, reviews, size, comments. |
+| `list_reminders_schedules_and_watchers` | Also lists pull request watches. |
+
+- A watch notifies on the changes it asked for. Merging or closing always notifies and ends the watch.
+- With `once` (the default) the watch ends after its first notification; otherwise it lasts until the pull request is merged or closed, or the watch expires.
+- Every watch expires. An expired watch sends a last notification so the agent can tell the user it stopped waiting.
+- While watched, a pull request is polled every 30 seconds (every 5 minutes once webhooks arrive for its connection). The notification reaches the agent within about 5 seconds of the change being seen.
+- Notifications reach the agent as `<watch-notification>` messages carrying the thread key, like task notifications. The user never sees them, only the agent's reply.
+- The thread sidebar shows "Watching pull requests" (each with a trash icon: `DELETE /threads/:id/watches/:watchId`) and "Pull requests": those linked from the thread's tasks or written in its messages (`GET /threads/:id/pull-requests`). Each section only appears when it has something in it.
+
+### Generic thread watches
+
+Pull requests are the first kind of a generic mechanism (`apps/backend/src/threads/watches/`), so the next kind is not a custom job:
+
+- `thread_watches` stores what a thread watches: `kind`, `target_id`, a label and URL for lists, `conditions`, `once`, `waiting_for`, the actor it acts for, and a required `expires_at`.
+- `thread_watch_deliveries` queues the notifications. `ThreadAgentLogService.ingestWatchDeliveries` delivers them to the next turn, oldest first, exactly once, under the same thread lock as the other injections.
+- `ThreadWatchesService` handles watching, listing, cancelling, queueing notifications (a final notification removes its watch in the same transaction) and expiry (`ThreadWatchExpiryService`, every minute).
+
+A new kind needs: a value in `ThreadWatchKind`; a listener on its domain events that finds the watches with `listForTarget`, decides what to say, and calls `notify`; an expiry message in `ThreadWatchExpiryService`; and the agent tools to start it. Task subscriptions (`subscribe_to_task`) predate this and still use their own table.

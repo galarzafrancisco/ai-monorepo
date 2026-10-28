@@ -44,6 +44,13 @@ import { ThreadTimerEntity } from './timers/thread-timer.entity';
 import { ThreadTimerFiringEntity } from './timers/thread-timer-firing.entity';
 import { ThreadTimersService } from './timers/thread-timers.service';
 import { ThreadTimerSweeperService } from './timers/thread-timer-sweeper.service';
+import { ThreadWatchEntity } from './watches/thread-watch.entity';
+import { ThreadWatchDeliveryEntity } from './watches/thread-watch-delivery.entity';
+import { ThreadWatchesService } from './watches/thread-watches.service';
+import { PullRequestWatchService } from './watches/pull-request-watch.service';
+import { PullRequestWatchNotifierService } from './watches/pull-request-watch-notifier.service';
+import { ThreadWatchExpiryService } from './watches/thread-watch-expiry.service';
+import { PullRequestsModule } from '../pull-requests/pull-requests.module';
 import { ThreadTimeService } from './time/thread-time.service';
 
 @Module({
@@ -56,6 +63,8 @@ import { ThreadTimeService } from './time/thread-time.service';
       ThreadTaskSubscriptionEntity,
       ThreadTimerEntity,
       ThreadTimerFiringEntity,
+      ThreadWatchEntity,
+      ThreadWatchDeliveryEntity,
       ThreadReadStateEntity,
       ThreadPinEntity,
       TaskEntity,
@@ -69,6 +78,7 @@ import { ThreadTimeService } from './time/thread-time.service';
     MetaModule,
     ContextModule,
     AiProvidersModule,
+    PullRequestsModule,
   ],
   controllers: [ThreadsController],
   providers: [
@@ -85,6 +95,10 @@ import { ThreadTimeService } from './time/thread-time.service';
     ThreadTaskSubscriptionNotifierService,
     ThreadTimersService,
     ThreadTimerSweeperService,
+    ThreadWatchesService,
+    PullRequestWatchService,
+    PullRequestWatchNotifierService,
+    ThreadWatchExpiryService,
     ThreadTimeService,
     ThreadAgentHooksRunner,
     EasterEggHook,

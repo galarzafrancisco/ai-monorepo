@@ -12,66 +12,7 @@ import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { PullRequestsService } from '../src/pull-requests/pull-requests.service';
 import { PullRequestUpdatedEvent } from '../src/pull-requests/events/pull-requests.events';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
-import { FakeGithub, FakeGithubRoute, patUsers } from './helpers/fake-github';
-
-type FakePull = {
-  title: string;
-  state: 'open' | 'closed';
-  merged: boolean;
-  draft: boolean;
-  sha: string;
-  comments: number;
-  checkRuns: Array<{ name: string; status: string; conclusion: string | null }>;
-  statuses: Array<{ context: string; state: string }>;
-  reviews: Array<{ user: { login: string }; state: string }>;
-};
-
-/** Serves one pull request the way GitHub does, with ETags and 304s. */
-function pullRequestRoutes(owner: string, repo: string, number: number, pull: () => FakePull): FakeGithubRoute {
-  const base = `/repos/${owner}/${repo}`;
-  const reply = (body: unknown, ifNoneMatch: string | null) => {
-    const etag = `"${createHmac('sha1', 'etag').update(JSON.stringify(body)).digest('hex')}"`;
-    return ifNoneMatch === etag ? { status: 304, headers: { etag } } : { status: 200, body, headers: { etag } };
-  };
-  return (incoming) => {
-    const pr = pull();
-    // GitHub ignores the case of owners and repositories.
-    const req = { ...incoming, path: incoming.path.toLowerCase() };
-    if (req.method !== 'GET') return undefined;
-    if (req.path === `${base}/pulls/${number}`) {
-      return reply(
-        {
-          title: pr.title,
-          state: pr.state,
-          draft: pr.draft,
-          merged: pr.merged,
-          merged_at: pr.merged ? '2026-01-02T00:00:00Z' : null,
-          closed_at: pr.state === 'closed' ? '2026-01-02T00:00:00Z' : null,
-          updated_at: '2026-01-01T00:00:00Z',
-          user: { login: 'octocat' },
-          head: { sha: pr.sha, ref: 'feature' },
-          base: { ref: 'main', repo: { name: repo, owner: { login: owner } } },
-          additions: 123,
-          deletions: 32,
-          changed_files: 4,
-          comments: pr.comments,
-          review_comments: 0,
-        },
-        req.ifNoneMatch,
-      );
-    }
-    if (req.path === `${base}/commits/${pr.sha}/check-runs?per_page=100`) {
-      return reply({ check_runs: pr.checkRuns }, req.ifNoneMatch);
-    }
-    if (req.path === `${base}/commits/${pr.sha}/status?per_page=100`) {
-      return reply({ statuses: pr.statuses }, req.ifNoneMatch);
-    }
-    if (req.path === `${base}/pulls/${number}/reviews?per_page=100`) {
-      return reply(pr.reviews, req.ifNoneMatch);
-    }
-    return undefined;
-  };
-}
+import { FakeGithub, FakePull, patUsers, pullRequestRoutes } from './helpers/fake-github';
 
 async function eventually<T>(check: () => Promise<T>, timeoutMs = 10_000): Promise<T> {
   const deadline = Date.now() + timeoutMs;

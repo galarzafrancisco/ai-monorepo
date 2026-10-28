@@ -54,6 +54,7 @@ import { WalkthroughModule } from './walkthrough/walkthrough.module';
 import { ExecutionTraceSource1762500000002 } from './migrations/1762500000002-ExecutionTraceSource';
 import { GithubConnections1762600000000 } from './migrations/1762600000000-GithubConnections';
 import { PullRequests1762700000000 } from './migrations/1762700000000-PullRequests';
+import { ThreadWatches1762800000000 } from './migrations/1762800000000-ThreadWatches';
 import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
@@ -98,6 +99,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ExecutionTraceSource1762500000002,
         GithubConnections1762600000000,
         PullRequests1762700000000,
+        ThreadWatches1762800000000,
       ],
     }),
     EventEmitterModule.forRoot(),

@@ -8,6 +8,7 @@ import type { MetaTagResponseDto } from './MetaTagResponseDto.js';
 import type { TaskSubscriptionResponseDto } from './TaskSubscriptionResponseDto.js';
 import type { TaskSummaryResponseDto } from './TaskSummaryResponseDto.js';
 import type { ThreadTimerResponseDto } from './ThreadTimerResponseDto.js';
+import type { ThreadWatchResponseDto } from './ThreadWatchResponseDto.js';
 export type ThreadResponseDto = {
     /**
      * Thread ID
@@ -53,6 +54,10 @@ export type ThreadResponseDto = {
      * Reminders and recurring schedules of the threads agent that will still fire, soonest first
      */
     timers: Array<ThreadTimerResponseDto>;
+    /**
+     * Things outside the thread the threads agent is watching, such as pull requests, oldest first
+     */
+    watches: Array<ThreadWatchResponseDto>;
     /**
      * Row version for optimistic locking
      */

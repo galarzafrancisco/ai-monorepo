@@ -5,3 +5,5 @@ export { pullRequestMarkdownRenderer } from './markdownRenderer';
 export { splitArtefactLinks } from './artefactLinks';
 export { parsePullRequestUrl } from './pullRequestLinks';
 export { usePullRequest } from './pullRequestStore';
+export { pullRequestStore } from './pullRequestStore';
+export type { PullRequest } from './api';
