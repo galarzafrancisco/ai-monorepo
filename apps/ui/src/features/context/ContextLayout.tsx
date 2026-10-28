@@ -85,7 +85,7 @@ export function ContextLayout(): React.JSX.Element {
                 ✕
               </button>
             </div>
-            <nav className="context-layout__drawer-nav">
+            <nav className="context-layout__drawer-nav thin-scrollbar">
               {MAIN_NAVEGATION_ITEMS.map((item) => {
                 const isActive = item.path === getActiveNavigationPath(location.pathname, MAIN_NAVEGATION_ITEMS);
                 return (
@@ -154,7 +154,7 @@ export function ContextLayout(): React.JSX.Element {
             )}
           </div>
 
-          <div className="context-desktop__sidebar-body">
+          <div className="context-desktop__sidebar-body thin-scrollbar">
             {!isSidebarCollapsed ? (
               isLoading ? (
                 <div className="context-home__loading">Loading context blocks...</div>
