@@ -21,6 +21,7 @@ import { AgentExecutionTokensResource } from './agent-execution-tokens-resource.
 import { ContextResource } from './context-resource.js';
 import { PullRequestsResource } from './pull-requests-resource.js';
 import { IntegrationsGithubResource } from './integrations---git-hub-resource.js';
+import { IssuesResource } from './issues-resource.js';
 import { ExecutionsResource } from './executions-resource.js';
 import { WorkersResource } from './workers-resource.js';
 import { TaskBlueprintsResource } from './task-blueprints-resource.js';
@@ -54,6 +55,7 @@ export class ApiClient {
   public readonly context: ContextResource;
   public readonly pullRequests: PullRequestsResource;
   public readonly integrationsGithub: IntegrationsGithubResource;
+  public readonly issues: IssuesResource;
   public readonly executions: ExecutionsResource;
   public readonly workers: WorkersResource;
   public readonly taskBlueprints: TaskBlueprintsResource;
@@ -87,6 +89,7 @@ export class ApiClient {
     this.context = new ContextResource(config);
     this.pullRequests = new PullRequestsResource(config);
     this.integrationsGithub = new IntegrationsGithubResource(config);
+    this.issues = new IssuesResource(config);
     this.executions = new ExecutionsResource(config);
     this.workers = new WorkersResource(config);
     this.taskBlueprints = new TaskBlueprintsResource(config);

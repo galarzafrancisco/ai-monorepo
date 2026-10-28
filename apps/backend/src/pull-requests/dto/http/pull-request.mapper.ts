@@ -6,6 +6,7 @@ export function toPullRequestResponse(row: PullRequestEntity): PullRequestRespon
   return {
     id: row.id,
     key: row.key,
+    host: row.host,
     owner: row.owner,
     repo: row.repo,
     number: row.number,

@@ -51,6 +51,7 @@ import { PullRequestWatchService } from './watches/pull-request-watch.service';
 import { PullRequestWatchNotifierService } from './watches/pull-request-watch-notifier.service';
 import { ThreadWatchExpiryService } from './watches/thread-watch-expiry.service';
 import { PullRequestsModule } from '../pull-requests/pull-requests.module';
+import { IssuesModule } from '../issues/issues.module';
 import { ThreadTimeService } from './time/thread-time.service';
 
 @Module({
@@ -79,6 +80,7 @@ import { ThreadTimeService } from './time/thread-time.service';
     ContextModule,
     AiProvidersModule,
     PullRequestsModule,
+    IssuesModule,
   ],
   controllers: [ThreadsController],
   providers: [

@@ -26,6 +26,14 @@ export class GithubConnectionEntity {
   @Column({ type: 'text' })
   name!: string;
 
+  /**
+   * The GitHub this connection talks to: `https://github.com`, or the address
+   * of a GitHub Enterprise (`https://github.acme.com`, `https://acme.ghe.com`).
+   * Scheme and host only. The API address is derived from it.
+   */
+  @Column({ type: 'text', name: 'base_url', default: 'https://github.com' })
+  baseUrl!: string;
+
   @Column({ type: 'text', name: 'auth_type', enum: GithubAuthType })
   authType!: GithubAuthType;
 

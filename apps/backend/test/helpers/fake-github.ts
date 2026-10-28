@@ -157,3 +157,41 @@ export function openFakePull(): FakePull {
     reviews: [],
   };
 }
+
+export type FakeIssue = {
+  title: string;
+  state: 'open' | 'closed';
+  stateReason: string | null;
+  comments: number;
+  labels: Array<{ name: string; color: string }>;
+  assignees: string[];
+  /** GitHub serves pull requests at /issues/:n too, with a `pull_request` key. */
+  pullRequest?: boolean;
+  /** `owner/repo` it was moved to: GitHub answers the old address from there. */
+  transferredTo?: string;
+};
+
+/** Serves one issue the way GitHub does, with ETags and 304s. */
+export function issueRoutes(owner: string, repo: string, number: number, issue: () => FakeIssue): FakeGithubRoute {
+  return (incoming) => {
+    // GitHub ignores the case of owners and repositories.
+    if (incoming.method !== 'GET' || incoming.path.toLowerCase() !== `/repos/${owner}/${repo}/issues/${number}`) return undefined;
+    const current = issue();
+    const body = {
+      title: current.title,
+      state: current.state,
+      state_reason: current.stateReason,
+      user: { login: 'octocat' },
+      labels: current.labels,
+      assignees: current.assignees.map((login) => ({ login })),
+      milestone: { title: 'v1' },
+      comments: current.comments,
+      closed_at: current.state === 'closed' ? '2026-01-02T00:00:00Z' : null,
+      updated_at: '2026-01-01T00:00:00Z',
+      repository_url: `https://api.github.com/repos/${current.transferredTo ?? `${owner}/${repo}`}`,
+      ...(current.pullRequest ? { pull_request: { url: 'x' } } : {}),
+    };
+    const etag = `"${createHmac('sha1', 'etag').update(JSON.stringify(body)).digest('hex')}"`;
+    return incoming.ifNoneMatch === etag ? { status: 304, headers: { etag } } : { status: 200, body, headers: { etag } };
+  };
+}

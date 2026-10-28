@@ -1461,6 +1461,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Issues attached as links to the thread's tasks, oldest link first */
+        get: operations["ThreadsController_listIssues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
         parameters: {
             query?: never;
@@ -2028,7 +2045,7 @@ export interface paths {
         put?: never;
         /**
          * Status of linked pull requests, in the order asked
-         * @description Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.
+         * @description Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.
          */
         post: operations["PullRequestsController_lookup"];
         delete?: never;
@@ -2153,6 +2170,60 @@ export interface paths {
         get: operations["GithubConnectionsController_getWebhookSettings"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Status of linked issues, in the order asked
+         * @description Issues Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as an issue.updated socket event. Issues on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.
+         */
+        post: operations["IssuesController_lookup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stored status of one issue */
+        get: operations["IssuesController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read the issue from GitHub now */
+        post: operations["IssuesController_refresh"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5356,10 +5427,15 @@ export interface components {
             /** @example 123e4567-e89b-12d3-a456-426614174000 */
             id: string;
             /**
-             * @description owner/repo#number, lower case
+             * @description owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case
              * @example acme/api#12
              */
             key: string;
+            /**
+             * @description github.com, or the host of a GitHub Enterprise
+             * @example github.com
+             */
+            host: string;
             /** @example acme */
             owner: string;
             /** @example api */
@@ -5419,6 +5495,91 @@ export interface components {
             approvals: number;
             /** @example null */
             mergedAt: string | null;
+            /** @example null */
+            closedAt: string | null;
+            /**
+             * @description When GitHub says it last changed
+             * @example null
+             */
+            githubUpdatedAt: string | null;
+            /**
+             * @description When Taico last read it from GitHub
+             * @example null
+             */
+            lastFetchedAt: string | null;
+            /**
+             * @description Why the last read failed; null when it worked
+             * @example null
+             */
+            lastError: string | null;
+        };
+        /**
+         * @description Null until Taico has read the issue
+         * @enum {string}
+         */
+        IssueState: "open" | "closed";
+        /**
+         * @description Why it is closed (completed, not planned, duplicate), or reopened
+         * @enum {string}
+         */
+        IssueStateReason: "completed" | "not_planned" | "duplicate" | "reopened";
+        IssueLabelResponseDto: {
+            /** @example bug */
+            name: string;
+            /**
+             * @description Hex color without #, as GitHub gives it
+             * @example d73a4a
+             */
+            color: string | null;
+        };
+        IssueResponseDto: {
+            /** @example 123e4567-e89b-12d3-a456-426614174000 */
+            id: string;
+            /**
+             * @description owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case
+             * @example acme/api#12
+             */
+            key: string;
+            /**
+             * @description github.com, or the host of a GitHub Enterprise
+             * @example github.com
+             */
+            host: string;
+            /** @example acme */
+            owner: string;
+            /** @example api */
+            repo: string;
+            /** @example 12 */
+            number: number;
+            /** @example https://github.com/acme/api/issues/12 */
+            url: string;
+            /**
+             * @description Null until Taico has read the issue
+             * @example Search is slow
+             */
+            title: string | null;
+            /** @description Null until Taico has read the issue */
+            state: components["schemas"]["IssueState"] | null;
+            /** @description Why it is closed (completed, not planned, duplicate), or reopened */
+            stateReason: components["schemas"]["IssueStateReason"] | null;
+            /**
+             * @description The link is an /issues/ link to a pull request
+             * @example false
+             */
+            isPullRequest: boolean;
+            /** @example octocat */
+            authorLogin: string | null;
+            labels: components["schemas"]["IssueLabelResponseDto"][];
+            /**
+             * @example [
+             *       "octocat"
+             *     ]
+             */
+            assignees: string[];
+            /** @example v1.2 */
+            milestone: string | null;
+            /** @example 3 */
+            commentCount: number | null;
             /** @example null */
             closedAt: string | null;
             /**
@@ -6526,7 +6687,7 @@ export interface components {
         };
         LookupPullRequestsDto: {
             /**
-             * @description Pull request links or owner/repo#number references, at most 50
+             * @description Pull request links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50
              * @example [
              *       "https://github.com/acme/api/pull/12",
              *       "acme/web#3"
@@ -6542,6 +6703,11 @@ export interface components {
              * @example Acme GitHub
              */
             name: string;
+            /**
+             * @description The address of the GitHub to connect to: https://github.com (the default), a GitHub Enterprise Server (https://github.acme.com) or a GitHub Enterprise Cloud with data residency (https://acme.ghe.com).
+             * @example https://github.com
+             */
+            baseUrl?: string | null;
             /** @example pat */
             authType: components["schemas"]["GithubAuthType"];
             /**
@@ -6572,6 +6738,16 @@ export interface components {
             id: string;
             /** @example Acme GitHub */
             name: string;
+            /**
+             * @description The GitHub this connection talks to: https://github.com or the address of a GitHub Enterprise
+             * @example https://github.com
+             */
+            baseUrl: string;
+            /**
+             * @description The host of baseUrl
+             * @example github.com
+             */
+            host: string;
             /** @example pat */
             authType: components["schemas"]["GithubAuthType"];
             /** @example 123456 */
@@ -6610,6 +6786,11 @@ export interface components {
             updatedAt: string;
         };
         GithubRepositoryRefDto: {
+            /**
+             * @description github.com, or the host of a GitHub Enterprise
+             * @example github.com
+             */
+            host: string;
             /** @example acme */
             owner: string;
             /** @example api */
@@ -6642,9 +6823,9 @@ export interface components {
             active: boolean;
         };
         ResolvedGithubConnectionResponseDto: {
-            /** @description The repository, or null when the URL is not a github.com repository */
+            /** @description The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to */
             repository: components["schemas"]["GithubRepositoryRefDto"] | null;
-            /** @description The connection Taico would use, or null when none fits (public repositories are then read anonymously) */
+            /** @description The connection Taico would use, or null when none fits (public github.com repositories are then read anonymously) */
             connection: components["schemas"]["GithubConnectionResponseDto"] | null;
             /** @description Why: the project names it, it lists the repository owner, or it is the only connection */
             match: components["schemas"]["GithubConnectionMatch"] | null;
@@ -6657,6 +6838,11 @@ export interface components {
              * @example Acme GitHub
              */
             name?: string;
+            /**
+             * @description The address of the GitHub to connect to. Changing it checks the credential again.
+             * @example https://github.acme.com
+             */
+            baseUrl?: string;
             /**
              * @description A new token or private key. Leave out to keep the current one.
              * @example github_pat_...
@@ -6698,6 +6884,16 @@ export interface components {
             lastDeliveryAt: string | null;
             /** @description Repositories (or whole owners) deliveries came from, most recent first. Learned from the deliveries. */
             sources: components["schemas"]["GithubWebhookSourceDto"][];
+        };
+        LookupIssuesDto: {
+            /**
+             * @description Issue links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50
+             * @example [
+             *       "https://github.com/acme/api/issues/12",
+             *       "acme/web#3"
+             *     ]
+             */
+            refs: string[];
         };
         TaskExecutionQueueEntryResponseDto: {
             /**
@@ -6975,6 +7171,11 @@ export interface components {
              * @example https://github.com/acme/api.git
              */
             cloneUrl: string;
+            /**
+             * @description github.com, or the host of the GitHub Enterprise the repository is on
+             * @example github.com
+             */
+            host: string;
             /** @example acme */
             owner: string;
             /** @example api */
@@ -11270,6 +11471,35 @@ export interface operations {
             };
         };
     };
+    ThreadsController_listIssues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponseDto"][];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ThreadsController_removeTaskSubscription: {
         parameters: {
             query?: never;
@@ -12840,6 +13070,85 @@ export interface operations {
                 };
             };
             /** @description GitHub connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IssuesController_lookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupIssuesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponseDto"][];
+                };
+            };
+        };
+    };
+    IssuesController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponseDto"];
+                };
+            };
+            /** @description Issue not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IssuesController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueResponseDto"];
+                };
+            };
+            /** @description Issue not found */
             404: {
                 headers: {
                     [name: string]: unknown;

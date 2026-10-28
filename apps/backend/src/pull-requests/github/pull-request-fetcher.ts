@@ -1,4 +1,4 @@
-import { githubRequest } from '../../integrations/github/github-api';
+import { GithubApi, githubRequest } from '../../integrations/github/github-api';
 import { PullRequestEtags } from '../pull-request.entity';
 import { PullRequestState } from '../enums';
 import { PullRequestRef } from './pull-request-ref';
@@ -46,7 +46,7 @@ export type FetchedPullRequest = {
  * reuse the previous values.
  */
 export async function fetchPullRequest(
-  token: string | null,
+  api: GithubApi,
   ref: PullRequestRef,
   etags: PullRequestEtags,
   previous: PreviousPullRequest,
@@ -54,7 +54,7 @@ export async function fetchPullRequest(
   const base = `/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`;
   const hasPrevious = previous?.headSha != null;
 
-  const pull = await githubRequest<GithubPull>(token, `${base}/pulls/${ref.number}`, {
+  const pull = await githubRequest<GithubPull>(api, `${base}/pulls/${ref.number}`, {
     etag: hasPrevious ? etags.pull : null,
   });
   const nextEtags: PullRequestEtags = { pull: pull.etag ?? undefined };
@@ -90,13 +90,13 @@ export async function fetchPullRequest(
   const sameSha = hasPrevious && etags.sha === pullPart.headSha;
   const commit = `${base}/commits/${encodeURIComponent(pullPart.headSha)}`;
   const [checkRuns, statuses, reviews] = await Promise.all([
-    githubRequest<GithubCheckRuns>(token, `${commit}/check-runs?per_page=100`, {
+    githubRequest<GithubCheckRuns>(api, `${commit}/check-runs?per_page=100`, {
       etag: sameSha ? etags.checkRuns : null,
     }),
-    githubRequest<GithubCombinedStatus>(token, `${commit}/status?per_page=100`, {
+    githubRequest<GithubCombinedStatus>(api, `${commit}/status?per_page=100`, {
       etag: sameSha ? etags.statuses : null,
     }),
-    githubRequest<GithubReview[]>(token, `${base}/pulls/${ref.number}/reviews?per_page=100`, {
+    githubRequest<GithubReview[]>(api, `${base}/pulls/${ref.number}/reviews?per_page=100`, {
       etag: hasPrevious ? etags.reviews : null,
     }),
   ]);
@@ -110,11 +110,11 @@ export async function fetchPullRequest(
   let runs = checkRuns.data;
   let commitStatuses = statuses.data;
   if (runs && !commitStatuses) {
-    const again = await githubRequest<GithubCombinedStatus>(token, `${commit}/status?per_page=100`);
+    const again = await githubRequest<GithubCombinedStatus>(api, `${commit}/status?per_page=100`);
     commitStatuses = again.data;
     nextEtags.statuses = again.etag ?? undefined;
   } else if (!runs && commitStatuses) {
-    const again = await githubRequest<GithubCheckRuns>(token, `${commit}/check-runs?per_page=100`);
+    const again = await githubRequest<GithubCheckRuns>(api, `${commit}/check-runs?per_page=100`);
     runs = again.data;
     nextEtags.checkRuns = again.etag ?? undefined;
   }

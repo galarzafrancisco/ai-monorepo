@@ -1,0 +1,198 @@
+.issue-chip {
+  --issue-color: var(--issue-open);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: baseline;
+}
+
+.issue-chip[data-look='completed'],
+.issue-card__body[data-look='completed'] {
+  --issue-color: var(--issue-completed);
+}
+
+.issue-chip[data-look='not_planned'],
+.issue-chip[data-look='unknown'],
+.issue-card__body[data-look='not_planned'],
+.issue-card__body[data-look='unknown'] {
+  --issue-color: var(--issue-not-planned);
+}
+
+.issue-chip[data-look='open'],
+.issue-card__body[data-look='open'] {
+  --issue-color: var(--issue-open);
+}
+
+.issue-chip__trigger {
+  min-width: 0;
+  color: var(--issue-color);
+}
+
+.issue-chip__icon {
+  flex: none;
+  color: var(--issue-color);
+}
+
+.issue-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Task header: a pill like the other header links. */
+.issue-chip--full {
+  height: 30px;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--issue-color) 45%, var(--border));
+  border-radius: var(--r-2);
+  background: color-mix(in srgb, var(--issue-color) 10%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+}
+
+.issue-chip--full .issue-chip__name {
+  color: var(--text);
+}
+
+/* Board cards: sits among the tag chips. */
+.issue-chip--compact {
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--issue-color) 14%, transparent);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+/* Inside text: an underlined name in the state color. */
+.issue-chip--inline .issue-chip__trigger {
+  display: inline;
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--issue-color) 50%, transparent);
+  text-underline-offset: 2px;
+  white-space: normal;
+}
+
+.issue-chip--inline .issue-chip__icon {
+  margin-right: 2px;
+  vertical-align: -2px;
+}
+
+.issue-chip--inline .issue-chip__name {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.issue-chip__external {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.issue-chip__external:hover {
+  color: var(--text);
+}
+
+/* The card shown on hover or tap */
+.issue-card {
+  width: 300px;
+}
+
+.issue-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.issue-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.issue-card__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--issue-color);
+  color: var(--text-inverse);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-semibold);
+}
+
+.issue-card__ref {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.issue-card__title {
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+.issue-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}
+
+.issue-card__comments {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.issue-card__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.issue-card__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: var(--fs-1);
+}
+
+.issue-card__label-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.issue-card__row {
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  overflow-wrap: anywhere;
+}
+
+.issue-card__error {
+  color: var(--danger);
+  font-size: var(--fs-1);
+}
+
+.issue-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-1);
+}

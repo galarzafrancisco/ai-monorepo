@@ -17,6 +17,18 @@ export class CreateGithubConnectionDto {
   @MaxLength(255)
   name!: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description:
+      'The address of the GitHub to connect to: https://github.com (the default), a GitHub Enterprise Server (https://github.acme.com) or a GitHub Enterprise Cloud with data residency (https://acme.ghe.com).',
+    example: 'https://github.com',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  baseUrl?: string | null;
+
   @ApiProperty({ enum: GithubAuthType, enumName: 'GithubAuthType', example: GithubAuthType.PAT })
   @IsEnum(GithubAuthType)
   authType!: GithubAuthType;

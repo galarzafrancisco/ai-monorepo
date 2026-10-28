@@ -5,6 +5,7 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import './TaskRow.css';
 import { actorHandle, isDeactivated } from "../actors";
 import { PullRequestChip, splitArtefactLinks } from "../pull-requests";
+import { IssueChip } from "../issues";
 
 export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: { task: Task, animation?: DataRowAnimation, onClick?: () => void, pulseKey?: number, additionalTags?: DataRowTag[] }): React.JSX.Element {
   const [pulse, setPulse] = useState(false);
@@ -23,7 +24,7 @@ export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: 
       label: `💬 ${task.comments.length}`
     })
   }
-  const { pullRequestUrls, otherCount: otherLinks } = splitArtefactLinks(task.artefacts);
+  const { pullRequestUrls, issueUrls, otherCount: otherLinks } = splitArtefactLinks(task.artefacts);
   if (otherLinks) {
     tags.push({
       label: `🔗 ${otherLinks}`
@@ -46,9 +47,10 @@ export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: 
       leading={<Avatar name={avatarActor.displayName} inactive={isDeactivated(avatarActor)} size='lg' src={avatarActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
-      tagExtras={pullRequestUrls.length ? pullRequestUrls.map((url) => (
-        <PullRequestChip key={url} url={url} variant="compact" />
-      )) : undefined}
+      tagExtras={pullRequestUrls.length || issueUrls.length ? [
+        ...pullRequestUrls.map((url) => <PullRequestChip key={url} url={url} variant="compact" />),
+        ...issueUrls.map((url) => <IssueChip key={url} url={url} variant="compact" />),
+      ] : undefined}
       animation={animation}
       highlight={task.inputRequests.filter(i => !i.resolvedAt)?.length > 0}
       onClick={onClick}

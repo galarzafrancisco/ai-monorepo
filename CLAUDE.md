@@ -136,7 +136,7 @@ Extensive documentation in `/docs/`:
 - `how-to-guides/sign-in-with-chatgpt.md` - The ChatGPT plan provider for threads: where it may be used, the sign-in flow, whose plan pays for a turn, and its limits
 - `how-to-guides/thread-timers.md` - Threads agent reminders, recurring schedules, task watchers and the `get_time` tool (user timezone): tools, multi-backend firing, downtime behavior
 - `how-to-guides/access-requests.md` - Public /join expressions of interest, admin review (Settings > Access requests), create-account fallback, abuse limits and privacy
-- `how-to-guides/github-integration.md` - GitHub connections (token or GitHub App), which connection a repository uses, who sees pull request status, and worker tokens
+- `how-to-guides/github-integration.md` - GitHub connections (token or GitHub App), which connection a repository uses, who sees pull request and issue status, and worker tokens
 - `how-to-guides/search.md` - Hybrid search (keyword, fuzzy title, semantic), the search index, pgvector requirements, and search settings
 - `DEPLOYMENT.md` - Production deployment with Kubernetes and GitOps workflow
 

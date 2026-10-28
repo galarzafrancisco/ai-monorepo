@@ -9,8 +9,8 @@ import { LookupPullRequestsDto } from './dto/http/lookup-pull-requests.dto';
 import { PullRequestParamsDto } from './dto/http/pull-request-params.dto';
 import { PullRequestResponseDto } from './dto/http/pull-request-response.dto';
 import { toPullRequestResponse } from './dto/http/pull-request.mapper';
-import { parsePullRequestRef } from './github/pull-request-ref';
 import { PullRequestRefInvalidError } from './errors/pull-requests.errors';
+import { parsePullRequestRef, PullRequestRef } from './github/pull-request-ref';
 
 @ApiTags('Pull requests')
 @ApiCookieAuth('JWT-Cookie')
@@ -25,15 +25,18 @@ export class PullRequestsController {
   @ApiOperation({
     summary: 'Status of linked pull requests, in the order asked',
     description:
-      'Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.',
+      'Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.',
   })
   @ApiOkResponse({ type: [PullRequestResponseDto] })
   async lookup(@Body() dto: LookupPullRequestsDto): Promise<PullRequestResponseDto[]> {
-    const refs = dto.refs.map((value) => {
-      const ref = parsePullRequestRef(value);
-      if (!ref) throw new PullRequestRefInvalidError(value);
-      return ref;
-    });
+    const hosts = await this.pullRequests.listEnterpriseHosts();
+    const refs: PullRequestRef[] = [];
+    for (const value of dto.refs) {
+      const ref = parsePullRequestRef(value, hosts);
+      if (ref) refs.push(ref);
+      // A pull request on a host Taico has no connection to is left out of the answer.
+      else if (!parsePullRequestRef(value, 'any')) throw new PullRequestRefInvalidError(value);
+    }
     return (await this.pullRequests.lookup(refs)).map(toPullRequestResponse);
   }
 

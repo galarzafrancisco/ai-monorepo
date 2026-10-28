@@ -58,6 +58,8 @@ import { ThreadWatchesService, ThreadWatchResult } from './watches/thread-watche
 import { PullRequestWatchService } from './watches/pull-request-watch.service';
 import { PullRequestsService } from '../pull-requests/pull-requests.service';
 import { PullRequestEntity } from '../pull-requests/pull-request.entity';
+import { IssuesService } from '../issues/issues.service';
+import { IssueEntity } from '../issues/issue.entity';
 import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
 
 type GenerateTitleFromFirstMessageInput = {
@@ -108,6 +110,7 @@ export class ThreadsService {
     private readonly threadWatches: ThreadWatchesService,
     private readonly pullRequestWatches: PullRequestWatchService,
     private readonly pullRequests: PullRequestsService,
+    private readonly issues: IssuesService,
   ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -363,6 +366,18 @@ export class ThreadsService {
       throw new ThreadNotFoundError(threadId);
     }
     return this.pullRequests.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
+  }
+
+  /**
+   * Issues attached as links to the thread's tasks, oldest link first.
+   * Mentions in descriptions, comments and messages are left out.
+   */
+  async listIssues(threadId: string): Promise<IssueEntity[]> {
+    const thread = await this.threadRepository.findOne({ where: { id: threadId }, relations: ['tasks'] });
+    if (!thread) {
+      throw new ThreadNotFoundError(threadId);
+    }
+    return this.issues.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
   }
 
   private async assertThreadExists(threadId: string): Promise<void> {

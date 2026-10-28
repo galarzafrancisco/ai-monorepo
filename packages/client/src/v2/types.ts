@@ -809,6 +809,7 @@ export type ReviewDecision = 'none' | 'approved' | 'changes_requested';
 export interface PullRequestResponseDto {
   id: string;
   key: string;
+  host: string;
   owner: string;
   repo: string;
   number: number;
@@ -832,6 +833,38 @@ export interface PullRequestResponseDto {
   reviewDecision: ReviewDecision;
   approvals: number;
   mergedAt: string | null;
+  closedAt: string | null;
+  githubUpdatedAt: string | null;
+  lastFetchedAt: string | null;
+  lastError: string | null;
+}
+
+export type IssueState = 'open' | 'closed';
+
+export type IssueStateReason = 'completed' | 'not_planned' | 'duplicate' | 'reopened';
+
+export interface IssueLabelResponseDto {
+  name: string;
+  color: string | null;
+}
+
+export interface IssueResponseDto {
+  id: string;
+  key: string;
+  host: string;
+  owner: string;
+  repo: string;
+  number: number;
+  url: string;
+  title: string | null;
+  state: IssueState | null;
+  stateReason: IssueStateReason | null;
+  isPullRequest: boolean;
+  authorLogin: string | null;
+  labels: IssueLabelResponseDto[];
+  assignees: string[];
+  milestone: string | null;
+  commentCount: number | null;
   closedAt: string | null;
   githubUpdatedAt: string | null;
   lastFetchedAt: string | null;
@@ -1157,6 +1190,7 @@ export type GithubAuthType = 'pat' | 'app';
 
 export interface CreateGithubConnectionDto {
   name: string;
+  baseUrl?: string | null;
   authType: GithubAuthType;
   secret: string;
   appId?: string | null;
@@ -1167,6 +1201,8 @@ export interface CreateGithubConnectionDto {
 export interface GithubConnectionResponseDto {
   id: string;
   name: string;
+  baseUrl: string;
+  host: string;
   authType: GithubAuthType;
   appId: string | null;
   installationId: string | null;
@@ -1181,6 +1217,7 @@ export interface GithubConnectionResponseDto {
 }
 
 export interface GithubRepositoryRefDto {
+  host: string;
   owner: string;
   repo: string;
 }
@@ -1204,6 +1241,7 @@ export interface ResolvedGithubConnectionResponseDto {
 
 export interface UpdateGithubConnectionDto {
   name?: string;
+  baseUrl?: string;
   secret?: string;
   appId?: string | null;
   installationId?: string | null;
@@ -1215,6 +1253,10 @@ export interface GithubWebhookSettingsResponseDto {
   secret: string;
   lastDeliveryAt: string | null;
   sources: GithubWebhookSourceDto[];
+}
+
+export interface LookupIssuesDto {
+  refs: string[];
 }
 
 export interface TaskExecutionQueueEntryResponseDto {
@@ -1297,6 +1339,7 @@ export interface TaskExecutionHistoryResponseDto {
 export interface WorkerGithubCredentialDto {
   projectSlug: string;
   cloneUrl: string;
+  host: string;
   owner: string;
   repo: string;
   token: string;

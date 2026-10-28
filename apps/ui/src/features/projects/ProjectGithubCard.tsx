@@ -94,7 +94,7 @@ export function ProjectGithubCard({
         {connections !== null && connections.length === 0 ? (
           <Text size="2" tone="muted">
             No GitHub connection yet. <Link to="/settings/integrations">Connect GitHub</Link> to see
-            the status of this project&apos;s pull requests. Public repositories work without one,
+            the status of this project&apos;s pull requests and issues. Public repositories work without one,
             within GitHub&apos;s low limit for anonymous requests.
           </Text>
         ) : (
@@ -117,7 +117,7 @@ export function ProjectGithubCard({
               ))}
             </select>
             {repoUrl && !isGithubRepo && resolved ? (
-              <Text size="1" tone="muted">The repository is not on github.com, so no connection is used.</Text>
+              <Text size="1" tone="muted">The repository is not on github.com or a GitHub Enterprise Taico has a connection to, so no connection is used.</Text>
             ) : !repoUrl ? (
               <Text size="1" tone="muted">Link a GitHub repository above to use a connection for it.</Text>
             ) : connection && resolved?.match ? (
@@ -126,7 +126,7 @@ export function ProjectGithubCard({
               </Text>
             ) : resolved ? (
               <Text size="1" tone="muted">
-                No connection fits this repository. Taico reads it anonymously, which only works if it is public.
+                No connection fits this repository. On github.com Taico reads it anonymously, which only works if it is public.
               </Text>
             ) : null}
           </Stack>
@@ -143,9 +143,9 @@ export function ProjectGithubCard({
         ) : null}
 
         <Text size="1" tone="muted" className="project-github__notice">
-          Taico uses this connection to check every pull request linked in Taico: in task links,
-          descriptions, comments and threads. Everyone in this Taico sees their status, title and
-          size, even people without access to the repository on GitHub.
+          Taico uses this connection to check every pull request and issue linked in Taico: in task
+          links, descriptions, comments and threads. Everyone in this Taico sees their status and
+          title, even people without access to the repository on GitHub.
         </Text>
 
         <Row justify="space-between" align="center" spacing="3">
@@ -275,8 +275,8 @@ function WebhookSetup({
   }, [connection.id]);
 
   const { owner, repo } = repository;
-  const newHookUrl = `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/settings/hooks/new`;
-  const orgHooksUrl = `https://github.com/organizations/${encodeURIComponent(owner)}/settings/hooks`;
+  const newHookUrl = `${connection.baseUrl}/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/settings/hooks/new`;
+  const orgHooksUrl = `${connection.baseUrl}/organizations/${encodeURIComponent(owner)}/settings/hooks`;
 
   return (
     <Stack spacing="3" className="project-github__webhook">

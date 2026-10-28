@@ -197,6 +197,68 @@ describe('Pull requests E2E', () => {
     });
   });
 
+  it('reads pull requests on a GitHub Enterprise through its own API, and leaves unknown hosts out', async () => {
+    const host = new URL(github.url).host;
+    const dotcomRoutes = pullRequestRoutes('acme', 'api', 7, () => pull);
+    github.routes = [
+      (req) =>
+        req.method === 'GET' && req.path === '/api/v3/user' && req.authorization === 'Bearer ghes'
+          ? { status: 200, body: { login: 'corp-bot' } }
+          : undefined,
+      // The same pull request, served under GitHub Enterprise Server's /api/v3.
+      (req) =>
+        req.path.startsWith('/api/v3/') && req.authorization === 'Bearer ghes'
+          ? dotcomRoutes({ ...req, path: req.path.slice('/api/v3'.length) })
+          : undefined,
+    ];
+    const work = (
+      await api('post', '/integrations/github/connections')
+        .send({ name: 'Work', authType: 'pat', secret: 'ghes', baseUrl: github.url })
+        .expect(201)
+    ).body;
+
+    // Before the connection is known, the link is not GitHub's: nothing is recorded.
+    const task = (
+      await api('post', '/tasks/tasks')
+        .send({ name: 'Ship it', description: `Tracking ${github.url}/acme/api/pull/7 and https://other.example/a/b/pull/1` })
+        .expect(201)
+    ).body;
+    await eventually(async () => {
+      const listed = await app.get(PullRequestsService).listForTasks([task.id]);
+      expect(listed.map((pr) => pr.key)).toEqual([`${host}/acme/api#7`]);
+    });
+
+    const found = (
+      await api('post', '/pull-requests/lookup')
+        .send({ refs: [`${host}/acme/api#7`, 'https://other.example/a/b/pull/1'] })
+        .expect(200)
+    ).body;
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ key: `${host}/acme/api#7`, host, title: 'Add search', state: 'open', lastError: null });
+    expect(found[0].url).toBe(`https://${host}/acme/api/pull/7`);
+    expect(github.requests.filter((r) => r.path.includes('/repos/')).every((r) => r.path.startsWith('/api/v3/repos/'))).toBe(true);
+
+    // github.com's copy of acme/api#7 is a different pull request.
+    const [dotcom] = (await api('post', '/pull-requests/lookup').send({ refs: ['acme/api#7'] }).expect(200)).body;
+    expect(dotcom.id).not.toBe(found[0].id);
+
+    // A webhook on the Enterprise acme/api covers that repository, not github.com's acme/api.
+    const { secret } = (await api('get', `/integrations/github/connections/${work.id}/webhook`).expect(200)).body;
+    const ping = JSON.stringify({ zen: 'Hi.', repository: { name: 'api', owner: { login: 'acme' } } });
+    await request(http)
+      .post(`/api/v1/integrations/github/webhooks/${work.id}`)
+      .set('Content-Type', 'application/json')
+      .set('X-GitHub-Event', 'ping')
+      .set('X-GitHub-Hook-Installation-Target-Type', 'repository')
+      .set('X-Hub-Signature-256', `sha256=${createHmac('sha256', secret).update(ping).digest('hex')}`)
+      .send(ping)
+      .expect(202);
+    const resolveWebhook = async (repoUrl: string) =>
+      (await api('get', '/integrations/github/connections/resolve').query({ repoUrl }).expect(200)).body.webhook;
+    expect(await resolveWebhook(`${github.url}/acme/api`)).toMatchObject({ owner: 'acme', repo: 'api', active: true });
+    expect(await resolveWebhook('https://github.com/acme/api')).toBeNull();
+  });
+
   it('reads due pull requests on the poll and leaves the rest alone', async () => {
     const [pr] = (await api('post', '/pull-requests/lookup').send({ refs: ['acme/api#7'] }).expect(200)).body;
     pull.title = 'Add search, take two';

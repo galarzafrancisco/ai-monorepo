@@ -4904,6 +4904,50 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/issues": {
+      "get": {
+        "operationId": "ThreadsController_listIssues",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Issues attached as links to the thread's tasks, oldest link first",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/task-subscriptions/{taskId}": {
       "delete": {
         "description": "Idempotent: removing a watch that does not exist succeeds.",
@@ -6849,7 +6893,7 @@
     },
     "/api/v1/pull-requests/lookup": {
       "post": {
-        "description": "Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.",
+        "description": "Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.",
         "operationId": "PullRequestsController_lookup",
         "parameters": [],
         "requestBody": {
@@ -7282,6 +7326,127 @@
         "summary": "Webhook address and secret for the connection (the secret is created on first request)",
         "tags": [
           "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/issues/lookup": {
+      "post": {
+        "description": "Issues Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as an issue.updated socket event. Issues on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.",
+        "operationId": "IssuesController_lookup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupIssuesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Status of linked issues, in the order asked",
+        "tags": [
+          "Issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}": {
+      "get": {
+        "operationId": "IssuesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Issue not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Stored status of one issue",
+        "tags": [
+          "Issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/refresh": {
+      "post": {
+        "operationId": "IssuesController_refresh",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Issue not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Read the issue from GitHub now",
+        "tags": [
+          "Issues"
         ]
       }
     },
@@ -12934,8 +13099,13 @@
           },
           "key": {
             "type": "string",
-            "description": "owner/repo#number, lower case",
+            "description": "owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case",
             "example": "acme/api#12"
+          },
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of a GitHub Enterprise",
+            "example": "github.com"
           },
           "owner": {
             "type": "string",
@@ -13086,6 +13256,7 @@
         "required": [
           "id",
           "key",
+          "host",
           "owner",
           "repo",
           "number",
@@ -13109,6 +13280,182 @@
           "reviewDecision",
           "approvals",
           "mergedAt",
+          "closedAt",
+          "githubUpdatedAt",
+          "lastFetchedAt",
+          "lastError"
+        ]
+      },
+      "IssueState": {
+        "type": "string",
+        "enum": [
+          "open",
+          "closed"
+        ],
+        "description": "Null until Taico has read the issue"
+      },
+      "IssueStateReason": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "not_planned",
+          "duplicate",
+          "reopened"
+        ],
+        "description": "Why it is closed (completed, not planned, duplicate), or reopened"
+      },
+      "IssueLabelResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hex color without #, as GitHub gives it",
+            "example": "d73a4a"
+          }
+        },
+        "required": [
+          "name",
+          "color"
+        ]
+      },
+      "IssueResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "key": {
+            "type": "string",
+            "description": "owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case",
+            "example": "acme/api#12"
+          },
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of a GitHub Enterprise",
+            "example": "github.com"
+          },
+          "owner": {
+            "type": "string",
+            "example": "acme"
+          },
+          "repo": {
+            "type": "string",
+            "example": "api"
+          },
+          "number": {
+            "type": "number",
+            "example": 12
+          },
+          "url": {
+            "type": "string",
+            "example": "https://github.com/acme/api/issues/12"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null until Taico has read the issue",
+            "example": "Search is slow"
+          },
+          "state": {
+            "nullable": true,
+            "description": "Null until Taico has read the issue",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssueState"
+              }
+            ]
+          },
+          "stateReason": {
+            "nullable": true,
+            "description": "Why it is closed (completed, not planned, duplicate), or reopened",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssueStateReason"
+              }
+            ]
+          },
+          "isPullRequest": {
+            "type": "boolean",
+            "description": "The link is an /issues/ link to a pull request",
+            "example": false
+          },
+          "authorLogin": {
+            "type": "string",
+            "nullable": true,
+            "example": "octocat"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueLabelResponseDto"
+            }
+          },
+          "assignees": {
+            "example": [
+              "octocat"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "milestone": {
+            "type": "string",
+            "nullable": true,
+            "example": "v1.2"
+          },
+          "commentCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 3
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "githubUpdatedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When GitHub says it last changed",
+            "example": null
+          },
+          "lastFetchedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When Taico last read it from GitHub",
+            "example": null
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last read failed; null when it worked",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "host",
+          "owner",
+          "repo",
+          "number",
+          "url",
+          "title",
+          "state",
+          "stateReason",
+          "isPullRequest",
+          "authorLogin",
+          "labels",
+          "assignees",
+          "milestone",
+          "commentCount",
           "closedAt",
           "githubUpdatedAt",
           "lastFetchedAt",
@@ -14751,7 +15098,7 @@
         "type": "object",
         "properties": {
           "refs": {
-            "description": "Pull request links or owner/repo#number references, at most 50",
+            "description": "Pull request links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50",
             "example": [
               "https://github.com/acme/api/pull/12",
               "acme/web#3"
@@ -14780,6 +15127,12 @@
             "type": "string",
             "description": "Display name",
             "example": "Acme GitHub"
+          },
+          "baseUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The address of the GitHub to connect to: https://github.com (the default), a GitHub Enterprise Server (https://github.acme.com) or a GitHub Enterprise Cloud with data residency (https://acme.ghe.com).",
+            "example": "https://github.com"
           },
           "authType": {
             "example": "pat",
@@ -14833,6 +15186,16 @@
           "name": {
             "type": "string",
             "example": "Acme GitHub"
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "The GitHub this connection talks to: https://github.com or the address of a GitHub Enterprise",
+            "example": "https://github.com"
+          },
+          "host": {
+            "type": "string",
+            "description": "The host of baseUrl",
+            "example": "github.com"
           },
           "authType": {
             "example": "pat",
@@ -14901,6 +15264,8 @@
         "required": [
           "id",
           "name",
+          "baseUrl",
+          "host",
           "authType",
           "appId",
           "installationId",
@@ -14917,6 +15282,11 @@
       "GithubRepositoryRefDto": {
         "type": "object",
         "properties": {
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of a GitHub Enterprise",
+            "example": "github.com"
+          },
           "owner": {
             "type": "string",
             "example": "acme"
@@ -14927,6 +15297,7 @@
           }
         },
         "required": [
+          "host",
           "owner",
           "repo"
         ]
@@ -14982,7 +15353,7 @@
         "properties": {
           "repository": {
             "nullable": true,
-            "description": "The repository, or null when the URL is not a github.com repository",
+            "description": "The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to",
             "type": "object",
             "allOf": [
               {
@@ -14992,7 +15363,7 @@
           },
           "connection": {
             "nullable": true,
-            "description": "The connection Taico would use, or null when none fits (public repositories are then read anonymously)",
+            "description": "The connection Taico would use, or null when none fits (public github.com repositories are then read anonymously)",
             "type": "object",
             "allOf": [
               {
@@ -15034,6 +15405,11 @@
             "type": "string",
             "description": "Display name",
             "example": "Acme GitHub"
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "The address of the GitHub to connect to. Changing it checks the credential again.",
+            "example": "https://github.acme.com"
           },
           "secret": {
             "type": "string",
@@ -15096,6 +15472,25 @@
           "secret",
           "lastDeliveryAt",
           "sources"
+        ]
+      },
+      "LookupIssuesDto": {
+        "type": "object",
+        "properties": {
+          "refs": {
+            "description": "Issue links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50",
+            "example": [
+              "https://github.com/acme/api/issues/12",
+              "acme/web#3"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "refs"
         ]
       },
       "TaskExecutionQueueEntryResponseDto": {
@@ -15560,6 +15955,11 @@
             "description": "HTTPS clone URL the token works with",
             "example": "https://github.com/acme/api.git"
           },
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of the GitHub Enterprise the repository is on",
+            "example": "github.com"
+          },
           "owner": {
             "type": "string",
             "example": "acme"
@@ -15591,6 +15991,7 @@
         "required": [
           "projectSlug",
           "cloneUrl",
+          "host",
           "owner",
           "repo",
           "token",

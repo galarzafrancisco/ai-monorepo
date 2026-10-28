@@ -11,13 +11,18 @@ describe('parsePullRequestUrl', () => {
   it('rejects other links', () => {
     expect(parsePullRequestUrl('https://github.com/acme/api/issues/12')).toBeNull();
     expect(parsePullRequestUrl('https://github.com/acme/api/pull/123x')).toBeNull();
-    expect(parsePullRequestUrl('https://example.com/acme/api/pull/1')).toBeNull();
+    expect(parsePullRequestUrl('https://example.com/acme/api/pulls/1')).toBeNull();
+  });
+
+  it('reads links on a GitHub Enterprise, with their host', () => {
+    expect(parsePullRequestUrl('https://GitHub.Acme.com/acme/api/pull/4')).toEqual({ host: 'github.acme.com', owner: 'acme', repo: 'api', number: 4 });
   });
 });
 
 describe('pullRequestKey', () => {
   it('is lower case', () => {
     expect(pullRequestKey({ owner: 'Acme', repo: 'API', number: 3 })).toBe('acme/api#3');
+    expect(pullRequestKey({ host: 'github.acme.com', owner: 'Acme', repo: 'API', number: 3 })).toBe('github.acme.com/acme/api#3');
   });
 });
 

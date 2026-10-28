@@ -95,6 +95,10 @@ describe('Worker GitHub credentials E2E', () => {
     github.routes = [
       patUsers({ 'pat-token': 'alice' }),
       (req) =>
+        req.method === 'GET' && req.path === '/api/v3/user' && req.authorization === 'Bearer ghes-token'
+          ? { status: 200, body: { login: 'corp-alice' } }
+          : undefined,
+      (req) =>
         req.method === 'GET' && req.path === '/app/installations/7'
           ? { status: 200, body: { account: { login: 'acme' } } }
           : undefined,
@@ -108,6 +112,9 @@ describe('Worker GitHub credentials E2E', () => {
     await api('post', '/integrations/github/connections')
       .send({ name: 'Acme', authType: 'app', secret: pem, appId: '42', installationId: '7' })
       .expect(201);
+    await api('post', '/integrations/github/connections')
+      .send({ name: 'Work', authType: 'pat', secret: 'ghes-token', baseUrl: github.url })
+      .expect(201);
 
     const suffix = randomUUID().slice(0, 8);
     const projects = [
@@ -115,6 +122,7 @@ describe('Worker GitHub credentials E2E', () => {
       await createProject(`app-${suffix}`, 'https://github.com/acme/api', true),
       await createProject(`off-${suffix}`, 'https://github.com/alice/private', false),
       await createProject(`lab-${suffix}`, 'https://gitlab.com/acme/api', true),
+      await createProject(`ghe-${suffix}`, `${github.url}/corp/service.git`, true),
     ];
 
     const task = (await api('post', '/tasks/tasks').send({ name: 'Ship it', description: 'x' }).expect(201)).body;
@@ -143,8 +151,16 @@ describe('Worker GitHub credentials E2E', () => {
         expiresAt: expect.any(String),
       }),
       expect.objectContaining({
+        projectSlug: `ghe-${suffix}`,
+        cloneUrl: `${github.url}/corp/service.git`,
+        host: new URL(github.url).host,
+        token: 'ghes-token',
+        authType: 'pat',
+      }),
+      expect.objectContaining({
         projectSlug: `pat-${suffix}`,
         cloneUrl: 'https://github.com/alice/tool.git',
+        host: 'github.com',
         token: 'pat-token',
         authType: 'pat',
         expiresAt: null,

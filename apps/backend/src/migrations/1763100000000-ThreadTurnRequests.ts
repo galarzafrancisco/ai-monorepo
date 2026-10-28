@@ -1,8 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /** Durable handoff when a thread agent request conflicts with an active turn. */
-export class ThreadTurnRequests1763000000000 implements MigrationInterface {
-  name = 'ThreadTurnRequests1763000000000';
+export class ThreadTurnRequests1763100000000 implements MigrationInterface {
+  name = 'ThreadTurnRequests1763100000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

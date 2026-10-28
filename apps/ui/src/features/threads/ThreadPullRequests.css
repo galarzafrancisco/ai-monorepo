@@ -14,7 +14,8 @@
   min-width: 0;
 }
 
-.thread-pull-requests__row .pr-chip {
+.thread-pull-requests__row .pr-chip,
+.thread-pull-requests__row .issue-chip {
   flex: none;
 }
 

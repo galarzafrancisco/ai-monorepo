@@ -14,7 +14,7 @@ import {
 } from '../watches/pull-request-watch.service';
 import { PULL_REQUEST_WATCH_CONDITIONS } from '../watches/pull-request-watch.conditions';
 import { PullRequestsService } from '../../pull-requests/pull-requests.service';
-import { parsePullRequestRef, pullRequestUrl } from '../../pull-requests/github/pull-request-ref';
+import { pullRequestLabel, pullRequestUrl } from '../../pull-requests/github/pull-request-ref';
 import {
   describeDuration,
   MAX_ITERATIONS,
@@ -294,7 +294,9 @@ export class ThreadAgentToolsFactory {
         inputSchema: z.object({
           pullRequest: z
             .string()
-            .describe('Link to the pull request (https://github.com/owner/repo/pull/123) or owner/repo#123.'),
+            .describe(
+              'Link to the pull request (https://github.com/owner/repo/pull/123) or owner/repo#123. On a GitHub Enterprise: its link, or host/owner/repo#123.',
+            ),
           for: z
             .array(z.enum(PULL_REQUEST_WATCH_CONDITIONS))
             .min(1)
@@ -318,9 +320,9 @@ export class ThreadAgentToolsFactory {
         }),
         execute: async (args) => {
           const { pullRequest, for: conditions, waitingFor, once, hours } = args;
-          const ref = parsePullRequestRef(pullRequest);
+          const ref = await this.pullRequests.parseRef(pullRequest);
           if (!ref) {
-            return { error: `"${pullRequest}" is not a GitHub pull request link or owner/repo#number.` };
+            return { error: `"${pullRequest}" is not a pull request link on GitHub (or a GitHub Enterprise Taico is connected to), or owner/repo#number.` };
           }
           const watchHours = Math.min(Math.max(1, hours ?? DEFAULT_WATCH_HOURS), MAX_WATCH_HOURS);
           const outcome = await this.pullRequestWatches.watch({
@@ -358,16 +360,18 @@ export class ThreadAgentToolsFactory {
         inputSchema: z.object({
           pullRequest: z
             .string()
-            .describe('Link to the pull request (https://github.com/owner/repo/pull/123) or owner/repo#123.'),
+            .describe(
+              'Link to the pull request (https://github.com/owner/repo/pull/123) or owner/repo#123. On a GitHub Enterprise: its link, or host/owner/repo#123.',
+            ),
         }),
         execute: async ({ pullRequest }) => {
-          const ref = parsePullRequestRef(pullRequest);
+          const ref = await this.pullRequests.parseRef(pullRequest);
           if (!ref) {
-            return { error: `"${pullRequest}" is not a GitHub pull request link or owner/repo#number.` };
+            return { error: `"${pullRequest}" is not a pull request link on GitHub (or a GitHub Enterprise Taico is connected to), or owner/repo#number.` };
           }
           const [found] = await this.pullRequests.lookup([ref]);
           return {
-            pullRequest: `${found.owner}/${found.repo}#${found.number}`,
+            pullRequest: pullRequestLabel(found),
             url: pullRequestUrl(found),
             title: found.title,
             summary: this.pullRequestWatches.describe(found),

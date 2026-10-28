@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PullRequestsService } from '../../pull-requests/pull-requests.service';
 import { PullRequestEntity } from '../../pull-requests/pull-request.entity';
 import { PullRequestState } from '../../pull-requests/enums';
-import { PullRequestRef, pullRequestUrl } from '../../pull-requests/github/pull-request-ref';
+import { PullRequestRef, pullRequestLabel, pullRequestUrl } from '../../pull-requests/github/pull-request-ref';
 import { ThreadWatchesService, ThreadWatchResult } from './thread-watches.service';
 import { ThreadWatchKind } from './thread-watch.enums';
 import { describePullRequest, formatPullRequestExpiry } from './pull-request-watch.format';
@@ -57,7 +57,7 @@ export class PullRequestWatchService {
       threadId: input.threadId,
       kind: ThreadWatchKind.PULL_REQUEST,
       targetId: pullRequest.id,
-      targetLabel: `${pullRequest.owner}/${pullRequest.repo}#${pullRequest.number}`,
+      targetLabel: pullRequestLabel(pullRequest),
       targetUrl: pullRequestUrl(pullRequest),
       conditions: input.conditions,
       once: input.once,

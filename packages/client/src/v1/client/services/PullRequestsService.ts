@@ -11,7 +11,7 @@ import { request as __request } from '../core/request.js';
 export class PullRequestsService {
     /**
      * Status of linked pull requests, in the order asked
-     * Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.
+     * Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.
      * @param requestBody
      * @returns PullRequestResponseDto
      * @throws ApiError
