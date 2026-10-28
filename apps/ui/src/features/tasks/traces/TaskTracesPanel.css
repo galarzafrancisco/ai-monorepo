@@ -179,14 +179,39 @@
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.task-traces__call strong {
-  flex: none;
+/* The name keeps the room it needs and truncates only when the row is too narrow;
+   the argument hint gets whatever is left. Nothing scrolls sideways. */
+.task-traces__tool-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 3ch;
   font-family: var(--font-mono);
+  white-space: nowrap;
+}
+/* The MCP server gives way first, so the tool's own name stays readable. */
+.task-traces__tool-server {
+  flex: 0 0 auto;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  border-radius: var(--r-1);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}
+.task-traces__call strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--fs-2);
   font-weight: var(--fw-medium);
 }
 .task-traces__hint {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
   color: var(--text-muted);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildTraceEntries,
   mergeTraceEvents,
+  splitToolName,
   summarizeToolInput,
   type TraceEvent,
 } from './traceEntries';
@@ -481,5 +482,13 @@ describe('summarizeToolInput', () => {
     expect(summarizeToolInput(JSON.stringify({ command: 'x'.repeat(100) }), 10)).toBe('xxxxxxxxx…');
     expect(summarizeToolInput(JSON.stringify({ count: 3 }))).toBe('');
     expect(summarizeToolInput(undefined)).toBe('');
+  });
+});
+
+describe('splitToolName', () => {
+  it('splits MCP tool names into server and tool', () => {
+    expect(splitToolName('mcp__tasks__mark_task_for_review')).toEqual({ server: 'tasks', tool: 'mark_task_for_review' });
+    expect(splitToolName('mcp__context__create_block')).toEqual({ server: 'context', tool: 'create_block' });
+    expect(splitToolName('Bash')).toEqual({ server: null, tool: 'Bash' });
   });
 });

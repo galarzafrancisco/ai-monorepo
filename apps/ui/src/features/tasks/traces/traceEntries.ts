@@ -411,3 +411,9 @@ export function summarizeToolInput(input: string | undefined, maxLength = 80): s
   summary = summary.replace(/\s+/g, ' ').trim();
   return summary.length > maxLength ? `${summary.slice(0, maxLength - 1)}…` : summary;
 }
+
+/** "mcp__tasks__add_comment" → { server: "tasks", tool: "add_comment" }; other names pass through. */
+export function splitToolName(name: string): { server: string | null; tool: string } {
+  const match = /^mcp__(.+?)__(.+)$/.exec(name);
+  return match ? { server: match[1], tool: match[2] } : { server: null, tool: name };
+}
