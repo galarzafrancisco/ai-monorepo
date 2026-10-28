@@ -47,6 +47,8 @@ type ThreadSubscriptionPayload = {
 };
 
 const getThreadRoomName = (threadId: string): string => `${THREADS_ROOM}-${threadId}`;
+const getThreadActorRoomName = (threadId: string, actorId: string): string =>
+  `${THREADS_ROOM}-${threadId}-actor-${actorId}`;
 
 /** Every list socket of one actor: all their tabs and devices. */
 const getActorRoomName = (actorId: string): string => `${THREADS_ROOM}-actor-${actorId}`;
@@ -121,6 +123,10 @@ export class ThreadsGateway
 
     const room = getThreadRoomName(body.threadId);
     client.join(room);
+    const actorId = getActorId(client);
+    if (actorId) {
+      client.join(getThreadActorRoomName(body.threadId, actorId));
+    }
     return { ok: true, room };
   }
 
@@ -140,6 +146,10 @@ export class ThreadsGateway
 
     const room = getThreadRoomName(body.threadId);
     client.leave(room);
+    const actorId = getActorId(client);
+    if (actorId) {
+      client.leave(getThreadActorRoomName(body.threadId, actorId));
+    }
     return { ok: true };
   }
 
@@ -226,17 +236,28 @@ export class ThreadsGateway
 
     const room = getThreadRoomName(event.payload.threadId);
 
+    const { detailActorId, input, output, ...metadata } = event.payload;
     const wireEvent: AgentActivityWireEvent = {
       payload: {
-        threadId: event.payload.threadId,
-        kind: event.payload.kind,
+        ...metadata,
+        occurredAt: event.occurredAt.toISOString(),
       },
       actor: { id: event.actor.id },
     };
 
-    this.server
-      .to(room)
-      .emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
+    // A thread subscription alone does not grant access to a tool's underlying
+    // tasks/context. Only the actor whose delegated token ran the tool receives
+    // its arguments and result; all other viewers see the lifecycle metadata.
+    if (detailActorId && (input !== undefined || output !== undefined)) {
+      const detailRoom = getThreadActorRoomName(event.payload.threadId, detailActorId);
+      this.server.to(detailRoom).emit(ThreadWireEvents.AGENT_ACTIVITY, {
+        ...wireEvent,
+        payload: { ...wireEvent.payload, input, output },
+      } satisfies AgentActivityWireEvent);
+      this.server.to(room).except(detailRoom).emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
+      return;
+    }
+    this.server.to(room).emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
   }
 
   @OnEvent(ThreadAgentResponseDeltaEvent.INTERNAL)

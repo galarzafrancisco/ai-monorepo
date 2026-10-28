@@ -239,6 +239,30 @@ export class ThreadAgentLogService {
     return rows.length > 0;
   }
 
+  /** Detect undelivered work created since the claim, including on other backend instances. */
+  async hasPendingSinceClaim(
+    threadId: string,
+    agentActorId: string,
+    turnId: string,
+  ): Promise<boolean> {
+    const rows: unknown[] = await this.dataSource.query(
+      `SELECT 1 FROM thread_turns t
+        WHERE t.id = $3 AND t.thread_id = $1 AND (
+          EXISTS (SELECT 1 FROM thread_messages m
+                   WHERE m.thread_id = $1 AND m.agent_message_id IS NULL
+                     AND m.created_by_actor_id <> $2 AND m.created_at >= t.started_at)
+          OR EXISTS (SELECT 1 FROM thread_task_subscriptions s
+                       WHERE s.thread_id = $1 AND s.triggered_at >= t.started_at)
+          OR EXISTS (SELECT 1 FROM thread_timer_firings f
+                       WHERE f.thread_id = $1 AND f.fired_at >= t.started_at)
+          OR EXISTS (SELECT 1 FROM thread_watch_deliveries d
+                       WHERE d.thread_id = $1 AND d.created_at >= t.started_at)
+        ) LIMIT 1`,
+      [threadId, agentActorId, turnId],
+    );
+    return rows.length > 0;
+  }
+
   /**
    * Tells the agent about subscribed tasks that went to review or were done,
    * as messages the user never sees. A done task ends the subscription; a task

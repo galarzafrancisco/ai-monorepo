@@ -215,14 +215,14 @@ export function RunTrace({
 }
 
 /** A tool still running, or the agent thinking: what the live shimmer marks. */
-function isEntryWorking(entry: TraceEntry): boolean {
+export function isEntryWorking(entry: TraceEntry): boolean {
   if (entry.kind === 'thinking') return true;
   if (entry.kind !== 'tool') return false;
   const status = entry.status?.toLowerCase();
   return status !== 'completed' && status !== 'failed' && status !== 'error';
 }
 
-function TraceEntryView({ entry, live = false }: { entry: TraceEntry; live?: boolean }) {
+export function TraceEntryView({ entry, live = false }: { entry: TraceEntry; live?: boolean }) {
   const Icon =
     entry.kind === 'tool'
       ? Terminal
@@ -234,10 +234,11 @@ function TraceEntryView({ entry, live = false }: { entry: TraceEntry; live?: boo
             ? MessageSquare
             : Braces;
   const working = live && isEntryWorking(entry);
-  const raw = <RawTraceDetails entry={entry} />;
+  const raw = entry.events.length ? <RawTraceDetails entry={entry} /> : null;
+  const emittedAt = entry.events[0]?.emittedAt ?? entry.timestamp;
   const at = (
-    <time dateTime={entry.events[0].emittedAt}>
-      {time(entry.events[0].emittedAt)}
+    <time dateTime={emittedAt}>
+      {emittedAt ? time(emittedAt) : ''}
     </time>
   );
 
