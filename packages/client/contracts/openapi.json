@@ -7514,6 +7514,44 @@
         ]
       }
     },
+    "/api/v1/executions/active/{executionId}/github-credentials": {
+      "post": {
+        "description": "Only the worker that claimed the execution may ask. Returns a token for each project of the task that lets workers use its GitHub connection: a one-hour installation token limited to the repository for a GitHub App, or the personal access token.",
+        "operationId": "ActiveTaskExecutionController_issueGithubCredentials",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "description": "Execution ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerGithubCredentialsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "GitHub tokens for the projects of a claimed execution",
+        "tags": [
+          "Executions"
+        ]
+      }
+    },
     "/api/v1/executions/active/{executionId}/session": {
       "patch": {
         "description": "Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.",
@@ -15452,6 +15490,71 @@
           "errorCode",
           "errorMessage",
           "stats"
+        ]
+      },
+      "WorkerGithubCredentialDto": {
+        "type": "object",
+        "properties": {
+          "projectSlug": {
+            "type": "string",
+            "example": "taico"
+          },
+          "cloneUrl": {
+            "type": "string",
+            "description": "HTTPS clone URL the token works with",
+            "example": "https://github.com/acme/api.git"
+          },
+          "owner": {
+            "type": "string",
+            "example": "acme"
+          },
+          "repo": {
+            "type": "string",
+            "example": "api"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token for git over HTTPS and the GitHub API. Never log or store it.",
+            "example": "ghs_..."
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the token stops working; null for a personal access token",
+            "example": "2026-01-01T01:00:00.000Z"
+          },
+          "authType": {
+            "type": "string",
+            "enum": [
+              "pat",
+              "app"
+            ],
+            "example": "app"
+          }
+        },
+        "required": [
+          "projectSlug",
+          "cloneUrl",
+          "owner",
+          "repo",
+          "token",
+          "expiresAt",
+          "authType"
+        ]
+      },
+      "WorkerGithubCredentialsResponseDto": {
+        "type": "object",
+        "properties": {
+          "credentials": {
+            "description": "One per project of the task whose GitHub connection may be used by workers. Empty when none is: the worker then uses the machine's own credentials.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkerGithubCredentialDto"
+            }
+          }
+        },
+        "required": [
+          "credentials"
         ]
       },
       "UpdateRunnerSessionIdDto": {

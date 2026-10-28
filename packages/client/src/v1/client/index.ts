@@ -198,6 +198,8 @@ export type { UpsertAgentToolPermissionDto } from './models/UpsertAgentToolPermi
 export { UserResponseDto } from './models/UserResponseDto.js';
 export { UserWalkthroughStatusResponseDto } from './models/UserWalkthroughStatusResponseDto.js';
 export type { VersionResponseDto } from './models/VersionResponseDto.js';
+export { WorkerGithubCredentialDto } from './models/WorkerGithubCredentialDto.js';
+export type { WorkerGithubCredentialsResponseDto } from './models/WorkerGithubCredentialsResponseDto.js';
 export type { WorkerResponseDto } from './models/WorkerResponseDto.js';
 
 export { AccessRequestsService } from './services/AccessRequestsService.js';

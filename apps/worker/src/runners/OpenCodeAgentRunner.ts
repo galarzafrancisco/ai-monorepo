@@ -65,6 +65,9 @@ function stopProcessTree(proc: ChildProcessWithoutNullStreams): void {
 }
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
+  /** The run's extra environment, for the opencode server it starts. */
+  private runEnv: Record<string, string> = {};
+
   readonly kind: string;
   protected override readonly usePeriodicHeartbeat = false;
 
@@ -264,6 +267,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
         detached: process.platform !== 'win32',
         env: {
           ...process.env,
+          ...this.runEnv,
           OPENCODE_CONFIG_CONTENT: JSON.stringify(config),
         },
       },
@@ -389,6 +393,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     }
 
     try {
+      this.runEnv = ctx.env ?? {};
       await this.initBullshit({
         executionId: ctx.executionId,
         cwd: ctx.cwd,

@@ -11,6 +11,7 @@ import type { TaskExecutionHistoryResponseDto } from '../models/TaskExecutionHis
 import type { TaskExecutionQueueListResponseDto } from '../models/TaskExecutionQueueListResponseDto.js';
 import type { UpdateExecutionStatsDto } from '../models/UpdateExecutionStatsDto.js';
 import type { UpdateRunnerSessionIdDto } from '../models/UpdateRunnerSessionIdDto.js';
+import type { WorkerGithubCredentialsResponseDto } from '../models/WorkerGithubCredentialsResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
 import type { OpenAPIConfig } from '../core/OpenAPI.js';
@@ -119,6 +120,25 @@ export class ExecutionsService {
         return __request(config, {
             method: 'POST',
             url: '/api/v1/executions/active/{executionId}/unclaim',
+            path: {
+                'executionId': executionId,
+            },
+        });
+    }
+    /**
+     * GitHub tokens for the projects of a claimed execution
+     * Only the worker that claimed the execution may ask. Returns a token for each project of the task that lets workers use its GitHub connection: a one-hour installation token limited to the repository for a GitHub App, or the personal access token.
+     * @param executionId Execution ID
+     * @returns WorkerGithubCredentialsResponseDto
+     * @throws ApiError
+     */
+    public static activeTaskExecutionControllerIssueGithubCredentials(
+        executionId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<WorkerGithubCredentialsResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/executions/active/{executionId}/github-credentials',
             path: {
                 'executionId': executionId,
             },

@@ -106,6 +106,19 @@ export abstract class BaseAgentRunner implements AgentRunner {
    * Implemented per agent.
    * Must return final result string.
    */
+  /**
+   * The worker's environment plus the run's extra variables, for harnesses
+   * that take a whole environment. Undefined when the run adds nothing, so the
+   * harness keeps its default (inheriting the worker's).
+   */
+  protected harnessEnv(ctx: AgentRunContext): Record<string, string> | undefined {
+    if (!ctx.env || Object.keys(ctx.env).length === 0) return undefined;
+    const inherited = Object.fromEntries(
+      Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
+    );
+    return { ...inherited, ...ctx.env };
+  }
+
   protected abstract runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,

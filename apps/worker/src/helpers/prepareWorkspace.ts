@@ -100,7 +100,7 @@ async function prepareRepo(
   report("running");
   console.log(`using repo for project '${repo.slug}': ${repo.repoUrl}`);
   try {
-    await ensureRepo({ repo: repo.repoUrl, dir });
+    await ensureRepo({ repo: repo.repoUrl, dir, ...(repo.tokenFile ? { tokenFile: repo.tokenFile } : {}) });
     report("completed");
   } catch (error) {
     report("failed");

@@ -3,6 +3,8 @@ export const PROJECT_TAG_PREFIX = 'project:';
 export type ProjectRepo = {
   slug: string;
   repoUrl: string;
+  /** File holding a GitHub token Taico issued for this repository, if any. */
+  tokenFile?: string;
 };
 
 export type SkippedProjectReason = 'not_found' | 'no_repo_url';

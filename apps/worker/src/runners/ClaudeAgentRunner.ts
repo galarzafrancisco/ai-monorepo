@@ -93,6 +93,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
           prompt: ctx.prompt,
           options: {
             cwd: ctx.cwd,
+            ...(this.harnessEnv(ctx) ? { env: this.harnessEnv(ctx) } : {}),
             persistSession: true,
             settingSources: ['user', 'project', 'local'],
             ...(this.model ? { model: this.model.modelId } : {}),

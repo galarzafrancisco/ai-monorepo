@@ -1,3 +1,4 @@
+import { IntegrationsModule } from '../integrations/integrations.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentsModule } from '../agents/agents.module';
@@ -47,6 +48,7 @@ import { ExecutionsGateway } from './executions.gateway';
     ThreadsModule,
     AuthGuardsModule,
     WorkersModule,
+    IntegrationsModule,
   ],
   controllers: [
     TaskExecutionQueueController,

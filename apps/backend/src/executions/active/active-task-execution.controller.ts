@@ -39,6 +39,8 @@ import { StopActiveTaskExecutionDto } from './dto/http/stop-active-task-executio
 import { UpdateRunnerSessionIdDto } from './dto/http/update-runner-session-id.dto';
 import { TaskExecutionHistoryResponseDto } from '../history/dto/http/task-execution-history-response.dto';
 import { UpdateExecutionStatsDto } from './dto/http/update-execution-stats.dto';
+import { WorkerGithubCredentialsResponseDto } from './dto/http/worker-github-credentials-response.dto';
+import { WorkerGithubCredentialsService } from '../../integrations/github/worker-github-credentials.service';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -48,6 +50,7 @@ import { UpdateExecutionStatsDto } from './dto/http/update-execution-stats.dto';
 export class ActiveTaskExecutionController {
   constructor(
     private readonly activeTaskExecutionService: ActiveTaskExecutionService,
+    private readonly workerGithubCredentials: WorkerGithubCredentialsService,
   ) {}
 
   @Get()
@@ -137,6 +140,46 @@ export class ActiveTaskExecutionController {
         throw new ForbiddenException(error.message);
       }
 
+      throw error;
+    }
+  }
+
+  @Post(':executionId/github-credentials')
+  @HttpCode(200)
+  @RequireScopes(WorkersScopes.CONNECT.id)
+  @ApiOperation({
+    summary: 'GitHub tokens for the projects of a claimed execution',
+    description:
+      'Only the worker that claimed the execution may ask. Returns a token for each project of the task that lets workers use its GitHub connection: a one-hour installation token limited to the repository for a GitHub App, or the personal access token.',
+  })
+  @ApiParam({ name: 'executionId', description: 'Execution ID' })
+  @ApiOkResponse({ type: WorkerGithubCredentialsResponseDto })
+  async issueGithubCredentials(
+    @Param('executionId') executionId: string,
+    @CurrentAuth() auth: AuthContext,
+  ): Promise<WorkerGithubCredentialsResponseDto> {
+    try {
+      const workerClientId = auth.claims.client_id;
+      const taskId = await this.activeTaskExecutionService.getTaskIdForWorker({ executionId, workerClientId });
+      const credentials = await this.workerGithubCredentials.issueForTask(taskId, { executionId, workerClientId });
+      return {
+        credentials: credentials.map((credential) => ({
+          projectSlug: credential.projectSlug,
+          cloneUrl: credential.cloneUrl,
+          owner: credential.owner,
+          repo: credential.repo,
+          token: credential.token,
+          expiresAt: credential.expiresAt?.toISOString() ?? null,
+          authType: credential.authType,
+        })),
+      };
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ForbiddenException(error.message);
+      }
       throw error;
     }
   }

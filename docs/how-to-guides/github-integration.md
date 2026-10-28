@@ -44,6 +44,25 @@ Access is Taico-wide. Anyone who can see a task, comment or thread with a pull r
 
 Each project has a "Workers use this connection" switch, off by default. When off, workers use whatever git and `gh` credentials the machine they run on already has.
 
+When it is on, a worker that picks up a task asks for tokens before preparing the workspace: `POST /executions/active/:executionId/github-credentials` (scope `workers:connect`). Only the worker that claimed the execution may ask (others get 403). The answer has one entry per project of the task that has a github.com repository, has the switch on, and resolves to a connection:
+
+| Connection | Token |
+|---|---|
+| GitHub App | A fresh installation token, valid for an hour, limited to that one repository |
+| Personal access token | The token itself, reaching everything it can |
+
+Every token handed out is logged (task, execution, worker, repository, connection), never the token itself.
+
+On the worker (`apps/worker/src/helpers/`):
+
+- Each token goes in its own file under `<baseDir>/.taico-credentials/<executionId>/`: the directory is 0700, the file 0600, outside every repository and the agent's working directory. The directory is deleted when the execution ends, whatever the outcome.
+- The repository is cloned or fetched over HTTPS (an SSH project URL is replaced by the HTTPS one, and an existing SSH clone's `origin` is switched).
+- The repository's local git config gets a credential helper for `https://github.com` that reads the token file when git asks. The agent's own `git push` uses it too. The token never appears in git config, remote URLs, process arguments or logs. A later run of a project without a token removes the helper again.
+- The harness gets `GH_TOKEN` for the `gh` CLI, per run, through the harness's own environment option (Claude, Copilot and OpenCode). With several projects, it is the first project's token.
+- If the request fails, the run goes on with the machine's own credentials.
+
+An App token expires after an hour; runs longer than that lose GitHub access until they finish. This is the contract containerised workers will use too: the claim hands over credentials, the runtime injects them.
+
 ## Pull requests
 
 Taico keeps one copy of each linked pull request in `pull_requests`, however many places link to it, keyed by `owner/repo#number` in lower case.

@@ -1284,6 +1284,20 @@ export interface TaskExecutionHistoryResponseDto {
   stats: ExecutionStatsResponseDto | null;
 }
 
+export interface WorkerGithubCredentialDto {
+  projectSlug: string;
+  cloneUrl: string;
+  owner: string;
+  repo: string;
+  token: string;
+  expiresAt: string | null;
+  authType: 'pat' | 'app';
+}
+
+export interface WorkerGithubCredentialsResponseDto {
+  credentials: WorkerGithubCredentialDto[];
+}
+
 export interface UpdateRunnerSessionIdDto {
   sessionId: string;
 }
