@@ -30,6 +30,7 @@ import { ProjectPicker } from '../projects/ProjectPicker';
 import { useProjects } from '../projects/useProjects';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { LinkifiedText, PullRequestChip, parsePullRequestUrl } from '../pull-requests';
+import { IssueChip, parseIssueUrl } from '../issues';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -661,6 +662,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               if (parsePullRequestUrl(artefact.link)) {
                 return <PullRequestChip key={artefact.id} url={artefact.link} variant="full" />;
               }
+              if (parseIssueUrl(artefact.link)) {
+                return <IssueChip key={artefact.id} url={artefact.link} variant="full" />;
+              }
               const { label } = describeArtefactLink(artefact.link);
               return (
                 <a
@@ -1145,7 +1149,7 @@ function TaskDetailLoadingShell({ backPath }: { backPath: string }) {
   );
 }
 
-/** A link's short name: host and path. Pull request links are drawn as PullRequestChip instead. */
+/** A link's short name: host and path. Pull request and issue links are drawn as chips instead. */
 function describeArtefactLink(link: string): { label: string } {
   try {
     const url = new URL(link);

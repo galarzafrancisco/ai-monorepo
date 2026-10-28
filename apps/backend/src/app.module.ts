@@ -44,6 +44,7 @@ import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { PullRequestsModule } from './pull-requests/pull-requests.module';
+import { IssuesModule } from './issues/issues.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
@@ -57,6 +58,7 @@ import { PullRequests1762700000000 } from './migrations/1762700000000-PullReques
 import { ThreadWatches1762800000000 } from './migrations/1762800000000-ThreadWatches';
 import { GithubEnterprise1762900000000 } from './migrations/1762900000000-GithubEnterprise';
 import { GithubWebhookSources1762950000000 } from './migrations/1762950000000-GithubWebhookSources';
+import { Issues1763000000000 } from './migrations/1763000000000-Issues';
 import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
@@ -104,6 +106,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadWatches1762800000000,
         GithubEnterprise1762900000000,
         GithubWebhookSources1762950000000,
+        Issues1763000000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -125,6 +128,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
     AiProvidersModule,
     IntegrationsModule,
     PullRequestsModule,
+    IssuesModule,
     ExecutionsModule,
     WorkersModule,
     GlobalSearchModule,

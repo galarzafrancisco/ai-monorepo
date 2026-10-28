@@ -3,10 +3,11 @@
 Taico can connect to GitHub. A connection does three things:
 
 - shows the status of pull requests linked anywhere in Taico (open, draft, merged, closed, CI, approvals, size);
+- shows the status of issues linked anywhere in Taico (open, closed, not planned, labels, assignees);
 - lets threads watch pull requests and wake up when something happens;
 - if a project allows it, gives workers a token to clone, push and open pull requests.
 
-Taico stays agnostic: agents keep adding PR links to tasks, comments and threads as usual. Taico notices the links on its own.
+Taico stays agnostic: agents keep adding PR and issue links to tasks, comments and threads as usual. Taico notices the links on its own.
 
 It works with github.com and with GitHub Enterprise: GitHub Enterprise Server (self-hosted, `https://github.acme.com`) and GitHub Enterprise Cloud with data residency (`https://acme.ghe.com`). GitHub Enterprise Cloud on github.com is plain github.com.
 
@@ -29,7 +30,7 @@ Each connection has a **GitHub address**: empty (github.com) or the address you 
 
 A personal access token is the quickest to set up and needs no admin rights. A GitHub App needs someone who can create and install apps on the account or organization, but gives short-lived, narrowly scoped tokens.
 
-Suggested permissions (fine-grained token or app): Pull requests read, Commit statuses read, Checks read, Metadata read. Add Contents read and write, and Pull requests write, if workers should clone, push and open pull requests.
+Suggested permissions (fine-grained token or app): Pull requests read, Issues read, Commit statuses read, Checks read, Metadata read. Add Contents read and write, and Pull requests write, if workers should clone, push and open pull requests.
 
 Before a connection is saved, Taico checks the credential with its GitHub (`GET /user` for a token, `GET /app/installations/:id` with an app JWT) and records the login it acts as. A credential GitHub rejects is never saved. "Check again" re-runs the check and shows why it failed, if it did.
 
@@ -129,7 +130,7 @@ The connection used is the one of the first project whose repository it is, if t
 
 ### Webhooks (optional)
 
-Settings > Integrations > Webhook shows a payload URL (`/api/v1/integrations/github/webhooks/<connection id>`, built from `ISSUER_URL`) and a secret, created the first time it is asked for. One URL and secret per connection: paste the same pair into as many webhooks as needed, with these events: pull requests, pull request reviews and review comments, issue comments, check runs, check suites and statuses. Where to add it:
+Settings > Integrations > Webhook shows a payload URL (`/api/v1/integrations/github/webhooks/<connection id>`, built from `ISSUER_URL`) and a secret, created the first time it is asked for. One URL and secret per connection: paste the same pair into as many webhooks as needed, with these events: pull requests, pull request reviews and review comments, issues, issue comments, check runs, check suites and statuses. Where to add it:
 
 | Where on GitHub | Covers | Who can add it |
 |---|---|---|
@@ -174,6 +175,19 @@ Colors follow GitHub: open green (`--pr-open`), draft gray (`--pr-draft`), merge
 Hovering a chip (or tapping it on touch screens) opens a card with the title, branches, author, lines added and removed, files, comments, which checks failed, and the review state. The card is a `Popover` in a portal, so board columns never clip it.
 
 `pullRequestStore` keeps one copy of every pull request on screen: requests made in the same render share one `POST /pull-requests/lookup`, the `/pull-requests` socket keeps them live, and pull requests still on screen are looked up again every 4 minutes (which keeps them in the backend's "viewed" polling tier) and after a reconnect.
+
+## Issues
+
+Issues work like pull requests, with less to read. Taico keeps one copy of each linked issue in `issues`, keyed like pull requests (`owner/repo#number`, `host/owner/repo#number` on a GitHub Enterprise), and where it is linked from in `issue_references`.
+
+- **Noticing links.** `IssueReferencesListener` reads issue links (`https://github.com/<owner>/<repo>/issues/<n>`, or the same on the host of a GitHub Enterprise connection, including `#issuecomment` anchors) from the same places as pull requests: task links (artefacts), task name and description, task comments and thread messages. The `Issues` migration records links that already existed, without reading them until someone looks.
+- **Reading from GitHub.** One conditional request (`GET /repos/:owner/:repo/issues/:n`); a 304 costs nothing. Taico keeps the title, state and why it was closed (`stateReason`: completed, not planned, duplicate), author, labels with their colors, assignees, milestone and comment count. GitHub serves pull requests at `/issues/:n` too: such a link is stored with `isPullRequest` and the UI draws it as the pull request.
+- **When Taico looks again** (`issue-schedule.ts`): every minute while someone has it on screen (10 minutes with webhooks), every 10 minutes while an open task or a thread in the last day links it (hourly with webhooks), otherwise not. Closed issues are only read again when someone looks, since they can be reopened. Failures back off like pull requests.
+- **Webhooks.** The same payload URL and secret. `issues` and `issue_comment` deliveries mark the issue they name for a fresh look; add the "Issues" event to the webhook.
+- **API and events.** `POST /issues/lookup` `{ refs: [...] }` (links, `owner/repo#n` or `host/owner/repo#n`, at most 50), `GET /issues/:id`, `POST /issues/:id/refresh`, `GET /threads/:id/issues` (issues attached as links to the thread's tasks). Scopes `issue:read` and `issue:write`. `IssueUpdatedEvent` (internal) carries the `changes` since the last look: `closed`, `reopened`, `assigned`, `labeled`, `new_comments`. Socket.io namespace `/issues`: `issues.subscribe`; `issue.updated` carries the new state.
+- **In the UI** (`apps/ui/src/features/issues/`): issue links are drawn like pull request links everywhere: compact chips on board cards and task rows, a full chip in the task header, inline in descriptions, comments and thread messages, and an "Issues" section in the thread sidebar. Colors follow GitHub: open green (`--issue-open`), closed purple (`--issue-completed`), not planned or duplicate gray (`--issue-not-planned`). Hovering a chip opens a card with the title, author, comments, labels, assignees and milestone. `issueStore` batches lookups and keeps them live like `pullRequestStore`.
+
+Code: `apps/backend/src/issues/`.
 
 ## Threads watching pull requests
 

@@ -429,6 +429,18 @@ export const ErrorCatalog: Record<
     type: '/errors/pull-requests/ref-invalid',
     retryable: false,
   },
+  [ErrorCodes.ISSUE_NOT_FOUND]: {
+    status: 404,
+    title: 'Issue not found',
+    type: '/errors/issues/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.ISSUE_REF_INVALID]: {
+    status: 400,
+    title: 'Not a GitHub issue',
+    type: '/errors/issues/ref-invalid',
+    retryable: false,
+  },
   [ErrorCodes.INTERNAL_ERROR]: {
     status: 500,
     title: 'Internal server error',

@@ -49,6 +49,11 @@
   --pr-draft: var(--text-muted);
   --pr-closed: var(--danger);
 
+  /* Colors - Issue states, after GitHub's: open green, closed purple, not planned gray. */
+  --issue-open: var(--pr-open);
+  --issue-completed: var(--pr-merged);
+  --issue-not-planned: var(--text-muted);
+
   /* Colors - Focus */
   --focus-ring: #0969da;
 
