@@ -14,8 +14,7 @@
         "build:prod"
       ],
       "inputs": [
-        "{workspaceRoot}/apps/ui/dist/**/*",
-        "{workspaceRoot}/apps/ui-v1/dist/**/*"
+        { "dependentTasksOutputFiles": "**/*" }
       ],
       "outputs": [
         "{projectRoot}/dist/public"
