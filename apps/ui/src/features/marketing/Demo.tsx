@@ -5,8 +5,10 @@ import { MAIN_NAVEGATION_ITEMS } from '../../shared/const/mainNavegationItems';
 import { TASKS_STATUS } from '../../shared/const/taskStatus';
 import { NavigationIcon } from '../../shared/components/NavigationIcon';
 import { getTaskStatusTag } from '../tasks/taskStatusTag';
-import { ACTORS, DEMO_EVENTS, HERO_ID, reduceDemo, stepDuration } from './demoScript';
-import type { BoardTask, Message, TaskStatus } from './demoScript';
+import { PullRequestChipView } from '../pull-requests/PullRequestChipView';
+import type { PullRequest } from '../pull-requests/api';
+import { ACTORS, DEMO_EVENTS, HERO_ID, PR_REPO, reduceDemo, stepDuration } from './demoScript';
+import type { BoardTask, DemoPullRequest, Message, TaskStatus } from './demoScript';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 const COLUMNS = Object.keys(TASKS_STATUS) as TaskStatus[];
@@ -26,6 +28,33 @@ function Typed({ text, animate }: { text: string; animate: boolean }) {
   return animate ? <Streaming key={text} text={text} /> : <>{text}</>;
 }
 
+const CHECKS_TOTAL = 6;
+
+/** Fills in a full pull request from the scripted state, for the app's own chip. */
+function demoPullRequest(pr: DemoPullRequest, title: string): PullRequest {
+  const { owner, repo } = PR_REPO;
+  const done = pr.checks === 'success' ? CHECKS_TOTAL : pr.checks === 'failure' ? CHECKS_TOTAL - 1 : pr.checks === 'pending' ? 2 : 0;
+  return {
+    id: `demo-${pr.number}`, key: `${owner}/${repo}#${pr.number}`, owner, repo, number: pr.number,
+    url: `https://github.com/${owner}/${repo}/pull/${pr.number}`, title,
+    state: pr.state, draft: false, authorLogin: 'claude-dev', headRef: 'feature/demo', baseRef: 'main',
+    additions: 128, deletions: 14, changedFiles: 5, commentCount: 2,
+    checksStatus: pr.checks,
+    checksTotal: pr.checks === 'none' ? 0 : CHECKS_TOTAL,
+    checksPassed: done,
+    checksFailed: pr.checks === 'failure' ? 1 : 0,
+    checksPending: pr.checks === 'pending' ? CHECKS_TOTAL - done : 0,
+    failedChecks: pr.checks === 'failure' ? ['e2e'] : [],
+    reviewDecision: pr.state === 'merged' ? 'approved' : 'none', approvals: pr.state === 'merged' ? 1 : 0,
+    mergedAt: null, closedAt: null, githubUpdatedAt: null, lastFetchedAt: null, lastError: null,
+  };
+}
+
+function DemoPrChip({ pr, title, variant }: { pr: DemoPullRequest; title: string; variant: 'compact' | 'full' }) {
+  const p = demoPullRequest(pr, title);
+  return <PullRequestChipView refInfo={{ owner: p.owner, repo: p.repo, number: p.number }} url={p.url} pullRequest={p} variant={variant} />;
+}
+
 function DemoCard({ task, pulse, animate, when }: { task: BoardTask; pulse?: number; animate: boolean; when?: string }) {
   const a = ACTORS[task.assignee];
   const tags = [];
@@ -41,6 +70,7 @@ function DemoCard({ task, pulse, animate, when }: { task: BoardTask; pulse?: num
       leading={<Avatar name={a.name} src={a.avatar} size="md" />}
       topRight={when ?? (task.id === HERO_ID ? 'just now' : '2h ago')}
       tags={tags}
+      tagExtras={task.pr ? <DemoPrChip pr={task.pr} title={task.name} variant="compact" /> : undefined}
       footer={
         <>
           <span className="row-detail truncate">#{task.id}</span>
@@ -165,7 +195,7 @@ export function Demo() {
                   {v.hero && (() => { const tag = getTaskStatusTag(v.hero.status); return <span className={`chip chip--${tag.color}`}>{tag.label}</span>; })()}
                 </div>
                 <h3>{v.hero?.name ?? 'New task'}</h3>
-                {v.prUrl && <span className="pub-pr pub-mono">🔗 {v.prUrl}</span>}
+                {v.hero?.pr && <span className="pub-pr"><DemoPrChip pr={v.hero.pr} title={v.hero.name} variant="full" /></span>}
                 <p className="pub-panel__label">Updates</p>
                 <ul className="pub-updates">
                   {v.comments.length === 0 && <li className="pub-updates__empty">Live activity will show here</li>}
