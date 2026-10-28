@@ -35,7 +35,7 @@ function demoPullRequest(pr: DemoPullRequest, title: string): PullRequest {
   const { owner, repo } = PR_REPO;
   const done = pr.checks === 'success' ? CHECKS_TOTAL : pr.checks === 'failure' ? CHECKS_TOTAL - 1 : pr.checks === 'pending' ? 2 : 0;
   return {
-    id: `demo-${pr.number}`, key: `${owner}/${repo}#${pr.number}`, owner, repo, number: pr.number,
+    id: `demo-${pr.number}`, key: `${owner}/${repo}#${pr.number}`, host: 'github.com', owner, repo, number: pr.number,
     url: `https://github.com/${owner}/${repo}/pull/${pr.number}`, title,
     state: pr.state, draft: false, authorLogin: 'claude-dev', headRef: 'feature/demo', baseRef: 'main',
     additions: 128, deletions: 14, changedFiles: 5, commentCount: 2,

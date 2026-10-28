@@ -6,6 +6,14 @@ import type { GithubAuthType } from './GithubAuthType.js';
 export type GithubConnectionResponseDto = {
     id: string;
     name: string;
+    /**
+     * The GitHub this connection talks to: https://github.com or the address of a GitHub Enterprise
+     */
+    baseUrl: string;
+    /**
+     * The host of baseUrl
+     */
+    host: string;
     authType: GithubAuthType;
     appId: string | null;
     installationId: string | null;

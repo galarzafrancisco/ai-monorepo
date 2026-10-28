@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type LookupPullRequestsDto = {
     /**
-     * Pull request links or owner/repo#number references, at most 50
+     * Pull request links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50
      */
     refs: Array<string>;
 };

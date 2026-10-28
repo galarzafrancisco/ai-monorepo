@@ -166,6 +166,7 @@ export class ActiveTaskExecutionController {
         credentials: credentials.map((credential) => ({
           projectSlug: credential.projectSlug,
           cloneUrl: credential.cloneUrl,
+          host: credential.host,
           owner: credential.owner,
           repo: credential.repo,
           token: credential.token,

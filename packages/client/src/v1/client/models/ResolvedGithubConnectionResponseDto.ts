@@ -7,11 +7,11 @@ import type { GithubConnectionResponseDto } from './GithubConnectionResponseDto.
 import type { GithubRepositoryRefDto } from './GithubRepositoryRefDto.js';
 export type ResolvedGithubConnectionResponseDto = {
     /**
-     * The repository, or null when the URL is not a github.com repository
+     * The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to
      */
     repository: GithubRepositoryRefDto | null;
     /**
-     * The connection Taico would use, or null when none fits (public repositories are then read anonymously)
+     * The connection Taico would use, or null when none fits (public github.com repositories are then read anonymously)
      */
     connection: GithubConnectionResponseDto | null;
     /**

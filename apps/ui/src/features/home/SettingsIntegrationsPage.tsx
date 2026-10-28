@@ -18,6 +18,8 @@ type AuthType = `${GithubAuthType}`;
 type ConnectionForm = {
   authType: AuthType;
   name: string;
+  /** Where the GitHub is: empty for github.com, else a GitHub Enterprise address. */
+  baseUrl: string;
   /** The token, or the App's PEM private key. */
   secret: string;
   appId: string;
@@ -31,7 +33,7 @@ const AUTH_TYPES: Record<AuthType, { label: string; secretLabel: string; help: s
     label: 'Personal access token',
     secretLabel: 'Token',
     help:
-      'Quickest to set up. Create a fine-grained token at github.com/settings/personal-access-tokens with read access to Pull requests, Commit statuses and Checks (add Contents read and write if workers should clone and push). Taico acts as you.',
+      'Quickest to set up. Create a fine-grained token at github.com/settings/personal-access-tokens (or the same page on your GitHub Enterprise) with read access to Pull requests, Commit statuses and Checks (add Contents read and write if workers should clone and push). Taico acts as you.',
   },
   app: {
     label: 'GitHub App',
@@ -44,6 +46,7 @@ const AUTH_TYPES: Record<AuthType, { label: string; secretLabel: string; help: s
 const EMPTY_FORM: ConnectionForm = {
   authType: 'pat',
   name: '',
+  baseUrl: '',
   secret: '',
   appId: '',
   installationId: '',
@@ -91,6 +94,7 @@ export function SettingsIntegrationsPage() {
     try {
       await IntegrationsGitHubService.githubConnectionsControllerCreateConnection({
         name: form.name.trim() || AUTH_TYPES[form.authType].label,
+        baseUrl: form.baseUrl.trim() || null,
         authType: form.authType as GithubAuthType,
         secret: form.secret.trim(),
         ...(form.authType === 'app'
@@ -116,6 +120,7 @@ export function SettingsIntegrationsPage() {
     try {
       await IntegrationsGitHubService.githubConnectionsControllerUpdateConnection(connection.id, {
         name: form.name.trim() || connection.name,
+        baseUrl: form.baseUrl.trim() || 'https://github.com',
         // An empty secret field keeps the stored one.
         ...(form.secret.trim() ? { secret: form.secret.trim() } : {}),
         ...(connection.authType === 'app'
@@ -269,6 +274,12 @@ function ConnectionFields({
         {info.help}
       </Text>
       {field('Name', 'name', info.label)}
+      {field(
+        'GitHub address',
+        'baseUrl',
+        'https://github.com',
+        'Leave empty for github.com. For GitHub Enterprise, the address you open it at, such as https://github.acme.com or https://acme.ghe.com.',
+      )}
       {form.authType === 'app' ? (
         <>
           {field('App id', 'appId', '123456')}
@@ -398,6 +409,7 @@ function EditConnectionForm({
   const [form, setForm] = useState<ConnectionForm>(() => ({
     authType: connection.authType,
     name: connection.name,
+    baseUrl: connection.host === 'github.com' ? '' : connection.baseUrl,
     secret: '',
     appId: connection.appId ?? '',
     installationId: connection.installationId ?? '',
@@ -458,6 +470,7 @@ function ConnectionRow({
   const isHealthy = !connection.lastError;
   const details = [
     AUTH_TYPES[connection.authType].label,
+    connection.host === 'github.com' ? null : connection.host,
     connection.accountLogin ? `acts as @${connection.accountLogin}` : null,
     connection.owners.length > 0
       ? `used for ${connection.owners.join(', ')}`

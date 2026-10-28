@@ -5,8 +5,14 @@ export class PullRequestResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id!: string;
 
-  @ApiProperty({ description: 'owner/repo#number, lower case', example: 'acme/api#12' })
+  @ApiProperty({
+    description: 'owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case',
+    example: 'acme/api#12',
+  })
   key!: string;
+
+  @ApiProperty({ description: 'github.com, or the host of a GitHub Enterprise', example: 'github.com' })
+  host!: string;
 
   @ApiProperty({ example: 'acme' })
   owner!: string;

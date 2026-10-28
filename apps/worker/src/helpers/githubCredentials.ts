@@ -5,6 +5,23 @@ import { toRepoDirName } from "./projectRepos.js";
 /** Git config key for credentials of github.com over HTTPS only. */
 export const GITHUB_CREDENTIAL_KEY = "credential.https://github.com.helper";
 
+/** Every token file lives under a directory of this name (tokenDir), which marks the helpers Taico set. */
+export const TOKEN_DIR_NAME = ".taico-credentials";
+
+/**
+ * Git config key for credentials of the host a repository is cloned from over
+ * HTTPS: github.com, or a GitHub Enterprise (`credential.https://github.acme.com.helper`).
+ */
+export function credentialKeyFor(repoUrl: string): string {
+  try {
+    const url = new URL(repoUrl);
+    if (url.protocol === "https:" || url.protocol === "http:") return `credential.${url.origin}.helper`;
+  } catch {
+    // A path or an SSH address: no token is used for it.
+  }
+  return GITHUB_CREDENTIAL_KEY;
+}
+
 /**
  * A git credential helper that answers `get` with the token in `tokenFile`.
  * The token is read at the moment git asks, so it never appears in git
@@ -21,7 +38,7 @@ export function credentialHelper(tokenFile: string): string {
  * execution ends (removeTokenDir).
  */
 export function tokenDir(baseDir: string, executionId: string): string {
-  return join(baseDir, ".taico-credentials", toRepoDirName(executionId));
+  return join(baseDir, TOKEN_DIR_NAME, toRepoDirName(executionId));
 }
 
 export function writeTokenFile(dir: string, projectSlug: string, token: string): string {

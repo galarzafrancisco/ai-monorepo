@@ -12,7 +12,7 @@ export type PullRequestEtags = {
 };
 
 /**
- * One GitHub pull request, however many places link to it: the last known
+ * One pull request on github.com or a GitHub Enterprise, however many places link to it: the last known
  * state, and when to look again. Rows are created the first time a link is
  * seen; the snapshot columns stay null until the first successful fetch.
  */
@@ -22,9 +22,16 @@ export class PullRequestEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  /** `owner/repo#number`, lower case: GitHub owners and repositories ignore case. */
+  /**
+   * `owner/repo#number` on github.com, `host/owner/repo#number` on a GitHub
+   * Enterprise; lower case: GitHub owners and repositories ignore case.
+   */
   @Column({ type: 'text' })
   key!: string;
+
+  /** github.com, or the host of the GitHub Enterprise it lives on. */
+  @Column({ type: 'text', default: 'github.com' })
+  host!: string;
 
   @Column({ type: 'text' })
   owner!: string;

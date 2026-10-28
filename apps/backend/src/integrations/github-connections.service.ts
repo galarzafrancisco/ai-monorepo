@@ -16,7 +16,8 @@ import {
   GithubCredentialSource,
   GithubCredentialsService,
 } from './github/github-credentials.service';
-import { parseGithubRepoUrl } from './github/github-repo-ref';
+import { GithubRepoRef, parseGithubRepoUrl } from './github/github-repo-ref';
+import { githubHostOf, isGithubCom, normalizeGithubUrl } from './github/github-host';
 import {
   CreateGithubConnectionInput,
   GithubConnectionResult,
@@ -36,6 +37,16 @@ function normalizeOwners(owners: string[] | undefined): string[] {
     result.push(owner);
   }
   return result;
+}
+
+function normalizeBaseUrl(value: string | null | undefined): string {
+  const baseUrl = normalizeGithubUrl(value);
+  if (!baseUrl) {
+    throw new GithubConnectionInvalidError(
+      'The GitHub address is not valid. Enter the address you open GitHub at, such as https://github.acme.com.',
+    );
+  }
+  return baseUrl;
 }
 
 function normalizeOptionalText(value: string | null | undefined): string | null | undefined {
@@ -58,6 +69,7 @@ export class GithubConnectionsService {
   /** Checks the credential with GitHub first: a connection that does not work is never saved. */
   async createConnection(input: CreateGithubConnectionInput): Promise<GithubConnectionResult> {
     const secretValue = input.secret.trim();
+    const baseUrl = normalizeBaseUrl(input.baseUrl);
     const appId = normalizeOptionalText(input.appId) ?? null;
     const installationId = normalizeOptionalText(input.installationId) ?? null;
     if (!secretValue) {
@@ -68,6 +80,7 @@ export class GithubConnectionsService {
 
     const accountLogin = await this.credentials.identify({
       authType: input.authType,
+      baseUrl,
       secret: secretValue,
       appId,
       installationId,
@@ -86,6 +99,7 @@ export class GithubConnectionsService {
       saved = await this.repository.save(
         this.repository.create({
           name: input.name.trim(),
+          baseUrl,
           authType: input.authType,
           secretId: secret.id,
           appId: input.authType === GithubAuthType.APP ? appId : null,
@@ -123,11 +137,14 @@ export class GithubConnectionsService {
     const appId = normalizeOptionalText(input.appId);
     const installationId = normalizeOptionalText(input.installationId);
     const newSecret = input.secret?.trim() || undefined;
+    const baseUrl = input.baseUrl === undefined ? undefined : normalizeBaseUrl(input.baseUrl);
     const credentialChanged =
       newSecret !== undefined ||
+      (baseUrl !== undefined && baseUrl !== connection.baseUrl) ||
       (connection.authType === GithubAuthType.APP && (appId !== undefined || installationId !== undefined));
 
     if (credentialChanged) {
+      if (baseUrl !== undefined) connection.baseUrl = baseUrl;
       if (connection.authType === GithubAuthType.APP) {
         if (appId !== undefined) connection.appId = appId;
         if (installationId !== undefined) connection.installationId = installationId;
@@ -135,6 +152,7 @@ export class GithubConnectionsService {
       const secretValue = newSecret ?? (await this.secretsService.getSecretValue(connection.secretId)).value;
       connection.accountLogin = await this.credentials.identify({
         authType: connection.authType,
+        baseUrl: connection.baseUrl,
         secret: secretValue,
         appId: connection.appId,
         installationId: connection.installationId,
@@ -173,6 +191,7 @@ export class GithubConnectionsService {
       const secret = await this.secretsService.getSecretValue(connection.secretId);
       connection.accountLogin = await this.credentials.identify({
         authType: connection.authType,
+        baseUrl: connection.baseUrl,
         secret: secret.value,
         appId: connection.appId,
         installationId: connection.installationId,
@@ -189,19 +208,25 @@ export class GithubConnectionsService {
 
   /**
    * Which connection serves a repository: the one its project names, else the
-   * one listing its owner, else the only connection there is. Null when none
-   * fits; Taico then reads public repositories anonymously.
+   * one listing its owner, else the only connection there is. Only connections
+   * to the repository's own GitHub (github.com or an Enterprise host) count.
+   * Null when none fits; Taico then reads public github.com repositories
+   * anonymously.
    */
   async resolveForRepository(input: {
+    host: string;
     owner: string;
     projectConnectionId?: string | null;
   }): Promise<ResolvedGithubConnection | null> {
+    const host = input.host.toLowerCase();
+    const onHost = (connection: GithubConnectionEntity) => githubHostOf(connection.baseUrl) === host;
+
     if (input.projectConnectionId) {
       const named = await this.repository.findOne({ where: { id: input.projectConnectionId } });
-      if (named) return { connection: this.mapToResult(named), match: 'project' };
+      if (named && onHost(named)) return { connection: this.mapToResult(named), match: 'project' };
     }
 
-    const connections = await this.repository.find({ order: { createdAt: 'ASC' } });
+    const connections = (await this.repository.find({ order: { createdAt: 'ASC' } })).filter(onHost);
     const owner = input.owner.toLowerCase();
     const byOwner = connections.find((connection) =>
       connection.owners.some((candidate) => candidate.toLowerCase() === owner),
@@ -216,19 +241,41 @@ export class GithubConnectionsService {
    * project (a pull request link): the first project whose repository it is
    * decides, if that project names a connection.
    */
-  async resolveForRepositoryOfAnyProject(input: { owner: string; repo: string }): Promise<ResolvedGithubConnection | null> {
+  async resolveForRepositoryOfAnyProject(input: GithubRepoRef): Promise<ResolvedGithubConnection | null> {
     const projects: Array<{ repo_url: string; github_connection_id: string }> = await this.dataSource.query(
       `SELECT "repoUrl" AS repo_url, github_connection_id FROM projects
         WHERE github_connection_id IS NOT NULL AND "repoUrl" IS NOT NULL AND deleted_at IS NULL
         ORDER BY created_at ASC`,
     );
+    const hosts = await this.listEnterpriseHosts();
+    const host = input.host.toLowerCase();
     const owner = input.owner.toLowerCase();
     const repo = input.repo.toLowerCase();
     const project = projects.find((row) => {
-      const ref = parseGithubRepoUrl(row.repo_url);
-      return ref?.owner.toLowerCase() === owner && ref.repo.toLowerCase() === repo;
+      const ref = parseGithubRepoUrl(row.repo_url, hosts);
+      return ref?.host === host && ref.owner.toLowerCase() === owner && ref.repo.toLowerCase() === repo;
     });
-    return this.resolveForRepository({ owner: input.owner, projectConnectionId: project?.github_connection_id });
+    return this.resolveForRepository({
+      host: input.host,
+      owner: input.owner,
+      projectConnectionId: project?.github_connection_id,
+    });
+  }
+
+  /**
+   * Hosts of the GitHub Enterprises Taico has connections to (github.com is
+   * always known). Links and repositories on other hosts are not GitHub's.
+   */
+  async listEnterpriseHosts(): Promise<string[]> {
+    const rows: Array<{ base_url: string }> = await this.dataSource.query(
+      `SELECT DISTINCT base_url FROM github_connections`,
+    );
+    return [...new Set(rows.map((row) => githubHostOf(row.base_url)))].filter((host) => !isGithubCom(host));
+  }
+
+  /** Reads a repository URL, knowing the Enterprise hosts Taico has connections to. */
+  async parseRepoUrl(url: string | null | undefined): Promise<GithubRepoRef | null> {
+    return parseGithubRepoUrl(url, await this.listEnterpriseHosts());
   }
 
   /** Webhook address and secret for this connection; the secret is created on first use. */
@@ -277,6 +324,7 @@ export class GithubConnectionsService {
     return {
       id: connection.id,
       authType: connection.authType,
+      baseUrl: connection.baseUrl,
       secretId: connection.secretId,
       appId: connection.appId,
       installationId: connection.installationId,
@@ -298,6 +346,8 @@ export class GithubConnectionsService {
     return {
       id: connection.id,
       name: connection.name,
+      baseUrl: connection.baseUrl,
+      host: githubHostOf(connection.baseUrl),
       authType: connection.authType,
       appId: connection.appId,
       installationId: connection.installationId,

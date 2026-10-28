@@ -2,6 +2,8 @@ import { GithubAuthType } from '../../enums';
 
 export type CreateGithubConnectionInput = {
   name: string;
+  /** The GitHub to talk to. Missing: github.com. */
+  baseUrl?: string | null;
   authType: GithubAuthType;
   /** The token (PAT) or the PEM private key (App). */
   secret: string;
@@ -14,6 +16,7 @@ export type CreateGithubConnectionInput = {
 
 export type UpdateGithubConnectionInput = {
   name?: string;
+  baseUrl?: string;
   /** A new token or private key. Undefined keeps the current one. */
   secret?: string;
   appId?: string | null;
@@ -24,6 +27,10 @@ export type UpdateGithubConnectionInput = {
 export type GithubConnectionResult = {
   id: string;
   name: string;
+  /** `https://github.com`, or the address of a GitHub Enterprise. */
+  baseUrl: string;
+  /** The host of baseUrl: `github.com`, `github.acme.com`. */
+  host: string;
   authType: GithubAuthType;
   appId: string | null;
   installationId: string | null;

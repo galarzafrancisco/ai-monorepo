@@ -7,6 +7,12 @@ export class WorkerGithubCredentialDto {
   @ApiProperty({ description: 'HTTPS clone URL the token works with', example: 'https://github.com/acme/api.git' })
   cloneUrl!: string;
 
+  @ApiProperty({
+    description: 'github.com, or the host of the GitHub Enterprise the repository is on',
+    example: 'github.com',
+  })
+  host!: string;
+
   @ApiProperty({ example: 'acme' })
   owner!: string;
 

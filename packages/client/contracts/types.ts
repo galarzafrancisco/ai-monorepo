@@ -1451,7 +1451,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Pull requests linked from the thread's tasks or messages, oldest link first */
+        /** Pull requests attached as links to the thread's tasks, oldest link first */
         get: operations["ThreadsController_listPullRequests"];
         put?: never;
         post?: never;
@@ -2028,7 +2028,7 @@ export interface paths {
         put?: never;
         /**
          * Status of linked pull requests, in the order asked
-         * @description Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.
+         * @description Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.
          */
         post: operations["PullRequestsController_lookup"];
         delete?: never;
@@ -5356,10 +5356,15 @@ export interface components {
             /** @example 123e4567-e89b-12d3-a456-426614174000 */
             id: string;
             /**
-             * @description owner/repo#number, lower case
+             * @description owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case
              * @example acme/api#12
              */
             key: string;
+            /**
+             * @description github.com, or the host of a GitHub Enterprise
+             * @example github.com
+             */
+            host: string;
             /** @example acme */
             owner: string;
             /** @example api */
@@ -6526,7 +6531,7 @@ export interface components {
         };
         LookupPullRequestsDto: {
             /**
-             * @description Pull request links or owner/repo#number references, at most 50
+             * @description Pull request links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50
              * @example [
              *       "https://github.com/acme/api/pull/12",
              *       "acme/web#3"
@@ -6542,6 +6547,11 @@ export interface components {
              * @example Acme GitHub
              */
             name: string;
+            /**
+             * @description The address of the GitHub to connect to: https://github.com (the default), a GitHub Enterprise Server (https://github.acme.com) or a GitHub Enterprise Cloud with data residency (https://acme.ghe.com).
+             * @example https://github.com
+             */
+            baseUrl?: string | null;
             /** @example pat */
             authType: components["schemas"]["GithubAuthType"];
             /**
@@ -6572,6 +6582,16 @@ export interface components {
             id: string;
             /** @example Acme GitHub */
             name: string;
+            /**
+             * @description The GitHub this connection talks to: https://github.com or the address of a GitHub Enterprise
+             * @example https://github.com
+             */
+            baseUrl: string;
+            /**
+             * @description The host of baseUrl
+             * @example github.com
+             */
+            host: string;
             /** @example pat */
             authType: components["schemas"]["GithubAuthType"];
             /** @example 123456 */
@@ -6610,6 +6630,11 @@ export interface components {
             updatedAt: string;
         };
         GithubRepositoryRefDto: {
+            /**
+             * @description github.com, or the host of a GitHub Enterprise
+             * @example github.com
+             */
+            host: string;
             /** @example acme */
             owner: string;
             /** @example api */
@@ -6621,9 +6646,9 @@ export interface components {
          */
         GithubConnectionMatch: "project" | "owner" | "only_connection";
         ResolvedGithubConnectionResponseDto: {
-            /** @description The repository, or null when the URL is not a github.com repository */
+            /** @description The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to */
             repository: components["schemas"]["GithubRepositoryRefDto"] | null;
-            /** @description The connection Taico would use, or null when none fits (public repositories are then read anonymously) */
+            /** @description The connection Taico would use, or null when none fits (public github.com repositories are then read anonymously) */
             connection: components["schemas"]["GithubConnectionResponseDto"] | null;
             /** @description Why: the project names it, it lists the repository owner, or it is the only connection */
             match: components["schemas"]["GithubConnectionMatch"] | null;
@@ -6634,6 +6659,11 @@ export interface components {
              * @example Acme GitHub
              */
             name?: string;
+            /**
+             * @description The address of the GitHub to connect to. Changing it checks the credential again.
+             * @example https://github.acme.com
+             */
+            baseUrl?: string;
             /**
              * @description A new token or private key. Leave out to keep the current one.
              * @example github_pat_...
@@ -6950,6 +6980,11 @@ export interface components {
              * @example https://github.com/acme/api.git
              */
             cloneUrl: string;
+            /**
+             * @description github.com, or the host of the GitHub Enterprise the repository is on
+             * @example github.com
+             */
+            host: string;
             /** @example acme */
             owner: string;
             /** @example api */

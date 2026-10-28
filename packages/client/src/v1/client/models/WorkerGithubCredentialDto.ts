@@ -8,6 +8,10 @@ export type WorkerGithubCredentialDto = {
      * HTTPS clone URL the token works with
      */
     cloneUrl: string;
+    /**
+     * github.com, or the host of the GitHub Enterprise the repository is on
+     */
+    host: string;
     owner: string;
     repo: string;
     /**

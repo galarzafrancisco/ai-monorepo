@@ -5,7 +5,10 @@ import type { ProjectRepo } from './projectRepos.js';
 export type GithubCredentialsForRun = {
   /** The repos to prepare: those with a token use its HTTPS clone URL and token file. */
   repos: ProjectRepo[];
-  /** Environment for the harness: GH_TOKEN for the gh CLI, when a token was issued. */
+  /**
+   * Environment for the harness, when a token was issued: GH_TOKEN for the gh
+   * CLI, plus GH_HOST and GH_ENTERPRISE_TOKEN on a GitHub Enterprise.
+   */
   env: Record<string, string>;
 };
 
@@ -29,7 +32,7 @@ export async function issueGithubCredentials({
 }): Promise<GithubCredentialsForRun> {
   if (repos.length === 0) return { repos, env: {} };
 
-  let credentials: Array<{ projectSlug: string; cloneUrl: string; token: string }> = [];
+  let credentials: Array<{ projectSlug: string; cloneUrl: string; host: string; token: string }> = [];
   try {
     credentials = (
       await workerClient.executions.ActiveTaskExecutionController_issueGithubCredentials({ executionId })
@@ -45,7 +48,7 @@ export async function issueGithubCredentials({
   const prepared = repos.map((repo) => {
     const credential = bySlug.get(repo.slug);
     if (!credential) return repo;
-    console.log(`[worker] using a GitHub token from Taico for project '${repo.slug}'`);
+    console.log(`[worker] using a GitHub token from Taico for project '${repo.slug}' (${credential.host})`);
     return {
       ...repo,
       repoUrl: credential.cloneUrl,
@@ -55,5 +58,11 @@ export async function issueGithubCredentials({
 
   // gh takes one token. The first project's is used; with a GitHub App it only reaches that repository.
   const first = repos.map((repo) => bySlug.get(repo.slug)).find(Boolean);
-  return { repos: prepared, env: first ? { GH_TOKEN: first.token } : {} };
+  if (!first) return { repos: prepared, env: {} };
+  const env: Record<string, string> = { GH_TOKEN: first.token };
+  if (first.host !== "github.com") {
+    env.GH_HOST = first.host;
+    env.GH_ENTERPRISE_TOKEN = first.token;
+  }
+  return { repos: prepared, env };
 }

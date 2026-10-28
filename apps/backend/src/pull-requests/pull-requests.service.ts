@@ -3,13 +3,24 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { GithubConnectionsService } from '../integrations/github-connections.service';
-import { GithubRequestFailedError, IntegrationsDomainError } from '../integrations/errors/integrations.errors';
+import {
+  GithubConnectionInvalidError,
+  GithubRequestFailedError,
+  IntegrationsDomainError,
+} from '../integrations/errors/integrations.errors';
+import { GITHUB_COM_URL, githubApiUrlFor, isGithubCom } from '../integrations/github/github-host';
 import { PullRequestEntity } from './pull-request.entity';
 import { PullRequestReferenceEntity } from './pull-request-reference.entity';
 import { PullRequestReferenceSource } from './enums';
 import { PullRequestUpdatedEvent } from './events/pull-requests.events';
 import { PullRequestNotFoundError } from './errors/pull-requests.errors';
-import { PullRequestRef, pullRequestKey } from './github/pull-request-ref';
+import {
+  extractPullRequestRefs,
+  parsePullRequestRef,
+  PullRequestRef,
+  pullRequestHost,
+  pullRequestKey,
+} from './github/pull-request-ref';
 import { fetchPullRequest } from './github/pull-request-fetcher';
 import { diffPullRequest } from './github/pull-request-changes';
 import {
@@ -70,6 +81,22 @@ export class PullRequestsService {
 
     const byId = new Map((await this.pullRequests.findBy({ id: In(rows.map((row) => row.id)) })).map((row) => [row.id, row]));
     return rows.map((row) => byId.get(row.id)!);
+  }
+
+  /** Pull request links in a text, on github.com and the GitHub Enterprises Taico has connections to. */
+  async extractRefs(text: string | null | undefined): Promise<PullRequestRef[]> {
+    if (!text) return [];
+    return extractPullRequestRefs(text, await this.connections.listEnterpriseHosts());
+  }
+
+  /** A link or short reference (`owner/repo#12`, `github.acme.com/owner/repo#12`); null if it is not one. */
+  async parseRef(value: string): Promise<PullRequestRef | null> {
+    return parsePullRequestRef(value, await this.listEnterpriseHosts());
+  }
+
+  /** Hosts of the GitHub Enterprises Taico has connections to. */
+  listEnterpriseHosts(): Promise<string[]> {
+    return this.connections.listEnterpriseHosts();
   }
 
   async getById(id: string): Promise<PullRequestEntity> {
@@ -152,14 +179,22 @@ export class PullRequestsService {
    * knows: by number, or by the commit at their head (CI events only name the
    * commit). Called when a webhook arrives.
    */
-  async markChanged(input: { owner: string; repo: string; numbers?: number[]; headSha?: string | null }): Promise<number> {
-    const keys = (input.numbers ?? []).map((number) => pullRequestKey({ owner: input.owner, repo: input.repo, number }));
+  async markChanged(input: {
+    host: string;
+    owner: string;
+    repo: string;
+    numbers?: number[];
+    headSha?: string | null;
+  }): Promise<number> {
+    const keys = (input.numbers ?? []).map((number) =>
+      pullRequestKey({ host: input.host, owner: input.owner, repo: input.repo, number }),
+    );
     const result: [unknown[], number] = await this.dataSource.query(
       `UPDATE pull_requests SET next_fetch_at = now()
         WHERE (key = ANY($1::text[])
-               OR ($2::text IS NOT NULL AND lower(owner) = lower($3) AND lower(repo) = lower($4) AND head_sha = $2))
+               OR ($2::text IS NOT NULL AND host = $5 AND lower(owner) = lower($3) AND lower(repo) = lower($4) AND head_sha = $2))
           AND (next_fetch_at IS NULL OR next_fetch_at > now())`,
-      [keys, input.headSha ?? null, input.owner, input.repo],
+      [keys, input.headSha ?? null, input.owner, input.repo, input.host.toLowerCase()],
     );
     return result[1];
   }
@@ -214,17 +249,23 @@ export class PullRequestsService {
    * and retried with backoff.
    */
   private async fetchAndStore(row: PullRequestEntity): Promise<PullRequestEntity> {
-    const ref = { owner: row.owner, repo: row.repo, number: row.number };
+    const ref = { host: row.host, owner: row.owner, repo: row.repo, number: row.number };
     let webhooksActive = false;
     try {
       const resolved = await this.connections.resolveForRepositoryOfAnyProject(ref);
-      const token = resolved ? (await this.connections.getAccessToken(resolved.connection.id)).token : null;
+      if (!resolved && !isGithubCom(row.host)) {
+        throw new GithubConnectionInvalidError(`No GitHub connection is set up for ${row.host}.`);
+      }
+      const api = {
+        apiUrl: githubApiUrlFor(resolved?.connection.baseUrl ?? GITHUB_COM_URL),
+        credential: resolved ? (await this.connections.getAccessToken(resolved.connection.id)).token : null,
+      };
       webhooksActive =
         !!resolved?.connection.lastWebhookAt &&
         Date.now() - resolved.connection.lastWebhookAt.getTime() < WEBHOOK_ACTIVE_MS;
 
       const before = row.lastFetchedAt ? { ...row } : null;
-      const fetched = await fetchPullRequest(token, ref, row.etags, before);
+      const fetched = await fetchPullRequest(api, ref, row.etags, before);
       const snapshot = fetched.snapshot;
       const changes = diffPullRequest(
         before && before.state && before.headSha
@@ -329,6 +370,7 @@ export class PullRequestsService {
       .values(
         [...unique.entries()].map(([key, ref]) => ({
           key,
+          host: pullRequestHost(ref),
           owner: ref.owner,
           repo: ref.repo,
           number: ref.number,

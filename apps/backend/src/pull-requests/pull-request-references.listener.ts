@@ -9,7 +9,6 @@ import {
 import { MessageCreatedEvent } from '../threads/events/threads.events';
 import { PullRequestsService } from './pull-requests.service';
 import { PullRequestReferenceSource } from './enums';
-import { extractPullRequestRefs } from './github/pull-request-ref';
 import { PullRequestReferenceInput } from './dto/service/pull-requests.service.types';
 
 /**
@@ -31,7 +30,7 @@ export class PullRequestReferencesListener {
       sourceType: PullRequestReferenceSource.TASK_DESCRIPTION,
       sourceId: task.id,
       taskId: task.id,
-      refs: extractPullRequestRefs(`${task.name ?? ''}\n${task.description ?? ''}`),
+      text: `${task.name ?? ''}\n${task.description ?? ''}`,
     });
   }
 
@@ -42,7 +41,7 @@ export class PullRequestReferencesListener {
       sourceType: PullRequestReferenceSource.TASK_ARTEFACT,
       sourceId: artefact.id,
       taskId: artefact.taskId,
-      refs: extractPullRequestRefs(artefact.link),
+      text: artefact.link,
     });
   }
 
@@ -53,7 +52,7 @@ export class PullRequestReferencesListener {
       sourceType: PullRequestReferenceSource.TASK_COMMENT,
       sourceId: comment.id,
       taskId: comment.taskId,
-      refs: extractPullRequestRefs(comment.content),
+      text: comment.content,
     });
   }
 
@@ -64,20 +63,24 @@ export class PullRequestReferencesListener {
       sourceType: PullRequestReferenceSource.THREAD_MESSAGE,
       sourceId: message.id,
       threadId: message.threadId,
-      refs: extractPullRequestRefs(message.content),
+      text: message.content,
     });
   }
 
-  private async record(input: PullRequestReferenceInput): Promise<void> {
-    // A new task or comment without links has nothing to replace: skip the write.
-    if (input.refs.length === 0 && input.sourceType !== PullRequestReferenceSource.TASK_DESCRIPTION) return;
+  private async record({
+    text,
+    ...source
+  }: Omit<PullRequestReferenceInput, 'refs'> & { text: string | null | undefined }): Promise<void> {
     try {
+      const input: PullRequestReferenceInput = { ...source, refs: await this.pullRequests.extractRefs(text) };
+      // A new task or comment without links has nothing to replace: skip the write.
+      if (input.refs.length === 0 && input.sourceType !== PullRequestReferenceSource.TASK_DESCRIPTION) return;
       await this.pullRequests.replaceReferences(input);
     } catch (error) {
       this.logger.warn({
         message: 'Failed to record pull request links',
-        sourceType: input.sourceType,
-        sourceId: input.sourceId,
+        sourceType: source.sourceType,
+        sourceId: source.sourceId,
         error: error instanceof Error ? error.message : String(error),
       });
     }

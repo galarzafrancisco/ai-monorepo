@@ -25,7 +25,6 @@ import {
   ResolvedGithubConnectionResponseDto,
 } from './dto/http/resolve-github-connection.dto';
 import { GithubConnectionResult } from './dto/service/github-connections.service.types';
-import { parseGithubRepoUrl } from './github/github-repo-ref';
 
 @ApiTags('Integrations - GitHub')
 @ApiCookieAuth('JWT-Cookie')
@@ -44,6 +43,7 @@ export class GithubConnectionsController {
   ): Promise<GithubConnectionResponseDto> {
     const result = await this.connections.createConnection({
       name: dto.name,
+      baseUrl: dto.baseUrl,
       authType: dto.authType,
       secret: dto.secret,
       appId: dto.appId,
@@ -70,9 +70,10 @@ export class GithubConnectionsController {
   async resolveConnection(
     @Query() query: ResolveGithubConnectionQueryDto,
   ): Promise<ResolvedGithubConnectionResponseDto> {
-    const repository = parseGithubRepoUrl(query.repoUrl);
+    const repository = await this.connections.parseRepoUrl(query.repoUrl);
     if (!repository) return { repository: null, connection: null, match: null };
     const resolved = await this.connections.resolveForRepository({
+      host: repository.host,
       owner: repository.owner,
       projectConnectionId: query.connectionId,
     });
@@ -103,6 +104,7 @@ export class GithubConnectionsController {
   ): Promise<GithubConnectionResponseDto> {
     const result = await this.connections.updateConnection(params.id, {
       name: dto.name,
+      baseUrl: dto.baseUrl,
       secret: dto.secret,
       appId: dto.appId,
       installationId: dto.installationId,
@@ -154,6 +156,8 @@ export class GithubConnectionsController {
     return {
       id: result.id,
       name: result.name,
+      baseUrl: result.baseUrl,
+      host: result.host,
       authType: result.authType,
       appId: result.appId,
       installationId: result.installationId,

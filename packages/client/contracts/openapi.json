@@ -4898,7 +4898,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Pull requests linked from the thread's tasks or messages, oldest link first",
+        "summary": "Pull requests attached as links to the thread's tasks, oldest link first",
         "tags": [
           "Threads"
         ]
@@ -6849,7 +6849,7 @@
     },
     "/api/v1/pull-requests/lookup": {
       "post": {
-        "description": "Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event.",
+        "description": "Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.",
         "operationId": "PullRequestsController_lookup",
         "parameters": [],
         "requestBody": {
@@ -12934,8 +12934,13 @@
           },
           "key": {
             "type": "string",
-            "description": "owner/repo#number, lower case",
+            "description": "owner/repo#number on github.com, host/owner/repo#number on a GitHub Enterprise; lower case",
             "example": "acme/api#12"
+          },
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of a GitHub Enterprise",
+            "example": "github.com"
           },
           "owner": {
             "type": "string",
@@ -13086,6 +13091,7 @@
         "required": [
           "id",
           "key",
+          "host",
           "owner",
           "repo",
           "number",
@@ -14751,7 +14757,7 @@
         "type": "object",
         "properties": {
           "refs": {
-            "description": "Pull request links or owner/repo#number references, at most 50",
+            "description": "Pull request links or owner/repo#number references (host/owner/repo#number on a GitHub Enterprise), at most 50",
             "example": [
               "https://github.com/acme/api/pull/12",
               "acme/web#3"
@@ -14780,6 +14786,12 @@
             "type": "string",
             "description": "Display name",
             "example": "Acme GitHub"
+          },
+          "baseUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The address of the GitHub to connect to: https://github.com (the default), a GitHub Enterprise Server (https://github.acme.com) or a GitHub Enterprise Cloud with data residency (https://acme.ghe.com).",
+            "example": "https://github.com"
           },
           "authType": {
             "example": "pat",
@@ -14833,6 +14845,16 @@
           "name": {
             "type": "string",
             "example": "Acme GitHub"
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "The GitHub this connection talks to: https://github.com or the address of a GitHub Enterprise",
+            "example": "https://github.com"
+          },
+          "host": {
+            "type": "string",
+            "description": "The host of baseUrl",
+            "example": "github.com"
           },
           "authType": {
             "example": "pat",
@@ -14901,6 +14923,8 @@
         "required": [
           "id",
           "name",
+          "baseUrl",
+          "host",
           "authType",
           "appId",
           "installationId",
@@ -14917,6 +14941,11 @@
       "GithubRepositoryRefDto": {
         "type": "object",
         "properties": {
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of a GitHub Enterprise",
+            "example": "github.com"
+          },
           "owner": {
             "type": "string",
             "example": "acme"
@@ -14927,6 +14956,7 @@
           }
         },
         "required": [
+          "host",
           "owner",
           "repo"
         ]
@@ -14945,7 +14975,7 @@
         "properties": {
           "repository": {
             "nullable": true,
-            "description": "The repository, or null when the URL is not a github.com repository",
+            "description": "The repository, or null when the URL is not on github.com or a GitHub Enterprise Taico has a connection to",
             "type": "object",
             "allOf": [
               {
@@ -14955,7 +14985,7 @@
           },
           "connection": {
             "nullable": true,
-            "description": "The connection Taico would use, or null when none fits (public repositories are then read anonymously)",
+            "description": "The connection Taico would use, or null when none fits (public github.com repositories are then read anonymously)",
             "type": "object",
             "allOf": [
               {
@@ -14986,6 +15016,11 @@
             "type": "string",
             "description": "Display name",
             "example": "Acme GitHub"
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "The address of the GitHub to connect to. Changing it checks the credential again.",
+            "example": "https://github.acme.com"
           },
           "secret": {
             "type": "string",
@@ -15504,6 +15539,11 @@
             "description": "HTTPS clone URL the token works with",
             "example": "https://github.com/acme/api.git"
           },
+          "host": {
+            "type": "string",
+            "description": "github.com, or the host of the GitHub Enterprise the repository is on",
+            "example": "github.com"
+          },
           "owner": {
             "type": "string",
             "example": "acme"
@@ -15535,6 +15575,7 @@
         "required": [
           "projectSlug",
           "cloneUrl",
+          "host",
           "owner",
           "repo",
           "token",
