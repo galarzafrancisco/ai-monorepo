@@ -14,6 +14,11 @@ export const emptyActivity: ActivityState = {
 };
 
 export function updateActivity(state: ActivityState, event: AgentActivityWireEvent['payload'], now: string): ActivityState {
+  // A turn with no activity must not erase the previous inspectable trace;
+  // a completion from an older turn must not replace newer in-flight work.
+  if (event.kind === 'turn_end' && event.turnId !== state.turnId) {
+    return state;
+  }
   const current = event.turnId && event.turnId !== state.turnId
     ? { ...emptyActivity, turnId: event.turnId }
     : state;

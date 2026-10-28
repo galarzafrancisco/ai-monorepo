@@ -101,6 +101,7 @@ export class ThreadAgentService {
           // The reply is already with the user; maintenance runs before the thread is released.
           await this.hooks.runAfterTurn({ threadId, turnId: turn.id, ...outcome });
         }
+        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
         await this.turns.finish(turn.id, ThreadTurnStatus.COMPLETED);
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
@@ -110,16 +111,16 @@ export class ThreadAgentService {
           turnId: turn.id,
           error: this.describeError(error),
         });
-        await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
         await this.saveDisplayMessage({
           threadId,
           actorId: self.actorId,
           content: `I encountered an error while processing your message: ${reason}`,
           agentMessageId: null,
         });
+        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
+        await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
         return;
       } finally {
-        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
         stopHeartbeat();
       }
 

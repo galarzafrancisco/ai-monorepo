@@ -35,6 +35,19 @@ describe('thread activity lifecycle', () => {
     expect(state.entries).toHaveLength(1);
   });
 
+  it('ignores empty turns and late completion from an older turn', () => {
+    let state = updateActivity(emptyActivity, event('thinking'), at);
+    state = updateActivity(state, event('turn_end'), at);
+    expect(state.entries).toHaveLength(1);
+    expect(updateActivity(state, { ...event('turn_end'), turnId: 'empty' }, at)).toBe(state);
+
+    state = updateActivity(state, { ...event('thinking'), turnId: 'turn-b' }, at);
+    expect(liveEntryId(state)).toBe(state.entries[0].id);
+    expect(updateActivity(state, event('turn_end'), at)).toBe(state);
+    expect(liveEntryId(state)).toBe(state.entries[0].id);
+    expect(state.turnId).toBe('turn-b');
+  });
+
   it('anchors the trace before the reply and subsequent user message', () => {
     const messages = [
       { createdAt: '2026-10-28T11:59:00.000Z' },
