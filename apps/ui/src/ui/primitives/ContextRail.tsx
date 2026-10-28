@@ -19,6 +19,8 @@ export interface ContextRailProps {
   onOpenChange?: (open: boolean) => void;
   /** Off for content that manages its own scrolling (e.g. a log that follows new output). */
   scroll?: boolean;
+  /** 'narrow' for context that sits beside a conversation (threads); default fits a log. */
+  size?: 'default' | 'narrow';
   className?: string;
 }
 
@@ -36,6 +38,7 @@ export function ContextRail({
   open = true,
   onOpenChange,
   scroll = true,
+  size = 'default',
   className = '',
 }: ContextRailProps) {
   const bodyId = useId();
@@ -43,7 +46,7 @@ export function ContextRail({
 
   if (!open && onOpenChange) {
     return (
-      <aside className={`context-rail context-rail--collapsed ${className}`} aria-label={title}>
+      <aside className={`context-rail context-rail--${size} context-rail--collapsed ${className}`} aria-label={title}>
         <button
           type="button"
           className="context-rail__strip"
@@ -61,7 +64,7 @@ export function ContextRail({
   }
 
   return (
-    <aside className={`context-rail ${className}`} aria-label={title}>
+    <aside className={`context-rail context-rail--${size} ${className}`} aria-label={title}>
       <header className="context-rail__header">
         <h2 className="context-rail__title">
           {title}

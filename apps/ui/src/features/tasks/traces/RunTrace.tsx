@@ -10,7 +10,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button, Text } from '../../../ui/primitives';
-import { buildTraceEntries, type TraceEntry } from './traceEntries';
+import { LoadEarlier, useLoadEarlier } from '../../../ui/components';
+import { buildTraceEntries, summarizeToolInput, type TraceEntry } from './traceEntries';
 import { useExecutionTraces } from './useExecutionTraces';
 import { ExecutionSteps } from './ExecutionSteps';
 import type { TraceRun } from './runs';
@@ -55,7 +56,6 @@ export function RunTrace({
   } = useExecutionTraces(run?.executionId ?? null, true, onRunsChanged);
   const entries = useMemo(() => buildTraceEntries(events), [events]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const earlierAnchor = useRef<{ sequence: number; top: number } | null>(null);
   const [pausedExecutionId, setPausedExecutionId] = useState<string | null>(
     null,
   );
@@ -64,27 +64,24 @@ export function RunTrace({
     setPausedExecutionId(value ? null : (run?.executionId ?? null));
   const visible = entries.filter((entry) => entry.kind !== 'system');
 
-  useLayoutEffect(() => {
-    earlierAnchor.current = null;
-  }, [run?.executionId]);
+  const isLive = run?.source === 'active';
+
+  // Scrolling up loads earlier events, keeping the ones on screen where they are.
+  const { sentinelRef: earlierSentinelRef, loadEarlier: loadEarlierEvents } = useLoadEarlier({
+    containerRef: scrollRef,
+    hasMore: hasMoreBefore,
+    isLoading: isLoadingEarlier,
+    load: () => {
+      setFollowing(false);
+      return loadEarlier();
+    },
+    itemSelector: '[data-trace-entry]',
+    contentDeps: [events],
+  });
+
   useLayoutEffect(() => {
     const scroll = scrollRef.current;
-    if (!scroll) return;
-    if (earlierAnchor.current) {
-      const anchor = earlierAnchor.current;
-      const anchored = entries.find((entry) =>
-        entry.events.some((event) => event.sequence === anchor.sequence),
-      );
-      const entry = anchored
-        ? scroll.querySelector<HTMLElement>(
-            `[data-trace-entry="${CSS.escape(anchored.id)}"]`,
-          )
-        : null;
-      if (entry) {
-        scroll.scrollTop += entry.getBoundingClientRect().top - anchor.top;
-      }
-      if (!isLoadingEarlier) earlierAnchor.current = null;
-    } else if (following) scroll.scrollTop = scroll.scrollHeight;
+    if (scroll && following && !isLoadingEarlier) scroll.scrollTop = scroll.scrollHeight;
   }, [events, entries, following, isLoadingEarlier]);
 
   return (
@@ -132,33 +129,13 @@ export function RunTrace({
           setFollowing(el.scrollHeight - el.scrollTop - el.clientHeight < 64);
         }}
       >
-        {hasMoreBefore && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="task-traces__earlier"
-            disabled={isLoadingEarlier}
-            onClick={async () => {
-              setFollowing(false);
-              const scroll = scrollRef.current;
-              const top = scroll?.getBoundingClientRect().top ?? 0;
-              const entry = [
-                ...(scroll?.querySelectorAll<HTMLElement>(
-                  '[data-trace-sequence]',
-                ) ?? []),
-              ].find((element) => element.getBoundingClientRect().bottom > top);
-              earlierAnchor.current = entry
-                ? {
-                    sequence: Number(entry.dataset.traceSequence),
-                    top: entry.getBoundingClientRect().top,
-                  }
-                : null;
-              await loadEarlier();
-            }}
-          >
-            {isLoadingEarlier ? 'Loading…' : 'Load earlier events'}
-          </Button>
-        )}
+        <LoadEarlier
+          sentinelRef={earlierSentinelRef}
+          hasMore={hasMoreBefore}
+          isLoading={isLoadingEarlier}
+          onLoad={loadEarlierEvents}
+          noun="events"
+        />
         {isLoading || (isLoadingRuns && !run) ? (
           <div className="task-traces__empty" role="status">
             <Terminal size={28} />
@@ -185,10 +162,11 @@ export function RunTrace({
         ) : (
           <>
             <div className="task-traces__timeline">
-              {visible.map((entry) => (
+              {visible.map((entry, index) => (
                 <TraceEntryView
                   key={`${run?.executionId}:${entry.id}`}
                   entry={entry}
+                  live={isLive && index === visible.length - 1}
                 />
               ))}
             </div>
@@ -199,14 +177,15 @@ export function RunTrace({
                   : 'No messages or tool activity in this run.'}
               </p>
             )}
-            <div className="task-traces__end">
-              <span
-                className={run?.source === 'active' ? 'task-traces__dot' : ''}
-              />
-              {run?.source === 'active'
-                ? 'Waiting for activity'
-                : 'End of execution'}
-            </div>
+            {isLive ? (
+              visible.length > 0 && !isEntryWorking(visible[visible.length - 1]) && (
+                <div className="task-traces__working" role="status">
+                  <span className="shimmer-text">Working…</span>
+                </div>
+              )
+            ) : (
+              <div className="task-traces__end">End of execution</div>
+            )}
           </>
         )}
       </div>
@@ -235,7 +214,15 @@ export function RunTrace({
   );
 }
 
-function TraceEntryView({ entry }: { entry: TraceEntry }) {
+/** A tool still running, or the agent thinking: what the live shimmer marks. */
+function isEntryWorking(entry: TraceEntry): boolean {
+  if (entry.kind === 'thinking') return true;
+  if (entry.kind !== 'tool') return false;
+  const status = entry.status?.toLowerCase();
+  return status !== 'completed' && status !== 'failed' && status !== 'error';
+}
+
+function TraceEntryView({ entry, live = false }: { entry: TraceEntry; live?: boolean }) {
   const Icon =
     entry.kind === 'tool'
       ? Terminal
@@ -246,40 +233,34 @@ function TraceEntryView({ entry }: { entry: TraceEntry }) {
           : entry.kind === 'message'
             ? MessageSquare
             : Braces;
+  const working = live && isEntryWorking(entry);
   const raw = <RawTraceDetails entry={entry} />;
-  return (
-    <article
-      className={`task-traces__entry task-traces__entry--${entry.kind}`}
-      data-trace-sequence={entry.events[0].sequence}
-      data-trace-entry={entry.id}
-    >
-      <div className="task-traces__marker">
-        <Icon size={14} />
-      </div>
-      <div className="task-traces__entry-content">
-        <div className="task-traces__entry-meta">
-          <span>{entry.kind === 'tool' ? 'Tool' : entry.title}</span>
-          <time dateTime={entry.events[0].emittedAt}>
-            {time(entry.events[0].emittedAt)}
-          </time>
+  const at = (
+    <time dateTime={entry.events[0].emittedAt}>
+      {time(entry.events[0].emittedAt)}
+    </time>
+  );
+
+  if (entry.kind === 'tool') {
+    const failed = ['failed', 'error'].includes(entry.status?.toLowerCase() ?? '');
+    const hint = summarizeToolInput(entry.input);
+    return (
+      <article
+        className={`task-traces__entry task-traces__entry--tool${working ? ' task-traces__entry--working' : ''}${failed ? ' task-traces__entry--failed' : ''}`}
+        data-trace-entry={entry.id}
+      >
+        <div className="task-traces__marker">
+          <Icon size={14} />
         </div>
-        {entry.kind === 'tool' ? (
-          <details className="task-traces__tool">
-            <summary>
-              <ChevronRight size={13} />
-              <strong>{entry.title}</strong>
-              {entry.status && (
-                <span
-                  className={
-                    entry.status.toLowerCase() === 'failed'
-                      ? 'task-traces__failed'
-                      : ''
-                  }
-                >
-                  {entry.status}
-                </span>
-              )}
-            </summary>
+        <details className="task-traces__call">
+          <summary>
+            <strong className={working ? 'shimmer-text' : undefined}>{entry.title}</strong>
+            {hint && <span className="task-traces__hint" title={hint}>{hint}</span>}
+            {failed && <span className="task-traces__failed">failed</span>}
+            {at}
+            <ChevronRight className="task-traces__chevron" size={13} aria-hidden="true" />
+          </summary>
+          <div className="task-traces__call-body">
             {entry.input && (
               <>
                 <div className="task-traces__label">Input</div>
@@ -293,23 +274,37 @@ function TraceEntryView({ entry }: { entry: TraceEntry }) {
               </>
             )}
             {raw}
-          </details>
-        ) : (
-          <>
-            {entry.text &&
-              (entry.text.length > 1600 ? (
-                <details className="task-traces__long">
-                  <summary>
-                    {entry.text.slice(0, 360)}… <span>Show more</span>
-                  </summary>
-                  <div className="task-traces__text">{entry.text}</div>
-                </details>
-              ) : (
-                <div className="task-traces__text">{entry.text}</div>
-              ))}
-            {raw}
-          </>
-        )}
+          </div>
+        </details>
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className={`task-traces__entry task-traces__entry--${entry.kind}${working ? ' task-traces__entry--working' : ''}`}
+      data-trace-entry={entry.id}
+    >
+      <div className="task-traces__marker">
+        <Icon size={14} />
+      </div>
+      <div className="task-traces__entry-content">
+        <div className="task-traces__entry-meta">
+          <span className={working ? 'shimmer-text' : undefined}>{entry.title}</span>
+          {at}
+        </div>
+        {entry.text &&
+          (entry.text.length > 1600 ? (
+            <details className="task-traces__long">
+              <summary>
+                {entry.text.slice(0, 360)}… <span>Show more</span>
+              </summary>
+              <div className="task-traces__text">{entry.text}</div>
+            </details>
+          ) : (
+            <div className="task-traces__text">{entry.text}</div>
+          ))}
+        {raw}
       </div>
     </article>
   );

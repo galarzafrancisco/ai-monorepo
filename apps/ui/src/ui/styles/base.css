@@ -155,3 +155,33 @@ ul, ol {
   font-family: var(--font-mono);
   letter-spacing: 0.02em;
 }
+
+/* Live activity ("Thinking", a tool running): a light sweeps across the text, like a model at work. */
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--text-muted) 0%,
+    var(--text-muted) 40%,
+    var(--text) 50%,
+    var(--text-muted) 60%,
+    var(--text-muted) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-text-sweep 1.8s linear infinite;
+}
+
+@keyframes shimmer-text-sweep {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text {
+    animation: none;
+    color: var(--text-muted);
+    background: none;
+  }
+}

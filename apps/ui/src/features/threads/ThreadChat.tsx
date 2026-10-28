@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Text, Button, Avatar } from "../../ui/primitives";
+import { LoadEarlier, useLoadEarlier } from "../../ui/components";
 import { useThread } from "./useThread";
 import { useMarkThreadRead } from "./useMarkThreadRead";
 import { useAuth } from "../../auth";
@@ -27,7 +28,6 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   /** The list's scroll height just before older messages were asked for. */
-  const scrollHeightBeforeOlderRef = useRef<number | null>(null);
   const keepScrollPositionRef = useRef(false);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
@@ -55,22 +55,16 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     !chatIsLoading && !chatError,
   );
 
-  const handleLoadOlderMessages = () => {
-    scrollHeightBeforeOlderRef.current = messagesContainerRef.current?.scrollHeight ?? null;
-    void loadOlderMessages();
-  };
-
-  // Older messages are added above the ones on screen: keep those where they are.
-  useLayoutEffect(() => {
-    const container = messagesContainerRef.current;
-    const previousHeight = scrollHeightBeforeOlderRef.current;
-    if (!container || previousHeight === null || isLoadingOlderMessages) return;
-    scrollHeightBeforeOlderRef.current = null;
-    const addedHeight = container.scrollHeight - previousHeight;
-    if (addedHeight === 0) return;
-    container.scrollTop += addedHeight;
-    keepScrollPositionRef.current = true;
-  }, [messages, isLoadingOlderMessages]);
+  // Scrolling up loads older messages, keeping the ones on screen where they are.
+  const { sentinelRef: olderSentinelRef, loadEarlier: loadEarlierMessages } = useLoadEarlier({
+    containerRef: messagesContainerRef,
+    hasMore: hasOlderMessages,
+    isLoading: isLoadingOlderMessages,
+    load: loadOlderMessages,
+    itemSelector: ".thread-chat__message",
+    contentDeps: [messages],
+    onRestored: () => { keepScrollPositionRef.current = true; },
+  });
 
   // Follow new activity only while the reader is at the bottom. When they've
   // scrolled up, a new message raises a "jump to latest" button instead.
@@ -140,18 +134,13 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
           ref={messagesContainerRef}
           inert={Boolean(lockedKind && messages.length === 0)}
         >
-          {hasOlderMessages && (
-            <div className="thread-chat__older">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleLoadOlderMessages}
-                disabled={isLoadingOlderMessages}
-              >
-                {isLoadingOlderMessages ? "loading..." : "load earlier messages"}
-              </Button>
-            </div>
-          )}
+          <LoadEarlier
+            sentinelRef={olderSentinelRef}
+            hasMore={hasOlderMessages}
+            isLoading={isLoadingOlderMessages}
+            onLoad={loadEarlierMessages}
+            noun="messages"
+          />
 
           {chatError && (
             <div className="thread-chat__status thread-chat__status--error">
@@ -244,7 +233,9 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
       {isChatReady && agentActivity && (
         <div className="thread-chat__activity" role="status" aria-live="polite">
           <Text size="1" tone="muted">
-            {agentActivity === "thinking" ? "Assistant is thinking..." : "Assistant is calling a tool..."}
+            <span className="shimmer-text">
+              {agentActivity === "thinking" ? "Assistant is thinking…" : "Assistant is calling a tool…"}
+            </span>
           </Text>
         </div>
       )}

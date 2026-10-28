@@ -147,47 +147,97 @@
   overflow-wrap: anywhere;
   line-height: var(--lh-relaxed);
 }
-.task-traces__tool {
-  border: 1px solid var(--border);
-  border-radius: var(--r-2);
-  background: var(--surface);
-  padding: var(--space-2) var(--space-3);
+/* A tool call is one line: name, what it was called with, time. Click it for input and output. */
+.task-traces__entry--tool {
+  padding-bottom: var(--space-2);
 }
-.task-traces__tool > summary {
+.task-traces__entry--tool:not(:last-child)::before {
+  top: 24px;
+}
+.task-traces__call {
+  min-width: 0;
+  font-size: var(--fs-1);
+}
+.task-traces__call > summary {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 24px;
+  padding: 0 var(--space-1);
+  margin: 0 calc(-1 * var(--space-1));
+  border-radius: var(--r-2);
   cursor: pointer;
   list-style: none;
-  min-height: 24px;
 }
-.task-traces__tool > summary::-webkit-details-marker {
+.task-traces__call > summary::-webkit-details-marker {
   display: none;
 }
-.task-traces__tool > summary > svg {
-  flex-shrink: 0;
+.task-traces__call > summary:hover {
+  background: var(--surface);
+}
+.task-traces__call > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.task-traces__call strong {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+}
+.task-traces__hint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-traces__call time {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.task-traces__chevron {
+  flex: none;
   color: var(--text-muted);
   transition: transform 120ms;
 }
-.task-traces__tool[open] > summary > svg {
+.task-traces__call[open] .task-traces__chevron {
   transform: rotate(90deg);
 }
-.task-traces__tool strong {
-  overflow-wrap: anywhere;
-  font-family: var(--font-mono);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-medium);
-}
-.task-traces__tool > summary > span {
-  margin-left: auto;
-  font-size: var(--fs-1);
-  color: var(--text-muted);
-}
-.task-traces__tool > summary > .task-traces__failed {
+.task-traces__failed {
+  flex: none;
   color: var(--danger);
 }
-.task-traces__tool > .task-traces__label {
+.task-traces__entry--failed .task-traces__marker {
+  color: var(--danger);
+}
+.task-traces__call-body {
+  margin: var(--space-2) 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-2);
+  background: var(--surface);
+}
+.task-traces__call-body > .task-traces__label:not(:first-child) {
   margin-top: var(--space-3);
+}
+
+/* The latest step of a live run: the marker breathes while the label shimmers. */
+.task-traces__entry--working .task-traces__marker {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-subtle));
+  animation: task-traces-breathe 1.6s ease-in-out infinite;
+}
+@keyframes task-traces-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+.task-traces__working {
+  padding: var(--space-2) 0 var(--space-4) 32px;
+  font-size: var(--fs-1);
 }
 .task-traces pre {
   font-family: var(--font-mono);
@@ -262,13 +312,12 @@
   font-size: var(--fs-1);
   text-align: center;
 }
-.task-traces__earlier {
-  display: block;
-  margin: 0 auto var(--space-4);
-}
 @media (prefers-reduced-motion: reduce) {
-  .task-traces__tool > summary > svg {
+  .task-traces__chevron {
     transition: none;
+  }
+  .task-traces__entry--working .task-traces__marker {
+    animation: none;
   }
 }
 
