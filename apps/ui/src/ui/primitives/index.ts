@@ -14,6 +14,8 @@ export { ListRow } from './ListRow';
 export { InsetGroup, InsetRow } from './InsetGroup';
 export { Modal } from './Modal';
 export { Tabs } from './Tabs';
+export { ContextRail, RailSection } from './ContextRail';
+export { useRailOpen } from './useRailOpen';
 
 export type { AvatarProps } from './Avatar';
 export type { ChipProps } from './Chip';
@@ -30,3 +32,4 @@ export type { ListRowProps } from './ListRow';
 export type { InsetGroupProps, InsetRowProps } from './InsetGroup';
 export type { ModalProps } from './Modal';
 export type { TabsProps, TabItem } from './Tabs';
+export type { ContextRailProps, RailSectionProps } from './ContextRail';

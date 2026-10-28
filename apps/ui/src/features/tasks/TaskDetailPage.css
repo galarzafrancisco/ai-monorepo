@@ -301,14 +301,6 @@
   margin: var(--space-3);
 }
 
-/* Comments */
-.task-detail-page__comment-buttons {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 8px;
-  margin: var(--space-3);
-}
-
 /* Actions */
 .task-detail-page__actions {
   display: grid;
@@ -703,5 +695,63 @@
   .task-detail-page__autocomplete-item:hover,
   .task-detail-page__autocomplete-item--highlighted {
     background: var(--color-surface-hover, #374151);
+  }
+}
+
+/* Desktop: the page carries its own title, so the runs panel can run the full height. */
+.task-detail-page__title {
+  /* Top spacing lives on the title, so the sticky status bar meets the page's top edge. */
+  margin: 0;
+  padding-top: var(--space-6);
+  font-size: var(--fs-6);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Danger zone: destructive actions last on the page, set apart. */
+.task-danger-zone {
+  margin: var(--space-8) 0 var(--space-4);
+  padding: 0 var(--space-3);
+}
+.task-danger-zone__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+.task-danger-zone__box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, var(--border));
+  border-radius: var(--r-3);
+}
+.task-danger-zone__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.task-danger-zone__actions {
+  display: flex;
+  flex-direction: row;
+  flex: none;
+  gap: var(--space-2);
+  padding: 0;
+  background: none;
+  border: 0;
+}
+@media (max-width: 767px) {
+  .task-danger-zone__box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  /* Clear the floating Add Comment button. */
+  .task-danger-zone {
+    margin-bottom: calc(var(--space-8) + 56px);
   }
 }

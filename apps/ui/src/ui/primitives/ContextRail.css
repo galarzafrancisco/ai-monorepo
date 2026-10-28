@@ -1,0 +1,202 @@
+/* Right-hand panel: full height, flush right, a header naming it; collapses to a strip. */
+.context-rail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: clamp(340px, 30vw, 480px);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  color: var(--text);
+}
+
+.context-rail--collapsed {
+  width: 48px;
+}
+
+.context-rail__header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.context-rail__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-normal);
+}
+
+.context-rail__count {
+  font-weight: var(--fw-normal);
+  color: var(--text-muted);
+}
+
+.context-rail__live {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-left: var(--space-1);
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.context-rail__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Shared look for header icon controls, links included. */
+.context-rail__icon-button,
+.context-rail__actions > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-2);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.context-rail__icon-button:hover,
+.context-rail__actions > a:hover {
+  background: color-mix(in srgb, var(--surface) 80%, var(--border));
+  color: var(--text);
+}
+
+.context-rail__scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.context-rail__fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Collapsed: the whole strip is the button that opens the panel. */
+.context-rail__strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-4) 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--fs-1);
+  cursor: pointer;
+}
+
+.context-rail__strip:hover {
+  background: color-mix(in srgb, var(--surface) 80%, var(--border));
+  color: var(--text);
+}
+
+.context-rail__strip-label {
+  writing-mode: vertical-rl;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+}
+
+.context-rail__strip-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.context-rail__strip:focus-visible,
+.context-rail__icon-button:focus-visible,
+.context-rail__actions > a:focus-visible,
+.rail-section__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.rail-section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rail-section--footer {
+  margin-top: auto;
+  border-bottom: 0;
+  padding-top: var(--space-4);
+}
+
+.rail-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.rail-section__heading,
+.rail-section__toggle {
+  margin: 0;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+  line-height: var(--lh-normal);
+}
+
+.rail-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--r-1);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rail-section__toggle > svg {
+  color: var(--text-muted);
+}
+
+.rail-section__count {
+  font-weight: var(--fw-normal);
+  color: var(--text-muted);
+}
+
+.rail-section__action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+}
+
+.rail-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-4);
+}
+

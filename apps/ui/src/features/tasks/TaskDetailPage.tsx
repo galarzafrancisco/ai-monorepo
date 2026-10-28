@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
-import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer, useRailOpen } from '../../ui/primitives';
 import { DeleteWithConfirmation, useCommandPalette } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
@@ -24,7 +24,7 @@ import type { Task } from './types';
 import { useChatReadiness } from '../ai-models/useChatReadiness';
 import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
-import { TaskRunsPanel, type RunsPanelMode } from './traces/TaskRunsPanel';
+import { TaskRunsPanel } from './traces/TaskRunsPanel';
 import { RunList } from './traces/RunList';
 import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
 import { ProjectPicker } from '../projects/ProjectPicker';
@@ -71,17 +71,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const { registerCommands } = useCommandPalette();
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
-  // The runs side bar starts collapsed; whichever size you leave it at sticks.
-  const [runsMode, setRunsMode] = useState<RunsPanelMode>(() => {
-    try {
-      const stored = localStorage.getItem(RUNS_MODE_KEY);
-      return stored === 'third' || stored === 'full' ? stored : 'closed';
-    } catch { return 'closed'; }
-  });
-  const changeRunsMode = useCallback((mode: RunsPanelMode) => {
-    setRunsMode(mode);
-    try { localStorage.setItem(RUNS_MODE_KEY, mode); } catch { /* Storage may be unavailable. */ }
-  }, []);
+  // The runs side bar is for troubleshooting: it starts collapsed, and stays open once you open it.
+  // 'third' and 'full' are the panel's older open sizes.
+  const [isRunsOpen, changeRunsOpen] = useRailOpen(RUNS_MODE_KEY, false, ['third', 'full']);
   const [executionsTaskId, setExecutionsTaskId] = useState<string | null>(null);
   const currentTaskId = useRef(task?.id);
   currentTaskId.current = task?.id;
@@ -258,8 +250,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       setSectionTitle('Task');
       return
     }
-    setSectionTitle(task.name);
-  }, [task, isLoadingTask, setSectionTitle]);
+    // On desktop the page shows its own title, so the runs panel can run the full height.
+    setSectionTitle(isDesktop ? '' : task.name);
+  }, [task, isLoadingTask, setSectionTitle, isDesktop]);
 
   useEffect(() => {
     return () => {
@@ -620,17 +613,19 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       isLoadingRuns={isLoadingExecutions}
       runsError={executionsError}
       onRefreshRuns={() => void loadExecutionsForTask(task.id)}
-      mode={runsMode}
-      onModeChange={changeRunsMode}
+      open={isRunsOpen}
+      onOpenChange={changeRunsOpen}
       onInterrupt={(run) => void handleInterruptExecution(run.executionId, task.name)}
       interruptingExecutionIds={interruptingExecutions}
     />
   );
 
   return (
-    <div className={`task-detail-workspace task-detail-workspace--runs-${isDesktop ? runsMode : "closed"}`}>
+    <div className="task-detail-workspace">
     <div className="task-detail-main">
     <div className="task-detail-page">
+
+      {isDesktop && <h1 className="task-detail-page__title">{task.name}</h1>}
 
       {error && (
         <ErrorText>
@@ -961,17 +956,29 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </DataRowContainer>
       ) : null}
 
-      <DeleteWithConfirmation
-        className='task-detail-page__comment-buttons'
-        onDelete={async () => {
-          try {
-            await handlers.deleteTask({ taskId: task.id });
-            navigate(backPath);
-          } catch (err: unknown) {
-            showError(err);
-          }
-        }}
-      />
+      <section className="task-danger-zone" aria-labelledby="task-danger-zone-title">
+        <h2 id="task-danger-zone-title" className="task-danger-zone__title">Danger zone</h2>
+        <div className="task-danger-zone__box">
+          <div className="task-danger-zone__text">
+            <Text weight="semibold">Delete this task</Text>
+            <Text size="2" tone="muted">Once deleted, the task is gone for everyone. This can't be undone.</Text>
+          </div>
+          <DeleteWithConfirmation
+            className="task-danger-zone__actions"
+            size="sm"
+            deleteLabel="Delete task"
+            confirmLabel="Delete forever"
+            onDelete={async () => {
+              try {
+                await handlers.deleteTask({ taskId: task.id });
+                navigate(backPath);
+              } catch (err: unknown) {
+                showError(err);
+              }
+            }}
+          />
+        </div>
+      </section>
 
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
