@@ -27,6 +27,9 @@ import { ThreadWatchParamsDto } from './dto/thread-watch-params.dto';
 import { PullRequestResponseDto } from '../pull-requests/dto/http/pull-request-response.dto';
 import { toPullRequestResponse } from '../pull-requests/dto/http/pull-request.mapper';
 import { PullRequestsScopes } from '../pull-requests/pull-requests.scopes';
+import { IssueResponseDto } from '../issues/dto/http/issue-response.dto';
+import { toIssueResponse } from '../issues/dto/http/issue.mapper';
+import { IssuesScopes } from '../issues/issues.scopes';
 import { ThreadReadStateService } from './read-state/thread-read-state.service';
 import { ThreadPinsService } from './pins/thread-pins.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
@@ -258,6 +261,17 @@ export class ThreadsController {
   @ApiNotFoundResponse({ description: 'Thread not found' })
   async listPullRequests(@Param() params: ThreadParamsDto): Promise<PullRequestResponseDto[]> {
     return (await this.threadsService.listPullRequests(params.id)).map(toPullRequestResponse);
+  }
+
+  @Get(':id/issues')
+  @RequireScopes(ThreadsScopes.READ.id, IssuesScopes.READ.id)
+  @ApiOperation({
+    summary: "Issues attached as links to the thread's tasks, oldest link first",
+  })
+  @ApiOkResponse({ type: [IssueResponseDto] })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async listIssues(@Param() params: ThreadParamsDto): Promise<IssueResponseDto[]> {
+    return (await this.threadsService.listIssues(params.id)).map(toIssueResponse);
   }
 
   @Delete(':id/task-subscriptions/:taskId')

@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, ListThreadMessagesResponseDto, PullRequestResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, ThreadTokenUsageResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
+import type { AddParticipantDto, AppendThreadStateDto, AttachTaskDto, CreateTagDto, CreateThreadDto, CreateThreadMessageDto, IssueResponseDto, ListThreadMessagesResponseDto, PullRequestResponseDto, ReferenceContextBlockDto, ThreadListResponseDto, ThreadMessageResponseDto, ThreadResponseDto, ThreadStateResponseDto, ThreadTokenUsageResponseDto, UpdateThreadDto, UpdateThreadStateDto } from './types.js';
 
 export class ThreadsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -59,6 +59,11 @@ export class ThreadsResource extends BaseClient {
   /** Pull requests attached as links to the thread's tasks, oldest link first */
   async ThreadsController_listPullRequests(params: { id: string; signal?: AbortSignal }): Promise<PullRequestResponseDto[]> {
     return this.request('GET', `/api/v1/threads/${params.id}/pull-requests`, { signal: params?.signal });
+  }
+
+  /** Issues attached as links to the thread's tasks, oldest link first */
+  async ThreadsController_listIssues(params: { id: string; signal?: AbortSignal }): Promise<IssueResponseDto[]> {
+    return this.request('GET', `/api/v1/threads/${params.id}/issues`, { signal: params?.signal });
   }
 
   /** Stop the threads agent watching a task */

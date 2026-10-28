@@ -13,6 +13,7 @@ import { ALL_WORKERS_SCOPES } from 'src/executions/workers.scopes';
 import { ALL_SEARCH_SCOPES } from 'src/search/search.scopes';
 import { ALL_INTEGRATIONS_SCOPES } from 'src/integrations/integrations.scopes';
 import { ALL_PULL_REQUESTS_SCOPES } from 'src/pull-requests/pull-requests.scopes';
+import { ALL_ISSUES_SCOPES } from 'src/issues/issues.scopes';
 
 export const ALL_API_SCOPES: Scope[] = [
   // Metadata
@@ -43,4 +44,5 @@ export const ALL_API_SCOPES: Scope[] = [
   ...ALL_INTEGRATIONS_SCOPES,
   // Pull requests
   ...ALL_PULL_REQUESTS_SCOPES,
+  ...ALL_ISSUES_SCOPES,
 ];

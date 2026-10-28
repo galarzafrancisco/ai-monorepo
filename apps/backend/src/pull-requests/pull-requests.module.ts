@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
+import { IssuesModule } from '../issues/issues.module';
 import { PullRequestEntity } from './pull-request.entity';
 import { PullRequestReferenceEntity } from './pull-request-reference.entity';
 import { PullRequestsService } from './pull-requests.service';
@@ -16,6 +17,7 @@ import { PullRequestReferencesListener } from './pull-request-references.listene
   imports: [
     TypeOrmModule.forFeature([PullRequestEntity, PullRequestReferenceEntity]),
     IntegrationsModule,
+    IssuesModule,
     AuthGuardsModule,
   ],
   controllers: [PullRequestsController, GithubWebhooksController],

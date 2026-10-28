@@ -7,6 +7,7 @@ export const GITHUB_WEBHOOK_EVENTS = [
   'Pull requests',
   'Pull request reviews',
   'Pull request review comments',
+  'Issues',
   'Issue comments',
   'Check runs',
   'Check suites',

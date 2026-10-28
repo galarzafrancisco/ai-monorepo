@@ -8,6 +8,7 @@ import type { AttachTaskDto } from '../models/AttachTaskDto.js';
 import type { CreateTagDto } from '../models/CreateTagDto.js';
 import type { CreateThreadDto } from '../models/CreateThreadDto.js';
 import type { CreateThreadMessageDto } from '../models/CreateThreadMessageDto.js';
+import type { IssueResponseDto } from '../models/IssueResponseDto.js';
 import type { ListThreadMessagesResponseDto } from '../models/ListThreadMessagesResponseDto.js';
 import type { PullRequestResponseDto } from '../models/PullRequestResponseDto.js';
 import type { ReferenceContextBlockDto } from '../models/ReferenceContextBlockDto.js';
@@ -257,6 +258,27 @@ export class ThreadsService {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/threads/{id}/pull-requests',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Issues attached as links to the thread's tasks, oldest link first
+     * @param id Thread UUID
+     * @returns IssueResponseDto
+     * @throws ApiError
+     */
+    public static threadsControllerListIssues(
+        id: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<Array<IssueResponseDto>> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/threads/{id}/issues',
             path: {
                 'id': id,
             },

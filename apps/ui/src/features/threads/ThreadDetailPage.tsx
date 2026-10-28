@@ -34,6 +34,8 @@ import {
 import { EditableThreadTitle } from "./EditableThreadTitle";
 import { ThreadPullRequestList, ThreadPullRequestWatchList } from "./ThreadPullRequests";
 import { isPullRequestWatch, useThreadPullRequests } from "./useThreadPullRequests";
+import { ThreadIssueList } from "./ThreadIssues";
+import { useThreadIssues } from "./useThreadIssues";
 import { ThreadChat } from "./ThreadChat";
 import { ThreadPinControl } from "./ThreadPinControl";
 import { useChatReadiness } from "../ai-models/useChatReadiness";
@@ -479,6 +481,7 @@ function ThreadDetailPageDesktop({
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
   const pullRequests = useThreadPullRequests(thread);
+  const issues = useThreadIssues(thread);
 
   return (
     <div className="thread-detail-page thread-detail-page--desktop">
@@ -557,6 +560,12 @@ function ThreadDetailPageDesktop({
           </RailSection>
         )}
 
+        {issues.length > 0 && (
+          <RailSection title="Issues" count={issues.length}>
+            <ThreadIssueList issues={issues} />
+          </RailSection>
+        )}
+
         {/* Tasks grouped by status */}
         {taskGroups.map((group) => (
           <RailSection
@@ -626,6 +635,7 @@ function ThreadDetailPageMobile({
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
   const pullRequests = useThreadPullRequests(thread);
+  const issues = useThreadIssues(thread);
   const [mobileView, setMobileView] = useState<"chat" | "tasks" | "context" | "more">("chat");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -722,6 +732,13 @@ function ThreadDetailPageMobile({
               <div className="thread-detail-page__mobile-section">
                 <DataRowContainer title="Pull requests">
                   <ThreadPullRequestList pullRequests={pullRequests} />
+                </DataRowContainer>
+              </div>
+            )}
+            {issues.length > 0 && (
+              <div className="thread-detail-page__mobile-section">
+                <DataRowContainer title="Issues">
+                  <ThreadIssueList issues={issues} />
                 </DataRowContainer>
               </div>
             )}

@@ -839,6 +839,38 @@ export interface PullRequestResponseDto {
   lastError: string | null;
 }
 
+export type IssueState = 'open' | 'closed';
+
+export type IssueStateReason = 'completed' | 'not_planned' | 'duplicate' | 'reopened';
+
+export interface IssueLabelResponseDto {
+  name: string;
+  color: string | null;
+}
+
+export interface IssueResponseDto {
+  id: string;
+  key: string;
+  host: string;
+  owner: string;
+  repo: string;
+  number: number;
+  url: string;
+  title: string | null;
+  state: IssueState | null;
+  stateReason: IssueStateReason | null;
+  isPullRequest: boolean;
+  authorLogin: string | null;
+  labels: IssueLabelResponseDto[];
+  assignees: string[];
+  milestone: string | null;
+  commentCount: number | null;
+  closedAt: string | null;
+  githubUpdatedAt: string | null;
+  lastFetchedAt: string | null;
+  lastError: string | null;
+}
+
 export interface ReferenceContextBlockDto {
   contextBlockId: string;
 }
@@ -1221,6 +1253,10 @@ export interface GithubWebhookSettingsResponseDto {
   secret: string;
   lastDeliveryAt: string | null;
   sources: GithubWebhookSourceDto[];
+}
+
+export interface LookupIssuesDto {
+  refs: string[];
 }
 
 export interface TaskExecutionQueueEntryResponseDto {

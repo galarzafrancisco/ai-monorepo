@@ -1,11 +1,13 @@
 import { Fragment } from 'react';
 import { PullRequestChip } from './PullRequestChip';
+import { IssueChip } from '../issues/IssueChip';
+import { parseIssueUrl } from '../issues/issueLinks';
 import { parsePullRequestUrl, splitLinks } from './pullRequestLinks';
 import './LinkifiedText.css';
 
 /**
- * Plain text with its links made clickable. Links to GitHub pull requests are
- * drawn as live pull request chips.
+ * Plain text with its links made clickable. Links to GitHub pull requests and
+ * issues are drawn as live chips.
  */
 export function LinkifiedText({ text }: { text: string }) {
   return (
@@ -14,6 +16,9 @@ export function LinkifiedText({ text }: { text: string }) {
         if (segment.kind === 'text') return <Fragment key={index}>{segment.text}</Fragment>;
         if (parsePullRequestUrl(segment.url)) {
           return <PullRequestChip key={index} url={segment.url} variant="inline" />;
+        }
+        if (parseIssueUrl(segment.url)) {
+          return <IssueChip key={index} url={segment.url} variant="inline" />;
         }
         return (
           <a

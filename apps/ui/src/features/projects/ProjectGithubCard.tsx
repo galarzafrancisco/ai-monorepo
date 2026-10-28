@@ -94,7 +94,7 @@ export function ProjectGithubCard({
         {connections !== null && connections.length === 0 ? (
           <Text size="2" tone="muted">
             No GitHub connection yet. <Link to="/settings/integrations">Connect GitHub</Link> to see
-            the status of this project&apos;s pull requests. Public repositories work without one,
+            the status of this project&apos;s pull requests and issues. Public repositories work without one,
             within GitHub&apos;s low limit for anonymous requests.
           </Text>
         ) : (
@@ -143,9 +143,9 @@ export function ProjectGithubCard({
         ) : null}
 
         <Text size="1" tone="muted" className="project-github__notice">
-          Taico uses this connection to check every pull request linked in Taico: in task links,
-          descriptions, comments and threads. Everyone in this Taico sees their status, title and
-          size, even people without access to the repository on GitHub.
+          Taico uses this connection to check every pull request and issue linked in Taico: in task
+          links, descriptions, comments and threads. Everyone in this Taico sees their status and
+          title, even people without access to the repository on GitHub.
         </Text>
 
         <Row justify="space-between" align="center" spacing="3">
