@@ -1,3 +1,3 @@
 # @taico/shared
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/shared/0.9.2)](https://badge.socket.dev/npm/package/@taico/shared/0.9.2)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/shared/0.10.0)](https://badge.socket.dev/npm/package/@taico/shared/0.10.0)
