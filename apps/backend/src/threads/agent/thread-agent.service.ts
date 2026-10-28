@@ -95,8 +95,12 @@ export class ThreadAgentService {
       }
 
       const stopHeartbeat = this.turns.startHeartbeat(turn.id);
+      let ingested = false;
+      let failed = false;
       try {
-        const outcome = await this.runTurn(turn, self);
+        const outcome = await this.runTurn(turn, self, () => {
+          ingested = true;
+        });
         if (outcome) {
           // The reply is already with the user; maintenance runs before the thread is released.
           await this.hooks.runAfterTurn({ threadId, turnId: turn.id, ...outcome });
@@ -119,11 +123,16 @@ export class ThreadAgentService {
         });
         this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
         await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
-        return;
+        failed = true;
       } finally {
         stopHeartbeat();
       }
 
+      // Failed work is already in the log after ingestion. Only drain newly
+      // arriving work; a pre-ingestion failure must not retry the same input forever.
+      if (failed && !ingested) {
+        return;
+      }
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.
       if (
@@ -138,7 +147,11 @@ export class ThreadAgentService {
   }
 
   /** Returns null when there was nothing for the agent to answer. */
-  private async runTurn(turn: ClaimedTurn, self: AgentResult): Promise<TurnOutcome | null> {
+  private async runTurn(
+    turn: ClaimedTurn,
+    self: AgentResult,
+    onIngested: () => void,
+  ): Promise<TurnOutcome | null> {
     const { threadId } = turn;
 
     const { triggerActor: author, newUserMessages } = await this.agentLog.ingestPending({
@@ -158,6 +171,7 @@ export class ThreadAgentService {
       threadId,
       turnId: turn.id,
     });
+    onIngested();
     // A turn started by a task notification, a timer or a watch acts for
     // whoever the agent subscribed, set the timer or started the watch for.
     const triggerActor =

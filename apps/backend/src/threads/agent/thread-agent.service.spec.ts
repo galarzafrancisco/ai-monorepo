@@ -174,7 +174,7 @@ function createHarness(steps: unknown[][]) {
     { emit: (event: symbol, payload: unknown) => emitted.push({ event, payload }) } as never,
   );
 
-  return { hooks, service, resolveModel, mcpOpen, threadTools, agentLog, turns, appended, displayMessages, emitted, finished, prompts, mcpClose };
+  return { hooks, service, resolveModel, mcpOpen, threadTools, agentLog, turns, messageWriter, appended, displayMessages, emitted, finished, prompts, mcpClose };
 }
 
 describe('ThreadAgentService', () => {
@@ -255,6 +255,81 @@ describe('ThreadAgentService', () => {
       }),
     ]);
     expect(h.mcpClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('drains work enqueued while a failed turn writes its error message', async () => {
+    const h = createHarness([textStep('Answer to the new message.')]);
+    h.resolveModel.mockRejectedValueOnce(new Error('model unavailable'));
+    let pending = false;
+    h.agentLog.hasPending.mockImplementation(async () => pending);
+    h.agentLog.ingestPending.mockImplementation(async () => {
+      const newUserMessages = pending ? ['new message'] : ['first message'];
+      pending = false;
+      return { triggerActor: USER, newUserMessages };
+    });
+
+    let releaseErrorWrite!: () => void;
+    let errorWriteStarted!: () => void;
+    const writingError = new Promise<void>((resolve) => {
+      errorWriteStarted = resolve;
+    });
+    const allowErrorWrite = new Promise<void>((resolve) => {
+      releaseErrorWrite = resolve;
+    });
+    const originalWrite = h.messageWriter.write.getMockImplementation()!;
+    h.messageWriter.write.mockImplementation(async (input) => {
+      if (input.agentMessageId === null) {
+        errorWriteStarted();
+        await allowErrorWrite;
+      }
+      return originalWrite(input);
+    });
+
+    let held = false;
+    let claimNumber = 0;
+    h.turns.tryClaim.mockImplementation(async () => {
+      if (held) return null;
+      held = true;
+      return { id: `turn-${++claimNumber}`, threadId: THREAD_ID };
+    });
+    h.turns.finish.mockImplementation(async (_id, status, error) => {
+      h.finished.push({ status, error });
+      held = false;
+    });
+
+    const draining = h.service.drain(THREAD_ID);
+    await writingError;
+    pending = true;
+    h.service.requestTurn(THREAD_ID);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(h.turns.tryClaim).toHaveBeenCalledTimes(2);
+    expect(h.finished).toEqual([]);
+
+    releaseErrorWrite();
+    await draining;
+
+    expect(h.finished.map((turn) => turn.status)).toEqual([
+      ThreadTurnStatus.FAILED,
+      ThreadTurnStatus.COMPLETED,
+    ]);
+    expect(h.turns.tryClaim).toHaveBeenCalledTimes(3);
+    expect(h.agentLog.ingestPending).toHaveBeenCalledTimes(2);
+    expect(h.displayMessages.map((message) => message.content)).toEqual([
+      expect.stringContaining('model unavailable'),
+      'Answer to the new message.',
+    ]);
+  });
+
+  it('does not retry unconsumed input when ingestion fails', async () => {
+    const h = createHarness([]);
+    h.agentLog.ingestPending.mockRejectedValue(new Error('ingestion unavailable'));
+    h.agentLog.hasPending.mockResolvedValue(true);
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.finished).toHaveLength(1);
+    expect(h.turns.tryClaim).toHaveBeenCalledTimes(1);
+    expect(h.agentLog.hasPending).not.toHaveBeenCalled();
   });
 
   it('runs a turn for a task notification when there is no new user message', async () => {
