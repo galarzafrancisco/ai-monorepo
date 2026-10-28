@@ -222,6 +222,106 @@
   gap: 6px;
 }
 
+/* Depends on: one pill per dependency, status icon first, removable in place. */
+.task-props__deps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-dep {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-4);
+  background: var(--surface);
+  font-size: var(--fs-1);
+}
+
+.task-dep__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 4px 2px var(--space-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.task-dep__link:hover .task-dep__name {
+  text-decoration: underline;
+}
+
+.task-dep__link > svg {
+  flex: none;
+  color: var(--text-muted);
+}
+
+/* A dependency that isn't shipped is still holding this task up. */
+.task-dep--IN_PROGRESS .task-dep__link > svg { color: var(--warning); }
+.task-dep--FOR_REVIEW .task-dep__link > svg { color: var(--accent); }
+.task-dep--DONE .task-dep__link > svg { color: var(--success); }
+.task-dep--DONE .task-dep__name { color: var(--text-muted); }
+
+.task-dep--loading .task-dep__name {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.task-dep__name {
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-dep__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.task-dep:hover .task-dep__remove,
+.task-dep__remove:focus-visible {
+  opacity: 1;
+}
+
+.task-dep__remove:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+
+@media (hover: none) {
+  .task-dep__remove {
+    opacity: 1;
+  }
+}
+
+.task-props__graph {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  text-decoration: none;
+}
+
+.task-props__graph:hover {
+  color: var(--text);
+}
+
 .task-props__project .project-picker__trigger {
   min-width: 11rem;
 }
