@@ -75,6 +75,7 @@ export function RunTrace({
       setFollowing(false);
       return loadEarlier();
     },
+    itemSelector: '[data-trace-entry]',
     contentDeps: [events],
   });
 

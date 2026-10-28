@@ -61,6 +61,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     hasMore: hasOlderMessages,
     isLoading: isLoadingOlderMessages,
     load: loadOlderMessages,
+    itemSelector: ".thread-chat__message",
     contentDeps: [messages],
     onRestored: () => { keepScrollPositionRef.current = true; },
   });
