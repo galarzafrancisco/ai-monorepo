@@ -166,6 +166,9 @@ describe('Thread pull request watches E2E', () => {
     toolResults.length = 0;
     await ds.query(`DELETE FROM pull_request_references`);
     await ds.query(`DELETE FROM pull_requests`);
+    // Connections left by other suites hold secrets encrypted with their own key.
+    await ds.query(`UPDATE projects SET github_connection_id = NULL`);
+    await ds.query(`DELETE FROM github_connections`);
   });
 
   afterEach(() => {
