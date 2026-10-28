@@ -7,8 +7,7 @@ import type { Thread } from "./types";
 export const isPullRequestWatch = (watch: ThreadWatchResponseDto) => watch.kind === "pull_request";
 
 /**
- * Pull requests linked from the thread's tasks (links, descriptions, comments)
- * or written in its messages. Fetched again when the thread changes (tasks
+ * Pull requests attached as links to the thread's tasks. Fetched again when the thread changes (tasks
  * attached, watches added) and when the window regains focus.
  */
 export function useThreadPullRequests(thread: Thread): PullRequest[] {

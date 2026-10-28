@@ -97,16 +97,16 @@ export class PullRequestsService {
   }
 
   /**
-   * Pull requests of a thread: linked from its tasks (links, descriptions,
-   * comments) or written in its messages, oldest link first.
+   * Pull requests attached as links (artefacts) to these tasks, oldest link
+   * first. Mentions in descriptions and comments are left out.
    */
-  async listForThread(threadId: string, taskIds: string[]): Promise<PullRequestEntity[]> {
+  async listLinkedToTasks(taskIds: string[]): Promise<PullRequestEntity[]> {
     const ids: Array<{ pull_request_id: string }> = await this.dataSource.query(
       `SELECT pull_request_id FROM pull_request_references
-        WHERE thread_id = $1 OR task_id = ANY($2::uuid[])
+        WHERE source_type = $1 AND task_id = ANY($2::uuid[])
         GROUP BY pull_request_id
         ORDER BY min(created_at) ASC`,
-      [threadId, taskIds],
+      [PullRequestReferenceSource.TASK_ARTEFACT, taskIds],
     );
     return this.inOrder(ids.map((row) => row.pull_request_id));
   }
