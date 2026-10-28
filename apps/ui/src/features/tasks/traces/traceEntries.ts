@@ -9,8 +9,6 @@ export type TraceEntry = {
   input?: string;
   status?: string;
   events: TraceEvent[];
-  /** Timestamp for ephemeral entries that have no persisted execution events. */
-  timestamp?: string;
 };
 const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)

@@ -11,7 +11,6 @@ import {
 } from "@taico/events";
 import { ActorResponseDto } from '@taico/client/v2';
 import type { Message } from './types';
-import { emptyActivity, updateActivity, type ActivityState } from './activityState';
 import { ActorType as DtoActorType } from './types';
 
 const SOCKET_URL = getUIWebSocketUrl('/threads');
@@ -42,7 +41,7 @@ const convertWireActorToDto = (
 export interface UseThreadSocketResult {
   socket: Socket | null;
   isConnected: boolean;
-  activity: ActivityState;
+  agentActivity: "thinking" | "tool_calling" | null;
   agentResponseStream: {
     streamId: string;
     actorId: string;
@@ -67,14 +66,25 @@ export interface UseThreadSocketResult {
 export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [activity, setActivity] = useState<ActivityState>(emptyActivity);
+  const [agentActivity, setAgentActivity] = useState<"thinking" | "tool_calling" | null>(null);
   const [agentResponseStream, setAgentResponseStream] = useState<{
     streamId: string;
     actorId: string;
     content: string;
   } | null>(null);
+  const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageHandlerRef = useRef<((message: Message) => void) | null>(null);
   const subscribedHandlerRef = useRef<(() => void) | null>(null);
+
+  const scheduleActivityReset = useCallback(() => {
+    if (activityTimeoutRef.current) {
+      clearTimeout(activityTimeoutRef.current);
+    }
+    activityTimeoutRef.current = setTimeout(() => {
+      setAgentActivity(null);
+      activityTimeoutRef.current = null;
+    }, 3000);
+  }, []);
 
   const onMessageCreated = useCallback((handler: (message: Message) => void) => {
     messageHandlerRef.current = handler;
@@ -85,8 +95,6 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
   }, []);
 
   useEffect(() => {
-    setActivity(emptyActivity);
-    setAgentResponseStream(null);
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
@@ -113,7 +121,11 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
 
     newSocket.on('disconnect', () => {
       setIsConnected(false);
-      setActivity((current) => ({ ...current, stepActive: false, pendingTools: [] }));
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
+      setAgentActivity(null);
       setAgentResponseStream(null);
     });
 
@@ -123,6 +135,12 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         return;
       }
 
+      // Clear agent activity when a message is created
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
+      setAgentActivity(null);
       setAgentResponseStream((current) => {
         if (!current) {
           return current;
@@ -148,7 +166,8 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         return;
       }
 
-      setActivity((current) => updateActivity(current, event.payload, event.payload.occurredAt ?? new Date().toISOString()));
+      setAgentActivity(event.payload.kind);
+      scheduleActivityReset();
     });
 
     newSocket.on(ThreadWireEvents.AGENT_RESPONSE_DELTA, (event: AgentResponseDeltaWireEvent) => {
@@ -176,14 +195,19 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
 
     return () => {
       newSocket.emit('threads.unsubscribe', { threadId });
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
+      setAgentResponseStream(null);
       newSocket.close();
     };
-  }, [threadId]);
+  }, [threadId, scheduleActivityReset]);
 
   return {
     socket,
     isConnected,
-    activity,
+    agentActivity,
     agentResponseStream,
     onMessageCreated,
     onSubscribed,

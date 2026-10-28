@@ -41,7 +41,7 @@ export const useThread = (threadId: string) => {
 
   // WebSocket transport and real-time events
   const {
-    activity,
+    agentActivity,
     agentResponseStream,
     onMessageCreated,
     onSubscribed,
@@ -108,7 +108,7 @@ export const useThread = (threadId: string) => {
 
     // Data
     messages,
-    activity,
+    agentActivity,
     agentResponseStream,
     sendMessage,
     loadOlderMessages,

@@ -15,7 +15,6 @@ import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
   ThreadAgentActivityKind,
-  ThreadAgentActivityPayload,
   ThreadAgentResponseDeltaEvent,
   ThreadUpdatedEvent,
 } from '../events/threads.events';
@@ -52,7 +51,6 @@ type TurnOutcome = {
 @Injectable()
 export class ThreadAgentService {
   private readonly logger = new Logger(ThreadAgentService.name);
-  private readonly requestedTurns = new Map<string, number>();
 
   constructor(
     @InjectRepository(ThreadEntity)
@@ -73,7 +71,6 @@ export class ThreadAgentService {
    * message or a task notification. Returns immediately.
    */
   requestTurn(threadId: string): void {
-    this.requestedTurns.set(threadId, (this.requestedTurns.get(threadId) ?? 0) + 1);
     void this.drain(threadId).catch((error) => {
       this.logger.error({
         message: 'Thread agent run failed',
@@ -89,7 +86,6 @@ export class ThreadAgentService {
    */
   async drain(threadId: string): Promise<void> {
     const self = await this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
-    let watermarkFallbackUsed = false;
 
     for (;;) {
       const turn = await this.turns.tryClaim(threadId);
@@ -98,18 +94,12 @@ export class ThreadAgentService {
       }
 
       const stopHeartbeat = this.turns.startHeartbeat(turn.id);
-      const requestsAtClaim = this.requestedTurns.get(threadId) ?? 0;
-      let ingested = false;
-      let failed = false;
       try {
-        const outcome = await this.runTurn(turn, self, () => {
-          ingested = true;
-        });
+        const outcome = await this.runTurn(turn, self);
         if (outcome) {
           // The reply is already with the user; maintenance runs before the thread is released.
           await this.hooks.runAfterTurn({ threadId, turnId: turn.id, ...outcome });
         }
-        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
         await this.turns.finish(turn.id, ThreadTurnStatus.COMPLETED);
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
@@ -119,46 +109,18 @@ export class ThreadAgentService {
           turnId: turn.id,
           error: this.describeError(error),
         });
-        try {
-          await this.saveDisplayMessage({
-            threadId,
-            actorId: self.actorId,
-            content: `I encountered an error while processing your message: ${reason}`,
-            agentMessageId: null,
-          });
-        } catch (reportError) {
-          this.logger.error({
-            message: 'Could not report thread agent turn failure',
-            threadId,
-            turnId: turn.id,
-            error: this.describeError(reportError),
-          });
-        } finally {
-          this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
-          await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
-        }
-        failed = true;
+        await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
+        await this.saveDisplayMessage({
+          threadId,
+          actorId: self.actorId,
+          content: `I encountered an error while processing your message: ${reason}`,
+          agentMessageId: null,
+        });
+        return;
       } finally {
         stopHeartbeat();
       }
 
-      const locallyRequested = (this.requestedTurns.get(threadId) ?? 0) !== requestsAtClaim;
-      if (failed && !ingested && !locallyRequested) {
-        try {
-          // Compare with the claim's database timestamp, not a later snapshot:
-          // another instance may enqueue work before the first read starts.
-          if (!(await this.agentLog.hasPendingSinceClaim(threadId, self.actorId, turn.id))) return;
-        } catch (error) {
-          // A failed watermark read gets one bounded attempt, not an error loop.
-          if (watermarkFallbackUsed) return;
-          watermarkFallbackUsed = true;
-          this.logger.warn({
-            message: 'Could not check pending work since claim',
-            threadId,
-            error: this.describeError(error),
-          });
-        }
-      }
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.
       if (
@@ -173,11 +135,7 @@ export class ThreadAgentService {
   }
 
   /** Returns null when there was nothing for the agent to answer. */
-  private async runTurn(
-    turn: ClaimedTurn,
-    self: AgentResult,
-    onIngested: () => void,
-  ): Promise<TurnOutcome | null> {
+  private async runTurn(turn: ClaimedTurn, self: AgentResult): Promise<TurnOutcome | null> {
     const { threadId } = turn;
 
     const { triggerActor: author, newUserMessages } = await this.agentLog.ingestPending({
@@ -197,7 +155,6 @@ export class ThreadAgentService {
       threadId,
       turnId: turn.id,
     });
-    onIngested();
     // A turn started by a task notification, a timer or a watch acts for
     // whoever the agent subscribed, set the timer or started the watch for.
     const triggerActor =
@@ -271,7 +228,6 @@ export class ThreadAgentService {
             forActorId: triggerActor.id,
           }),
         },
-        detailActorId: triggerActor.id,
       });
       return { model: resolved, lastInputTokens };
     } finally {
@@ -286,7 +242,6 @@ export class ThreadAgentService {
     threadSecret: string;
     messages: ModelMessage[];
     tools: ToolSet;
-    detailActorId: string;
   }): Promise<number | null> {
     const { turn, self, resolved } = input;
     const { threadId } = turn;
@@ -325,40 +280,12 @@ export class ThreadAgentService {
       switch (part.type) {
         case 'start-step':
           streamId = randomUUID();
-          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'reasoning-delta':
+          this.emitActivity(threadId, self.actorId, 'thinking');
           break;
         case 'tool-call':
-          this.emitActivity(threadId, self.actorId, 'tool_calling', {
-            turnId: turn.id,
-            toolCallId: part.toolCallId,
-            toolName: part.toolName,
-            input: JSON.stringify(part.input),
-            detailActorId: input.detailActorId,
-          });
-          break;
-        case 'tool-result':
-          this.emitActivity(threadId, self.actorId, 'tool_result', {
-            turnId: turn.id,
-            toolCallId: part.toolCallId,
-            toolName: part.toolName,
-            output: JSON.stringify(part.output),
-            detailActorId: input.detailActorId,
-          });
-          break;
-        case 'tool-error':
-          this.emitActivity(threadId, self.actorId, 'tool_result', {
-            turnId: turn.id,
-            toolCallId: part.toolCallId,
-            toolName: part.toolName,
-            output: String(part.error),
-            failed: true,
-            detailActorId: input.detailActorId,
-          });
-          break;
-        case 'finish-step':
-          this.emitActivity(threadId, self.actorId, 'step_end', { turnId: turn.id });
+          this.emitActivity(threadId, self.actorId, 'tool_calling');
           break;
         case 'text-delta':
           this.eventEmitter.emit(
@@ -465,11 +392,10 @@ export class ThreadAgentService {
     threadId: string,
     actorId: string,
     kind: ThreadAgentActivityKind,
-    details: Omit<ThreadAgentActivityPayload, 'threadId' | 'kind'> = {},
   ): void {
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
-      new ThreadAgentActivityEvent({ id: actorId }, { threadId, kind, ...details }),
+      new ThreadAgentActivityEvent({ id: actorId }, { threadId, kind }),
     );
   }
 
