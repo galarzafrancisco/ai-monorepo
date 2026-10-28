@@ -22,6 +22,8 @@ export interface CreateProjectDto {
   slug: string;
   description?: string;
   repoUrl?: string;
+  githubConnectionId?: string | null;
+  githubForWorker?: boolean;
   color?: string;
 }
 
@@ -33,6 +35,8 @@ export interface ProjectResponseDto {
   slug: string;
   description?: string;
   repoUrl?: string;
+  githubConnectionId: string | null;
+  githubForWorker: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +44,8 @@ export interface ProjectResponseDto {
 export interface PatchProjectDto {
   description?: string;
   repoUrl?: string;
+  githubConnectionId?: string | null;
+  githubForWorker?: boolean;
 }
 
 export interface RegisterClientDto {
@@ -1304,6 +1310,53 @@ export interface ProtectedResourceMetadataResponseDto {
   scopes_supported: string[];
   bearer_methods_supported: string[];
   resource_name: string;
+}
+
+export type GithubAuthType = 'pat' | 'app';
+
+export interface CreateGithubConnectionDto {
+  name: string;
+  authType: GithubAuthType;
+  secret: string;
+  appId?: string | null;
+  installationId?: string | null;
+  owners?: string[];
+}
+
+export interface GithubConnectionResponseDto {
+  id: string;
+  name: string;
+  authType: GithubAuthType;
+  appId: string | null;
+  installationId: string | null;
+  owners: string[];
+  accountLogin: string | null;
+  lastVerifiedAt: string | null;
+  lastError: string | null;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GithubRepositoryRefDto {
+  owner: string;
+  repo: string;
+}
+
+export type GithubConnectionMatch = 'project' | 'owner' | 'only_connection';
+
+export interface ResolvedGithubConnectionResponseDto {
+  repository: GithubRepositoryRefDto | null;
+  connection: GithubConnectionResponseDto | null;
+  match: GithubConnectionMatch | null;
+}
+
+export interface UpdateGithubConnectionDto {
+  name?: string;
+  secret?: string;
+  appId?: string | null;
+  installationId?: string | null;
+  owners?: string[];
 }
 
 export type SearchResultType = 'task' | 'context_block' | 'thread' | 'tool' | 'agent' | 'project';

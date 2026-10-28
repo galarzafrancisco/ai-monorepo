@@ -7920,6 +7920,282 @@
         ]
       }
     },
+    "/api/v1/integrations/github/connections": {
+      "post": {
+        "operationId": "GithubConnectionsController_createConnection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGithubConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Connect GitHub with a personal access token or a GitHub App installation",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      },
+      "get": {
+        "operationId": "GithubConnectionsController_listConnections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List GitHub connections",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/resolve": {
+      "get": {
+        "operationId": "GithubConnectionsController_resolveConnection",
+        "parameters": [
+          {
+            "name": "repoUrl",
+            "required": true,
+            "in": "query",
+            "description": "Repository URL (web or clone URL)",
+            "schema": {
+              "example": "https://github.com/acme/api",
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": false,
+            "in": "query",
+            "description": "The connection the project names, if any",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedGithubConnectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Which connection Taico would use for a repository, and why",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/{id}": {
+      "get": {
+        "operationId": "GithubConnectionsController_getConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a GitHub connection",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      },
+      "patch": {
+        "operationId": "GithubConnectionsController_updateConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGithubConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a GitHub connection; a new credential is checked with GitHub before it is saved",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      },
+      "delete": {
+        "operationId": "GithubConnectionsController_deleteConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a GitHub connection and its stored credential",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
+    "/api/v1/integrations/github/connections/{id}/verify": {
+      "post": {
+        "operationId": "GithubConnectionsController_verifyConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "GitHub connection id",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Check the stored credential with GitHub again",
+        "tags": [
+          "Integrations - GitHub"
+        ]
+      }
+    },
     "/api/v1/search/query": {
       "get": {
         "description": "Searches tasks (including their comments), context blocks, tools, agents and projects by keyword, fuzzy title and meaning, and returns one list ranked by relevance.",
@@ -8462,6 +8738,17 @@
             "description": "Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)",
             "example": "https://github.com/user/repo"
           },
+          "githubConnectionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub connection for this project. Null picks one automatically from the repository owner.",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "githubForWorker": {
+            "type": "boolean",
+            "description": "Whether workers get a token from the project's GitHub connection to clone and push",
+            "example": false
+          },
           "color": {
             "type": "string",
             "description": "Tag color in hex format",
@@ -8510,6 +8797,17 @@
             "description": "Repository URL",
             "example": "https://github.com/user/repo"
           },
+          "githubConnectionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub connection for this project. Null picks one automatically from the repository owner.",
+            "example": null
+          },
+          "githubForWorker": {
+            "type": "boolean",
+            "description": "Whether workers get a token from the project's GitHub connection to clone and push",
+            "example": false
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -8527,6 +8825,8 @@
           "tagName",
           "tagColor",
           "slug",
+          "githubConnectionId",
+          "githubForWorker",
           "createdAt",
           "updatedAt"
         ]
@@ -8543,6 +8843,17 @@
             "type": "string",
             "description": "Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)",
             "example": "https://github.com/user/repo"
+          },
+          "githubConnectionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub connection for this project. Null picks one automatically from the repository owner.",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "githubForWorker": {
+            "type": "boolean",
+            "description": "Whether workers get a token from the project's GitHub connection to clone and push",
+            "example": false
           }
         }
       },
@@ -15050,6 +15361,249 @@
           "bearer_methods_supported",
           "resource_name"
         ]
+      },
+      "GithubAuthType": {
+        "type": "string",
+        "enum": [
+          "pat",
+          "app"
+        ]
+      },
+      "CreateGithubConnectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "example": "Acme GitHub"
+          },
+          "authType": {
+            "example": "pat",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubAuthType"
+              }
+            ]
+          },
+          "secret": {
+            "type": "string",
+            "description": "The personal access token (PAT), or the whole PEM private key of the GitHub App (App). Stored encrypted and never returned.",
+            "example": "github_pat_..."
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App id. Required for App connections.",
+            "example": "123456"
+          },
+          "installationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App installation id. Required for App connections.",
+            "example": "7890123"
+          },
+          "owners": {
+            "description": "Repository owners (users or organisations) this connection is used for. Empty: the account the credential acts as.",
+            "example": [
+              "acme"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "authType",
+          "secret"
+        ]
+      },
+      "GithubConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "Acme GitHub"
+          },
+          "authType": {
+            "example": "pat",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubAuthType"
+              }
+            ]
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true,
+            "example": "123456"
+          },
+          "installationId": {
+            "type": "string",
+            "nullable": true,
+            "example": "7890123"
+          },
+          "owners": {
+            "description": "Repository owners this connection is used for",
+            "example": [
+              "acme"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountLogin": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who GitHub says the connection acts as",
+            "example": "octocat"
+          },
+          "lastVerifiedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-01-01T00:00:00.000Z"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last check with GitHub failed; null when it worked",
+            "example": null
+          },
+          "rowVersion": {
+            "type": "number",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "authType",
+          "appId",
+          "installationId",
+          "owners",
+          "accountLogin",
+          "lastVerifiedAt",
+          "lastError",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "GithubRepositoryRefDto": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "example": "acme"
+          },
+          "repo": {
+            "type": "string",
+            "example": "api"
+          }
+        },
+        "required": [
+          "owner",
+          "repo"
+        ]
+      },
+      "GithubConnectionMatch": {
+        "type": "string",
+        "enum": [
+          "project",
+          "owner",
+          "only_connection"
+        ],
+        "description": "Why: the project names it, it lists the repository owner, or it is the only connection"
+      },
+      "ResolvedGithubConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "nullable": true,
+            "description": "The repository, or null when the URL is not a github.com repository",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubRepositoryRefDto"
+              }
+            ]
+          },
+          "connection": {
+            "nullable": true,
+            "description": "The connection Taico would use, or null when none fits (public repositories are then read anonymously)",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubConnectionResponseDto"
+              }
+            ]
+          },
+          "match": {
+            "nullable": true,
+            "description": "Why: the project names it, it lists the repository owner, or it is the only connection",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GithubConnectionMatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "repository",
+          "connection",
+          "match"
+        ]
+      },
+      "UpdateGithubConnectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "example": "Acme GitHub"
+          },
+          "secret": {
+            "type": "string",
+            "description": "A new token or private key. Leave out to keep the current one.",
+            "example": "github_pat_..."
+          },
+          "appId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App id",
+            "example": "123456"
+          },
+          "installationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "GitHub App installation id",
+            "example": "7890123"
+          },
+          "owners": {
+            "description": "Repository owners this connection is used for",
+            "example": [
+              "acme"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "SearchResultType": {
         "type": "string",

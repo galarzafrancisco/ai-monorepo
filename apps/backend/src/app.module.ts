@@ -42,6 +42,7 @@ import { ThreadMessageTimezone1762100000000 } from './migrations/1762100000000-T
 import { ThreadHardDelete1762200000000 } from './migrations/1762200000000-ThreadHardDelete';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
@@ -50,6 +51,7 @@ import { AccessRequests1762300000000 } from './migrations/1762300000000-AccessRe
 import { AccessRequestHeardFrom1762400000000 } from './migrations/1762400000000-AccessRequestHeardFrom';
 import { WalkthroughModule } from './walkthrough/walkthrough.module';
 import { ExecutionTraceSource1762500000002 } from './migrations/1762500000002-ExecutionTraceSource';
+import { GithubConnections1762600000000 } from './migrations/1762600000000-GithubConnections';
 import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
@@ -92,6 +94,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ExecutionTraces1762500000000,
         ExecutionTraceJson1762500000001,
         ExecutionTraceSource1762500000002,
+        GithubConnections1762600000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -111,6 +114,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
     AppInitModule,
     SecretsModule,
     AiProvidersModule,
+    IntegrationsModule,
     ExecutionsModule,
     WorkersModule,
     GlobalSearchModule,

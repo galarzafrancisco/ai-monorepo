@@ -44,6 +44,20 @@ export class ProjectResponseDto {
   repoUrl?: string;
 
   @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'GitHub connection for this project. Null picks one automatically from the repository owner.',
+    example: null,
+  })
+  githubConnectionId!: string | null;
+
+  @ApiProperty({
+    description: "Whether workers get a token from the project's GitHub connection to clone and push",
+    example: false,
+  })
+  githubForWorker!: boolean;
+
+  @ApiProperty({
     description: 'Creation timestamp',
     example: '2024-01-01T00:00:00.000Z',
   })

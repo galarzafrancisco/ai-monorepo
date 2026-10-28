@@ -57,6 +57,8 @@ export class ProjectsController {
       description: dto.description,
       repoUrl: dto.repoUrl,
       color: dto.color,
+      githubConnectionId: dto.githubConnectionId,
+      githubForWorker: dto.githubForWorker,
     });
     return this.mapProjectResultToResponse(result);
   }
@@ -156,6 +158,8 @@ export class ProjectsController {
     const result = await this.projectsService.updateProject(projectId, {
       description: dto.description,
       repoUrl: dto.repoUrl,
+      githubConnectionId: dto.githubConnectionId,
+      githubForWorker: dto.githubForWorker,
     });
     return this.mapProjectResultToResponse(result);
   }
@@ -181,6 +185,8 @@ export class ProjectsController {
       slug: result.slug,
       description: result.description,
       repoUrl: result.repoUrl,
+      githubConnectionId: result.githubConnectionId,
+      githubForWorker: result.githubForWorker,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
