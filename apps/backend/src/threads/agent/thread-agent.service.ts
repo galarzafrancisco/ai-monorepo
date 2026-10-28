@@ -89,6 +89,7 @@ export class ThreadAgentService {
    */
   async drain(threadId: string): Promise<void> {
     const self = await this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
+    let watermarkFallbackUsed = false;
 
     for (;;) {
       const turn = await this.turns.tryClaim(threadId);
@@ -98,15 +99,9 @@ export class ThreadAgentService {
 
       const stopHeartbeat = this.turns.startHeartbeat(turn.id);
       const requestsAtClaim = this.requestedTurns.get(threadId) ?? 0;
-      // Capture durable pending identities before ingestion. Requests made on
-      // another instance do not increment our local generation.
-      let pendingAtClaim: string[] = [];
-      let capturedPending = false;
       let ingested = false;
       let failed = false;
       try {
-        pendingAtClaim = await this.agentLog.pendingKeys(threadId, self.actorId);
-        capturedPending = true;
         const outcome = await this.runTurn(turn, self, () => {
           ingested = true;
         });
@@ -149,12 +144,20 @@ export class ThreadAgentService {
 
       const locallyRequested = (this.requestedTurns.get(threadId) ?? 0) !== requestsAtClaim;
       if (failed && !ingested && !locallyRequested) {
-        if (!capturedPending) return;
-        const previous = new Set(pendingAtClaim);
-        const now = await this.agentLog.pendingKeys(threadId, self.actorId);
-        // Only retry for genuinely new pending identities. The failed input
-        // itself remains pending and must not generate an error loop.
-        if (!now.some((key) => !previous.has(key))) return;
+        try {
+          // Compare with the claim's database timestamp, not a later snapshot:
+          // another instance may enqueue work before the first read starts.
+          if (!(await this.agentLog.hasPendingSinceClaim(threadId, self.actorId, turn.id))) return;
+        } catch (error) {
+          // A failed watermark read gets one bounded attempt, not an error loop.
+          if (watermarkFallbackUsed) return;
+          watermarkFallbackUsed = true;
+          this.logger.warn({
+            message: 'Could not check pending work since claim',
+            threadId,
+            error: this.describeError(error),
+          });
+        }
       }
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.
