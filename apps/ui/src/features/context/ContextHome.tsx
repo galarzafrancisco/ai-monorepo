@@ -58,7 +58,7 @@ export function ContextHome(): React.JSX.Element {
 
   return (
     <>
-      <div className="context-home">
+      <div className="context-home thin-scrollbar">
         <ThreadStateToggle />
         <ContextBlockTree
           blocks={blocks}
@@ -137,7 +137,7 @@ function DesktopContextHome({
   }, [blocks, normalizedQuery]);
 
   return (
-    <div className="context-home-desktop">
+    <div className="context-home-desktop thin-scrollbar">
       <div className="context-home-desktop__hero">
         <Text as="div" size="6" weight="bold" className="context-home-desktop__title">
           Blocks

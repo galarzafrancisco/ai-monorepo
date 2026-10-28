@@ -171,7 +171,7 @@ export function ContextBlockDetailPage() {
   }
 
   return (
-    <div className="context-block-detail">
+    <div className="context-block-detail thin-scrollbar">
       <Stack spacing="3" className="context-block-detail__header">
         {isDesktop ? (
           <div className="context-block-detail__breadcrumbs" aria-label="Breadcrumb">
