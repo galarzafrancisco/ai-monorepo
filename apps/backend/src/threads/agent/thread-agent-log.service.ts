@@ -239,6 +239,23 @@ export class ThreadAgentLogService {
     return rows.length > 0;
   }
 
+  /** Durable identities of undelivered sources, used to detect arrivals during a failed turn. */
+  async pendingKeys(threadId: string, agentActorId: string): Promise<string[]> {
+    const rows: Array<{ key: string }> = await this.dataSource.query(
+      `SELECT 'message:' || id::text AS key FROM thread_messages
+         WHERE thread_id = $1 AND agent_message_id IS NULL AND created_by_actor_id <> $2
+       UNION ALL
+       SELECT 'task:' || task_id::text || ':' || triggered_at::text FROM thread_task_subscriptions
+         WHERE thread_id = $1 AND triggered_at IS NOT NULL
+       UNION ALL
+       SELECT 'timer:' || id::text FROM thread_timer_firings WHERE thread_id = $1
+       UNION ALL
+       SELECT 'watch:' || id::text FROM thread_watch_deliveries WHERE thread_id = $1`,
+      [threadId, agentActorId],
+    );
+    return rows.map((row) => row.key);
+  }
+
   /**
    * Tells the agent about subscribed tasks that went to review or were done,
    * as messages the user never sees. A done task ends the subscription; a task

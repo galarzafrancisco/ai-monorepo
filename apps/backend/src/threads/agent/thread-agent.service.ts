@@ -52,6 +52,7 @@ type TurnOutcome = {
 @Injectable()
 export class ThreadAgentService {
   private readonly logger = new Logger(ThreadAgentService.name);
+  private readonly requestedTurns = new Map<string, number>();
 
   constructor(
     @InjectRepository(ThreadEntity)
@@ -72,6 +73,7 @@ export class ThreadAgentService {
    * message or a task notification. Returns immediately.
    */
   requestTurn(threadId: string): void {
+    this.requestedTurns.set(threadId, (this.requestedTurns.get(threadId) ?? 0) + 1);
     void this.drain(threadId).catch((error) => {
       this.logger.error({
         message: 'Thread agent run failed',
@@ -95,9 +97,16 @@ export class ThreadAgentService {
       }
 
       const stopHeartbeat = this.turns.startHeartbeat(turn.id);
+      const requestsAtClaim = this.requestedTurns.get(threadId) ?? 0;
+      // Capture durable pending identities before ingestion. Requests made on
+      // another instance do not increment our local generation.
+      let pendingAtClaim: string[] = [];
+      let capturedPending = false;
       let ingested = false;
       let failed = false;
       try {
+        pendingAtClaim = await this.agentLog.pendingKeys(threadId, self.actorId);
+        capturedPending = true;
         const outcome = await this.runTurn(turn, self, () => {
           ingested = true;
         });
@@ -115,23 +124,37 @@ export class ThreadAgentService {
           turnId: turn.id,
           error: this.describeError(error),
         });
-        await this.saveDisplayMessage({
-          threadId,
-          actorId: self.actorId,
-          content: `I encountered an error while processing your message: ${reason}`,
-          agentMessageId: null,
-        });
-        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
-        await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
+        try {
+          await this.saveDisplayMessage({
+            threadId,
+            actorId: self.actorId,
+            content: `I encountered an error while processing your message: ${reason}`,
+            agentMessageId: null,
+          });
+        } catch (reportError) {
+          this.logger.error({
+            message: 'Could not report thread agent turn failure',
+            threadId,
+            turnId: turn.id,
+            error: this.describeError(reportError),
+          });
+        } finally {
+          this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
+          await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
+        }
         failed = true;
       } finally {
         stopHeartbeat();
       }
 
-      // Failed work is already in the log after ingestion. Only drain newly
-      // arriving work; a pre-ingestion failure must not retry the same input forever.
-      if (failed && !ingested) {
-        return;
+      const locallyRequested = (this.requestedTurns.get(threadId) ?? 0) !== requestsAtClaim;
+      if (failed && !ingested && !locallyRequested) {
+        if (!capturedPending) return;
+        const previous = new Set(pendingAtClaim);
+        const now = await this.agentLog.pendingKeys(threadId, self.actorId);
+        // Only retry for genuinely new pending identities. The failed input
+        // itself remains pending and must not generate an error loop.
+        if (!now.some((key) => !previous.has(key))) return;
       }
       // Checked after releasing the claim, so a message that arrived while the
       // turn was finishing is never left without an owner.

@@ -73,6 +73,7 @@ function createHarness(steps: unknown[][]) {
   const finished: Array<{ status: ThreadTurnStatus; error?: string }> = [];
 
   const agentLog = {
+    pendingKeys: jest.fn().mockResolvedValue(['message:original']),
     ingestPending: jest.fn().mockResolvedValue({
       triggerActor: USER,
       newUserMessages: ['hello'],
@@ -320,7 +321,7 @@ describe('ThreadAgentService', () => {
     ]);
   });
 
-  it('does not retry unconsumed input when ingestion fails', async () => {
+  it('does not retry unconsumed input when ingestion fails without new arrivals', async () => {
     const h = createHarness([]);
     h.agentLog.ingestPending.mockRejectedValue(new Error('ingestion unavailable'));
     h.agentLog.hasPending.mockResolvedValue(true);
@@ -330,6 +331,111 @@ describe('ThreadAgentService', () => {
     expect(h.finished).toHaveLength(1);
     expect(h.turns.tryClaim).toHaveBeenCalledTimes(1);
     expect(h.agentLog.hasPending).not.toHaveBeenCalled();
+  });
+
+  it('drains a new remote arrival during a failed ingestion without a local request', async () => {
+    const h = createHarness([textStep('Remote work answered.')]);
+    h.agentLog.ingestPending.mockRejectedValueOnce(new Error('ingestion unavailable'));
+    h.agentLog.pendingKeys
+      .mockResolvedValueOnce(['message:original'])
+      .mockResolvedValueOnce(['message:original', 'timer:new'])
+      .mockResolvedValue(['timer:new']);
+    h.agentLog.hasPendingTimerFirings.mockResolvedValueOnce(true).mockResolvedValue(false);
+
+    await h.service.drain(THREAD_ID);
+
+    expect(h.finished.map((turn) => turn.status)).toEqual([
+      ThreadTurnStatus.FAILED,
+      ThreadTurnStatus.COMPLETED,
+    ]);
+    expect(h.displayMessages.at(-1)?.content).toBe('Remote work answered.');
+  });
+
+  it.each(['first', 'fourth'] as const)(
+    'drains a new request arriving during reporting when the %s ingestion fails',
+    async (source) => {
+      const h = createHarness([textStep('New work answered.')]);
+      if (source === 'fourth') {
+        h.agentLog.ingestWatchDeliveries.mockRejectedValueOnce(new Error('ingestion unavailable'));
+      }
+      let pending = false;
+      h.agentLog.hasPending.mockImplementation(async () => pending);
+      h.agentLog.ingestPending.mockImplementationOnce(
+        source === 'first'
+          ? async () => { throw new Error('ingestion unavailable'); }
+          : async () => ({ triggerActor: USER, newUserMessages: ['original'] }),
+      ).mockImplementation(async () => {
+        pending = false;
+        return { triggerActor: USER, newUserMessages: ['new work'] };
+      });
+
+      let releaseWrite!: () => void;
+      let writing!: () => void;
+      const started = new Promise<void>((resolve) => { writing = resolve; });
+      const allowed = new Promise<void>((resolve) => { releaseWrite = resolve; });
+      const originalWrite = h.messageWriter.write.getMockImplementation()!;
+      h.messageWriter.write.mockImplementation(async (input) => {
+        if (input.agentMessageId === null) {
+          writing();
+          await allowed;
+        }
+        return originalWrite(input);
+      });
+      let held = false;
+      let nextId = 0;
+      h.turns.tryClaim.mockImplementation(async () => {
+        if (held) return null;
+        held = true;
+        return { id: `turn-${++nextId}`, threadId: THREAD_ID };
+      });
+      h.turns.finish.mockImplementation(async (_id, status, error) => {
+        h.finished.push({ status, error });
+        held = false;
+      });
+
+      const draining = h.service.drain(THREAD_ID);
+      await started;
+      pending = true;
+      h.service.requestTurn(THREAD_ID);
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(held).toBe(true);
+      releaseWrite();
+      await draining;
+
+      expect(h.finished.map((turn) => turn.status)).toEqual([
+        ThreadTurnStatus.FAILED,
+        ThreadTurnStatus.COMPLETED,
+      ]);
+      expect(h.agentLog.ingestPending).toHaveBeenCalledTimes(2);
+      expect(h.displayMessages.at(-1)?.content).toBe('New work answered.');
+    },
+  );
+
+  it('finishes and releases a failed turn even if reporting the error fails', async () => {
+    const h = createHarness([textStep('Recovered.')]);
+    h.resolveModel.mockRejectedValueOnce(new Error('model unavailable'));
+    h.messageWriter.write.mockRejectedValueOnce(new Error('display unavailable'));
+    let held = false;
+    let nextId = 0;
+    h.turns.tryClaim.mockImplementation(async () => {
+      if (held) return null;
+      held = true;
+      return { id: `turn-${++nextId}`, threadId: THREAD_ID };
+    });
+    h.turns.finish.mockImplementation(async (_id, status, error) => {
+      h.finished.push({ status, error });
+      held = false;
+    });
+
+    await h.service.drain(THREAD_ID);
+    expect(h.finished[0].status).toBe(ThreadTurnStatus.FAILED);
+    expect(held).toBe(false);
+    await h.service.drain(THREAD_ID);
+    expect(h.finished.map((turn) => turn.status)).toEqual([
+      ThreadTurnStatus.FAILED,
+      ThreadTurnStatus.COMPLETED,
+    ]);
+    expect(h.displayMessages.at(-1)?.content).toBe('Recovered.');
   });
 
   it('runs a turn for a task notification when there is no new user message', async () => {
