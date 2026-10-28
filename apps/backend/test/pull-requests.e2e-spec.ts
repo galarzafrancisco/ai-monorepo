@@ -256,6 +256,18 @@ describe('Pull requests E2E', () => {
     });
   });
 
+  it('reads due pull requests on the poll and leaves the rest alone', async () => {
+    const [pr] = (await api('post', '/pull-requests/lookup').send({ refs: ['acme/api#7'] }).expect(200)).body;
+    pull.title = 'Add search, take two';
+    await ds.query(`UPDATE pull_requests SET next_fetch_at = NULL WHERE id = $1`, [pr.id]);
+    expect(await pollDue()).toBe(0);
+
+    await ds.query(`UPDATE pull_requests SET next_fetch_at = now() - interval '1 second' WHERE id = $1`, [pr.id]);
+    expect(await pollDue()).toBe(1);
+    const after = (await api('get', `/pull-requests/${pr.id}`).expect(200)).body;
+    expect(after.title).toBe('Add search, take two');
+  });
+
   it('accepts only correctly signed webhooks, which mark pull requests for a fresh look', async () => {
     const connection = (
       await api('post', '/integrations/github/connections').send({ name: 'Acme', authType: 'pat', secret: 'token' }).expect(201)

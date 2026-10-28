@@ -165,16 +165,20 @@ export class PullRequestsService {
    * takes them for FETCH_LEASE_MS, and looks at each.
    */
   async fetchDue(limit: number): Promise<number> {
+    // Selected from a CTE: a bare UPDATE ... RETURNING comes back as [rows, count].
     const claimed: Array<{ id: string }> = await this.dataSource.query(
-      `UPDATE pull_requests p
-          SET next_fetch_at = now() + ($2 || ' milliseconds')::interval
-         FROM (SELECT id FROM pull_requests
-                WHERE next_fetch_at <= now()
-                ORDER BY next_fetch_at ASC
-                LIMIT $1
-                FOR UPDATE SKIP LOCKED) due
-        WHERE p.id = due.id
-        RETURNING p.id`,
+      `WITH claimed AS (
+         UPDATE pull_requests p
+            SET next_fetch_at = now() + ($2 || ' milliseconds')::interval
+           FROM (SELECT id FROM pull_requests
+                  WHERE next_fetch_at <= now()
+                  ORDER BY next_fetch_at ASC
+                  LIMIT $1
+                  FOR UPDATE SKIP LOCKED) due
+          WHERE p.id = due.id
+          RETURNING p.id
+       )
+       SELECT id FROM claimed`,
       [limit, String(FETCH_LEASE_MS)],
     );
     if (claimed.length === 0) return 0;
