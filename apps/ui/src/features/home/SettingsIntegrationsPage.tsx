@@ -280,7 +280,7 @@ function ConnectionFields({
         'GitHub address',
         'baseUrl',
         'https://github.com',
-        'Leave empty for github.com. For GitHub Enterprise, the address you open it at, such as https://github.acme.com or https://acme.ghe.com.',
+        'Leave empty for github.com, including organizations on GitHub Enterprise Cloud (github.com/your-org). Fill it in only if your company opens GitHub at its own address, such as https://github.acme.com (Enterprise Server) or https://acme.ghe.com (data residency).',
       )}
       {form.authType === 'app' ? (
         <>
