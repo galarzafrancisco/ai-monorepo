@@ -1,4 +1,4 @@
-/* The runs side bar, docked to the app's right edge like the nav is to the left. */
+/* A run's trace: the panel on its own page, or embedded in the task's runs panel. */
 .task-traces {
   display: flex;
   flex-direction: column;
@@ -12,22 +12,6 @@
   overflow: hidden;
   color: var(--text);
   font-size: var(--fs-2);
-}
-.task-traces__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-subtle);
-}
-.task-traces__heading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.task-traces__heading > svg {
-  color: var(--text-muted);
 }
 .task-traces__label {
   font-size: var(--fs-1);
@@ -288,12 +272,7 @@
   }
 }
 
-/* Runs panel: header actions, run list on top, the selected run's trace below. */
-.task-traces__header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
+/* Runs panel: run list on top, the selected run's trace below. */
 .task-runs__list {
   flex: none;
   max-height: 38%;
@@ -319,21 +298,21 @@
   padding-bottom: 0;
 }
 .task-detail-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px;
+  display: flex;
   min-height: 0;
   height: 100%;
 }
-.task-detail-workspace--runs-open {
-  grid-template-columns: minmax(0, 1fr) clamp(360px, 32vw, 520px);
-}
-/* Docked flush, full height: no floating-card corner. */
-.task-detail-workspace > .task-traces {
-  border-top: 0;
-  border-top-left-radius: 0;
+/* Inside the runs panel the shell supplies the frame. */
+.task-traces--embedded {
+  flex: 1;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .task-detail-main {
   position: relative;
+  flex: 1;
   min-width: 0;
   min-height: 0;
 }
@@ -348,49 +327,6 @@
   bottom: var(--space-4);
   right: var(--space-6);
   z-index: 2;
-}
-
-/* Collapsed: a slim rail that opens the side bar. */
-.task-runs-rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-  height: 100%;
-  padding: var(--space-5) 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: var(--fs-1);
-  cursor: pointer;
-}
-.task-runs-rail:hover {
-  background: var(--surface);
-  color: var(--text);
-}
-.task-runs-rail:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-.task-runs-rail__label {
-  writing-mode: vertical-rl;
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.04em;
-}
-
-.task-traces__icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-1);
-  border-radius: var(--r-2);
-  color: var(--text-muted);
-}
-.task-traces__icon-button:hover {
-  background: var(--surface);
-  color: var(--text);
 }
 
 /* Phones have no side bar (runs are listed in the task and open their own page): one column. */

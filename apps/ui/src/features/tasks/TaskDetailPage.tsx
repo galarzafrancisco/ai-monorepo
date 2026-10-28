@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
-import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer, useRailOpen } from '../../ui/primitives';
 import { DeleteWithConfirmation, useCommandPalette } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
@@ -72,17 +72,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
   // The runs side bar is for troubleshooting: it starts collapsed, and stays open once you open it.
-  const [isRunsOpen, setIsRunsOpen] = useState(() => {
-    try {
-      // 'third' and 'full' are the panel's older open sizes.
-      const stored = localStorage.getItem(RUNS_MODE_KEY);
-      return stored === 'open' || stored === 'third' || stored === 'full';
-    } catch { return false; }
-  });
-  const changeRunsOpen = useCallback((open: boolean) => {
-    setIsRunsOpen(open);
-    try { localStorage.setItem(RUNS_MODE_KEY, open ? 'open' : 'closed'); } catch { /* Storage may be unavailable. */ }
-  }, []);
+  // 'third' and 'full' are the panel's older open sizes.
+  const [isRunsOpen, changeRunsOpen] = useRailOpen(RUNS_MODE_KEY, false, ['third', 'full']);
   const [executionsTaskId, setExecutionsTaskId] = useState<string | null>(null);
   const currentTaskId = useRef(task?.id);
   currentTaskId.current = task?.id;
@@ -630,7 +621,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   );
 
   return (
-    <div className={`task-detail-workspace${isDesktop && isRunsOpen ? ' task-detail-workspace--runs-open' : ''}`}>
+    <div className="task-detail-workspace">
     <div className="task-detail-main">
     <div className="task-detail-page">
 

@@ -1,38 +1,113 @@
-import { useId, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { useCallback, useId, useState, type ReactNode } from 'react';
+import { ChevronDown, ChevronRight, PanelRightClose, type LucideIcon } from 'lucide-react';
 import './ContextRail.css';
 
 export interface ContextRailProps {
   children: ReactNode;
-  /** Names the rail for assistive tech, e.g. "Thread details". */
-  label: string;
+  /** Shown in the header when open and down the strip when collapsed, e.g. "Details" or "Runs". */
+  title: string;
+  /** Marks the collapsed strip so it reads at a glance. */
+  icon: LucideIcon;
+  /** Shown muted after the title, e.g. 3. */
+  count?: ReactNode;
+  /** Something is happening in here right now (e.g. a live run): a green dot beside the title. */
+  live?: boolean;
+  /** Extra header controls, before the collapse button. */
+  actions?: ReactNode;
   open?: boolean;
-  /** Omit to leave out the collapse toggle. */
+  /** Omit to leave out the collapse controls. */
   onOpenChange?: (open: boolean) => void;
+  /** Off for content that manages its own scrolling (e.g. a log that follows new output). */
+  scroll?: boolean;
   className?: string;
 }
 
 /**
- * The right-hand rail on detail pages: full height, flush to the window edge,
- * holding context about the thing in the main column as a stack of sections.
- * Collapses to a slim strip.
+ * The right-hand panel on detail pages: full height, flush to the window edge,
+ * with a header naming it. Collapses to a slim strip that opens it again.
  */
-export function ContextRail({ children, label, open = true, onOpenChange, className = '' }: ContextRailProps) {
+export function ContextRail({
+  children,
+  title,
+  icon: Icon,
+  count,
+  live = false,
+  actions,
+  open = true,
+  onOpenChange,
+  scroll = true,
+  className = '',
+}: ContextRailProps) {
+  const bodyId = useId();
+  const countText = count !== undefined && count !== null ? count : null;
+
+  if (!open && onOpenChange) {
+    return (
+      <aside className={`context-rail context-rail--collapsed ${className}`} aria-label={title}>
+        <button
+          type="button"
+          className="context-rail__strip"
+          onClick={() => onOpenChange(true)}
+          aria-expanded={false}
+          title={`Open ${title.toLowerCase()}`}
+        >
+          <Icon size={18} aria-hidden="true" />
+          <span className="context-rail__strip-label">{title}</span>
+          {countText !== null && <span className="context-rail__strip-count">{countText}</span>}
+          {live && <span className="context-rail__live" aria-label="Live" />}
+        </button>
+      </aside>
+    );
+  }
+
   return (
-    <aside className={`context-rail${open ? '' : ' context-rail--collapsed'} ${className}`} aria-label={label}>
-      {open && <div className="context-rail__scroll thin-scrollbar">{children}</div>}
-      {onOpenChange && <button
-        type="button"
-        className="context-rail__toggle"
-        onClick={() => onOpenChange(!open)}
-        aria-expanded={open}
-        aria-label={open ? `Collapse ${label.toLowerCase()}` : `Expand ${label.toLowerCase()}`}
-        title={open ? 'Collapse' : 'Expand'}
-      >
-        {open ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-      </button>}
+    <aside className={`context-rail ${className}`} aria-label={title}>
+      <header className="context-rail__header">
+        <h2 className="context-rail__title">
+          {title}
+          {countText !== null && <span className="context-rail__count"> · {countText}</span>}
+          {live && <span className="context-rail__live" aria-label="Live" />}
+        </h2>
+        <div className="context-rail__actions">
+          {actions}
+          {onOpenChange && (
+            <button
+              type="button"
+              className="context-rail__icon-button"
+              onClick={() => onOpenChange(false)}
+              aria-expanded={true}
+              aria-controls={bodyId}
+              aria-label={`Close ${title.toLowerCase()}`}
+              title="Close"
+            >
+              <PanelRightClose size={16} />
+            </button>
+          )}
+        </div>
+      </header>
+      <div id={bodyId} className={scroll ? 'context-rail__scroll thin-scrollbar' : 'context-rail__fill'}>
+        {children}
+      </div>
     </aside>
   );
+}
+
+/** Open/closed state for a rail, remembered per browser under `storageKey`. */
+export function useRailOpen(storageKey: string, defaultOpen: boolean, legacyOpenValues: string[] = []) {
+  const [open, setOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored === null) return defaultOpen;
+      return stored === 'open' || legacyOpenValues.includes(stored);
+    } catch {
+      return defaultOpen;
+    }
+  });
+  const change = useCallback((next: boolean) => {
+    setOpen(next);
+    try { localStorage.setItem(storageKey, next ? 'open' : 'closed'); } catch { /* Storage may be unavailable. */ }
+  }, [storageKey]);
+  return [open, change] as const;
 }
 
 export interface RailSectionProps {
@@ -96,7 +171,7 @@ export function RailSection({
               {heading}
             </button>
           ) : (
-            <h2 className="rail-section__heading">{heading}</h2>
+            <h3 className="rail-section__heading">{heading}</h3>
           )}
           {action && <div className="rail-section__action">{action}</div>}
         </header>

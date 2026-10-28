@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, DataRowContainer, Text } from "../../ui/primitives";
 import { Avatar, Chip, ContextRail, RailSection } from "../../ui/primitives";
+import { Info } from "lucide-react";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { ThreadRow } from "./ThreadRow";
 import { splitPinnedThreads } from "./splitPinnedThreads";
@@ -351,7 +352,7 @@ function OptimisticDesktopThread({
         </div>
       </div>
 
-      <ContextRail label="Thread details" className="threads-page-desktop__optimistic-sidebar">
+      <ContextRail title="Details" icon={Info} className="threads-page-desktop__optimistic-sidebar">
         <RailSection title="Context" count="1 block">
           <ThreadContextCard
             contextBlock={{

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { io } from "socket.io-client";
-import { Bot } from "lucide-react";
+import { Bot, Info } from "lucide-react";
 import type { ThreadTokenUsageResponseDto } from "@taico/client/v2";
 import {
   MessageCreatedWireEvent,
@@ -16,7 +16,7 @@ import {
 } from "@taico/events";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { Text, Stack, Button, DataRowContainer, Chip, Avatar, ContextRail, RailSection } from "../../ui/primitives";
+import { Text, Stack, Button, DataRowContainer, Chip, Avatar, ContextRail, RailSection, useRailOpen } from "../../ui/primitives";
 import { DeleteWithConfirmation } from "../../ui/components";
 import type { Thread } from "./types";
 import { getUIWebSocketUrl } from "../../config/api";
@@ -438,6 +438,9 @@ function ThreadTokenUsageLabel({ usage }: { usage: ThreadTokenUsageResponseDto |
   );
 }
 
+/** Whether the details panel is open, remembered across threads. */
+const THREAD_RAIL_KEY = 'taico.threadRail.open';
+
 function ThreadDetailPageDesktop({
   thread,
   tokenUsage,
@@ -450,7 +453,7 @@ function ThreadDetailPageDesktop({
   onRenamed: (title: string) => void;
 }) {
   const { conversationModel } = useChatReadiness();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useRailOpen(THREAD_RAIL_KEY, true);
   // Status groups collapsed in the sidebar; Done starts collapsed like past days on the board
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     () => new Set<string>([TaskStatus.DONE]),
@@ -505,7 +508,7 @@ function ThreadDetailPageDesktop({
         </div>
       </div>
 
-      <ContextRail label="Thread details" open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+      <ContextRail title="Details" icon={Info} open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         {thread.participants.length > 0 && (
           <RailSection title="Participants" count={participantsSummary(thread.participants)}>
             {thread.participants.map((participant) => (
