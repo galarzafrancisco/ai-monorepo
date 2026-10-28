@@ -15,6 +15,7 @@ import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadTurnsService } from '../src/threads/agent/thread-turns.service';
 import { ThreadAgentLogService } from '../src/threads/agent/thread-agent-log.service';
+import { ThreadAgentService } from '../src/threads/agent/thread-agent.service';
 import { ThreadNotFoundError } from '../src/threads/errors/threads.errors';
 import { ThreadTurnStatus } from '../src/threads/agent/thread-agent.enums';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
@@ -157,6 +158,66 @@ describe('Thread agent E2E', () => {
     expect(next!.id).not.toBe(first!.id);
     expect(await otherInstance.finish(next!.id, ThreadTurnStatus.COMPLETED)).toBe(0);
   });
+
+  it('drains a remote request committed after the claim even when its row predates the claim', async () => {
+    const threadId = await createThread();
+    // An existing log keeps a later failure notice out of the backfill path.
+    await sendMessage(threadId, 'Initial message');
+    await waitForAgentReplies(threadId, 1);
+    const transaction = dataSource.createQueryRunner();
+    await transaction.connect();
+    await transaction.startTransaction();
+    const agentLog = app.get(ThreadAgentLogService);
+    const originalIngest = agentLog.ingestPending.bind(agentLog);
+    let ingestionStarted!: () => void;
+    const started = new Promise<void>((resolve) => { ingestionStarted = resolve; });
+    let failIngestion!: (error: Error) => void;
+    const ingestion = new Promise<never>((_resolve, reject) => { failIngestion = reject; });
+    const ingestSpy = jest.spyOn(agentLog, 'ingestPending')
+      .mockImplementationOnce(async () => {
+        ingestionStarted();
+        return ingestion;
+      })
+      .mockImplementation((input) => originalIngest(input));
+
+    try {
+      await transaction.query(
+        `INSERT INTO thread_messages (thread_id, created_by_actor_id, content, created_at)
+           VALUES ($1, $2, $3, now() - interval '1 minute')`,
+        [threadId, userActorId, 'Committed after the claim'],
+      );
+
+      const draining = app.get(ThreadAgentService).drain(threadId);
+      await started;
+      const [claim]: Array<{ started_at: Date }> = await dataSource.query(
+        `SELECT started_at FROM thread_turns WHERE thread_id = $1 AND status = 'running'`,
+        [threadId],
+      );
+      expect(claim).toBeDefined();
+      await transaction.commitTransaction();
+
+      // A different instance loses the running claim and records the request.
+      const otherInstance = new ThreadTurnsService(dataSource);
+      expect(await otherInstance.tryClaim(threadId)).toBeNull();
+      failIngestion(new Error('ingestion unavailable'));
+      await draining;
+
+      const replies = await waitForAgentReplies(threadId, 3);
+      expect(replies.at(-1)?.content).toMatch(/^Reply \d+$/);
+      const [message]: Array<{ created_at: Date; agent_message_id: string | null }> =
+        await dataSource.query(
+          `SELECT created_at, agent_message_id FROM thread_messages
+            WHERE thread_id = $1 AND content = $2`,
+          [threadId, 'Committed after the claim'],
+        );
+      expect(new Date(message.created_at).getTime()).toBeLessThan(new Date(claim.started_at).getTime());
+      expect(message.agent_message_id).not.toBeNull();
+    } finally {
+      ingestSpy.mockRestore();
+      if (transaction.isTransactionActive) await transaction.rollbackTransaction();
+      await transaction.release();
+    }
+  }, 15000);
 
   it('stores the conversation in the agent log and links visible messages to it', async () => {
     const threadId = await createThread();
