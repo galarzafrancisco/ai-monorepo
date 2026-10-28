@@ -11,7 +11,7 @@ import {
 } from "@taico/events";
 import { ActorResponseDto } from '@taico/client/v2';
 import type { Message } from './types';
-import type { TraceEntry } from '../tasks/traces/traceEntries';
+import { emptyActivity, updateActivity, type ActivityState } from './activityState';
 import { ActorType as DtoActorType } from './types';
 
 const SOCKET_URL = getUIWebSocketUrl('/threads');
@@ -42,8 +42,7 @@ const convertWireActorToDto = (
 export interface UseThreadSocketResult {
   socket: Socket | null;
   isConnected: boolean;
-  agentActivity: "thinking" | "tool_calling" | null;
-  activityEntries: TraceEntry[];
+  activity: ActivityState;
   agentResponseStream: {
     streamId: string;
     actorId: string;
@@ -68,27 +67,14 @@ export interface UseThreadSocketResult {
 export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [agentActivity, setAgentActivity] = useState<"thinking" | "tool_calling" | null>(null);
-  const [activityEntries, setActivityEntries] = useState<TraceEntry[]>([]);
-  const activityTurnRef = useRef<string | null>(null);
+  const [activity, setActivity] = useState<ActivityState>(emptyActivity);
   const [agentResponseStream, setAgentResponseStream] = useState<{
     streamId: string;
     actorId: string;
     content: string;
   } | null>(null);
-  const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageHandlerRef = useRef<((message: Message) => void) | null>(null);
   const subscribedHandlerRef = useRef<(() => void) | null>(null);
-
-  const scheduleActivityReset = useCallback(() => {
-    if (activityTimeoutRef.current) {
-      clearTimeout(activityTimeoutRef.current);
-    }
-    activityTimeoutRef.current = setTimeout(() => {
-      setAgentActivity(null);
-      activityTimeoutRef.current = null;
-    }, 3000);
-  }, []);
 
   const onMessageCreated = useCallback((handler: (message: Message) => void) => {
     messageHandlerRef.current = handler;
@@ -99,6 +85,8 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
   }, []);
 
   useEffect(() => {
+    setActivity(emptyActivity);
+    setAgentResponseStream(null);
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
@@ -125,11 +113,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
 
     newSocket.on('disconnect', () => {
       setIsConnected(false);
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-        activityTimeoutRef.current = null;
-      }
-      setAgentActivity(null);
+      setActivity((current) => ({ ...current, stepActive: false, pendingTools: [] }));
       setAgentResponseStream(null);
     });
 
@@ -139,12 +123,6 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         return;
       }
 
-      // The last step stays inspectable until the next turn, but stops animating.
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-        activityTimeoutRef.current = null;
-      }
-      setAgentActivity(null);
       setAgentResponseStream((current) => {
         if (!current) {
           return current;
@@ -170,31 +148,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         return;
       }
 
-      const { kind, turnId, toolCallId, toolName, input, output, failed } = event.payload;
-      if (turnId && turnId !== activityTurnRef.current) {
-        activityTurnRef.current = turnId;
-        setActivityEntries([]);
-      }
-      setAgentActivity(kind === 'tool_result' ? null : kind);
-      if (kind !== 'tool_result') scheduleActivityReset();
-      setActivityEntries((previous) => {
-        const now = new Date().toISOString();
-        const last = previous.at(-1);
-        const id = toolCallId ? `tool:${toolCallId}` : last?.kind === 'thinking' ? last.id : `thinking:${now}`;
-        const index = previous.findIndex((entry) => entry.id === id);
-        const entry: TraceEntry = {
-          id,
-          kind: toolCallId ? 'tool' : 'thinking',
-          title: toolName ?? (toolCallId ? 'Tool call' : 'Thinking'),
-          text: output ?? (index >= 0 ? previous[index].text : ''),
-          input: input ?? (index >= 0 ? previous[index].input : undefined),
-          status: kind === 'tool_result' ? (failed ? 'Failed' : 'Completed') : toolCallId ? 'Running' : undefined,
-          events: [],
-          timestamp: index >= 0 ? previous[index].timestamp : now,
-        };
-        if (index < 0) return [...previous, entry];
-        return previous.map((item, i) => i === index ? entry : item);
-      });
+      setActivity((current) => updateActivity(current, event.payload, event.payload.occurredAt ?? new Date().toISOString()));
     });
 
     newSocket.on(ThreadWireEvents.AGENT_RESPONSE_DELTA, (event: AgentResponseDeltaWireEvent) => {
@@ -222,20 +176,14 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
 
     return () => {
       newSocket.emit('threads.unsubscribe', { threadId });
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-        activityTimeoutRef.current = null;
-      }
-      setAgentResponseStream(null);
       newSocket.close();
     };
-  }, [threadId, scheduleActivityReset]);
+  }, [threadId]);
 
   return {
     socket,
     isConnected,
-    agentActivity,
-    activityEntries,
+    activity,
     agentResponseStream,
     onMessageCreated,
     onSubscribed,

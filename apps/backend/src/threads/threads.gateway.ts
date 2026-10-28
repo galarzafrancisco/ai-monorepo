@@ -226,16 +226,31 @@ export class ThreadsGateway
 
     const room = getThreadRoomName(event.payload.threadId);
 
+    const { detailActorId, input, output, ...metadata } = event.payload;
     const wireEvent: AgentActivityWireEvent = {
       payload: {
-        ...event.payload,
+        ...metadata,
+        occurredAt: event.occurredAt.toISOString(),
       },
       actor: { id: event.actor.id },
     };
 
-    this.server
-      .to(room)
-      .emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
+    // A thread subscription alone does not grant access to a tool's underlying
+    // tasks/context. Only the actor whose delegated token ran the tool receives
+    // its arguments and result; all other viewers see the lifecycle metadata.
+    const detailRecipients: string[] = [];
+    if (detailActorId && (input !== undefined || output !== undefined)) {
+      for (const client of this.server.sockets.sockets.values()) {
+        if (client.rooms.has(room) && getActorId(client) === detailActorId) {
+          detailRecipients.push(client.id);
+          client.emit(ThreadWireEvents.AGENT_ACTIVITY, {
+            ...wireEvent,
+            payload: { ...wireEvent.payload, input, output },
+          } satisfies AgentActivityWireEvent);
+        }
+      }
+    }
+    this.server.to(room).except(detailRecipients).emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
   }
 
   @OnEvent(ThreadAgentResponseDeltaEvent.INTERNAL)

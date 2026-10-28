@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Text, Button, Avatar } from "../../ui/primitives";
 import { LoadEarlier, useLoadEarlier } from "../../ui/components";
@@ -14,6 +14,7 @@ import Markdown from "marked-react";
 import { pullRequestMarkdownRenderer } from "../pull-requests";
 import { ArrowDown } from "lucide-react";
 import { TraceEntryView, isEntryWorking } from "../tasks/traces/RunTrace";
+import { liveEntryId, traceInsertionIndex } from "./activityState";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -39,8 +40,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
 
   const {
     messages,
-    agentActivity,
-    activityEntries,
+    activity,
     agentResponseStream,
     sendMessage,
     chatIsSending,
@@ -51,6 +51,21 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     isLoadingOlderMessages,
     loadOlderMessages,
   } = useThread(threadId);
+  const { entries: activityEntries } = activity;
+  const liveId = liveEntryId(activity);
+  const trace = activityEntries.length > 0 && (
+    <div className="thread-chat__trace task-traces" aria-label="Assistant activity" aria-live="polite">
+      <div className="task-traces__timeline">
+        {activityEntries.map((entry) => (
+          <TraceEntryView key={entry.id} entry={entry} live={entry.id === liveId} />
+        ))}
+      </div>
+      {activity.stepActive && !liveId && !isEntryWorking(activityEntries[activityEntries.length - 1]) && (
+        <div className="task-traces__working" role="status"><span className="shimmer-text">Working…</span></div>
+      )}
+    </div>
+  );
+  const traceBefore = traceInsertionIndex(activity.startedAt, messages);
 
   useMarkThreadRead(
     threadId,
@@ -158,15 +173,16 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               </Text>
             </div>
           ) : (
-            messages.map((message) => {
+            messages.map((message, index) => {
               const author = message.createdByActor;
               const isOwnMessage = Boolean(user?.actorId && user.actorId === message.createdByActorId);
               const authorName = author?.displayName || "Anonymous";
               const authorHandle = author ? actorHandle(author) : null;
 
               return (
+                <Fragment key={message.id}>
+                {traceBefore === index && trace}
                 <div
-                  key={message.id}
                   className={`thread-chat__message ${isOwnMessage ? "thread-chat__message--mine" : ""}`}
                 >
                   <div className="thread-chat__message-header">
@@ -191,26 +207,12 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
                     <Markdown renderer={pullRequestMarkdownRenderer}>{message.content}</Markdown>
                   </div>
                 </div>
+                </Fragment>
               );
             })
           )}
 
-          {activityEntries.length > 0 && (
-            <div className="thread-chat__trace task-traces" aria-label="Assistant activity" aria-live="polite">
-              <div className="task-traces__timeline">
-                {activityEntries.map((entry, index) => (
-                  <TraceEntryView
-                    key={entry.id}
-                    entry={entry}
-                    live={Boolean(agentActivity) && index === activityEntries.length - 1}
-                  />
-                ))}
-              </div>
-              {agentActivity && !isEntryWorking(activityEntries[activityEntries.length - 1]) && (
-                <div className="task-traces__working" role="status"><span className="shimmer-text">Working…</span></div>
-              )}
-            </div>
-          )}
+          {traceBefore === -1 && trace}
 
           {agentResponseStream && (
             <div className="thread-chat__message thread-chat__message--streaming" role="status" aria-live="polite">

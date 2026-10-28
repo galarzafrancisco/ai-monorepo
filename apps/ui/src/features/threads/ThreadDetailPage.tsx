@@ -514,7 +514,7 @@ function ThreadDetailPageDesktop({
           </div>
 
           <div className="thread-detail-page__chat">
-            <ThreadChat threadId={thread.id} />
+            <ThreadChat key={thread.id} threadId={thread.id} />
           </div>
         </div>
       </div>
@@ -707,7 +707,7 @@ function ThreadDetailPageMobile({
       <div className="thread-detail-page__mobile-content">
         {mobileView === "chat" && (
           <div className="thread-detail-page__mobile-chat-container">
-            <ThreadChat threadId={thread.id} />
+            <ThreadChat key={thread.id} threadId={thread.id} />
           </div>
         )}
 

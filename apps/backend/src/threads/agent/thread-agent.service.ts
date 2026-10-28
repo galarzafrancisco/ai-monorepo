@@ -119,6 +119,7 @@ export class ThreadAgentService {
         });
         return;
       } finally {
+        this.emitActivity(threadId, self.actorId, 'turn_end', { turnId: turn.id });
         stopHeartbeat();
       }
 
@@ -229,6 +230,7 @@ export class ThreadAgentService {
             forActorId: triggerActor.id,
           }),
         },
+        detailActorId: triggerActor.id,
       });
       return { model: resolved, lastInputTokens };
     } finally {
@@ -243,6 +245,7 @@ export class ThreadAgentService {
     threadSecret: string;
     messages: ModelMessage[];
     tools: ToolSet;
+    detailActorId: string;
   }): Promise<number | null> {
     const { turn, self, resolved } = input;
     const { threadId } = turn;
@@ -284,7 +287,6 @@ export class ThreadAgentService {
           this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'reasoning-delta':
-          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'tool-call':
           this.emitActivity(threadId, self.actorId, 'tool_calling', {
@@ -292,6 +294,7 @@ export class ThreadAgentService {
             toolCallId: part.toolCallId,
             toolName: part.toolName,
             input: JSON.stringify(part.input),
+            detailActorId: input.detailActorId,
           });
           break;
         case 'tool-result':
@@ -300,8 +303,8 @@ export class ThreadAgentService {
             toolCallId: part.toolCallId,
             toolName: part.toolName,
             output: JSON.stringify(part.output),
+            detailActorId: input.detailActorId,
           });
-          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
           break;
         case 'tool-error':
           this.emitActivity(threadId, self.actorId, 'tool_result', {
@@ -310,8 +313,11 @@ export class ThreadAgentService {
             toolName: part.toolName,
             output: String(part.error),
             failed: true,
+            detailActorId: input.detailActorId,
           });
-          this.emitActivity(threadId, self.actorId, 'thinking', { turnId: turn.id });
+          break;
+        case 'finish-step':
+          this.emitActivity(threadId, self.actorId, 'step_end', { turnId: turn.id });
           break;
         case 'text-delta':
           this.eventEmitter.emit(
