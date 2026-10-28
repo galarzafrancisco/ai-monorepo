@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Button, Text } from '../../../ui/primitives';
 import { LoadEarlier, useLoadEarlier } from '../../../ui/components';
-import { buildTraceEntries, summarizeToolInput, type TraceEntry } from './traceEntries';
+import { buildTraceEntries, splitToolName, summarizeToolInput, type TraceEntry } from './traceEntries';
 import { useExecutionTraces } from './useExecutionTraces';
 import { ExecutionSteps } from './ExecutionSteps';
 import type { TraceRun } from './runs';
@@ -244,6 +244,7 @@ function TraceEntryView({ entry, live = false }: { entry: TraceEntry; live?: boo
   if (entry.kind === 'tool') {
     const failed = ['failed', 'error'].includes(entry.status?.toLowerCase() ?? '');
     const hint = summarizeToolInput(entry.input);
+    const name = splitToolName(entry.title);
     return (
       <article
         className={`task-traces__entry task-traces__entry--tool${working ? ' task-traces__entry--working' : ''}${failed ? ' task-traces__entry--failed' : ''}`}
@@ -254,7 +255,10 @@ function TraceEntryView({ entry, live = false }: { entry: TraceEntry; live?: boo
         </div>
         <details className="task-traces__call">
           <summary>
-            <strong className={working ? 'shimmer-text' : undefined}>{entry.title}</strong>
+            <span className="task-traces__tool-name" title={entry.title}>
+              {name.server && <span className="task-traces__tool-server">{name.server}</span>}
+              <strong className={working ? 'shimmer-text' : undefined}>{name.tool}</strong>
+            </span>
             {hint && <span className="task-traces__hint" title={hint}>{hint}</span>}
             {failed && <span className="task-traces__failed">failed</span>}
             {at}
