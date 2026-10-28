@@ -11,6 +11,7 @@ import { useChatReadiness } from "../ai-models/useChatReadiness";
 import { ThreadChatLocked } from "./ThreadChatLocked";
 import { useChatScrollFollow } from "./useChatScrollFollow";
 import Markdown from "marked-react";
+import { pullRequestMarkdownRenderer } from "../pull-requests";
 import { ArrowDown } from "lucide-react";
 import "./ThreadChat.css";
 
@@ -185,7 +186,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
                   </div>
 
                   <div className="thread-chat__message-content">
-                    <Markdown>{message.content}</Markdown>
+                    <Markdown renderer={pullRequestMarkdownRenderer}>{message.content}</Markdown>
                   </div>
                 </div>
               );
@@ -207,7 +208,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               </div>
 
               <div className="thread-chat__message-content">
-                <Markdown>{agentResponseStream.content}</Markdown>
+                <Markdown renderer={pullRequestMarkdownRenderer}>{agentResponseStream.content}</Markdown>
               </div>
             </div>
           )}

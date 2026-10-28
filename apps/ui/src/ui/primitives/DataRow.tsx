@@ -24,6 +24,9 @@ export interface DataRowProps {
   /** Chips under the text */
   tags?: DataRowTag[];
 
+  /** Richer chips after the tags, e.g. live pull request chips */
+  tagExtras?: ReactNode;
+
   /** Top-right meta, e.g. date / "Last updated" */
   topRight?: ReactNode;
 
@@ -45,6 +48,7 @@ export function DataRow({
   leading,
   children,
   tags = [],
+  tagExtras,
   topRight,
   trailing,
   animation,
@@ -75,7 +79,7 @@ export function DataRow({
             {topRight ? <div className="data-row__meta">{topRight}</div> : null}
           </div>
 
-          {tags.length ? (
+          {tags.length || tagExtras ? (
             <div className="data-row__tags" aria-label="tags">
               {tags.map((t, index) => (
                 <Chip
@@ -90,6 +94,7 @@ export function DataRow({
                   {t.label}
                 </Chip>
               ))}
+              {tagExtras}
             </div>
           ) : null}
         </div>

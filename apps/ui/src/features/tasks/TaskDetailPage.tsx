@@ -13,7 +13,7 @@ import { DependencyPicker } from './DependencyPicker';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto } from "@taico/client/v2";
-import { ExternalLink, GitBranch, GitPullRequest, Link2, MessagesSquare, X } from 'lucide-react';
+import { ExternalLink, GitBranch, Link2, MessagesSquare, X } from 'lucide-react';
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -29,6 +29,7 @@ import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
 import { ProjectPicker } from '../projects/ProjectPicker';
 import { useProjects } from '../projects/useProjects';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
+import { LinkifiedText, PullRequestChip, parsePullRequestUrl } from '../pull-requests';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -657,8 +658,10 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           </div>}
           <div className="task-bar__actions">
             {task.artefacts.map((artefact) => {
-              const { label, isPullRequest } = describeArtefactLink(artefact.link);
-              const Icon = isPullRequest ? GitPullRequest : Link2;
+              if (parsePullRequestUrl(artefact.link)) {
+                return <PullRequestChip key={artefact.id} url={artefact.link} variant="full" />;
+              }
+              const { label } = describeArtefactLink(artefact.link);
               return (
                 <a
                   key={artefact.id}
@@ -668,7 +671,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                   rel="noopener noreferrer"
                   title={`${artefact.name}: ${artefact.link}`}
                 >
-                  <Icon size={14} aria-hidden="true" />
+                  <Link2 size={14} aria-hidden="true" />
                   <span className="task-bar__link-label">{label}</span>
                   <ExternalLink size={12} aria-hidden="true" className="task-bar__link-external" />
                 </a>
@@ -782,7 +785,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
       <section className="task-detail-page__description" aria-label="Description">
         {task.description ? (
-          <Text wrap>{task.description}</Text>
+          <Text wrap><LinkifiedText text={task.description} /></Text>
         ) : (
           <Text tone="muted">No description</Text>
         )}
@@ -822,8 +825,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                 <Text as='span' weight='normal' tone='muted' size='3'>
                   {` ${handle}`}
                 </Text>
-                <Text>
-                  {comment.content}
+                <Text wrap>
+                  <LinkifiedText text={comment.content} />
                 </Text>
               </DataRow>
             );
@@ -1142,16 +1145,14 @@ function TaskDetailLoadingShell({ backPath }: { backPath: string }) {
   );
 }
 
-/** A link's short name: "acme/api#412" for a GitHub PR, otherwise host and path. */
-function describeArtefactLink(link: string): { label: string; isPullRequest: boolean } {
+/** A link's short name: host and path. Pull request links are drawn as PullRequestChip instead. */
+function describeArtefactLink(link: string): { label: string } {
   try {
     const url = new URL(link);
-    const pr = url.hostname === 'github.com' ? url.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)/) : null;
-    if (pr) return { label: `${pr[1]}/${pr[2]}#${pr[3]}`, isPullRequest: true };
     const path = url.pathname.replace(/\/$/, '');
-    return { label: `${url.hostname}${path.length > 24 ? `${path.slice(0, 24)}…` : path}`, isPullRequest: false };
+    return { label: `${url.hostname}${path.length > 24 ? `${path.slice(0, 24)}…` : path}` };
   } catch {
-    return { label: link, isPullRequest: false };
+    return { label: link };
   }
 }
 

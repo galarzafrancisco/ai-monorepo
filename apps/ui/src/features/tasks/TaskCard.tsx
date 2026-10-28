@@ -3,6 +3,7 @@ import { Task } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import './TaskCard.css';
 import { actorHandle, isDeactivated } from "../actors";
+import { PullRequestChip, splitArtefactLinks } from "../pull-requests";
 
 export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void, pulseKey?: number }): React.JSX.Element {
   const avatarActor = task.assigneeActor ?? task.createdByActor;
@@ -18,9 +19,10 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
       label: `✋ ${openQuestions}`
     })
   }
-  if (task.artefacts.length) {
+  const { pullRequestUrls, otherCount: otherLinks } = splitArtefactLinks(task.artefacts);
+  if (otherLinks) {
     tags.push({
-      label: `🔗 ${task.artefacts.length}`
+      label: `🔗 ${otherLinks}`
     })
   }
   return (
@@ -28,6 +30,9 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
       leading={<Avatar name={avatarActor.displayName} inactive={isDeactivated(avatarActor)} size='md' src={avatarActor.avatarUrl || undefined} />}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
+      tagExtras={pullRequestUrls.length ? pullRequestUrls.map((url) => (
+        <PullRequestChip key={url} url={url} variant="compact" />
+      )) : undefined}
       animation={animation}
       onClick={onClick}
       pulseKey={pulseKey}

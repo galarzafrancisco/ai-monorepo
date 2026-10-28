@@ -100,3 +100,20 @@ Each delivery must carry a valid `X-Hub-Signature-256`; anything else gets 401. 
 - Socket.io namespace `/pull-requests`: `pull_requests.subscribe` joins one room; `pull_request.updated` carries the new state and the changes.
 
 Code: `apps/backend/src/pull-requests/`.
+
+## In the UI
+
+Pull request links are drawn with their live state wherever they appear (`apps/ui/src/features/pull-requests/`):
+
+| Where | How |
+|---|---|
+| Board cards and task rows | One chip per pull request link of the task (`#1142`), colored by state, with CI and approval. Other links still count as `🔗 n`. |
+| Task header | The full name (`owner/repo#1142`), CI, approval, and a link out. |
+| Task descriptions and comments | Links become clickable; pull request links are drawn inline, colored by state. |
+| Thread messages | The same, through the Markdown renderer. |
+
+Colors follow GitHub: open green (`--pr-open`), draft gray (`--pr-draft`), merged purple (`--pr-merged`), closed red (`--pr-closed`). CI shows as a green spinner while checks run, a red cross when any failed, and a green dot when all passed; a green tick means approved. CI and approvals are only shown on open pull requests.
+
+Hovering a chip (or tapping it on touch screens) opens a card with the title, branches, author, lines added and removed, files, comments, which checks failed, and the review state. The card is a `Popover` in a portal, so board columns never clip it.
+
+`pullRequestStore` keeps one copy of every pull request on screen: requests made in the same render share one `POST /pull-requests/lookup`, the `/pull-requests` socket keeps them live, and pull requests still on screen are looked up again every 4 minutes (which keeps them in the backend's "viewed" polling tier) and after a reconnect.
