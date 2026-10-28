@@ -3,6 +3,7 @@ import {
   IntegrationsGitHubService,
   type GithubAuthType,
   type GithubConnectionResponseDto,
+  type GithubWebhookSettingsResponseDto,
 } from '@taico/client';
 import { Stack, Text, Card, Button, Modal, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
@@ -452,6 +453,7 @@ function ConnectionRow({
   onDelete: () => void;
 }) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [showWebhook, setShowWebhook] = useState(false);
 
   const isHealthy = !connection.lastError;
   const details = [
@@ -482,6 +484,8 @@ function ConnectionRow({
           ) : null}
         </Stack>
 
+        {showWebhook && !isEditing ? <WebhookPanel connection={connection} /> : null}
+
         {isEditing ? (
           <EditConnectionForm connection={connection} onSave={onSave} onCancel={onCancel} />
         ) : isConfirmingDelete ? (
@@ -509,6 +513,14 @@ function ConnectionRow({
             <Button variant="secondary" size="sm" onClick={onVerify}>
               Check again
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-expanded={showWebhook}
+              onClick={() => setShowWebhook((current) => !current)}
+            >
+              Webhook
+            </Button>
             <Button variant="secondary" size="sm" onClick={() => setIsConfirmingDelete(true)}>
               Delete
             </Button>
@@ -516,5 +528,113 @@ function ConnectionRow({
         )}
       </Stack>
     </div>
+  );
+}
+
+const WEBHOOK_EVENTS = [
+  'Pull requests',
+  'Pull request reviews',
+  'Pull request review comments',
+  'Issue comments',
+  'Check runs',
+  'Check suites',
+  'Statuses',
+];
+
+/**
+ * Optional: with a webhook, GitHub tells Taico the moment a pull request
+ * changes, and polling slows down to a safety net.
+ */
+function WebhookPanel({ connection }: { connection: GithubConnectionResponseDto }) {
+  const [settings, setSettings] = useState<GithubWebhookSettingsResponseDto | null>(null);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState<'url' | 'secret' | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    IntegrationsGitHubService.githubConnectionsControllerGetWebhookSettings(connection.id)
+      .then((data) => { if (!cancelled) setSettings(data); })
+      .catch((err) => { if (!cancelled) setError(errorDetail(err, 'Failed to load the webhook settings')); });
+    return () => { cancelled = true; };
+  }, [connection.id]);
+
+  const copy = async (what: 'url' | 'secret', value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(what);
+      window.setTimeout(() => setCopied(null), 1600);
+    } catch {
+      setCopied(null);
+    }
+  };
+
+  if (error) return <ErrorText size="2">{error}</ErrorText>;
+  if (!settings) return <Text size="2" tone="muted">Loading…</Text>;
+
+  const where =
+    connection.authType === 'app'
+      ? 'In the GitHub App settings, turn on Webhook, paste the URL and secret, and subscribe to:'
+      : 'In the repository or organization settings on GitHub, add a webhook with content type application/json, paste the URL and secret, and pick these events:';
+
+  return (
+    <Stack spacing="3" className="settings-integrations__webhook">
+      <Text size="2" tone="muted">
+        Optional. Without a webhook Taico polls GitHub; with one, it hears about changes within
+        seconds and polls much less. {where} {WEBHOOK_EVENTS.join(', ')}.
+      </Text>
+      <WebhookField
+        label="Payload URL"
+        value={settings.url}
+        copied={copied === 'url'}
+        onCopy={() => void copy('url', settings.url)}
+      />
+      <WebhookField
+        label="Secret"
+        value={settings.secret}
+        secret
+        copied={copied === 'secret'}
+        onCopy={() => void copy('secret', settings.secret)}
+      />
+      <Text size="1" tone="muted">
+        {settings.lastDeliveryAt
+          ? `Last delivery ${new Date(settings.lastDeliveryAt).toLocaleString()}.`
+          : 'No delivery received yet. GitHub has to be able to reach this address.'}
+      </Text>
+    </Stack>
+  );
+}
+
+function WebhookField({
+  label,
+  value,
+  secret = false,
+  copied,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  secret?: boolean;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <Stack spacing="1">
+      <Text size="1" weight="medium">
+        {label}
+      </Text>
+      <Row spacing="2" align="center">
+        <input
+          readOnly
+          type={secret ? 'password' : 'text'}
+          value={value}
+          className="settings-models__control settings-integrations__webhook-value"
+          aria-label={label}
+          onFocus={(event) => event.target.select()}
+        />
+        <Button variant="secondary" size="sm" onClick={onCopy}>
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </Row>
+    </Stack>
   );
 }

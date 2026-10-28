@@ -25,6 +25,7 @@ import { TaskBlueprintsResource } from './task-blueprints-resource.js';
 import { ScheduledTasksResource } from './scheduled-tasks-resource.js';
 import { DiscoveryResource } from './discovery-resource.js';
 import { IntegrationsGithubResource } from './integrations---git-hub-resource.js';
+import { PullRequestsResource } from './pull-requests-resource.js';
 import { SearchResource } from './search-resource.js';
 import { WalkthroughResource } from './walkthrough-resource.js';
 import { AccessRequestsResource } from './access-requests-resource.js';
@@ -57,6 +58,7 @@ export class ApiClient {
   public readonly scheduledTasks: ScheduledTasksResource;
   public readonly discovery: DiscoveryResource;
   public readonly integrationsGithub: IntegrationsGithubResource;
+  public readonly pullRequests: PullRequestsResource;
   public readonly search: SearchResource;
   public readonly walkthrough: WalkthroughResource;
   public readonly accessRequests: AccessRequestsResource;
@@ -89,6 +91,7 @@ export class ApiClient {
     this.scheduledTasks = new ScheduledTasksResource(config);
     this.discovery = new DiscoveryResource(config);
     this.integrationsGithub = new IntegrationsGithubResource(config);
+    this.pullRequests = new PullRequestsResource(config);
     this.search = new SearchResource(config);
     this.walkthrough = new WalkthroughResource(config);
     this.accessRequests = new AccessRequestsResource(config);

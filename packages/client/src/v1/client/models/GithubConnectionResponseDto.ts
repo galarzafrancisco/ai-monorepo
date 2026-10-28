@@ -22,6 +22,10 @@ export type GithubConnectionResponseDto = {
      * Why the last check with GitHub failed; null when it worked
      */
     lastError: string | null;
+    /**
+     * When GitHub last delivered a correctly signed webhook through this connection
+     */
+    lastWebhookAt: string | null;
     rowVersion: number;
     createdAt: string;
     updatedAt: string;

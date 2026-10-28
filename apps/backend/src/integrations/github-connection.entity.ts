@@ -63,6 +63,14 @@ export class GithubConnectionEntity {
   @Column({ type: 'text', nullable: true, name: 'last_error' })
   lastError!: string | null;
 
+  /** Shared secret GitHub signs webhook deliveries with. Created the first time someone asks for it. */
+  @Column({ type: 'uuid', nullable: true, name: 'webhook_secret_id' })
+  webhookSecretId!: string | null;
+
+  /** When GitHub last delivered a correctly signed webhook through this connection. */
+  @Column({ type: 'timestamptz', nullable: true, name: 'last_webhook_at' })
+  lastWebhookAt!: Date | null;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

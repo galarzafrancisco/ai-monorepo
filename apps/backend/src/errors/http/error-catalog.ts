@@ -417,6 +417,18 @@ export const ErrorCatalog: Record<
     type: '/errors/integrations/github-request-failed',
     retryable: true,
   },
+  [ErrorCodes.PULL_REQUEST_NOT_FOUND]: {
+    status: 404,
+    title: 'Pull request not found',
+    type: '/errors/pull-requests/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.PULL_REQUEST_REF_INVALID]: {
+    status: 400,
+    title: 'Not a GitHub pull request',
+    type: '/errors/pull-requests/ref-invalid',
+    retryable: false,
+  },
   [ErrorCodes.INTERNAL_ERROR]: {
     status: 500,
     title: 'Internal server error',

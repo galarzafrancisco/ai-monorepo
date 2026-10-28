@@ -104,6 +104,8 @@ async function createConfiguredApp(
   AppModule: typeof import('./app.module').AppModule,
 ): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // GitHub webhook signatures are checked over the exact bytes received.
+    rawBody: true,
     logger: new ConsoleLogger({
       json: true,
     }),

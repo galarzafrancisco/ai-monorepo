@@ -43,6 +43,7 @@ import { ThreadHardDelete1762200000000 } from './migrations/1762200000000-Thread
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
@@ -52,6 +53,7 @@ import { AccessRequestHeardFrom1762400000000 } from './migrations/1762400000000-
 import { WalkthroughModule } from './walkthrough/walkthrough.module';
 import { ExecutionTraceSource1762500000002 } from './migrations/1762500000002-ExecutionTraceSource';
 import { GithubConnections1762600000000 } from './migrations/1762600000000-GithubConnections';
+import { PullRequests1762700000000 } from './migrations/1762700000000-PullRequests';
 import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
@@ -95,6 +97,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ExecutionTraceJson1762500000001,
         ExecutionTraceSource1762500000002,
         GithubConnections1762600000000,
+        PullRequests1762700000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -115,6 +118,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
     SecretsModule,
     AiProvidersModule,
     IntegrationsModule,
+    PullRequestsModule,
     ExecutionsModule,
     WorkersModule,
     GlobalSearchModule,

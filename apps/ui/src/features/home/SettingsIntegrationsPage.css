@@ -1,3 +1,14 @@
 .settings-integrations .settings-models__provider .error-text {
   overflow-wrap: anywhere;
 }
+
+.settings-integrations__webhook {
+  padding: var(--space-3);
+  border-radius: var(--r-2);
+  background: var(--surface);
+}
+
+.settings-integrations__webhook-value {
+  flex: 1;
+  font-family: var(--font-mono);
+}

@@ -1333,6 +1333,7 @@ export interface GithubConnectionResponseDto {
   accountLogin: string | null;
   lastVerifiedAt: string | null;
   lastError: string | null;
+  lastWebhookAt: string | null;
   rowVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -1357,6 +1358,54 @@ export interface UpdateGithubConnectionDto {
   appId?: string | null;
   installationId?: string | null;
   owners?: string[];
+}
+
+export interface GithubWebhookSettingsResponseDto {
+  url: string;
+  secret: string;
+  lastDeliveryAt: string | null;
+}
+
+export interface LookupPullRequestsDto {
+  refs: string[];
+}
+
+export type PullRequestState = 'open' | 'closed' | 'merged';
+
+export type ChecksStatus = 'none' | 'pending' | 'success' | 'failure';
+
+export type ReviewDecision = 'none' | 'approved' | 'changes_requested';
+
+export interface PullRequestResponseDto {
+  id: string;
+  key: string;
+  owner: string;
+  repo: string;
+  number: number;
+  url: string;
+  title: string | null;
+  state: PullRequestState | null;
+  draft: boolean;
+  authorLogin: string | null;
+  headRef: string | null;
+  baseRef: string | null;
+  additions: number | null;
+  deletions: number | null;
+  changedFiles: number | null;
+  commentCount: number | null;
+  checksStatus: ChecksStatus;
+  checksTotal: number;
+  checksPassed: number;
+  checksFailed: number;
+  checksPending: number;
+  failedChecks: string[];
+  reviewDecision: ReviewDecision;
+  approvals: number;
+  mergedAt: string | null;
+  closedAt: string | null;
+  githubUpdatedAt: string | null;
+  lastFetchedAt: string | null;
+  lastError: string | null;
 }
 
 export type SearchResultType = 'task' | 'context_block' | 'thread' | 'tool' | 'agent' | 'project';
