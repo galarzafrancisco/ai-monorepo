@@ -1,14 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as crypto from 'crypto';
 import {
   isPlaintextSecretsInsecurelyAllowed,
   isSecretsEnabled,
 } from '../config/env.config';
 import { SecretsFeatureDisabledError } from './errors/secrets.errors';
+import { decryptEnvelope, encryptEnvelope } from './secret-storage-format';
 
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 12; // 96 bits recommended for GCM
-const TAG_LENGTH = 16; // 128 bits authentication tag
 const KEY_LENGTH = 32; // 256 bits
 
 /**
@@ -104,23 +101,7 @@ export class SecretsEncryptionService {
     if (this.allowPlaintextStorage) {
       return plaintext;
     }
-    const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, this.key!, iv, {
-      authTagLength: TAG_LENGTH,
-    });
-
-    const ciphertext = Buffer.concat([
-      cipher.update(plaintext, 'utf8'),
-      cipher.final(),
-    ]);
-    const authTag = cipher.getAuthTag();
-
-    // Pack as: base64(iv):base64(authTag):base64(ciphertext)
-    return [
-      iv.toString('base64'),
-      authTag.toString('base64'),
-      ciphertext.toString('base64'),
-    ].join(':');
+    return encryptEnvelope(plaintext, this.key!);
   }
 
   /**
@@ -133,26 +114,6 @@ export class SecretsEncryptionService {
     if (this.allowPlaintextStorage) {
       return encryptedValue;
     }
-    const parts = encryptedValue.split(':');
-    if (parts.length !== 3) {
-      throw new Error('Invalid encrypted value format');
-    }
-
-    const [ivB64, authTagB64, ciphertextB64] = parts;
-    const iv = Buffer.from(ivB64, 'base64');
-    const authTag = Buffer.from(authTagB64, 'base64');
-    const ciphertext = Buffer.from(ciphertextB64, 'base64');
-
-    const decipher = crypto.createDecipheriv(ALGORITHM, this.key!, iv, {
-      authTagLength: TAG_LENGTH,
-    });
-    decipher.setAuthTag(authTag);
-
-    const plaintext = Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]);
-
-    return plaintext.toString('utf8');
+    return decryptEnvelope(encryptedValue, this.key!);
   }
 }
