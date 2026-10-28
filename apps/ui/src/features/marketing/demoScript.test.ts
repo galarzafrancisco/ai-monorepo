@@ -20,7 +20,25 @@ describe('demo script', () => {
   it('keeps the card counters in step with the activity', () => {
     const v = reduceDemo(DEMO_EVENTS, DEMO_EVENTS.findIndex((e) => e.type === 'approve'));
     expect(v.hero?.comments).toBe(v.comments.length);
-    expect(v.hero?.artefacts).toBe(1);
+    expect(v.hero?.pr?.number).toBeDefined();
+  });
+  it('walks the pull request from open, through CI, to merged', () => {
+    const prs = DEMO_EVENTS.map((_, i) => reduceDemo(DEMO_EVENTS, i).hero?.pr);
+    const first = prs.findIndex(Boolean);
+    expect(prs[first]).toMatchObject({ state: 'open', checks: 'none' });
+    const pending = prs.findIndex((p) => p?.checks === 'pending');
+    const green = prs.findIndex((p, i) => i > pending && p?.checks === 'success');
+    const merged = prs.findIndex((p) => p?.state === 'merged');
+    expect(first).toBeLessThan(pending);
+    expect(pending).toBeLessThan(green);
+    expect(green).toBeLessThan(merged);
+    expect(prs.slice(first, merged).every((p) => p?.state === 'open')).toBe(true);
+    expect(prs.at(-1)?.state).toBe('merged');
+  });
+  it('merges a background pull request when its task ships', () => {
+    const pg = (n: number) => reduceDemo(DEMO_EVENTS, n).tasks.find((t) => t.id === 'c2f7a9')!;
+    expect(pg(0).pr?.state).toBe('open');
+    expect(pg(DEMO_EVENTS.length - 1)).toMatchObject({ status: 'DONE', pr: { state: 'merged' } });
   });
   it('moves background tasks too, so the board feels alive', () => {
     const before = reduceDemo(DEMO_EVENTS, 0).tasks.filter((t) => t.id !== HERO_ID);

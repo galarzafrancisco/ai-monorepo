@@ -1,5 +1,7 @@
 export { PullRequestChip } from './PullRequestChip';
 export type { PullRequestChipProps, PullRequestChipVariant } from './PullRequestChip';
+export { PullRequestChipView } from './PullRequestChipView';
+export type { PullRequestChipViewProps } from './PullRequestChipView';
 export { LinkifiedText } from './LinkifiedText';
 export { pullRequestMarkdownRenderer } from './markdownRenderer';
 export { splitArtefactLinks } from './artefactLinks';

@@ -25,6 +25,13 @@ export interface Message {
   reminder?: { title: string; when: string };
 }
 
+/** The scripted state of a pull request, drawn with the app's own PR chip. */
+export interface DemoPullRequest {
+  number: number;
+  state: 'open' | 'merged';
+  checks: 'none' | 'pending' | 'success' | 'failure';
+}
+
 export interface BoardTask {
   id: string;
   name: string;
@@ -32,22 +39,28 @@ export interface BoardTask {
   status: TaskStatus;
   assignee: ActorId;
   comments: number;
+  /** Links other than the pull request. */
   artefacts: number;
+  pr?: DemoPullRequest;
   /** Open questions the assignee is waiting on a person to answer. */
   questions?: number;
 }
 
 /** The task the demo follows. The rest of the board is background life. */
 export const HERO_ID = 'a41c92';
-export const PR_URL = 'github.com/acme/api/pull/412';
+export const PR_NUMBER = 412;
+export const PR_REPO = { owner: 'acme', repo: 'api' };
+export const PR_URL = 'https://github.com/acme/api/pull/412';
 
 type SideMove = { id: string; status: TaskStatus; assignee?: ActorId; questions?: number };
 
-export type DemoEvent = { caption: string; side?: SideMove } & (
+/** `ci` updates the hero's pull request checks as part of any step. */
+export type DemoEvent = { caption: string; side?: SideMove; ci?: DemoPullRequest['checks'] } & (
   | { type: 'create' }
   | { type: 'status'; status: TaskStatus; assignee?: ActorId }
   | { type: 'comment'; message: Message }
   | { type: 'pr' }
+  | { type: 'ci' }
   | { type: 'approve'; message: Message }
   | { type: 'thread-message'; message: Message }
 );
@@ -55,9 +68,12 @@ export type DemoEvent = { caption: string; side?: SideMove } & (
 const BACKGROUND: BoardTask[] = [
   { id: '7c01de', name: 'Spike: SSO with Okta', description: 'Do we need SAML, or is OIDC enough?', status: 'NOT_STARTED', assignee: 'jane', comments: 2, artefacts: 0 },
   { id: '19bb40', name: 'Plan the v2 migration', description: 'Split the auth and pagination changes into tasks', status: 'NOT_STARTED', assignee: 'planner', comments: 0, artefacts: 0 },
-  { id: '5e8a13', name: 'Fix flaky checkout e2e', description: 'Cart total races the price fetch', status: 'IN_PROGRESS', assignee: 'qa', comments: 3, artefacts: 1, questions: 1 },
-  { id: 'c2f7a9', name: 'Bump Postgres to 16', description: 'Staging is green, needs a final look', status: 'FOR_REVIEW', assignee: 'code-reviewer', comments: 4, artefacts: 1 },
-  { id: '0d44e1', name: 'Drop the legacy /v1 auth', description: 'Last client migrated on Friday', status: 'DONE', assignee: 'claude-dev', comments: 6, artefacts: 2 },
+  { id: '5e8a13', name: 'Fix flaky checkout e2e', description: 'Cart total races the price fetch', status: 'IN_PROGRESS', assignee: 'qa', comments: 3, artefacts: 0, questions: 1,
+    pr: { number: 409, state: 'open', checks: 'failure' } },
+  { id: 'c2f7a9', name: 'Bump Postgres to 16', description: 'Staging is green, needs a final look', status: 'FOR_REVIEW', assignee: 'code-reviewer', comments: 4, artefacts: 0,
+    pr: { number: 407, state: 'open', checks: 'success' } },
+  { id: '0d44e1', name: 'Drop the legacy /v1 auth', description: 'Last client migrated on Friday', status: 'DONE', assignee: 'claude-dev', comments: 6, artefacts: 1,
+    pr: { number: 398, state: 'merged', checks: 'success' } },
 ];
 
 export const HERO_TASK: BoardTask = {
@@ -71,18 +87,20 @@ export const DEMO_EVENTS: DemoEvent[] = [
     side: { id: '19bb40', status: 'IN_PROGRESS' } },
   { type: 'comment', caption: 'Progress lands on the task, not in a terminal you have to go find.',
     message: { by: 'claude-dev', text: 'On branch feature/export-rate-limit. Adding a token bucket in front of /export.' } },
-  { type: 'pr', caption: 'The pull request is linked to the task.',
+  { type: 'pr', caption: 'The pull request shows up on the task, green while it’s open.',
     side: { id: 'c2f7a9', status: 'DONE' } },
-  { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', caption: 'When it’s ready, a reviewer agent takes it.' },
+  { type: 'ci', ci: 'pending', caption: 'CI starts. The chip spins while the checks run.' },
+  { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', ci: 'success',
+    caption: 'Checks pass, the chip goes green, and a reviewer agent takes it.' },
   { type: 'comment', caption: 'The reviewer leaves real feedback…',
     message: { by: 'code-reviewer', text: 'The bucket is keyed by IP. Behind the load balancer that’s everyone, so one noisy client throttles all of them. Key it by API token. Also missing: a test for the Retry-After header.' } },
   { type: 'status', status: 'NOT_STARTED', assignee: 'claude-dev', caption: '…and sends it back. You didn’t copy-paste a thing.' },
   { type: 'status', status: 'IN_PROGRESS', caption: 'The developer picks it up again, with the review right there on the task.' },
   { type: 'comment', caption: 'It fixes both and pushes to the same PR.',
-    message: { by: 'claude-dev', text: 'Keyed by API token now, and added a Retry-After test. Pushed to the same PR.' },
+    message: { by: 'claude-dev', text: 'Keyed by API token now, and added a Retry-After test. Pushed to the same PR.' }, ci: 'pending',
     side: { id: '5e8a13', status: 'FOR_REVIEW', assignee: 'code-reviewer', questions: 0 } },
-  { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', caption: 'Back to review.' },
-  { type: 'approve', caption: 'Approved. It ships, and the whole trail stays on the task.',
+  { type: 'status', status: 'FOR_REVIEW', assignee: 'code-reviewer', ci: 'success', caption: 'Checks are green again. Back to review.' },
+  { type: 'approve', caption: 'Approved and merged: the chip turns purple, and the whole trail stays on the task.',
     message: { by: 'code-reviewer', text: 'Both fixed. Approved.' } },
   { type: 'thread-message', caption: 'Days later, in a thread, you ask what happened.',
     message: { by: 'jane', text: 'What happened with the export rate limit?' } },
@@ -126,11 +144,12 @@ export function reduceDemo(events: DemoEvent[], upTo: number): DemoView {
         view.comments = [...view.comments, e.message];
         patchHero({ comments: view.comments.length });
         break;
-      case 'pr': view.prUrl = PR_URL; patchHero({ artefacts: 1 }); break;
+      case 'pr': view.prUrl = PR_URL; patchHero({ pr: { number: PR_NUMBER, state: 'open', checks: 'none' } }); break;
+      case 'ci': break;
       case 'approve':
         view.approved = true;
         view.comments = [...view.comments, e.message];
-        patchHero({ status: 'DONE', comments: view.comments.length });
+        patchHero({ status: 'DONE', comments: view.comments.length, ...(hero?.pr && { pr: { ...hero.pr, state: 'merged' } }) });
         break;
       case 'thread-message':
         view.scene = 'thread';
@@ -138,9 +157,12 @@ export function reduceDemo(events: DemoEvent[], upTo: number): DemoView {
         view.touched = [];
         break;
     }
+    if (e.ci && hero?.pr) patchHero({ pr: { ...hero.pr, checks: e.ci } });
     if (e.side) {
       const s = e.side;
-      tasks = tasks.map((t) => (t.id === s.id ? { ...t, status: s.status, ...(s.assignee && { assignee: s.assignee }), ...(s.questions !== undefined && { questions: s.questions }) } : t));
+      // A task that ships merges its pull request.
+      const shipped = (t: BoardTask) => (s.status === 'DONE' && t.pr ? { pr: { ...t.pr, state: 'merged' as const } } : {});
+      tasks = tasks.map((t) => (t.id === s.id ? { ...t, status: s.status, ...shipped(t), ...(s.assignee && { assignee: s.assignee }), ...(s.questions !== undefined && { questions: s.questions }) } : t));
       view.touched = [...view.touched, s.id];
     }
   }
