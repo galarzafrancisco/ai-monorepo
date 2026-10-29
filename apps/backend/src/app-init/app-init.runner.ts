@@ -48,6 +48,10 @@ import { createTaskmaster } from './agent/taskmaster.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './prompts/prompts';
+import {
+  LEGACY_ASSISTANT_PROMPTS,
+  LEGACY_DEV_PROMPTS,
+} from './prompts/legacy-prompts';
 import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
 import { createChromeDevTools } from './mcp/chrome-devtools.mcp';
@@ -194,22 +198,38 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring taico Agent exists');
     }
     try {
-      await this.ensureAgentExists(createClaudeDev);
+      await this.syncSeededPrompt(
+        await this.ensureAgentExists(createClaudeDev),
+        createClaudeDev,
+        LEGACY_DEV_PROMPTS,
+      );
     } catch (error) {
       this.logger.error('Error ensuring claude-dev Agent exists');
     }
     try {
-      await this.ensureAgentExists(createDeveloper);
+      await this.syncSeededPrompt(
+        await this.ensureAgentExists(createDeveloper),
+        createDeveloper,
+        LEGACY_DEV_PROMPTS,
+      );
     } catch (error) {
       this.logger.error('Error ensuring developer Agent exists');
     }
     try {
-      await this.ensureAgentExists(createCodexDev);
+      await this.syncSeededPrompt(
+        await this.ensureAgentExists(createCodexDev),
+        createCodexDev,
+        LEGACY_DEV_PROMPTS,
+      );
     } catch (error) {
       this.logger.error('Error ensuring codex-dev Agent exists');
     }
     try {
-      await this.ensureAgentExists(createGeminiAssistant);
+      await this.syncSeededPrompt(
+        await this.ensureAgentExists(createGeminiAssistant),
+        createGeminiAssistant,
+        LEGACY_ASSISTANT_PROMPTS,
+      );
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
     }
@@ -219,7 +239,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring grok Agent exists');
     }
     try {
-      await this.ensureAgentExists(createGrokDev);
+      await this.syncSeededPrompt(
+        await this.ensureAgentExists(createGrokDev),
+        createGrokDev,
+        LEGACY_DEV_PROMPTS,
+      );
     } catch (error) {
       this.logger.error('Error ensuring grok-dev Agent exists');
     }
@@ -248,6 +272,27 @@ export class AppInitRunner implements OnApplicationBootstrap {
     } catch (error) {
       this.logger.error('Error ensuring taskmaster Agent exists');
     }
+  }
+
+  /**
+   * Move a built-in agent to the current seeded prompt, but only if its stored
+   * prompt is a verbatim copy of an earlier seeded version. A prompt someone
+   * edited is never overwritten.
+   */
+  async syncSeededPrompt(
+    agent: AgentResult | null,
+    seed: CreateAgentInput,
+    legacyPrompts: readonly string[],
+  ): Promise<void> {
+    if (!agent || !seed.systemPrompt) return;
+    const stored = normalizePrompt(agent.systemPrompt);
+    if (stored === normalizePrompt(seed.systemPrompt)) return;
+    if (!legacyPrompts.some((p) => normalizePrompt(p) === stored)) return;
+
+    await this.agentsService.patchAgent(agent.actorId, {
+      systemPrompt: seed.systemPrompt,
+    });
+    this.logger.log(`Updated ${agent.slug} to the current seeded prompt`);
   }
 
   async ensureMcpServers() {
@@ -546,4 +591,8 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring default AI providers exist');
     }
   }
+}
+
+function normalizePrompt(prompt: string | null | undefined): string {
+  return (prompt ?? '').replace(/\r\n/g, '\n').trim();
 }

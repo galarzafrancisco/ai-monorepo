@@ -2,7 +2,7 @@
 
 # Script: open_pr_to_agents_main.sh
 # Purpose: Opens a pull request to agents/main branch
-# Usage: ./open_pr_to_agents_main.sh "PR Title" "PR Body"
+# Usage: ./open_pr_to_agents_main.sh "PR Title" "PR Body" [--draft]
 #
 # Constraints handled:
 # - Fails if uncommitted changes exist
@@ -35,12 +35,16 @@ info() {
 }
 
 # Validate arguments
-if [ $# -ne 2 ]; then
-    error "Missing required arguments.\nUsage: $0 \"PR Title\" \"PR Body\""
+if [ $# -lt 2 ] || [ $# -gt 3 ] || { [ $# -eq 3 ] && [ "$3" != "--draft" ]; }; then
+    error "Missing required arguments.\nUsage: $0 \"PR Title\" \"PR Body\" [--draft]"
 fi
 
 PR_TITLE="$1"
 PR_BODY="$2"
+DRAFT_FLAG=()
+if [ "$3" = "--draft" ]; then
+    DRAFT_FLAG=(--draft)
+fi
 
 # Validate we're in a git repository
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
@@ -99,7 +103,7 @@ if ! command -v gh &> /dev/null; then
     error "GitHub CLI (gh) is not installed. Install it from: https://cli.github.com/"
 fi
 
-if ! PR_URL=$(gh pr create --base agents/main --head "$CURRENT_BRANCH" --title "$PR_TITLE" --body "$PR_BODY" 2>&1); then
+if ! PR_URL=$(gh pr create --base agents/main --head "$CURRENT_BRANCH" --title "$PR_TITLE" --body "$PR_BODY" "${DRAFT_FLAG[@]}" 2>&1); then
     error "Failed to create pull request.\n$PR_URL"
 fi
 
