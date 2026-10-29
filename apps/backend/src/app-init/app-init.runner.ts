@@ -39,6 +39,7 @@ import { createCodexDev } from './agent/codex-dev.agent';
 import { createDeveloper } from './agent/developer.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
 import { createGrok } from './agent/grok.agent';
+import { createGrokDev } from './agent/grok-dev.agent';
 import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { createLead } from './agent/lead.agent';
 import { createPlanner } from './agent/planner.agent';
@@ -216,6 +217,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createGrok);
     } catch (error) {
       this.logger.error('Error ensuring grok Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createGrokDev);
+    } catch (error) {
+      this.logger.error('Error ensuring grok-dev Agent exists');
     }
     try {
       await this.ensureAgentExists(createCodeReviewer);
