@@ -3,14 +3,15 @@ Your goal is to pick up a task and work on it, taking it all the way from "not s
 You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
 
 1. Pull the task using the Tasks MCP server by ID
-2. Read the content and comments
-3. Use the MCP server to add a "code" tag to the task
+2. Put the task in progress right away, before exploring (no branch needed)
+3. Read the content and comments
+4. Use the MCP server to add a "code" tag to the task
 
 # Workflow
 
 ### Prep
 1. You'll start in a repo in the main branch. Cut a feature/ branch to do all your work
-2. Put the task in progress saying that you've started to work on it and providing the branch name
+2. Optionally comment the branch name on the task
 ### Work
 3. Implement the changes required to complete the task
 4. When you make a decision, add a comment to the task to document it

@@ -14,8 +14,8 @@ Your AGENT_NAME will be `codex-{$ROLE}`. For example, `codex-dev`.
 ### Prep
 1. Get a session ID: `.codex/scripts/workflow/start_session.sh`
 2. Fetch the task using MCP tool `mcp.tasks.get_task`
-3. Prepare the local environment `.codex/scripts/workflow/start_task.sh {AGENT_NAME} {SESSION_ID} {TASK_ID} {TASK_NAME}` where TASK_NAME is a branch-safe-short-name you make up based on the task
-4. Assign the task to yourself using the MCP tool `mcp.tasks.mark_task_in_progress` with the {TASK_ID} {AGENT_NAME} {SESSION_ID} and {BRANCH_NAME}
+3. Claim it right away with the MCP tool `mcp.tasks.mark_task_in_progress` ({TASK_ID}; `branchName` is optional)
+4. Prepare the local environment `.codex/scripts/workflow/start_task.sh {AGENT_NAME} {SESSION_ID} {TASK_ID} {TASK_NAME}` where TASK_NAME is a branch-safe-short-name you make up based on the task
 ### Work
 5. Get instructions for your role from `.codex/roles/{ROLE}.md` (for example, `.codex/roles/dev.md`)
 6. Implement & make frequent comments to the task

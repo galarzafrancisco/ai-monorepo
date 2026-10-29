@@ -117,33 +117,30 @@ server.registerTool(
   'mark_task_in_progress',
   {
     title: 'Start working on task',
-    description: 'Assign task, set status to IN_PROGRESS, add comment with branch info',
+    description: 'Claim a task: assign to yourself, set IN_PROGRESS, add a start comment. branchName is optional.',
     inputSchema: {
       taskId: z.string(),
-      assignee: z.string(),
-      sessionId: z.string(),
-      branchName: z.string(),
+      // Optional: claiming work must not require a Git branch (non-code tasks have none)
+      branchName: z.string().optional(),
     },
   },
-  async ({ taskId, assignee, sessionId, branchName }) => {
+  async ({ taskId, branchName }) => {
     // Journey: Multiple operations in one tool
-    await this.tasksService.assignTask(taskId, { assignee, sessionId });
-    await this.tasksService.changeStatus(taskId, { status: 'IN_PROGRESS' });
+    await this.tasksService.assignTask(taskId, { assigneeActorId: user.actorId }, user.actorId);
+    await this.tasksService.changeStatus(taskId, { status: TaskStatus.IN_PROGRESS }, user.actorId);
     await this.tasksService.addComment(taskId, {
-      commenterName: assignee,
-      content: `Starting to work on this. I've created the branch ${branchName}`,
+      commenterActorId: user.actorId,
+      content: branchName
+        ? `Starting to work on this on branch \`${branchName}\`.`
+        : 'Starting to work on this.',
     });
 
-    const task = await this.tasksService.getTaskById(taskId);
-    return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(task),
-      }],
-    }
+    return { content: [{ type: 'text', text: 'done' }] };
   }
 );
 ```
+
+Keep journey tools' required inputs to what the journey truly needs. An extra required field (like a branch name) makes agents delay the call until they can supply it.
 
 ### 3. Wire into Module
 
