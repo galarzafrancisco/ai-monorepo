@@ -10,6 +10,7 @@ import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { DependencyPicker } from './DependencyPicker';
+import { applyProjectTagChange } from './projectPicker';
 import { ProjectSelector } from './ProjectSelector';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
@@ -604,14 +605,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   // A task's project is its project:<slug> tag. Picking a project swaps that tag.
   const changeProject = async (next: { tagName: string } | null): Promise<boolean> => {
     try {
-      if (next && !projectTags.some((tag) => tag.name === next.tagName)) {
-        await handlers.addTag({ taskId: task.id, tag: { name: next.tagName } as MetaTagResponseDto });
-      }
-      for (const tag of projectTags) {
-        if (tag.name !== next?.tagName) {
-          await handlers.removeTag({ taskId: task.id, tagId: tag.id });
-        }
-      }
+      await applyProjectTagChange(
+        projectTags,
+        next,
+        (tagName) => handlers.addTag({ taskId: task.id, tag: { name: tagName } as MetaTagResponseDto }),
+        (tagId) => handlers.removeTag({ taskId: task.id, tagId }),
+      );
       return true;
     } catch (err: unknown) {
       showError(err);
@@ -744,7 +743,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             className="task-props__person task-props__project"
             onClick={() => setShowProjectPop(true)}
             title="Change project (p)"
-            aria-label={currentProject ? `Task project, ${currentProject.slug}` : 'Task project, no project'}
+            aria-label={currentProject
+              ? `Task project, ${currentProject.slug}`
+              : projectTags[0]
+                ? `Task project, ${projectTags[0].name.slice(PROJECT_TAG_PREFIX.length)}`
+                : 'Task project, no project'}
           >
             {currentProject ? (
               <>
@@ -998,6 +1001,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           projects={projects}
           projectsState={isLoadingProjects ? 'loading' : projectsError ? 'error' : 'ready'}
           selectedProjectId={currentProject?.id ?? null}
+          hasProjectTag={projectTags.length > 0}
           tasks={allTasks}
           onPick={changeProject}
           onClose={() => setShowProjectPop(false)}

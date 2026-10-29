@@ -5,6 +5,7 @@ import { elapsedTime } from '../../shared/helpers/elapsedTime';
 import { ProjectsService } from '../projects/api';
 import { toRepoLink } from '../projects/repoLink';
 import type { Project } from '../projects/types';
+import { hitsForQuery, initialHighlightIndex, isCurrentProjectChoice } from './projectPicker';
 import { activityByProjectTag, matchesClearProject, projectSections, type ProjectSection } from './projectSuggestions';
 import { recentProjectIdsForPicker, rememberRecentProject } from './recentProjects';
 import './ProjectSelector.css';
@@ -31,6 +32,7 @@ export function ProjectSelector({
   projects,
   projectsState,
   selectedProjectId,
+  hasProjectTag,
   tasks,
   onPick,
   onClose,
@@ -39,12 +41,14 @@ export function ProjectSelector({
   projects: Project[];
   projectsState: 'loading' | 'ready' | 'error';
   selectedProjectId: string | null;
+  /** True when the task has a project:* tag, including one the loaded list does not resolve. */
+  hasProjectTag: boolean;
   tasks: TaskActivity[];
   onPick: (project: Project | null) => Promise<boolean>;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
-  const [serverHits, setServerHits] = useState<Project[]>([]);
+  const [serverSearch, setServerSearch] = useState<{ query: string; hits: Project[] }>({ query: '', hits: [] });
   const [searchState, setSearchState] = useState<'idle' | 'searching' | 'done' | 'error'>('idle');
   const [highlighted, setHighlighted] = useState(0);
   const [pickingId, setPickingId] = useState<string | null>(null);
@@ -57,7 +61,7 @@ export function ProjectSelector({
   useEffect(() => {
     const requestId = ++searchRequest.current;
     if (!trimmed) {
-      setServerHits([]);
+      setServerSearch({ query: '', hits: [] });
       setSearchState('idle');
       return;
     }
@@ -66,11 +70,11 @@ export function ProjectSelector({
       try {
         const hits = await ProjectsService.ProjectsController_searchProjects({ q: trimmed, limit: SEARCH_LIMIT });
         if (searchRequest.current !== requestId) return;
-        setServerHits(hits ?? []);
+        setServerSearch({ query: trimmed, hits: hits ?? [] });
         setSearchState('done');
       } catch {
         if (searchRequest.current !== requestId) return;
-        setServerHits([]);
+        setServerSearch({ query: trimmed, hits: [] });
         setSearchState('error');
       }
     }, 200);
@@ -80,8 +84,8 @@ export function ProjectSelector({
   const activity = useMemo(() => activityByProjectTag(tasks), [tasks]);
   const known = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
   const hits = useMemo(
-    () => serverHits.map((hit) => known.get(hit.id) ?? hit),
-    [serverHits, known],
+    () => hitsForQuery(trimmed, serverSearch).map((hit) => known.get(hit.id) ?? hit),
+    [trimmed, serverSearch, known],
   );
 
   const sections = useMemo(
@@ -114,12 +118,7 @@ export function ProjectSelector({
       setHighlighted((index) => Math.min(index, Math.max(rows.length - 1, 0)));
       return;
     }
-    if (trimmed) {
-      setHighlighted(0);
-      return;
-    }
-    const currentIndex = rows.findIndex((row) => row.kind === 'project' && row.id === selectedProjectId);
-    setHighlighted(currentIndex >= 0 ? currentIndex : 0);
+    setHighlighted(initialHighlightIndex(rows, trimmed, selectedProjectId));
   }, [trimmed, rows, selectedProjectId]);
 
   useEffect(() => {
@@ -129,7 +128,8 @@ export function ProjectSelector({
   const pick = async (row: Row) => {
     if (pickingId) return;
     const project = row.kind === 'clear' ? null : row.project;
-    if ((project?.id ?? null) === selectedProjectId) {
+    const choice = row.kind === 'clear' ? { kind: 'clear' as const } : { kind: 'project' as const, id: row.id };
+    if (isCurrentProjectChoice(choice, selectedProjectId, hasProjectTag)) {
       onClose();
       return;
     }
@@ -206,7 +206,11 @@ export function ProjectSelector({
                 index={index}
                 query={trimmed}
                 highlighted={index === highlighted}
-                current={row.kind === 'clear' ? selectedProjectId === null : row.id === selectedProjectId}
+                current={isCurrentProjectChoice(
+                  row.kind === 'clear' ? { kind: 'clear' } : { kind: 'project', id: row.id },
+                  selectedProjectId,
+                  hasProjectTag,
+                )}
                 busy={pickingId === row.id}
                 disabled={pickingId !== null}
                 activityAt={row.kind === 'project' ? activity.get(row.project.tagName) : undefined}
