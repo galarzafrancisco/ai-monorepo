@@ -41,6 +41,13 @@ export const GPT_5_5: MODEL_CONFIG = {
   name: 'gpt-5.5',
 };
 
+// Good for OpenCode runner
+export const GROK_4_7: MODEL_CONFIG = {
+  providerId: 'xai',
+  modelId: 'grok-4.7',
+  name: 'grok-4.7',
+};
+
 // Good for GitHub Copilot runner
 export const COPILOT_CLAUDE: MODEL_CONFIG = {
   providerId: '',

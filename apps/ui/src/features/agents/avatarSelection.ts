@@ -25,6 +25,10 @@ export function getSuggestedAvatarUrl(
     return getAvatarUrlById(catalog, 'qwen');
   }
 
+  if (provider === 'xai' || model.includes('grok')) {
+    return getAvatarUrlById(catalog, 'spacexai');
+  }
+
   return getAvatarUrlById(catalog, DEFAULT_AVATAR_ID_BY_TYPE[value.type ?? 'other']);
 }
 
