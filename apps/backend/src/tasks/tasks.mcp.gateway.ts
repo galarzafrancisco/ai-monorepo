@@ -439,7 +439,8 @@ export class TasksMcpGateway {
         'add_artefact',
         {
           title: 'Add artefact to task',
-          description: 'Add an artefact (like a PR link) to a task',
+          description:
+            'Attach an artefact (like a draft PR link) to a task. Re-adding the same link is a no-op.',
           inputSchema: {
             taskId: z.string(),
             name: z.string(),
@@ -472,10 +473,13 @@ export class TasksMcpGateway {
         {
           title: 'Start working on task',
           description:
-            'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
+            'Claim a task: assign it to yourself, set status to IN_PROGRESS and add a start comment. Call this as soon as you begin, before exploring. branchName is optional (omit it for non-code work).',
           inputSchema: {
             taskId: z.string(),
-            branchName: z.string(),
+            branchName: z
+              .string()
+              .optional()
+              .describe('Git branch, if any. Mentioned in the start comment.'),
           },
         },
         async ({ taskId, branchName }) => {
@@ -500,7 +504,9 @@ export class TasksMcpGateway {
           // Add comment
           await this.tasksService.addComment(taskId, {
             commenterActorId: user.actorId,
-            content: `Starting to work on this. I've created the branch ${branchName}`,
+            content: branchName?.trim()
+              ? `Starting to work on this on branch \`${branchName.trim()}\`.`
+              : 'Starting to work on this.',
           });
 
           return {
@@ -519,7 +525,8 @@ export class TasksMcpGateway {
         'mark_task_for_review',
         {
           title: 'Submit task for review',
-          description: 'Set status to FOR_REVIEW and add PR link as artefact',
+          description:
+            'Set status to FOR_REVIEW and attach the PR link as an artefact (no duplicate if the PR was already attached).',
           inputSchema: {
             taskId: z.string(),
             prLink: z.string(),

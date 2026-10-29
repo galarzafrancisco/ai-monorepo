@@ -3,39 +3,43 @@ Your goal is to pick up a task and work on it, taking it all the way from "not s
 You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
 
 1. Pull the task using the Tasks MCP server by ID
-2. Read the content and comments
-3. Use the MCP server to add a “code” tag
+2. Put the task in progress right away, before exploring (no branch needed)
+3. Read the content and comments
+4. Use the MCP server to add a “code” tag
 
 # Workflow
+If the task changes files in the repo (code or docs), follow every step. If it doesn't (investigation, questions), skip the steps marked (repo): post your findings on the task, mark it \`in review\` and assign it to whoever created it.
 
 ### Prep
-1. You'll start in a repo in the main branch. Cut a feature/ branch to do all your work
-2. Put the task in progress saying that you've started to work on it and providing the branch name
+1. (repo) You'll start in a repo in the main branch. Cut a feature/ branch to do all your work
 ### Work
-3. Implement the changes required to complete the task
+2. (repo) As soon as you have a first useful commit, push and open a draft PR to \`main\` (\`gh pr create --draft\`). Attach it to the task with \`add_artefact\`, then keep pushing commits to it
+3. Do the work
 4. When you make a decision, add a comment to the task to document it
 5. When you find relevant context, add it to the task as a comment
 ### Validate
-6. Always run \`npm run build:dev\` to test that builds work
-7. Always run \`npm run dev\` to validate that the app starts
+6. (repo) Always run \`npm run build:dev\` to test that builds work
+7. (repo) Always run \`npm run dev\` to validate that the app starts
 ### Finish
-7. Open a PR to \`main\` using the \`gh\` cli. Add a title and clear description of what you did. If there's any technical debt, call it out.
-8. Mark the task as \`in review\` adding a comment that you've finish implementation, link to the PR and are watching the CI
-9. Watch CI using the \`gh\` cli
-10.a. If CI passed:
+8. (repo) Update the PR description: what you did, how you tested it, and any technical debt. Mark it ready (\`gh pr ready\`)
+9. (repo) Mark the task as \`in review\` with the PR link, adding a comment that you've finished implementation and are watching the CI
+10. (repo) Watch CI using the \`gh\` cli
+11.a. (repo) If CI passed:
   - Update task saying PR is good and waiting for review
   - Assign the task to @code-reviewer
-10.b. If CI Failed:
+11.b. (repo) If CI Failed:
   - Put the task back to in progress with a comment explaining the failure
   - Start work again
-11. When done, reflect on the work you did. If you encountered any pain points and have ideas of what could be either refactored or improved via documentation to make your job easier, please use the context tool to find the "Pain Points Log" block and append an entry. Mention what project this relates to if any.
+12. When done, reflect on the work you did. If you encountered any pain points and have ideas of what could be either refactored or improved via documentation to make your job easier, please use the context tool to find the "Pain Points Log" block and append an entry. Mention what project this relates to if any.
 
 # Checklist:
-- [] put the task in progress when starting to work
-- [] cut a feature branch
-- [] ran \`npm run build:dev\` to confirm build works
-- [] ran \`npm run dev:[1-5]\` to ensure app starts (some AppInitRunner errors expected during startup)
-- [] created a PR when done and put the task in review and assigned to @code-reviewer
+- [] put the task in progress as the first step
+- [] (repo) cut a feature branch
+- [] (repo) opened a draft PR early and attached it to the task
+- [] (repo) ran \`npm run build:dev\` to confirm build works
+- [] (repo) ran \`npm run dev:[1-5]\` to ensure app starts (some AppInitRunner errors expected during startup)
+- [] (repo) marked the PR ready, put the task in review and assigned to @code-reviewer
+- [] (no repo changes) posted findings, put the task in review and assigned it to its creator
 - [] meditated on pain points and logged if any are relevant
 `;
 
@@ -45,13 +49,13 @@ You are in headless mode, and the only way to communicate with the user is throu
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments
-3. Use the MCP server to add a comment saying that you are on it
+3. Put the task in progress right away, saying that you are on it
 
 # Workflow
 
 ### Prep
 1. You'll start in a clean workspace.
-2. Put the task in progress saying that you've started to work on it.
+2. Read any context you need.
 ### Clarify
 3. If the requirement is not clear, ask a question via the input request tool.
 ### Work
