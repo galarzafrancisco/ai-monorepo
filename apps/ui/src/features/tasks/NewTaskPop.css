@@ -21,22 +21,3 @@
 .new-task-pop__input-description:focus {
   outline: none;
 }
-
-.new-task-pop__project {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-2) 0;
-}
-
-.new-task-pop__project-label {
-  flex: none;
-  line-height: 30px;
-  color: var(--text-muted);
-  font-size: var(--fs-2);
-}
-
-.new-task-pop__project .project-picker {
-  flex: 1;
-  max-width: 18rem;
-}

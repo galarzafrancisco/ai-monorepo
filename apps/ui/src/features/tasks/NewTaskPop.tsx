@@ -1,17 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { PopShell } from "../../app/shells/PopShell";
 import { useDraftState } from "../../shared/hooks/useDraftState";
-import { ProjectPicker, type PickableProject } from "../projects/ProjectPicker";
 import "./NewTaskPop.css";
 
 type NewTaskPopProps = {
   onCancel?: () => void;
-  onSave: (payload: { title: string; description: string; projectId: string | null }) => Promise<boolean>;
-  /** Shows a project picker when given. Blueprints (scheduled tasks) don't pass one. */
-  projects?: PickableProject[];
-  projectsLoaded?: boolean;
-  /** Starts on the project the board is showing, so it's visible and changeable rather than implied. */
-  defaultProjectId?: string | null;
+  onSave: (payload: { title: string; description: string }) => Promise<boolean>;
 };
 
 interface TaskDraftState {
@@ -32,8 +26,7 @@ const resizeTextarea = (el: HTMLTextAreaElement | null) => {
   el.style.height = `${el.scrollHeight}px`;
 };
 
-export function NewTaskPop({ onCancel, onSave, projects, projectsLoaded = true, defaultProjectId = null }: NewTaskPopProps) {
-  const [projectId, setProjectId] = useState<string | null>(defaultProjectId);
+export function NewTaskPop({ onCancel, onSave }: NewTaskPopProps) {
   const [draftState, setDraftState, clearDraft] = useDraftState({
     key: 'new-task-draft',
     defaultValue: defaultDraftState,
@@ -62,7 +55,7 @@ export function NewTaskPop({ onCancel, onSave, projects, projectsLoaded = true, 
   }
 
   async function handleSave(): Promise<boolean> {
-    const success = await onSave({ title, description, projectId });
+    const success = await onSave({ title, description });
     if (success) {
       clearDraft(); // Clear draft on successful save
     }
@@ -104,21 +97,6 @@ export function NewTaskPop({ onCancel, onSave, projects, projectsLoaded = true, 
           />
 
         </div>
-
-        {projects ? (
-          <div className="new-task-pop__project">
-            <span className="new-task-pop__project-label">Project</span>
-            <ProjectPicker
-              projects={projects}
-              projectsLoaded={projectsLoaded}
-              selectedProjectId={projectId}
-              onChange={setProjectId}
-              emptyLabel="No project"
-              ariaLabel="New task project"
-              inline
-            />
-          </div>
-        ) : null}
       </>
     </PopShell>
   );
