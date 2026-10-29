@@ -88,6 +88,8 @@ export function idPrefixFromQuery(query: string): string | null {
 }
 
 export function projectName(task: Task): string | null {
-  const tag = task.tags.find((candidate) => candidate.name.startsWith(PROJECT_TAG_PREFIX));
-  return tag ? tag.name.slice(PROJECT_TAG_PREFIX.length) : null;
+  const names = task.tags
+    .filter((candidate) => candidate.name.startsWith(PROJECT_TAG_PREFIX))
+    .map((tag) => tag.name.slice(PROJECT_TAG_PREFIX.length));
+  return names.length > 0 ? names.join(', ') : null;
 }

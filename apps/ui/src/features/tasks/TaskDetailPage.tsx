@@ -10,12 +10,13 @@ import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { DependencyPicker } from './DependencyPicker';
-import { applyProjectTagChange } from './projectPicker';
+import { applyProjectTagChange, removeProjectAssignment } from './projectPicker';
 import { ProjectSelector } from './ProjectSelector';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto } from "@taico/client/v2";
-import { ExternalLink, GitBranch, Link2, MessagesSquare, X } from 'lucide-react';
+import { Copy, ExternalLink, GitBranch, Link2, MessagesSquare, X } from 'lucide-react';
+import { copyToClipboard } from '../../shared/helpers/copyToClipboard';
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -231,9 +232,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       },
       {
         id: 'task-set-project',
-        label: 'Set project',
-        description: 'Choose the project for this task',
-        aliases: ['project', 'move project', 'p'],
+        label: 'Projects',
+        description: 'Add or remove projects for this task',
+        aliases: ['project', 'add project', 'move project', 'p'],
         onSelect: () => setShowProjectPop(true),
       },
       {
@@ -308,6 +309,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       });
     }
   }, [showToast, showError]);
+
+  const copyComment = useCallback(async (content: string) => {
+    const copied = await copyToClipboard(content);
+    if (copied) {
+      showToast('Comment copied', 'success', 1600);
+    } else {
+      showToast('Could not copy the comment', 'error');
+    }
+  }, [showToast]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -600,21 +610,35 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   const projectTags = task.tags.filter((tag) => tag.name.startsWith(PROJECT_TAG_PREFIX));
   const otherTags = task.tags.filter((tag) => !tag.name.startsWith(PROJECT_TAG_PREFIX));
-  const currentProject = projects.find((project) => projectTags.some((tag) => tag.id === project.tagId || tag.name === project.tagName)) ?? null;
+  const projectAssignments = projectTags.map((tag) => {
+    const project = projects.find((candidate) => candidate.tagId === tag.id || candidate.tagName === tag.name) ?? null;
+    return {
+      tag,
+      project,
+      label: project?.slug ?? tag.name.slice(PROJECT_TAG_PREFIX.length),
+    };
+  });
+  const selectedProjectIds = projectAssignments.flatMap((item) => item.project ? [item.project.id] : []);
 
-  // A task's project is its project:<slug> tag. Picking a project swaps that tag.
+  const addTag = (tagName: string) => handlers.addTag({ taskId: task.id, tag: { name: tagName } as MetaTagResponseDto });
+  const removeTagById = (tagId: string) => handlers.removeTag({ taskId: task.id, tagId });
+
+  // A task's projects are its project:<slug> tags. Adding one leaves the others.
   const changeProject = async (next: { tagName: string } | null): Promise<boolean> => {
     try {
-      await applyProjectTagChange(
-        projectTags,
-        next,
-        (tagName) => handlers.addTag({ taskId: task.id, tag: { name: tagName } as MetaTagResponseDto }),
-        (tagId) => handlers.removeTag({ taskId: task.id, tagId }),
-      );
+      await applyProjectTagChange(projectTags, next, addTag, removeTagById);
       return true;
     } catch (err: unknown) {
       showError(err);
       return false;
+    }
+  };
+
+  const removeProject = async (tagId: string) => {
+    try {
+      await removeProjectAssignment(projectTags, tagId, removeTagById);
+    } catch (err: unknown) {
+      showError(err);
     }
   };
 
@@ -736,30 +760,42 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           )}
         </dd>
 
-        <dt>Project</dt>
-        <dd>
-          <button
-            type="button"
-            className="task-props__person task-props__project"
-            onClick={() => setShowProjectPop(true)}
-            title="Change project (p)"
-            aria-label={currentProject
-              ? `Task project, ${currentProject.slug}`
-              : projectTags[0]
-                ? `Task project, ${projectTags[0].name.slice(PROJECT_TAG_PREFIX.length)}`
-                : 'Task project, no project'}
-          >
-            {currentProject ? (
-              <>
-                <span className="task-props__swatch" style={currentProject.tagColor ? { background: currentProject.tagColor } : undefined} aria-hidden="true" />
-                <span>{currentProject.slug}</span>
-              </>
-            ) : (
-              <span className="task-props__muted">
-                {projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : 'No project'}
-              </span>
-            )}
-          </button>
+        <dt>Projects</dt>
+        <dd className="task-props__projects" aria-label={projectAssignments.length > 0 ? `Task projects, ${projectAssignments.map((item) => item.label).join(', ')}` : 'Task projects, no project'}>
+          {projectAssignments.map((item) => (
+            <span key={item.tag.id} className="task-project">
+              <button
+                type="button"
+                className="task-project__open"
+                onClick={() => setShowProjectPop(true)}
+                title="Add a project (p)"
+              >
+                <span className="task-props__swatch" style={item.project?.tagColor ? { background: item.project.tagColor } : undefined} aria-hidden="true" />
+                <span className="task-project__name">{item.label}</span>
+              </button>
+              <button
+                type="button"
+                className="task-project__remove"
+                onClick={() => void removeProject(item.tag.id)}
+                aria-label={`Remove project ${item.label}`}
+                title="Remove project"
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+          {projectAssignments.length === 0 ? (
+            <button
+              type="button"
+              className="task-props__person task-props__project"
+              onClick={() => setShowProjectPop(true)}
+              title="Add a project (p)"
+            >
+              <span className="task-props__muted">No project</span>
+            </button>
+          ) : (
+            <Chip onClick={() => setShowProjectPop(true)} clickLabel="Add project">+ add</Chip>
+          )}
         </dd>
 
         <dt>Tags</dt>
@@ -843,7 +879,23 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               <DataRow
                 key={`comment-${comment.id}`}
                 leading={<Avatar size={'sm'} name={name} inactive={isDeactivated(comment.commenterActor)} src={comment.commenterActor?.avatarUrl || undefined} />}
-                topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
+                topRight={
+                  <span className='task-detail-page__comment-meta'>
+                    <Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>
+                    <button
+                      type='button'
+                      className='task-detail-page__comment-copy'
+                      aria-label={`Copy comment from ${name}`}
+                      title='Copy comment'
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void copyComment(comment.content);
+                      }}
+                    >
+                      <Copy size={14} aria-hidden='true' />
+                    </button>
+                  </span>
+                }
               >
                 <Text as='span' weight='medium' size='3'>
                   {name}
@@ -1000,7 +1052,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           taskName={task.name}
           projects={projects}
           projectsState={isLoadingProjects ? 'loading' : projectsError ? 'error' : 'ready'}
-          selectedProjectId={currentProject?.id ?? null}
+          selectedProjectIds={selectedProjectIds}
           hasProjectTag={projectTags.length > 0}
           tasks={allTasks}
           onPick={changeProject}

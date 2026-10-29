@@ -23,7 +23,8 @@ type TaskActivity = {
 };
 
 /**
- * Picks the project a task belongs to. Before you type it lists recent
+ * Adds a project to a task, or clears every project. Already-assigned projects
+ * stay; picking one again only closes. Before you type it lists recent
  * projects; typing searches slug, description and repo, with the server's
  * fuzzy search filling in typos the local ranker misses.
  */
@@ -31,7 +32,7 @@ export function ProjectSelector({
   taskName,
   projects,
   projectsState,
-  selectedProjectId,
+  selectedProjectIds,
   hasProjectTag,
   tasks,
   onPick,
@@ -40,7 +41,7 @@ export function ProjectSelector({
   taskName: string;
   projects: Project[];
   projectsState: 'loading' | 'ready' | 'error';
-  selectedProjectId: string | null;
+  selectedProjectIds: string[];
   /** True when the task has a project:* tag, including one the loaded list does not resolve. */
   hasProjectTag: boolean;
   tasks: TaskActivity[];
@@ -99,7 +100,7 @@ export function ProjectSelector({
       id: project.id,
       project: project as Project,
       reasons: [
-        ...(project.id === selectedProjectId ? ['Current'] : []),
+        ...(selectedProjectIds.includes(project.id) ? ['Assigned'] : []),
         ...(rememberedIds.includes(project.id) && trimmed ? ['Recent'] : []),
       ],
     })));
@@ -108,7 +109,7 @@ export function ProjectSelector({
       : [];
     // Keep "No project" off the default Enter target. It leads only when the query is a clear-word.
     return trimmed ? [...clear, ...projectRows] : [...projectRows, ...clear];
-  }, [sections, selectedProjectId, rememberedIds, trimmed, projectsState]);
+  }, [sections, selectedProjectIds, rememberedIds, trimmed, projectsState]);
 
   const moved = useRef(false);
   useEffect(() => { moved.current = false; }, [trimmed]);
@@ -118,8 +119,8 @@ export function ProjectSelector({
       setHighlighted((index) => Math.min(index, Math.max(rows.length - 1, 0)));
       return;
     }
-    setHighlighted(initialHighlightIndex(rows, trimmed, selectedProjectId));
-  }, [trimmed, rows, selectedProjectId]);
+    setHighlighted(initialHighlightIndex(rows, trimmed, selectedProjectIds));
+  }, [trimmed, rows, selectedProjectIds]);
 
   useEffect(() => {
     listRef.current?.querySelector<HTMLElement>(`[data-row-index="${highlighted}"]`)?.scrollIntoView({ block: 'nearest' });
@@ -129,7 +130,7 @@ export function ProjectSelector({
     if (pickingId) return;
     const project = row.kind === 'clear' ? null : row.project;
     const choice = row.kind === 'clear' ? { kind: 'clear' as const } : { kind: 'project' as const, id: row.id };
-    if (isCurrentProjectChoice(choice, selectedProjectId, hasProjectTag)) {
+    if (isCurrentProjectChoice(choice, selectedProjectIds, hasProjectTag)) {
       onClose();
       return;
     }
@@ -175,9 +176,9 @@ export function ProjectSelector({
   const groups = groupedRows(rows, sections);
 
   return (
-    <Modal open onOpenChange={(open) => { if (!open) onClose(); }} title="Set project" className="project-selector">
+    <Modal open onOpenChange={(open) => { if (!open) onClose(); }} title="Projects" className="project-selector">
       <p className="project-selector__lede">
-        Move <strong>{taskName}</strong> to a project, or clear it.
+        Add a project to <strong>{taskName}</strong>, or clear them all.
       </p>
       <label className="project-selector__search">
         <Search size={16} aria-hidden="true" />
@@ -208,7 +209,7 @@ export function ProjectSelector({
                 highlighted={index === highlighted}
                 current={isCurrentProjectChoice(
                   row.kind === 'clear' ? { kind: 'clear' } : { kind: 'project', id: row.id },
-                  selectedProjectId,
+                  selectedProjectIds,
                   hasProjectTag,
                 )}
                 busy={pickingId === row.id}
@@ -222,7 +223,7 @@ export function ProjectSelector({
         ))}
       </div>
       <p className="project-selector__hint" aria-hidden="true">
-        <kbd>↑</kbd><kbd>↓</kbd> to move · <kbd>Enter</kbd> to set · <kbd>Esc</kbd> to close
+        <kbd>↑</kbd><kbd>↓</kbd> to move · <kbd>Enter</kbd> to add · <kbd>Esc</kbd> to close
       </p>
     </Modal>
   );
@@ -291,7 +292,7 @@ function ProjectOption({
       <span className="project-option__main">
         <span className="project-option__title">
           <span className="project-option__name">
-            {project ? highlight(project.slug, query) : 'No project'}
+            {project ? highlight(project.slug, query) : (current ? 'No project' : 'Clear projects')}
           </span>
         </span>
         {project?.description ? (
@@ -305,7 +306,7 @@ function ProjectOption({
           </span>
         ) : null}
       </span>
-      {current && !busy ? <Check className="project-option__check" size={16} aria-label="Current project" /> : null}
+      {current && !busy ? <Check className="project-option__check" size={16} aria-label={project ? 'Assigned' : 'No project'} /> : null}
       {busy ? <span className="project-option__busy">Saving…</span> : null}
     </button>
   );

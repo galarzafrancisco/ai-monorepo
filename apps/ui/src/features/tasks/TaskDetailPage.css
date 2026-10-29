@@ -174,7 +174,7 @@
   50% { opacity: 0.35; }
 }
 
-/* Details: who, which project, how it's tagged, where it came from. */
+/* Details: who, which projects, how it's tagged, where it came from. */
 .task-props {
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr);
@@ -334,6 +334,75 @@
 
 .task-props__graph:hover {
   color: var(--text);
+}
+
+.task-props__projects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-project {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-4);
+  background: var(--surface);
+  font-size: var(--fs-1);
+}
+
+.task-project__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 4px 2px var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.task-project__name {
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-project__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.task-project:hover .task-project__remove,
+.task-project__remove:focus-visible {
+  opacity: 1;
+}
+
+.task-project__remove:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+
+@media (hover: none) {
+  .task-project__remove {
+    opacity: 1;
+  }
 }
 
 .task-props__project {
@@ -607,6 +676,38 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.task-detail-page__comment-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Always visible (no hover on touch). Padding + negative margin give a
+   comfortable tap target without pushing the timestamp around. */
+.task-detail-page__comment-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+  margin-left: 0;
+  border: none;
+  border-radius: var(--r-2);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.task-detail-page__comment-copy:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.task-detail-page__comment-copy:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .task-detail-page__execution-stats {
