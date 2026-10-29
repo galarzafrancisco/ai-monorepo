@@ -175,7 +175,9 @@ export const useTools = () => {
   };
 
   // Update tool
-  const updateTool = useCallback(async (toolId: string, updates: Partial<Tool>): Promise<Tool | null> => {
+  // Throws on failure (like createTool), so callers can tell the user the
+  // change was not saved.
+  const updateTool = useCallback(async (toolId: string, updates: Partial<Tool>): Promise<Tool> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -191,7 +193,7 @@ export const useTools = () => {
       return updatedTool;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update tool');
-      return null;
+      throw err;
     } finally {
       setIsLoading(false);
     }

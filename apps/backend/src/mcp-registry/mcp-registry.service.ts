@@ -203,6 +203,36 @@ export class McpRegistryService {
     return server.id;
   }
 
+  /**
+   * Read a server's current auth type straight from the database, for checks
+   * on OAuth state (flows, issued tokens) that outlives a toggle.
+   * @throws ServerNotFoundError if the server does not exist
+   * @throws ServerUsesExternalAuthError for `external` servers
+   */
+  async assertServerUsesTaicoAuth(id: string): Promise<void> {
+    const server = await this.serverRepository.findOne({
+      where: { id },
+      select: ['id', 'providedId', 'authType'],
+    });
+    if (!server) {
+      throw new ServerNotFoundError(id);
+    }
+    this.assertUsesTaicoAuth(server);
+  }
+
+  /**
+   * Current auth type of a server by providedId, or null if no such server.
+   */
+  async findAuthTypeByProvidedId(
+    providedId: string,
+  ): Promise<McpServerAuthType | null> {
+    const server = await this.serverRepository.findOne({
+      where: { providedId },
+      select: ['id', 'authType'],
+    });
+    return server ? this.normalizeAuthType(server.authType) : null;
+  }
+
   /** Throws unless Taico is the server's authorization server. */
   assertUsesTaicoAuth(server: {
     providedId: string;

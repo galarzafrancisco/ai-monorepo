@@ -3814,7 +3814,7 @@ export interface components {
              * @example taico
              * @enum {string}
              */
-            authType: "taico" | "external";
+            authType?: "taico" | "external";
             /**
              * @description URL that MCP Clients will use to connect to the server
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
@@ -5757,7 +5757,7 @@ export interface components {
              * @example claude
              * @enum {string}
              */
-            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
             /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
@@ -5795,7 +5795,7 @@ export interface components {
              *       "NOT_STARTED"
              *     ]
              */
-            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
              * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
              * @default []
@@ -5803,7 +5803,7 @@ export interface components {
              *       "code"
              *     ]
              */
-            tagTriggers: string[];
+            tagTriggers?: string[];
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @default []
@@ -5813,13 +5813,13 @@ export interface components {
              *       "context.search"
              *     ]
              */
-            allowedTools: string[];
+            allowedTools?: string[];
             /**
              * @description Whether this agent is available for assignment
              * @default true
              * @example true
              */
-            isActive: boolean;
+            isActive?: boolean;
             /**
              * @description Max number of tasks this agent can process in parallel
              * @example 5
@@ -6222,7 +6222,7 @@ export interface components {
              *       "tasks:write"
              *     ]
              */
-            scopeIds: string[];
+            scopeIds?: string[];
         };
         IssueAccessTokenRequestDto: {
             /**
@@ -6243,7 +6243,7 @@ export interface components {
              * @default 30
              * @example 30
              */
-            expirationDays: number;
+            expirationDays?: number;
         };
         IssueAccessTokenResponseDto: {
             /**
@@ -7476,7 +7476,7 @@ export interface components {
              * @default true
              * @example true
              */
-            enabled: boolean;
+            enabled?: boolean;
         };
         ScheduledTaskResponseDto: {
             /**

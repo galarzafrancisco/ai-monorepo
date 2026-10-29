@@ -38,6 +38,7 @@ import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
 import { MCP_SERVER_AUTH_TYPE_EXTERNAL } from '../mcp-registry/mcp-server.types';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { ServerUsesExternalAuthError } from '../mcp-registry/errors/mcp-registry.errors';
 import {
   MCP_AUTH_SERVER_VERSION,
@@ -56,6 +57,7 @@ export class TokenService {
     private readonly clientAssertionService: ClientAssertionService,
     @InjectRepository(McpRefreshTokenEntity)
     private readonly mcpRefreshTokenRepository: Repository<McpRefreshTokenEntity>,
+    private readonly mcpRegistryService: McpRegistryService,
   ) {}
 
   /**
@@ -522,6 +524,18 @@ export class TokenService {
     // that validate through introspection enforce their audience.
     if (serverIdentifier && claims.mcp_server_identifier !== serverIdentifier) {
       this.logger.warn('Token introspected at another MCP server endpoint');
+      return { active: false };
+    }
+
+    // Tokens Taico issued before the server was switched to external auth
+    // are no longer active: Taico is not that server's authorization server.
+    if (
+      claims.mcp_server_identifier &&
+      (await this.mcpRegistryService.findAuthTypeByProvidedId(
+        claims.mcp_server_identifier,
+      )) === MCP_SERVER_AUTH_TYPE_EXTERNAL
+    ) {
+      this.logger.warn('Token introspected for a server using external auth');
       return { active: false };
     }
 

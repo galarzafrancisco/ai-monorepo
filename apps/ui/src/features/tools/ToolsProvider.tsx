@@ -19,7 +19,7 @@ export type ToolsContextValue = {
     type: 'http' | 'stdio';
     authType?: 'taico' | 'external';
   }) => Promise<Tool | null>;
-  updateTool: (toolId: string, updates: Partial<Tool>) => Promise<Tool | null>;
+  updateTool: (toolId: string, updates: Partial<Tool>) => Promise<Tool>;
   deleteTool: (toolId: string) => Promise<boolean>;
 };
 

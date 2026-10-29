@@ -46,6 +46,7 @@ import {
   AuthFlowNotFoundError,
   ResourceMismatchError,
 } from './errors/authorization.errors';
+import { McpRegistryDomainError } from '../mcp-registry/errors/mcp-registry.errors';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -170,6 +171,11 @@ export class AuthorizationController {
       this.logger.debug(`controller redirecting to ${redirectUrl}`);
       res.redirect(HttpStatus.FOUND, redirectUrl);
     } catch (error) {
+      // Registry errors (server gone, or switched to external auth) carry
+      // their own status through the exception filter.
+      if (error instanceof McpRegistryDomainError) {
+        throw error;
+      }
       // If we can't redirect, throw the error
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Consent processing failed',
@@ -351,6 +357,9 @@ export class AuthorizationController {
         );
       res.redirect(HttpStatus.FOUND, redirectUrl);
     } catch (error) {
+      if (error instanceof McpRegistryDomainError) {
+        throw error;
+      }
       // If there's an error, show an error page
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Callback processing failed',

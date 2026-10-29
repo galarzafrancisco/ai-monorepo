@@ -102,11 +102,50 @@ describe('MCP server auth type (e2e)', () => {
       });
   }
 
+  function consent(providedId: string, flowId: string) {
+    return request(httpServer)
+      .post(`/api/v1/auth/authorize/mcp/${providedId}/${VERSION}`)
+      .set('Cookie', authCookies)
+      .send({ flow_id: flowId, approved: true });
+  }
+
+  function introspect(providedId: string, token: string) {
+    return request(httpServer)
+      .post(`/api/v1/auth/introspect/mcp/${providedId}/${VERSION}`)
+      .send({ token });
+  }
+
+  /** Register a client and start an authorization request; returns the flow. */
+  async function startFlow(providedId: string) {
+    const client = await registerClient(providedId).expect(201);
+    const clientId: string = client.body.client_id;
+    const codeVerifier = randomBytes(32).toString('base64url');
+    const codeChallenge = createHash('sha256')
+      .update(codeVerifier)
+      .digest('base64url');
+    const authorizeResponse = await authorize(
+      providedId,
+      clientId,
+      codeChallenge,
+    ).expect(302);
+    const flowId = new URL(
+      authorizeResponse.headers.location,
+    ).searchParams.get('flow')!;
+    return { clientId, codeVerifier, codeChallenge, flowId };
+  }
+
   describe('migration', () => {
     it('backfills existing servers to Taico auth with a non-null default', async () => {
+      // The migration is replayed inside a transaction that is always rolled
+      // back, so the shared e2e database (and the auth type of servers other
+      // tests created) is left exactly as it was, even if an assertion fails.
+      const external = await createServer({ authType: 'external' });
+
       const migration = new McpServerAuthType1763200000000();
       const queryRunner = dataSource.createQueryRunner();
       const providedId = `legacy-${randomBytes(4).toString('hex')}`;
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       try {
         await migration.down(queryRunner);
         // A server registered before auth types existed.
@@ -115,27 +154,40 @@ describe('MCP server auth type (e2e)', () => {
           [providedId],
         );
         await migration.up(queryRunner);
+
+        const rows: Array<{ authType: string }> = await queryRunner.query(
+          `SELECT "authType" FROM "mcp_servers" WHERE "providedId" = $1`,
+          [providedId],
+        );
+        expect(rows[0].authType).toBe('taico');
+
+        const nulls: Array<{ count: string }> = await queryRunner.query(
+          `SELECT count(*) FROM "mcp_servers" WHERE "authType" IS NULL`,
+        );
+        expect(Number(nulls[0].count)).toBe(0);
+
+        const columns: Array<{ is_nullable: string; column_default: string }> =
+          await queryRunner.query(
+            `SELECT is_nullable, column_default FROM information_schema.columns WHERE table_name = 'mcp_servers' AND column_name = 'authType'`,
+          );
+        expect(columns[0].is_nullable).toBe('NO');
+        expect(columns[0].column_default).toContain('taico');
       } finally {
+        await queryRunner.rollbackTransaction();
         await queryRunner.release();
       }
 
-      const rows: Array<{ authType: string }> = await dataSource.query(
-        `SELECT "authType" FROM "mcp_servers" WHERE "providedId" = $1`,
+      // The rollback left the real data alone.
+      const legacy: unknown[] = await dataSource.query(
+        `SELECT 1 FROM "mcp_servers" WHERE "providedId" = $1`,
         [providedId],
       );
-      expect(rows[0].authType).toBe('taico');
-
-      const nulls: Array<{ count: string }> = await dataSource.query(
-        `SELECT count(*) FROM "mcp_servers" WHERE "authType" IS NULL`,
-      );
-      expect(Number(nulls[0].count)).toBe(0);
-
-      const columns: Array<{ is_nullable: string; column_default: string }> =
-        await dataSource.query(
-          `SELECT is_nullable, column_default FROM information_schema.columns WHERE table_name = 'mcp_servers' AND column_name = 'authType'`,
-        );
-      expect(columns[0].is_nullable).toBe('NO');
-      expect(columns[0].column_default).toContain('taico');
+      expect(legacy).toHaveLength(0);
+      const fetched = await request(httpServer)
+        .get(`/api/v1/mcp/servers/${external.id}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+      expect(fetched.body.authType).toBe('external');
     });
   });
 
@@ -251,6 +303,52 @@ describe('MCP server auth type (e2e)', () => {
       expect(token.status).toBe(404);
       expect(token.body.code).toBe('SERVER_USES_EXTERNAL_AUTH');
       expect(token.body.access_token).toBeUndefined();
+    });
+
+    it('refuse to finish a consent flow begun before the switch to external', async () => {
+      const server = await createServer();
+      const { flowId } = await startFlow(server.providedId);
+
+      await setAuthType(server.id, 'external').expect(200);
+
+      const response = await consent(server.providedId, flowId);
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('SERVER_USES_EXTERNAL_AUTH');
+      expect(response.headers.location).toBeUndefined();
+    });
+
+    it('stop introspecting tokens as active after the switch to external', async () => {
+      const server = await createServer();
+      const { clientId, codeVerifier, flowId } = await startFlow(
+        server.providedId,
+      );
+      const approved = await consent(server.providedId, flowId).expect(302);
+      const code = new URL(approved.headers.location).searchParams.get('code');
+      const token = await request(httpServer)
+        .post(`/api/v1/auth/token/mcp/${server.providedId}/${VERSION}`)
+        .send({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          code: code!,
+          redirect_uri: REDIRECT_URI,
+          code_verifier: codeVerifier,
+        });
+      expect(token.status).toBeLessThan(300);
+      const accessToken: string = token.body.access_token;
+      expect(accessToken).toBeTruthy();
+
+      const before = await introspect(server.providedId, accessToken);
+      expect(before.body.active).toBe(true);
+
+      await setAuthType(server.id, 'external').expect(200);
+
+      const after = await introspect(server.providedId, accessToken);
+      expect(after.body).toEqual({ active: false });
+
+      // Switching back restores Taico's view of its own token.
+      await setAuthType(server.id, 'taico').expect(200);
+      const restored = await introspect(server.providedId, accessToken);
+      expect(restored.body.active).toBe(true);
     });
   });
 });
