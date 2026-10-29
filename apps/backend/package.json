@@ -36,7 +36,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:should-be-e2e": "node test/run-e2e.mjs",
-    "test:e2e": "node test/run-e2e.mjs tasks.e2e-spec.ts context-blocks.e2e-spec.ts search.e2e-spec.ts mcp-oauth-resource-binding.e2e-spec.ts mcp-client-id-metadata.e2e-spec.ts thread-read-state.e2e-spec.ts thread-ordering.e2e-spec.ts thread-pins.e2e-spec.ts thread-deletion.e2e-spec.ts chatgpt-subscription.e2e-spec.ts access-requests.e2e-spec.ts execution-traces.e2e-spec.ts github-connections.e2e-spec.ts pull-requests.e2e-spec.ts issues.e2e-spec.ts thread-pull-request-watches.e2e-spec.ts worker-github-credentials.e2e-spec.ts",
+    "test:e2e": "node test/run-e2e.mjs tasks.e2e-spec.ts context-blocks.e2e-spec.ts search.e2e-spec.ts mcp-oauth-resource-binding.e2e-spec.ts mcp-client-id-metadata.e2e-spec.ts mcp-server-auth-type.e2e-spec.ts thread-read-state.e2e-spec.ts thread-ordering.e2e-spec.ts thread-pins.e2e-spec.ts thread-deletion.e2e-spec.ts chatgpt-subscription.e2e-spec.ts access-requests.e2e-spec.ts execution-traces.e2e-spec.ts github-connections.e2e-spec.ts pull-requests.e2e-spec.ts issues.e2e-spec.ts thread-pull-request-watches.e2e-spec.ts worker-github-credentials.e2e-spec.ts",
     "test:e2e:worker-auth": "node test/run-e2e.mjs worker-auth.e2e-spec.ts",
     "test:e2e:threads-agent": "node test/run-e2e.mjs thread-agent.e2e-spec.ts thread-task-subscriptions.e2e-spec.ts thread-timers.e2e-spec.ts ai-model-selection.e2e-spec.ts",
     "test:e2e:chatgpt-subscription": "node test/run-e2e.mjs chatgpt-subscription.e2e-spec.ts access-requests.e2e-spec.ts",
