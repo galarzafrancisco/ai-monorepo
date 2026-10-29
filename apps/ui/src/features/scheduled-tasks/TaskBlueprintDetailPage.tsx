@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { TaskDetailView } from '../tasks/TaskDetailPage';
 import { TaskStatus } from '../tasks/const';
@@ -7,6 +7,7 @@ import { useScheduledTasksCtx } from './ScheduledTasksProvider';
 import { useToast } from '../../shared/context/ToastContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useTasksCtx } from '../tasks/TasksProvider';
+import { createBlueprintTagEditor, type BlueprintTag } from './blueprintTags';
 
 export function TaskBlueprintDetailPage() {
   const { taskBlueprintId } = useParams<{ taskBlueprintId: string }>();
@@ -58,6 +59,19 @@ export function TaskBlueprintDetailPage() {
     };
   }, [blueprint]);
 
+  // Latest tags the server accepted. Tag edits chain from here so a run of
+  // removals (Clear projects) never rebuilds tagNames from a stale render.
+  const latestTags = useRef<BlueprintTag[]>(blueprint?.tags ?? []);
+  useEffect(() => {
+    latestTags.current = blueprint?.tags ?? [];
+  }, [blueprint]);
+
+  const tagEditorFor = (taskId: string) => createBlueprintTagEditor(
+    () => latestTags.current,
+    (tags) => { latestTags.current = tags; },
+    (tagNames) => updateBlueprint(taskId, { tagNames }),
+  );
+
   const handlers = {
     addComment: async () => {
       throw new Error('Blueprints do not support comments.');
@@ -85,14 +99,10 @@ export function TaskBlueprintDetailPage() {
       throw new Error('Blueprints do not have status updates.');
     },
     addTag: async ({ taskId, tag }: { taskId: string; tag: { name: string } }) => {
-      const current = blueprint?.tags?.map((item) => item.name) ?? [];
-      const next = current.includes(tag.name) ? current : [...current, tag.name];
-      await updateBlueprint(taskId, { tagNames: next });
+      await tagEditorFor(taskId).addTag(tag.name);
     },
     removeTag: async ({ taskId, tagId }: { taskId: string; tagId: string }) => {
-      const current = blueprint?.tags ?? [];
-      const next = current.filter((item) => item.id !== tagId).map((item) => item.name);
-      await updateBlueprint(taskId, { tagNames: next });
+      await tagEditorFor(taskId).removeTag(tagId);
     },
     addDependency: async ({ taskId, dependencyTaskId }: { taskId: string; dependencyTaskId: string }) => {
       const current = blueprint?.dependsOnIds ?? [];
