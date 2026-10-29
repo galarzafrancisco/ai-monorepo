@@ -609,6 +609,38 @@
   gap: var(--space-2);
 }
 
+.task-detail-page__comment-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Always visible (no hover on touch). Padding + negative margin give a
+   comfortable tap target without pushing the timestamp around. */
+.task-detail-page__comment-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+  margin-left: 0;
+  border: none;
+  border-radius: var(--r-2);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.task-detail-page__comment-copy:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.task-detail-page__comment-copy:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .task-detail-page__execution-stats {
   display: inline-flex;
   align-items: center;
