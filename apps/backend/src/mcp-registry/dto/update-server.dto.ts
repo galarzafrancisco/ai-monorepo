@@ -25,7 +25,7 @@ export class UpdateServerDto {
 
   @ApiProperty({
     description:
-      'Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent\'s Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.',
+      'Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent\'s Taico execution token. `external`: the server handles its own auth and receives no Taico credentials. Servers with `requiresTaicoAuth` reject `external`.',
     enum: MCP_SERVER_AUTH_TYPES,
     required: false,
     example: 'external',

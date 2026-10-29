@@ -16,6 +16,7 @@ function makeTool(overrides: Partial<Tool> = {}): Tool {
     type: 'http',
     url: 'http://localhost:3000/example/mcp',
     authType: 'taico',
+    requiresTaicoAuth: false,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
@@ -134,5 +135,22 @@ describe('ToolAuthSection', () => {
       resolve(makeTool({ authType: 'external' }));
     });
     expect((taicoSwitch() as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("locks the switch on for Taico's own tools", () => {
+    const onSave = vi.fn();
+    render(
+      <ToolAuthSection
+        tool={makeTool({ providedId: 'tasks', requiresTaicoAuth: true })}
+        onSave={onSave}
+        onSaved={vi.fn()}
+      />,
+    );
+
+    expect(taicoSwitch().getAttribute('aria-checked')).toBe('true');
+    expect((taicoSwitch() as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/always uses Taico authentication/)).toBeTruthy();
+    fireEvent.click(taicoSwitch());
+    expect(onSave).not.toHaveBeenCalled();
   });
 });

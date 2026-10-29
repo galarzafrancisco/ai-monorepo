@@ -20,6 +20,7 @@ function server(
     description: id,
     type: 'http',
     authType: 'taico',
+    requiresTaicoAuth: false,
     url: `https://${id}.example.com/mcp`,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
@@ -54,6 +55,25 @@ test('Taico-auth HTTP servers get the Taico token and execution ID', () => {
     Authorization: 'Bearer taico-token',
     [EXECUTION_ID_HEADER]: 'exec-1',
   });
+});
+
+test("Taico's own servers keep their credentials next to external servers", () => {
+  // The registry locks tasks and context to Taico auth (requiresTaicoAuth),
+  // so a run that also uses an external server must still authenticate them.
+  const runtime = build([
+    server('tasks', { requiresTaicoAuth: true }),
+    server('context', { requiresTaicoAuth: true }),
+    server('github', { authType: 'external' }),
+  ]);
+  for (const id of ['tasks', 'context']) {
+    const entry = runtime[id];
+    assert.deepEqual(entry.type === 'http' && entry.headers, {
+      Authorization: 'Bearer taico-token',
+      [EXECUTION_ID_HEADER]: 'exec-1',
+    });
+  }
+  const github = runtime.github;
+  assert.deepEqual(github.type === 'http' && github.headers, {});
 });
 
 test('external HTTP servers get neither header', () => {

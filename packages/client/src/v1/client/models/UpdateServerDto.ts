@@ -8,7 +8,7 @@ export type UpdateServerDto = {
      */
     type?: UpdateServerDto.type;
     /**
-     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials. Servers with `requiresTaicoAuth` reject `external`.
      */
     authType?: UpdateServerDto.authType;
     /**
@@ -41,7 +41,7 @@ export namespace UpdateServerDto {
         STDIO = 'stdio',
     }
     /**
-     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials. Servers with `requiresTaicoAuth` reject `external`.
      */
     export enum authType {
         TAICO = 'taico',

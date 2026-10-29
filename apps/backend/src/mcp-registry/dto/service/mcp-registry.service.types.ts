@@ -66,6 +66,8 @@ type ServerRecordBase = {
   name: string;
   description: string;
   authType: McpServerAuthType;
+  /** Taico serves this server itself, so its auth type is locked to `taico`. */
+  requiresTaicoAuth: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -16,12 +16,15 @@ type ToolAuthSectionProps = {
 /**
  * The "Use Taico authentication" switch of an HTTP tool. When a save fails it
  * says so, and says which setting is still in effect, because that decides
- * whether agents send the server Taico credentials.
+ * whether agents send the server Taico credentials. Taico's own tools
+ * (`requiresTaicoAuth`) show the switch locked on.
  */
 export function ToolAuthSection({ tool, onSave, onSaved, onError, className }: ToolAuthSectionProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const isTaicoAuth = usesTaicoAuth(tool);
+  // Taico serves these tools itself; they only accept Taico tokens.
+  const isLocked = tool.requiresTaicoAuth === true;
 
   const handleChange = async (checked: boolean) => {
     setIsSaving(true);
@@ -44,13 +47,18 @@ export function ToolAuthSection({ tool, onSave, onSaved, onError, className }: T
             id="tool-taico-auth"
             label="Use Taico authentication"
             checked={isTaicoAuth}
-            disabled={isSaving}
+            disabled={isSaving || isLocked}
             onCheckedChange={(checked) => { void handleChange(checked); }}
           />
         }
       >
         <Text size="2" weight="medium">Use Taico authentication</Text>
         <TaicoAuthExplanation />
+        {isLocked ? (
+          <Text size="1" tone="muted">
+            Taico runs this tool itself, so it always uses Taico authentication.
+          </Text>
+        ) : null}
         {saveFailed ? (
           <ErrorText size="1">
             {isTaicoAuth

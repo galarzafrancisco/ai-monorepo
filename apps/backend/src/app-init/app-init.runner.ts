@@ -413,6 +413,13 @@ export class AppInitRunner implements OnApplicationBootstrap {
           server.cmd != serverConfig.cmd ||
           JSON.stringify(server.args ?? []) != JSON.stringify(serverConfig.args ?? [])
         ) {
+          if (server.authType != expectedAuthType) {
+            // The registry rejects `external` for Taico's own servers, so this
+            // only repairs rows saved before that rule existed.
+            this.logger.warn(
+              `MCP server ${server.providedId} had auth type '${server.authType}'; restoring '${expectedAuthType}'`,
+            );
+          }
           server = await this.mcpRegistryService.updateServer(server.id, {
             name: serverConfig.name,
             description: serverConfig.description,

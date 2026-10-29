@@ -43,6 +43,13 @@ export class ServerResponseDto {
   authType!: McpServerAuthType;
 
   @ApiProperty({
+    description:
+      'True for servers Taico serves itself (tasks, context, worker and display auth targets). Their auth type is locked to `taico`; setting it to `external` is rejected.',
+    example: false,
+  })
+  requiresTaicoAuth!: boolean;
+
+  @ApiProperty({
     description: 'URL that MCP Clients will use to connect to the server',
     example: 'http://localhost:3000/api/v1/tasks/tasks/mcp',
     required: false,

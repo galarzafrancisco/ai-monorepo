@@ -28,6 +28,10 @@ export type ServerResponseDto = {
      */
     authType: ServerResponseDto.authType;
     /**
+     * True for servers Taico serves itself (tasks, context, worker and display auth targets). Their auth type is locked to `taico`; setting it to `external` is rejected.
+     */
+    requiresTaicoAuth: boolean;
+    /**
      * URL that MCP Clients will use to connect to the server
      */
     url?: string;

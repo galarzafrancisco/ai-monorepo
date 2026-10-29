@@ -36,7 +36,9 @@ import {
   InvalidMappingError,
   InvalidServerConfigurationError,
   ServerUsesExternalAuthError,
+  ServerRequiresTaicoAuthError,
 } from './errors/mcp-registry.errors';
+import { mcpServerRequiresTaicoAuth } from '@taico/shared';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.entity';
 import {
@@ -69,6 +71,7 @@ export class McpRegistryService {
 
   async createServer(input: CreateServerInput): Promise<ServerRecord> {
     this.validateServerConfiguration(input);
+    this.assertAuthTypeAllowed(input.providedId, input.authType);
 
     // Check for duplicate providedId
     const existing = await this.serverRepository.findOne({
@@ -262,6 +265,7 @@ export class McpRegistryService {
       cmd: input.cmd ?? server.cmd,
       args: input.args ?? server.args,
     });
+    this.assertAuthTypeAllowed(server.providedId, input.authType);
 
     // Skip undefined values — DTO class fields are initialized to undefined by
     // TypeScript (ES2023 target), so a plain Object.assign would overwrite valid
@@ -655,6 +659,7 @@ export class McpRegistryService {
         name: server.name,
         description: server.description,
         authType: this.normalizeAuthType(server.authType),
+        requiresTaicoAuth: mcpServerRequiresTaicoAuth(server.providedId),
         type: MCP_SERVER_TYPE_HTTP,
         url: server.url ?? '', // Provide empty string if null to satisfy type
         createdAt,
@@ -668,12 +673,31 @@ export class McpRegistryService {
       name: server.name,
       description: server.description,
       authType: this.normalizeAuthType(server.authType),
+      requiresTaicoAuth: mcpServerRequiresTaicoAuth(server.providedId),
       type: MCP_SERVER_TYPE_STDIO,
       cmd: server.cmd ?? '', // Provide empty string if null to satisfy type
       args: server.args ?? [],
       createdAt,
       updatedAt,
     };
+  }
+
+  /**
+   * Taico's own servers (tasks, context, worker and display auth targets)
+   * only accept Taico tokens, so they cannot be switched to `external`.
+   * @throws ServerRequiresTaicoAuthError
+   */
+  private assertAuthTypeAllowed(
+    providedId: string,
+    authType: string | undefined,
+  ): void {
+    if (
+      authType !== undefined &&
+      authType !== MCP_SERVER_AUTH_TYPE_TAICO &&
+      mcpServerRequiresTaicoAuth(providedId)
+    ) {
+      throw new ServerRequiresTaicoAuthError(providedId);
+    }
   }
 
   /** Rows written before auth types existed read as Taico auth. */

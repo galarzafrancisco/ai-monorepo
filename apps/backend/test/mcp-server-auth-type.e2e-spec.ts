@@ -6,6 +6,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { AppInitRunner } from '../src/app-init/app-init.runner';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { McpServerAuthType1763200000000 } from '../src/migrations/1763200000000-McpServerAuthType';
@@ -222,6 +223,57 @@ describe('MCP server auth type (e2e)', () => {
     it('rejects an unknown auth type', async () => {
       const server = await createServer();
       await setAuthType(server.id, 'magic').expect(400);
+    });
+
+    it('marks only user-registered servers as switchable', async () => {
+      const server = await createServer();
+      expect(server).toMatchObject({ requiresTaicoAuth: false });
+    });
+  });
+
+  describe("Taico's own servers", () => {
+    const LOCKED_IDS = ['tasks', 'context', 'taico-worker', 'taico-display'];
+
+    async function getByProvidedId(providedId: string) {
+      const response = await request(httpServer)
+        .get(`/api/v1/mcp/servers/${providedId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+      return response.body as {
+        id: string;
+        authType: string;
+        requiresTaicoAuth: boolean;
+      };
+    }
+
+    it.each(LOCKED_IDS)('reject switching %s to external', async (providedId) => {
+      const server = await getByProvidedId(providedId);
+      expect(server).toMatchObject({ authType: 'taico', requiresTaicoAuth: true });
+
+      const response = await setAuthType(server.id, 'external').expect(400);
+      expect(response.body.code).toBe('SERVER_REQUIRES_TAICO_AUTH');
+      expect((await getByProvidedId(providedId)).authType).toBe('taico');
+
+      // Saving taico (or omitting authType) is still allowed.
+      await setAuthType(server.id, 'taico').expect(200);
+    });
+
+    it('restore a legacy external row to taico on startup', async () => {
+      const server = await getByProvidedId('context');
+      // A row saved before the registry rejected external for this server.
+      await dataSource.query(
+        `UPDATE mcp_servers SET "authType" = 'external' WHERE id = $1`,
+        [server.id],
+      );
+      try {
+        await app.get(AppInitRunner).ensureMcpServers();
+        expect((await getByProvidedId('context')).authType).toBe('taico');
+      } finally {
+        await dataSource.query(
+          `UPDATE mcp_servers SET "authType" = 'taico' WHERE id = $1`,
+          [server.id],
+        );
+      }
     });
   });
 

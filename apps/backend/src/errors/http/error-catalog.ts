@@ -197,6 +197,12 @@ export const ErrorCatalog: Record<
     type: '/errors/mcp/server-uses-external-auth',
     retryable: false,
   },
+  [ErrorCodes.SERVER_REQUIRES_TAICO_AUTH]: {
+    status: 400,
+    title: 'MCP server must use Taico authentication',
+    type: '/errors/mcp/server-requires-taico-auth',
+    retryable: false,
+  },
   [ErrorCodes.SERVER_ALREADY_EXISTS]: {
     status: 409,
     title: 'MCP server already exists',

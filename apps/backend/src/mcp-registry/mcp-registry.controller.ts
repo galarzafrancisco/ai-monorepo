@@ -413,6 +413,7 @@ export class McpRegistryController {
       description: server.description,
       type: server.type,
       authType: server.authType,
+      requiresTaicoAuth: server.requiresTaicoAuth,
       url: server.url,
       cmd: server.cmd,
       args: server.args,

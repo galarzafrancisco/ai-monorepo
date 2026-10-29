@@ -306,6 +306,7 @@ export interface ServerResponseDto {
   description: string;
   type: 'http' | 'stdio';
   authType: 'taico' | 'external';
+  requiresTaicoAuth: boolean;
   url?: string;
   cmd?: string;
   args?: string[];

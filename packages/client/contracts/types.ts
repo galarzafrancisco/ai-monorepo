@@ -3867,6 +3867,11 @@ export interface components {
              */
             authType: "taico" | "external";
             /**
+             * @description True for servers Taico serves itself (tasks, context, worker and display auth targets). Their auth type is locked to `taico`; setting it to `external` is rejected.
+             * @example false
+             */
+            requiresTaicoAuth: boolean;
+            /**
              * @description URL that MCP Clients will use to connect to the server
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
@@ -3921,7 +3926,7 @@ export interface components {
              */
             type?: "http" | "stdio";
             /**
-             * @description Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+             * @description Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials. Servers with `requiresTaicoAuth` reject `external`.
              * @example external
              * @enum {string}
              */
