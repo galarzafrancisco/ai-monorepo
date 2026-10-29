@@ -15,7 +15,8 @@ import { ProjectSelector } from './ProjectSelector';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto } from "@taico/client/v2";
-import { ExternalLink, GitBranch, Link2, MessagesSquare, X } from 'lucide-react';
+import { Copy, ExternalLink, GitBranch, Link2, MessagesSquare, X } from 'lucide-react';
+import { copyToClipboard } from '../../shared/helpers/copyToClipboard';
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -308,6 +309,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       });
     }
   }, [showToast, showError]);
+
+  const copyComment = useCallback(async (content: string) => {
+    const copied = await copyToClipboard(content);
+    if (copied) {
+      showToast('Comment copied', 'success', 1600);
+    } else {
+      showToast('Could not copy the comment', 'error');
+    }
+  }, [showToast]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -869,7 +879,23 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               <DataRow
                 key={`comment-${comment.id}`}
                 leading={<Avatar size={'sm'} name={name} inactive={isDeactivated(comment.commenterActor)} src={comment.commenterActor?.avatarUrl || undefined} />}
-                topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
+                topRight={
+                  <span className='task-detail-page__comment-meta'>
+                    <Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>
+                    <button
+                      type='button'
+                      className='task-detail-page__comment-copy'
+                      aria-label={`Copy comment from ${name}`}
+                      title='Copy comment'
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void copyComment(comment.content);
+                      }}
+                    >
+                      <Copy size={14} aria-hidden='true' />
+                    </button>
+                  </span>
+                }
               >
                 <Text as='span' weight='medium' size='3'>
                   {name}
