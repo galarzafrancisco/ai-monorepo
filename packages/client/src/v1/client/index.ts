@@ -101,6 +101,7 @@ export type { GithubWebhookSettingsResponseDto } from './models/GithubWebhookSet
 export type { GithubWebhookSourceDto } from './models/GithubWebhookSourceDto.js';
 export type { GlobalSearchResultDto } from './models/GlobalSearchResultDto.js';
 export type { ImportBlocksResponseDto } from './models/ImportBlocksResponseDto.js';
+export type { ImportProjectsResponseDto } from './models/ImportProjectsResponseDto.js';
 export type { InputRequestResponseDto } from './models/InputRequestResponseDto.js';
 export { IntrospectTokenRequestDto } from './models/IntrospectTokenRequestDto.js';
 export { IntrospectTokenResponseDto } from './models/IntrospectTokenResponseDto.js';
