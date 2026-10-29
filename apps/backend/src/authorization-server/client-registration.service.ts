@@ -67,7 +67,7 @@ export class ClientRegistrationService {
 
     // Validate that the MCP Server exists
     const mcpServer =
-      await this.mcpRegistryService.getServerByProvidedId(serverId); // service throws if not found
+      await this.mcpRegistryService.getTaicoAuthServerByProvidedId(serverId); // throws if not found or external
 
     // Create and persist the client entity
     let scopes: string[] = [];

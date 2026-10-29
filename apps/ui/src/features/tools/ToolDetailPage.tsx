@@ -13,6 +13,7 @@ import { EditToolDescriptionPop } from './EditToolDescriptionPop';
 import { EditToolUrlPop } from './EditToolUrlPop';
 import { EditToolCommandPop } from './EditToolCommandPop';
 import { EditToolScopesPop } from './EditToolScopesPop';
+import { ToolAuthSection } from './ToolAuthSection';
 import './ToolDetailPage.css';
 
 type ProtectedResourceMetadata = {
@@ -426,6 +427,17 @@ export function ToolDetailPage() {
         </DataRowContainer >
       ) : null
       }
+
+      {/* Authentication (http tools) */}
+      {isHttpTool ? (
+        <ToolAuthSection
+          className="tool-detail-page__section"
+          tool={tool}
+          onSave={(authType) => updateTool(tool.id, { authType })}
+          onSaved={setTool}
+          onError={showError}
+        />
+      ) : null}
 
       {/* Command (stdio tools) */}
       {isStdioTool && (

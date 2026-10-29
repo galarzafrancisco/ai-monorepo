@@ -78,8 +78,10 @@ export class DiscoveryService {
   ): Promise<AuthorizationServerMetadataResult> {
     const server =
       input.lookupBy === 'id'
-        ? await this.mcpRegistryService.getServerById(input.serverIdentifier)
-        : await this.mcpRegistryService.getServerByProvidedId(
+        ? await this.mcpRegistryService.getTaicoAuthServerById(
+            input.serverIdentifier,
+          )
+        : await this.mcpRegistryService.getTaicoAuthServerByProvidedId(
             input.serverIdentifier,
           );
 

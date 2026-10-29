@@ -71,9 +71,11 @@ export class AuthorizationService {
     serverIdentifier: string,
     version: string,
   ): Promise<string> {
-    // Validate that the MCP Server exists
+    // Validate that the MCP Server exists and Taico authorizes it
     const mcpServer =
-      await this.mcpRegistryService.getServerByProvidedId(serverIdentifier);
+      await this.mcpRegistryService.getTaicoAuthServerByProvidedId(
+        serverIdentifier,
+      );
     if (!mcpServer) {
       throw new McpServerNotFoundError(serverIdentifier);
     }
@@ -271,6 +273,13 @@ export class AuthorizationService {
         mcpAuthFlow.server.providedId,
       );
     }
+
+    // A flow begun while Taico authorized the server cannot finish after the
+    // server was switched to external auth. Read the auth type fresh rather
+    // than trusting the joined row, so this holds on every backend.
+    await this.mcpRegistryService.assertServerUsesTaicoAuth(
+      mcpAuthFlow.serverId,
+    );
 
     // Verify required PKCE parameters exist
     if (
@@ -489,6 +498,12 @@ export class AuthorizationService {
     if (!mcpAuthFlow.redirectUri || !mcpAuthFlow.state) {
       throw new InvalidFlowStateError('missing redirect URI or state');
     }
+
+    // Downstream connection callbacks also end here, possibly long after
+    // consent, so check again that Taico still authorizes the server.
+    await this.mcpRegistryService.assertServerUsesTaicoAuth(
+      mcpAuthFlow.serverId,
+    );
 
     // Generate authorization code for the MCP client
     const authorizationCode = randomBytes(32).toString('base64url');

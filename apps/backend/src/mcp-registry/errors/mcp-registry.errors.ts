@@ -13,6 +13,8 @@ export const McpRegistryErrorCodes = {
   SCOPE_HAS_MAPPINGS: ErrorCodes.SCOPE_HAS_MAPPINGS,
   CONNECTION_HAS_MAPPINGS: ErrorCodes.CONNECTION_HAS_MAPPINGS,
   INVALID_MAPPING: ErrorCodes.INVALID_MAPPING,
+  SERVER_USES_EXTERNAL_AUTH: ErrorCodes.SERVER_USES_EXTERNAL_AUTH,
+  SERVER_REQUIRES_TAICO_AUTH: ErrorCodes.SERVER_REQUIRES_TAICO_AUTH,
   VALIDATION_FAILED: ErrorCodes.VALIDATION_FAILED,
 } as const;
 
@@ -143,5 +145,35 @@ export class InvalidMappingError extends McpRegistryDomainError {
 export class InvalidServerConfigurationError extends McpRegistryDomainError {
   constructor(message: string) {
     super(message, McpRegistryErrorCodes.VALIDATION_FAILED);
+  }
+}
+
+/**
+ * Raised by Taico OAuth routes (discovery metadata, authorize, token,
+ * client registration, token exchange) for a server whose auth type is
+ * `external`: Taico is not its authorization server.
+ */
+export class ServerUsesExternalAuthError extends McpRegistryDomainError {
+  constructor(serverId: string) {
+    super(
+      `MCP server '${serverId}' does not use Taico authentication.`,
+      McpRegistryErrorCodes.SERVER_USES_EXTERNAL_AUTH,
+      { serverId },
+    );
+  }
+}
+
+/**
+ * Raised when someone tries to give one of Taico's own MCP servers (tasks,
+ * context, worker and display auth targets) the `external` auth type. Those
+ * endpoints only accept Taico tokens.
+ */
+export class ServerRequiresTaicoAuthError extends McpRegistryDomainError {
+  constructor(serverId: string) {
+    super(
+      `MCP server '${serverId}' is served by Taico and must use Taico authentication.`,
+      McpRegistryErrorCodes.SERVER_REQUIRES_TAICO_AUTH,
+      { serverId },
+    );
   }
 }

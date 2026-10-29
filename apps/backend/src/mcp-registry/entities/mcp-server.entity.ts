@@ -9,8 +9,11 @@ import {
 } from 'typeorm';
 import { McpScopeEntity } from './mcp-scope.entity';
 import { McpConnectionEntity } from './mcp-connection.entity';
-import { MCP_SERVER_TYPE_HTTP } from '../mcp-server.types';
-import type { McpServerType } from '../mcp-server.types';
+import {
+  MCP_SERVER_AUTH_TYPE_TAICO,
+  MCP_SERVER_TYPE_HTTP,
+} from '../mcp-server.types';
+import type { McpServerAuthType, McpServerType } from '../mcp-server.types';
 import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.entity';
 
 @Entity('mcp_servers')
@@ -29,6 +32,9 @@ export class McpServerEntity {
 
   @Column({ type: 'text', default: MCP_SERVER_TYPE_HTTP })
   type!: McpServerType;
+
+  @Column({ type: 'text', default: MCP_SERVER_AUTH_TYPE_TAICO })
+  authType!: McpServerAuthType;
 
   @Column({ type: 'varchar', length: 2048, nullable: true })
   url?: string;

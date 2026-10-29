@@ -84,3 +84,22 @@ export const DEFAULT_AGENT_TOKEN_SCOPES = [
 ] as const;
 
 export * from './agent-runtime-permissions.js';
+import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS } from './agent-runtime-permissions.js';
+
+/**
+ * MCP servers that Taico itself serves and authorizes. Their endpoints only
+ * accept Taico tokens, so they must keep the `taico` auth type: switching one
+ * to `external` would stop workers sending the execution token and cut agents
+ * off from the tools.
+ */
+export const TAICO_AUTH_REQUIRED_MCP_SERVER_PROVIDED_IDS = [
+  ...BASELINE_SYSTEM_TOOL_PROVIDED_IDS,
+  INTERNAL_WORKER_AUTH_TARGET_ID,
+  DISPLAY_AUTH_TARGET_ID,
+] as const;
+
+export function mcpServerRequiresTaicoAuth(providedId: string): boolean {
+  return (TAICO_AUTH_REQUIRED_MCP_SERVER_PROVIDED_IDS as readonly string[]).includes(
+    providedId,
+  );
+}

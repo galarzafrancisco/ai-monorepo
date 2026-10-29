@@ -51,9 +51,9 @@ export class TokenExchangeService {
       `Processing token exchange for resource: ${request.resource}`,
     );
 
-    // Step 1: Resolve MCP Server UUID from providedId (with caching)
+    // Step 1: Resolve MCP Server UUID from providedId (throws for external auth)
     const serverId =
-      await this.mcpRegistryService.resolveServerIdFromProvidedId(
+      await this.mcpRegistryService.resolveTaicoAuthServerIdFromProvidedId(
         serverIdentifier,
       );
     if (!serverId) {

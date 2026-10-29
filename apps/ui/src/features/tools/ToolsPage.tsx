@@ -49,10 +49,18 @@ export function ToolsPage() {
     setFormError(null);
   };
 
-  const handleNewToolSave = async ({ name, type }: { name: string; type: 'http' | 'stdio' }): Promise<boolean> => {
+  const handleNewToolSave = async ({
+    name,
+    type,
+    authType,
+  }: {
+    name: string;
+    type: 'http' | 'stdio';
+    authType: 'taico' | 'external';
+  }): Promise<boolean> => {
     setFormError(null);
     try {
-      const tool = await createTool({ name, type });
+      const tool = await createTool({ name, type, authType });
       if (tool) {
         navigate(`/tools/tool/${tool.id}`);
         return true;

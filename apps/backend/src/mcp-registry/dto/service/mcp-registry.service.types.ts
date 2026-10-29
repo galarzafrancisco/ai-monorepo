@@ -3,7 +3,7 @@
  * These are transport-agnostic and avoid framework-specific decorators.
  */
 
-import { McpServerType } from '../../mcp-server.types';
+import { McpServerAuthType, McpServerType } from '../../mcp-server.types';
 
 type ServerBase = {
   providedId: string;
@@ -27,6 +27,8 @@ type StdioServerConfig = {
 
 export type CreateServerInput = ServerBase & {
   type: McpServerType;
+  /** Defaults to `taico`. */
+  authType?: McpServerAuthType;
   url?: string;
   cmd?: string;
   args?: string[];
@@ -34,6 +36,7 @@ export type CreateServerInput = ServerBase & {
 
 export type UpdateServerInput = {
   type?: McpServerType;
+  authType?: McpServerAuthType;
   name?: string;
   description?: string;
   url?: string;
@@ -62,6 +65,9 @@ type ServerRecordBase = {
   providedId: string;
   name: string;
   description: string;
+  authType: McpServerAuthType;
+  /** Taico serves this server itself, so its auth type is locked to `taico`. */
+  requiresTaicoAuth: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

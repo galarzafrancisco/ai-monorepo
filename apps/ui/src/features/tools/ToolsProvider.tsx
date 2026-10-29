@@ -14,8 +14,12 @@ export type ToolsContextValue = {
   loadToolClients: (serverId: string) => Promise<ToolClient[]>;
   loadToolAuthorizations: (serverId: string) => Promise<ToolAuthorization[]>;
   loadClientDetails: (connectionId: string) => Promise<ToolClient | null>;
-  createTool: (params: { name: string; type: 'http' | 'stdio' }) => Promise<Tool | null>;
-  updateTool: (toolId: string, updates: Partial<Tool>) => Promise<Tool | null>;
+  createTool: (params: {
+    name: string;
+    type: 'http' | 'stdio';
+    authType?: 'taico' | 'external';
+  }) => Promise<Tool | null>;
+  updateTool: (toolId: string, updates: Partial<Tool>) => Promise<Tool>;
   deleteTool: (toolId: string) => Promise<boolean>;
 };
 
