@@ -14,6 +14,7 @@ import {
   GPT_5_6_LUNA,
   GPT_5_6_SOL,
   GPT_5_6_TERRA,
+  GROK_4_7,
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
 import {
@@ -114,6 +115,11 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
         label: 'GPT-5.5',
         providerId: GPT_5_5.providerId,
         modelId: GPT_5_5.modelId,
+      }),
+      modelOption({
+        label: 'Grok 4.7',
+        providerId: GROK_4_7.providerId,
+        modelId: GROK_4_7.modelId,
       }),
     ],
   },

@@ -38,6 +38,7 @@ import { Scope } from 'src/auth/core/types/scope.type';
 import { createCodexDev } from './agent/codex-dev.agent';
 import { createDeveloper } from './agent/developer.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
+import { createGrok } from './agent/grok.agent';
 import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { createLead } from './agent/lead.agent';
 import { createPlanner } from './agent/planner.agent';
@@ -210,6 +211,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createGeminiAssistant);
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createGrok);
+    } catch (error) {
+      this.logger.error('Error ensuring grok Agent exists');
     }
     try {
       await this.ensureAgentExists(createCodeReviewer);

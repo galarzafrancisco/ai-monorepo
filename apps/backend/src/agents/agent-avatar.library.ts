@@ -86,6 +86,12 @@ export const AGENT_AVATARS: AgentAvatarDefinition[] = [
     url: '/avatar/qwen.png',
     description: 'Qwen model avatar for custom model configurations.',
   },
+  {
+    id: 'spacexai',
+    label: 'SpaceXAI',
+    url: '/avatar/spacexai.jpg',
+    description: 'SpaceXAI avatar for xAI Grok model selections.',
+  },
 ];
 
 const AVATAR_BY_ID = new Map(AGENT_AVATARS.map((avatar) => [avatar.id, avatar]));
@@ -156,6 +162,10 @@ export function getDefaultAgentAvatarUrl({
 
   if (model.includes('qwen')) {
     return getAgentAvatarUrlById('qwen');
+  }
+
+  if (provider === 'xai' || model.includes('grok')) {
+    return getAgentAvatarUrlById('spacexai');
   }
 
   return getAgentAvatarUrlById(type ? DEFAULT_AVATAR_BY_TYPE[type] : null);
