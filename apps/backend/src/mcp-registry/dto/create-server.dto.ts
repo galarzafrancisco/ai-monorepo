@@ -10,8 +10,8 @@ import {
   ArrayMaxSize,
   ValidateIf,
 } from 'class-validator';
-import { MCP_SERVER_TYPES } from '../mcp-server.types';
-import type { McpServerType } from '../mcp-server.types';
+import { MCP_SERVER_AUTH_TYPES, MCP_SERVER_TYPES } from '../mcp-server.types';
+import type { McpServerAuthType, McpServerType } from '../mcp-server.types';
 
 export class CreateServerDto {
   @ApiProperty({
@@ -47,6 +47,18 @@ export class CreateServerDto {
   })
   @IsIn(MCP_SERVER_TYPES)
   type!: McpServerType;
+
+  @ApiProperty({
+    description:
+      'Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent\'s Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.',
+    enum: MCP_SERVER_AUTH_TYPES,
+    default: 'taico',
+    required: false,
+    example: 'taico',
+  })
+  @IsOptional()
+  @IsIn(MCP_SERVER_AUTH_TYPES)
+  authType?: McpServerAuthType;
 
   @ApiProperty({
     description: 'URL that MCP Clients will use to connect to the server',

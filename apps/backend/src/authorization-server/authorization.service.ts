@@ -71,9 +71,11 @@ export class AuthorizationService {
     serverIdentifier: string,
     version: string,
   ): Promise<string> {
-    // Validate that the MCP Server exists
+    // Validate that the MCP Server exists and Taico authorizes it
     const mcpServer =
-      await this.mcpRegistryService.getServerByProvidedId(serverIdentifier);
+      await this.mcpRegistryService.getTaicoAuthServerByProvidedId(
+        serverIdentifier,
+      );
     if (!mcpServer) {
       throw new McpServerNotFoundError(serverIdentifier);
     }

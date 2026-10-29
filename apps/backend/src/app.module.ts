@@ -60,6 +60,7 @@ import { GithubEnterprise1762900000000 } from './migrations/1762900000000-Github
 import { GithubWebhookSources1762950000000 } from './migrations/1762950000000-GithubWebhookSources';
 import { Issues1763000000000 } from './migrations/1763000000000-Issues';
 import { ThreadTurnRequests1763100000000 } from './migrations/1763100000000-ThreadTurnRequests';
+import { McpServerAuthType1763200000000 } from './migrations/1763200000000-McpServerAuthType';
 import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
@@ -109,6 +110,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         GithubWebhookSources1762950000000,
         Issues1763000000000,
         ThreadTurnRequests1763100000000,
+        McpServerAuthType1763200000000,
       ],
     }),
     EventEmitterModule.forRoot(),

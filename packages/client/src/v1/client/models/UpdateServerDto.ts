@@ -8,6 +8,10 @@ export type UpdateServerDto = {
      */
     type?: UpdateServerDto.type;
     /**
+     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+     */
+    authType?: UpdateServerDto.authType;
+    /**
      * Display name of the MCP server
      */
     name?: string;
@@ -35,6 +39,13 @@ export namespace UpdateServerDto {
     export enum type {
         HTTP = 'http',
         STDIO = 'stdio',
+    }
+    /**
+     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+     */
+    export enum authType {
+        TAICO = 'taico',
+        EXTERNAL = 'external',
     }
 }
 

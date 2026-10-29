@@ -3809,6 +3809,13 @@ export interface components {
              */
             type: "http" | "stdio";
             /**
+             * @description Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+             * @default taico
+             * @example taico
+             * @enum {string}
+             */
+            authType: "taico" | "external";
+            /**
              * @description URL that MCP Clients will use to connect to the server
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
@@ -3853,6 +3860,12 @@ export interface components {
              * @enum {string}
              */
             type: "http" | "stdio";
+            /**
+             * @description Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+             * @example taico
+             * @enum {string}
+             */
+            authType: "taico" | "external";
             /**
              * @description URL that MCP Clients will use to connect to the server
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
@@ -3907,6 +3920,12 @@ export interface components {
              * @enum {string}
              */
             type?: "http" | "stdio";
+            /**
+             * @description Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+             * @example external
+             * @enum {string}
+             */
+            authType?: "taico" | "external";
             /**
              * @description Display name of the MCP server
              * @example GitHub Integration

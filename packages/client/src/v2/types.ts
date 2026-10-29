@@ -293,6 +293,7 @@ export interface CreateServerDto {
   name: string;
   description: string;
   type: 'http' | 'stdio';
+  authType?: 'taico' | 'external';
   url?: string;
   cmd?: string;
   args?: string[];
@@ -304,6 +305,7 @@ export interface ServerResponseDto {
   name: string;
   description: string;
   type: 'http' | 'stdio';
+  authType: 'taico' | 'external';
   url?: string;
   cmd?: string;
   args?: string[];
@@ -320,6 +322,7 @@ export interface ServerListResponseDto {
 
 export interface UpdateServerDto {
   type?: 'http' | 'stdio';
+  authType?: 'taico' | 'external';
   name?: string;
   description?: string;
   url?: string;

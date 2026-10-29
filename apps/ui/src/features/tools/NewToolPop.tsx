@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PopShell } from '../../app/shells/PopShell';
+import { Switch } from '../../ui/primitives';
+import { TaicoAuthExplanation } from './TaicoAuthExplanation';
+import { authTypeForNewTool, type ToolAuthType } from './toolAuth';
 import './NewToolPop.css';
 
 type NewToolPopPayload = {
   name: string;
   type: 'http' | 'stdio';
+  authType: ToolAuthType;
 };
 
 type NewToolPopProps = {
@@ -16,6 +20,7 @@ type NewToolPopProps = {
 export function NewToolPop({ onCancel, onSave, error }: NewToolPopProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<'http' | 'stdio'>('http');
+  const [useTaicoAuth, setUseTaicoAuth] = useState(true);
   const nameRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -34,6 +39,7 @@ export function NewToolPop({ onCancel, onSave, error }: NewToolPopProps) {
     return onSave({
       name: name.trim(),
       type,
+      authType: authTypeForNewTool(type, useTaicoAuth),
     });
   };
 
@@ -67,6 +73,24 @@ export function NewToolPop({ onCancel, onSave, error }: NewToolPopProps) {
           <option value="stdio">STDIO</option>
         </select>
       </div>
+
+      {type === 'http' ? (
+        <div className="new-tool-pop__group">
+          <div className="new-tool-pop__switch-row">
+            <label className="new-tool-pop__label" htmlFor="new-tool-taico-auth">
+              Use Taico authentication
+            </label>
+            <Switch
+              id="new-tool-taico-auth"
+              checked={useTaicoAuth}
+              onCheckedChange={setUseTaicoAuth}
+            />
+          </div>
+          <div className="new-tool-pop__hint">
+            <TaicoAuthExplanation />
+          </div>
+        </div>
+      ) : null}
     </PopShell>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
-import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip, Switch } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -13,6 +13,8 @@ import { EditToolDescriptionPop } from './EditToolDescriptionPop';
 import { EditToolUrlPop } from './EditToolUrlPop';
 import { EditToolCommandPop } from './EditToolCommandPop';
 import { EditToolScopesPop } from './EditToolScopesPop';
+import { TaicoAuthExplanation } from './TaicoAuthExplanation';
+import { authTypeFromSwitch, usesTaicoAuth } from './toolAuth';
 import './ToolDetailPage.css';
 
 type ProtectedResourceMetadata = {
@@ -67,7 +69,10 @@ export function ToolDetailPage() {
   const [showEditCommandPop, setShowEditCommandPop] = useState(false);
   const [showEditScopesPop, setShowEditScopesPop] = useState(false);
 
+  const [isSavingAuthType, setIsSavingAuthType] = useState(false);
+
   const isHttpTool = tool?.type === 'http';
+  const isTaicoAuth = usesTaicoAuth(tool);
   const isStdioTool = tool?.type === 'stdio';
 
   const copyToClipboard = (text: string) => {
@@ -200,6 +205,22 @@ export function ToolDetailPage() {
       console.error('Failed to update command:', err);
       showError(err);
       return false;
+    }
+  };
+
+  const handleToggleTaicoAuth = async (checked: boolean): Promise<void> => {
+    if (!tool) return;
+    setIsSavingAuthType(true);
+    try {
+      const updated = await updateTool(tool.id, { authType: authTypeFromSwitch(checked) });
+      if (updated) {
+        setTool(updated);
+      }
+    } catch (err) {
+      console.error('Failed to update authentication:', err);
+      showError(err);
+    } finally {
+      setIsSavingAuthType(false);
     }
   };
 
@@ -426,6 +447,26 @@ export function ToolDetailPage() {
         </DataRowContainer >
       ) : null
       }
+
+      {/* Authentication (http tools) */}
+      {isHttpTool ? (
+        <DataRowContainer title="Authentication" className="tool-detail-page__section">
+          <DataRow
+            trailing={
+              <Switch
+                id="tool-taico-auth"
+                label="Use Taico authentication"
+                checked={isTaicoAuth}
+                disabled={isSavingAuthType}
+                onCheckedChange={(checked) => { void handleToggleTaicoAuth(checked); }}
+              />
+            }
+          >
+            <Text size="2" weight="medium">Use Taico authentication</Text>
+            <TaicoAuthExplanation />
+          </DataRow>
+        </DataRowContainer>
+      ) : null}
 
       {/* Command (stdio tools) */}
       {isStdioTool && (

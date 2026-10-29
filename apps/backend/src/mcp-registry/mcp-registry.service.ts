@@ -35,13 +35,17 @@ import {
   ConnectionHasMappingsError,
   InvalidMappingError,
   InvalidServerConfigurationError,
+  ServerUsesExternalAuthError,
 } from './errors/mcp-registry.errors';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.entity';
 import {
+  MCP_SERVER_AUTH_TYPE_TAICO,
+  MCP_SERVER_AUTH_TYPES,
   MCP_SERVER_TYPE_HTTP,
   MCP_SERVER_TYPE_STDIO,
   MCP_SERVER_TYPES,
+  McpServerAuthType,
   McpServerType,
 } from './mcp-server.types';
 import { INTERNAL_WORKER_AUTH_TARGET_ID } from 'src/auth/core/constants/internal-auth-target.constant';
@@ -49,10 +53,6 @@ import { INTERNAL_WORKER_AUTH_TARGET_ID } from 'src/auth/core/constants/internal
 @Injectable()
 export class McpRegistryService {
   private readonly logger = new Logger(McpRegistryService.name);
-
-  // In-memory cache for server providedId -> UUID resolution
-  // Used for hot-path operations like token exchange
-  private readonly serverIdCache = new Map<string, string>();
 
   constructor(
     @InjectRepository(McpServerEntity)
@@ -79,7 +79,10 @@ export class McpRegistryService {
       throw new ServerAlreadyExistsError(input.providedId);
     }
 
-    const server = this.serverRepository.create(input);
+    const server = this.serverRepository.create({
+      ...input,
+      authType: input.authType ?? MCP_SERVER_AUTH_TYPE_TAICO,
+    });
     try {
       const savedServer = await this.serverRepository.save(server);
       return this.mapServerEntityToRecord(savedServer);
@@ -162,32 +165,52 @@ export class McpRegistryService {
   }
 
   /**
-   * Resolve MCP Server UUID from providedId with caching
-   * Optimized for hot-path operations (e.g., token exchange)
-   * @returns Server UUID or null if not found
+   * Fetch a server that Taico authorizes, for the Taico OAuth routes.
+   * Throws ServerUsesExternalAuthError for `external` servers.
    */
-  async resolveServerIdFromProvidedId(
+  async getTaicoAuthServerByProvidedId(
+    providedId: string,
+  ): Promise<ServerWithRelationsRecord> {
+    const server = await this.getServerByProvidedId(providedId);
+    this.assertUsesTaicoAuth(server);
+    return server;
+  }
+
+  async getTaicoAuthServerById(id: string): Promise<ServerWithRelationsRecord> {
+    const server = await this.getServerById(id);
+    this.assertUsesTaicoAuth(server);
+    return server;
+  }
+
+  /**
+   * Resolve the UUID of a server Taico authorizes, for token exchange.
+   * Not cached: the auth type can change, and on several backends a cached
+   * value would outlive the change.
+   * @returns Server UUID, or null if not found
+   * @throws ServerUsesExternalAuthError for `external` servers
+   */
+  async resolveTaicoAuthServerIdFromProvidedId(
     providedId: string,
   ): Promise<string | null> {
-    // Check cache first
-    const cached = this.serverIdCache.get(providedId);
-    if (cached) {
-      return cached;
-    }
-
-    // Query database - only select ID for minimal overhead
     const server = await this.serverRepository.findOne({
       where: { providedId },
-      select: ['id'],
+      select: ['id', 'providedId', 'authType'],
     });
-
-    if (server) {
-      // Cache the result for future lookups
-      this.serverIdCache.set(providedId, server.id);
-      return server.id;
+    if (!server) {
+      return null;
     }
+    this.assertUsesTaicoAuth(server);
+    return server.id;
+  }
 
-    return null;
+  /** Throws unless Taico is the server's authorization server. */
+  assertUsesTaicoAuth(server: {
+    providedId: string;
+    authType?: string | null;
+  }): void {
+    if (this.normalizeAuthType(server.authType) !== MCP_SERVER_AUTH_TYPE_TAICO) {
+      throw new ServerUsesExternalAuthError(server.providedId);
+    }
   }
 
   async updateServer(
@@ -204,6 +227,7 @@ export class McpRegistryService {
 
     this.validateServerConfiguration({
       type: (input.type ?? server.type) as McpServerType,
+      authType: input.authType,
       url: input.url ?? server.url,
       cmd: input.cmd ?? server.cmd,
       args: input.args ?? server.args,
@@ -600,6 +624,7 @@ export class McpRegistryService {
         providedId: server.providedId,
         name: server.name,
         description: server.description,
+        authType: this.normalizeAuthType(server.authType),
         type: MCP_SERVER_TYPE_HTTP,
         url: server.url ?? '', // Provide empty string if null to satisfy type
         createdAt,
@@ -612,6 +637,7 @@ export class McpRegistryService {
       providedId: server.providedId,
       name: server.name,
       description: server.description,
+      authType: this.normalizeAuthType(server.authType),
       type: MCP_SERVER_TYPE_STDIO,
       cmd: server.cmd ?? '', // Provide empty string if null to satisfy type
       args: server.args ?? [],
@@ -620,8 +646,14 @@ export class McpRegistryService {
     };
   }
 
+  /** Rows written before auth types existed read as Taico auth. */
+  private normalizeAuthType(authType: string | null | undefined): McpServerAuthType {
+    return authType === 'external' ? 'external' : MCP_SERVER_AUTH_TYPE_TAICO;
+  }
+
   private validateServerConfiguration(input: {
     type?: string;
+    authType?: string;
     url?: string;
     cmd?: string;
     args?: string[];
@@ -629,6 +661,15 @@ export class McpRegistryService {
     if (!input.type || !MCP_SERVER_TYPES.includes(input.type as McpServerType)) {
       throw new InvalidServerConfigurationError(
         "Server type must be either 'http' or 'stdio'.",
+      );
+    }
+
+    if (
+      input.authType !== undefined &&
+      !MCP_SERVER_AUTH_TYPES.includes(input.authType as McpServerAuthType)
+    ) {
+      throw new InvalidServerConfigurationError(
+        "Server auth type must be either 'taico' or 'external'.",
       );
     }
 

@@ -137,7 +137,11 @@ export const useTools = () => {
   }, []);
 
   // Create tool
-  const createTool = async (params: { name: string; type: 'http' | 'stdio' }): Promise<Tool | null> => {
+  const createTool = async (params: {
+    name: string;
+    type: 'http' | 'stdio';
+    authType?: 'taico' | 'external';
+  }): Promise<Tool | null> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -149,6 +153,7 @@ export const useTools = () => {
         name: params.name,
         description: `New ${params.type.toUpperCase()} MCP server`,
         type: params.type as 'http' | 'stdio',
+        authType: params.authType ?? 'taico',
         ...(params.type === 'http'
           ? { url: DEFAULT_HTTP_URL }
           : { cmd: DEFAULT_STDIO_CMD, args: [...DEFAULT_STDIO_ARGS] }),

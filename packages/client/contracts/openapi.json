@@ -10594,6 +10594,16 @@
             ],
             "example": "http"
           },
+          "authType": {
+            "type": "string",
+            "description": "Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.",
+            "enum": [
+              "taico",
+              "external"
+            ],
+            "default": "taico",
+            "example": "taico"
+          },
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
@@ -10654,6 +10664,15 @@
             ],
             "example": "http"
           },
+          "authType": {
+            "type": "string",
+            "description": "Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.",
+            "enum": [
+              "taico",
+              "external"
+            ],
+            "example": "taico"
+          },
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
@@ -10691,6 +10710,7 @@
           "name",
           "description",
           "type",
+          "authType",
           "createdAt",
           "updatedAt"
         ]
@@ -10739,6 +10759,15 @@
               "stdio"
             ],
             "example": "stdio"
+          },
+          "authType": {
+            "type": "string",
+            "description": "Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.",
+            "enum": [
+              "taico",
+              "external"
+            ],
+            "example": "external"
           },
           "name": {
             "type": "string",

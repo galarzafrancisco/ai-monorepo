@@ -37,6 +37,8 @@ import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
+import { MCP_SERVER_AUTH_TYPE_EXTERNAL } from '../mcp-registry/mcp-server.types';
+import { ServerUsesExternalAuthError } from '../mcp-registry/errors/mcp-registry.errors';
 import {
   MCP_AUTH_SERVER_VERSION,
   getMcpServerResourceUrl,
@@ -354,6 +356,11 @@ export class TokenService {
     serverIdentifier: string,
   ): void {
     const server = mcpAuthFlow.server;
+    // A server switched to external auth after the grant was issued no
+    // longer gets Taico tokens.
+    if (server.authType === MCP_SERVER_AUTH_TYPE_EXTERNAL) {
+      throw new ServerUsesExternalAuthError(server.providedId);
+    }
     if (
       server.providedId !== serverIdentifier &&
       server.id !== serverIdentifier

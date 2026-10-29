@@ -24,6 +24,10 @@ export type ServerResponseDto = {
      */
     type: ServerResponseDto.type;
     /**
+     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+     */
+    authType: ServerResponseDto.authType;
+    /**
      * URL that MCP Clients will use to connect to the server
      */
     url?: string;
@@ -51,6 +55,13 @@ export namespace ServerResponseDto {
     export enum type {
         HTTP = 'http',
         STDIO = 'stdio',
+    }
+    /**
+     * Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent's Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.
+     */
+    export enum authType {
+        TAICO = 'taico',
+        EXTERNAL = 'external',
     }
 }
 

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MCP_SERVER_TYPES } from '../mcp-server.types';
-import type { McpServerType } from '../mcp-server.types';
+import { MCP_SERVER_AUTH_TYPES, MCP_SERVER_TYPES } from '../mcp-server.types';
+import type { McpServerAuthType, McpServerType } from '../mcp-server.types';
 
 export class ServerResponseDto {
   @ApiProperty({
@@ -33,6 +33,14 @@ export class ServerResponseDto {
     example: 'http',
   })
   type!: McpServerType;
+
+  @ApiProperty({
+    description:
+      'Who authorizes calls to the server. `taico`: Taico is the OAuth authorization server and workers send the agent\'s Taico execution token. `external`: the server handles its own auth and receives no Taico credentials.',
+    enum: MCP_SERVER_AUTH_TYPES,
+    example: 'taico',
+  })
+  authType!: McpServerAuthType;
 
   @ApiProperty({
     description: 'URL that MCP Clients will use to connect to the server',

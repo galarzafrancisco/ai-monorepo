@@ -12,6 +12,7 @@ import { ActorService } from 'src/identity-provider/actor.service';
 import { createClaudeDev } from './agent/claude-dev.agent';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { createTasks, createTasksScopes } from './mcp/tasks.mcp';
+import { MCP_SERVER_AUTH_TYPE_TAICO } from '../mcp-registry/mcp-server.types';
 import { CreateServerInput, ServerRecord } from 'src/mcp-registry/dto';
 import {
   ServerAlreadyExistsError,
@@ -394,6 +395,8 @@ export class AppInitRunner implements OnApplicationBootstrap {
     scopesConfig: Scope[],
   ): Promise<ServerRecord | null> {
     let server: ServerRecord | null = null;
+    // Taico's own servers always use Taico auth.
+    const expectedAuthType = serverConfig.authType ?? MCP_SERVER_AUTH_TYPE_TAICO;
     try {
       server = await this.mcpRegistryService.createServer(serverConfig);
     } catch (error) {
@@ -405,6 +408,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
           server.name != serverConfig.name ||
           server.description != serverConfig.description ||
           server.type != serverConfig.type ||
+          server.authType != expectedAuthType ||
           server.url != serverConfig.url ||
           server.cmd != serverConfig.cmd ||
           JSON.stringify(server.args ?? []) != JSON.stringify(serverConfig.args ?? [])
@@ -413,6 +417,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
             name: serverConfig.name,
             description: serverConfig.description,
             type: serverConfig.type,
+            authType: expectedAuthType,
             url: serverConfig.url,
             cmd: serverConfig.cmd,
             args: serverConfig.args,

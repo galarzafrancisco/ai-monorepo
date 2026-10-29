@@ -44,3 +44,15 @@
   color: var(--danger);
   font-size: var(--fs-2);
 }
+
+.new-tool-pop__switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.new-tool-pop__hint {
+  padding: 0 var(--space-2);
+}
