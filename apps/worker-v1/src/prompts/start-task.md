@@ -8,7 +8,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 4. Use the MCP server to add a "code" tag to the task
 
 # Workflow
-If the task changes files in the repo (code or docs), follow every step. If it doesn't (investigation, questions), skip the steps marked (repo): post your findings on the task and mark it `in review`.
+If the task changes files in the repo (code or docs), follow every step. If it doesn't (investigation, questions), skip the steps marked (repo): post your findings on the task, set it to `FOR_REVIEW` with `change_task_status` and assign it to whoever created it.
 
 ### Prep
 1. (repo) You'll start in a repo in the main branch. Cut a feature/ branch to do all your work

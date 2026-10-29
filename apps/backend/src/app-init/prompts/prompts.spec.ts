@@ -97,10 +97,50 @@ describe('developer workflow prompts', () => {
         expect(branch).toBeGreaterThan(claim);
         expect(text).toMatch(/--draft/);
         expect(text).toMatch(/add_artefact/);
+        expect(text).toMatch(/steps marked \(repo\)/);
+      },
+    );
+
+    it.each(files)('%s never merges or closes the task itself', (file) => {
+      const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+      expect(text).not.toMatch(/merge (the )?pull request|gh pr merge/i);
+      expect(text).not.toMatch(/mark_task_done/);
+    });
+
+    it.each(files)(
+      '%s: every PR/CI/Git step is marked (repo)',
+      (file) => {
+        const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+        const gitLines = steps(text).filter(
+          (line) =>
+            /start_task\.sh|feature\/ branch|\bPR\b|\bCI\b|gh pr|agents\/main|npm run/.test(
+              line,
+            ) && /^\d/.test(line),
+        );
+        expect(gitLines.length).toBeGreaterThan(0);
+        for (const line of gitLines) {
+          expect(line).toContain('(repo)');
+        }
+      },
+    );
+
+    it.each(files)(
+      '%s: work without repo changes finishes via change_task_status and a handoff',
+      (file) => {
+        const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
         expect(text).toMatch(
-          /only if the task changes files in the repo|steps marked \(repo\)/i,
+          /FOR_REVIEW[^\n]*change_task_status[^\n]*assign[^\n]*whoever created it/,
         );
       },
     );
+
+    it.each([
+      '.claude/commands/start-task.md',
+      '.codex/prompts/start-task.md',
+    ])('%s hands a green PR to code-reviewer', (file) => {
+      const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+      expect(text).toMatch(/If CI passed[^\n]*assign the task to `code-reviewer`/);
+      expect(text).toMatch(/If CI failed[^\n]*mark_task_needs_work/);
+    });
   });
 });
