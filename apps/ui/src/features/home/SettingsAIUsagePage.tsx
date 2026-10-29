@@ -71,6 +71,31 @@ export function SettingsAIUsagePage() {
           </Stack>
         </Stack>
       </Card>
+
+      <Card padding="5" className="settings-panel-card">
+        <Stack spacing="4">
+          <Row justify="space-between" align="center">
+            <Stack spacing="1">
+              <Text size="4" weight="semibold">SpaceX AI</Text>
+              <Text size="1" tone="muted">
+                Grok models
+              </Text>
+            </Stack>
+          </Row>
+
+          <Stack spacing="2">
+            <Row spacing="2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.open('https://grok.com/build?_s=usage', '_blank', 'noopener,noreferrer')}
+              >
+                See usage
+              </Button>
+            </Row>
+          </Stack>
+        </Stack>
+      </Card>
     </Stack>
   );
 }
