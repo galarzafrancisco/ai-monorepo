@@ -19,7 +19,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
 
   const isDesktop = useIsDesktop();
   const statusFilter = isDesktop ? undefined : status;
-  const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId, projects, projectsLoaded, selectedProjectId } = useTasksCtx();
+  const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId, projects, selectedProjectId } = useTasksCtx();
   const { showError } = useToast();
   const { registerCommands, registerTaskSearch } = useCommandPalette();
 
@@ -92,10 +92,10 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
     console.log('cancel');
     setShowNewTaskPop(false);
   }
-  const handleNewTaskSave = async ({ title, description, projectId }: { title: string, description: string, projectId: string | null }): Promise<boolean> => {
-    const project = projects.find((candidate) => candidate.id === projectId);
-    // A project was chosen but the list hasn't loaded: don't create the task without it.
-    if (projectId && !project) {
+  const handleNewTaskSave = async ({ title, description }: { title: string, description: string }): Promise<boolean> => {
+    const project = projects.find((candidate) => candidate.id === selectedProjectId);
+    // The board is filtered to a project that hasn't loaded: don't create the task without it.
+    if (selectedProjectId && !project) {
       showError(new Error("Projects haven't loaded, so the task can't go into its project yet. Try again in a moment."));
       return false;
     }
@@ -145,7 +145,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
             +
           </button>
           {/* {showNewTaskPop ? <Pop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null} */}
-          {showNewTaskPop ? <NewTaskPop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} projects={projects} projectsLoaded={projectsLoaded} defaultProjectId={selectedProjectId} /> : null}
+          {showNewTaskPop ? <NewTaskPop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
         </>
         :
         <div className="tasks-page">
@@ -160,7 +160,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
             <span className="tasks-fab__label">New task</span>
           </button>
 
-          {showNewTaskPop ? <NewTaskPop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} projects={projects} projectsLoaded={projectsLoaded} defaultProjectId={selectedProjectId} /> : null}
+          {showNewTaskPop ? <NewTaskPop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
         </div>
       }
     </div>

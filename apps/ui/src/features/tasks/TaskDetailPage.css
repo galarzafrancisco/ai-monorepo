@@ -336,8 +336,22 @@
   color: var(--text);
 }
 
-.task-props__project .project-picker__trigger {
-  min-width: 11rem;
+.task-props__project {
+  max-width: 100%;
+}
+
+.task-props__project > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-props__swatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
 }
 
 .task-detail-page__description {

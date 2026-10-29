@@ -6,7 +6,7 @@ export type PickableProject = { id: string; slug: string; tagName: string };
 
 /**
  * Searchable single-project picker. The Tasks board uses it as a filter
- * ("All projects"), the task view uses it to set a task's project ("No project").
+ * ("All projects"). A task's project is set from ProjectSelector instead.
  */
 export function ProjectPicker({
   projects,

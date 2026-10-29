@@ -10,6 +10,8 @@ import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { DependencyPicker } from './DependencyPicker';
+import { applyProjectTagChange } from './projectPicker';
+import { ProjectSelector } from './ProjectSelector';
 import { ActorSearchPop, Actor, actorHandle, isDeactivated, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto } from "@taico/client/v2";
@@ -26,7 +28,6 @@ import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRunsPanel } from './traces/TaskRunsPanel';
 import { RunList } from './traces/RunList';
 import { loadTaskRuns, runTracePath, type TaskRun } from './traces/runs';
-import { ProjectPicker } from '../projects/ProjectPicker';
 import { useProjects } from '../projects/useProjects';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { LinkifiedText, PullRequestChip, parsePullRequestUrl } from '../pull-requests';
@@ -229,6 +230,13 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         onSelect: () => setShowTagPop(true),
       },
       {
+        id: 'task-set-project',
+        label: 'Set project',
+        description: 'Choose the project for this task',
+        aliases: ['project', 'move project', 'p'],
+        onSelect: () => setShowProjectPop(true),
+      },
+      {
         id: 'task-thread-action',
         label: threadId ? 'Go to thread' : 'Create thread',
         description: threadId ? 'Open this task thread' : 'Create a thread from this task',
@@ -277,6 +285,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
   const [showDependencyPop, setShowDependencyPop] = useState(false);
+  const [showProjectPop, setShowProjectPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
   const handleInterruptExecution = useCallback(async (executionId: string, taskName: string | undefined) => {
@@ -306,11 +315,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         return;
       }
 
-      if (event.metaKey || event.ctrlKey || event.altKey) {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) {
         return;
       }
 
-      if (showNewCommentPop || showAssignPop || showTagPop || showDependencyPop || respondingToInputRequest) {
+      if (showNewCommentPop || showAssignPop || showTagPop || showDependencyPop || showProjectPop || respondingToInputRequest) {
         return;
       }
 
@@ -329,12 +338,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       } else if (key === 't') {
         event.preventDefault();
         setShowTagPop(true);
+      } else if (key === 'p') {
+        event.preventDefault();
+        setShowProjectPop(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [task, showNewCommentPop, showAssignPop, showTagPop, showDependencyPop, respondingToInputRequest]);
+  }, [task, showNewCommentPop, showAssignPop, showTagPop, showDependencyPop, showProjectPop, respondingToInputRequest]);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
@@ -591,19 +603,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const currentProject = projects.find((project) => projectTags.some((tag) => tag.id === project.tagId || tag.name === project.tagName)) ?? null;
 
   // A task's project is its project:<slug> tag. Picking a project swaps that tag.
-  const changeProject = async (projectId: string | null) => {
-    const next = projects.find((project) => project.id === projectId) ?? null;
+  const changeProject = async (next: { tagName: string } | null): Promise<boolean> => {
     try {
-      if (next && !projectTags.some((tag) => tag.name === next.tagName)) {
-        await handlers.addTag({ taskId: task.id, tag: { name: next.tagName } as MetaTagResponseDto });
-      }
-      for (const tag of projectTags) {
-        if (tag.name !== next?.tagName) {
-          await handlers.removeTag({ taskId: task.id, tagId: tag.id });
-        }
-      }
+      await applyProjectTagChange(
+        projectTags,
+        next,
+        (tagName) => handlers.addTag({ taskId: task.id, tag: { name: tagName } as MetaTagResponseDto }),
+        (tagId) => handlers.removeTag({ taskId: task.id, tagId }),
+      );
+      return true;
     } catch (err: unknown) {
       showError(err);
+      return false;
     }
   };
 
@@ -727,17 +738,28 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
         <dt>Project</dt>
         <dd>
-          <ProjectPicker
-            projects={projects}
-            // Without the project list, "No project" would be the only choice and
-            // would strip the task's project, so the picker stays locked.
-            projectsLoaded={!isLoadingProjects && !projectsError}
-            selectedProjectId={currentProject?.id ?? null}
-            onChange={(projectId) => void changeProject(projectId)}
-            emptyLabel={!currentProject && projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : "No project"}
-            ariaLabel="Task project"
-            className="task-props__project"
-          />
+          <button
+            type="button"
+            className="task-props__person task-props__project"
+            onClick={() => setShowProjectPop(true)}
+            title="Change project (p)"
+            aria-label={currentProject
+              ? `Task project, ${currentProject.slug}`
+              : projectTags[0]
+                ? `Task project, ${projectTags[0].name.slice(PROJECT_TAG_PREFIX.length)}`
+                : 'Task project, no project'}
+          >
+            {currentProject ? (
+              <>
+                <span className="task-props__swatch" style={currentProject.tagColor ? { background: currentProject.tagColor } : undefined} aria-hidden="true" />
+                <span>{currentProject.slug}</span>
+              </>
+            ) : (
+              <span className="task-props__muted">
+                {projectTags[0] ? projectTags[0].name.slice(PROJECT_TAG_PREFIX.length) : 'No project'}
+              </span>
+            )}
+          </button>
         </dd>
 
         <dt>Tags</dt>
@@ -972,6 +994,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
       {showDependencyPop ? (
         <DependencyPicker task={task} onPick={saveDependency} onClose={cancelDependency} />
+      ) : null}
+      {showProjectPop ? (
+        <ProjectSelector
+          taskName={task.name}
+          projects={projects}
+          projectsState={isLoadingProjects ? 'loading' : projectsError ? 'error' : 'ready'}
+          selectedProjectId={currentProject?.id ?? null}
+          hasProjectTag={projectTags.length > 0}
+          tasks={allTasks}
+          onPick={changeProject}
+          onClose={() => setShowProjectPop(false)}
+        />
       ) : null}
       {respondingToInputRequest ? (
         <AnswerInputRequestPop
