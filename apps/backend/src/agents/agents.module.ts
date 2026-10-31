@@ -13,6 +13,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { McpServerEntity } from '../mcp-registry/entities/mcp-server.entity';
 import { AgentToolPermissionsService } from './agent-tool-permissions.service';
+import { AgentImportExportService } from './agent-import-export.service';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { AgentToolPermissionsService } from './agent-tool-permissions.service';
     AgentTokensController,
     AgentExecutionTokensController,
   ],
-  providers: [AgentsService, AgentToolPermissionsService],
+  providers: [AgentsService, AgentToolPermissionsService, AgentImportExportService],
   exports: [AgentsService],
 })
 export class AgentsModule {}

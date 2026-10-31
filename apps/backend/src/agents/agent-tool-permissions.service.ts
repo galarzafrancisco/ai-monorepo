@@ -73,6 +73,43 @@ export class AgentToolPermissionsService {
     );
   }
 
+  async listStoredAgentToolPermissions(
+    actorId: string,
+  ): Promise<AgentToolPermissionRecord[]> {
+    await this.assertAgentExists(actorId);
+
+    const permissions = await this.permissionRepository.find({
+      where: { agentActorId: actorId },
+      relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
+      order: {
+        server: { name: 'ASC' },
+      },
+    });
+
+    return permissions
+      .filter(
+        (permission): permission is AgentToolPermissionEntity & {
+          server: McpServerEntity;
+        } => Boolean(permission.server),
+      )
+      .map((permission) => this.mapPermissionToRecord(permission));
+  }
+
+  async upsertAgentToolPermissionByProvidedId(
+    actorId: string,
+    providedId: string,
+    input: UpsertAgentToolPermissionInput,
+  ): Promise<AgentToolPermissionRecord> {
+    const server = await this.serverRepository.findOne({
+      where: { providedId },
+    });
+    if (!server) {
+      throw new ServerNotFoundError(providedId);
+    }
+
+    return this.upsertAgentToolPermission(actorId, server.id, input);
+  }
+
   async upsertAgentToolPermission(
     actorId: string,
     serverId: string,
