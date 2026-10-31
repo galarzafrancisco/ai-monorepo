@@ -21,16 +21,6 @@ export class AgentResource extends BaseClient {
     return this.request('GET', '/api/v1/agents/templates', { signal: params?.signal });
   }
 
-  /** Export agent definitions as portable JSON */
-  async AgentsController_exportAgents(params?: { slug?: string; signal?: AbortSignal }): Promise<AgentDefinitionsDocumentDto> {
-    return this.request('GET', '/api/v1/agents/export', { params: { slug: params?.slug }, signal: params?.signal });
-  }
-
-  /** Import agent definitions, creating or updating by slug */
-  async AgentsController_importAgents(params: { body: AgentDefinitionsDocumentDto; signal?: AbortSignal }): Promise<ImportAgentsResponseDto> {
-    return this.request('POST', '/api/v1/agents/import', { body: params.body, signal: params?.signal });
-  }
-
   /** Get an agent by slug */
   async AgentsController_getAgentBySlug(params: { slug: string; signal?: AbortSignal }): Promise<AgentResponseDto> {
     return this.request('GET', `/api/v1/agents/${params.slug}`, { signal: params?.signal });
@@ -44,6 +34,16 @@ export class AgentResource extends BaseClient {
   /** Delete an agent */
   async AgentsController_deleteAgent(params: { actorId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('DELETE', `/api/v1/agents/${params.actorId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Export agent definitions as portable JSON */
+  async AgentDefinitionsController_exportAgents(params?: { slug?: string; signal?: AbortSignal }): Promise<AgentDefinitionsDocumentDto> {
+    return this.request('GET', '/api/v1/agent-definitions/export', { params: { slug: params?.slug }, signal: params?.signal });
+  }
+
+  /** Import agent definitions, creating or updating by slug */
+  async AgentDefinitionsController_importAgents(params: { body: AgentDefinitionsDocumentDto; signal?: AbortSignal }): Promise<ImportAgentsResponseDto> {
+    return this.request('POST', '/api/v1/agent-definitions/import', { body: params.body, signal: params?.signal });
   }
 
   /** List tool permissions for an agent */

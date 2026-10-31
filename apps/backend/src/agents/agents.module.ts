@@ -5,6 +5,7 @@ import { AgentToolPermissionEntity } from './agent-tool-permission.entity';
 import { AgentToolPermissionScopeEntity } from './agent-tool-permission-scope.entity';
 import { AgentsService } from './agents.service';
 import { AgentsController } from './agents.controller';
+import { AgentDefinitionsController } from './agent-definitions.controller';
 import { AgentTokensController } from './agent-tokens.controller';
 import { AgentExecutionTokensController } from './agent-execution-tokens.controller';
 import { AgentToolPermissionsController } from './agent-tool-permissions.controller';
@@ -29,6 +30,7 @@ import { AgentImportExportService } from './agent-import-export.service';
   ],
   controllers: [
     AgentsController,
+    AgentDefinitionsController,
     AgentToolPermissionsController,
     AgentTokensController,
     AgentExecutionTokensController,

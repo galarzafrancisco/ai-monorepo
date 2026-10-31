@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { AgentNotFoundError } from './errors/agents.errors';
 import { McpServerEntity } from '../mcp-registry/entities/mcp-server.entity';
@@ -10,6 +10,8 @@ import { AgentToolPermissionScopeEntity } from './agent-tool-permission-scope.en
 import {
   AgentToolPermissionRecord,
   AgentToolPermissionScopeRecord,
+  ResolvedAgentToolGrant,
+  ResolvedAgentToolGrants,
   UpsertAgentToolPermissionInput,
 } from './dto/service/agent-tool-permissions.service.types';
 import {
@@ -95,19 +97,68 @@ export class AgentToolPermissionsService {
       .map((permission) => this.mapPermissionToRecord(permission));
   }
 
-  async upsertAgentToolPermissionByProvidedId(
-    actorId: string,
-    providedId: string,
-    input: UpsertAgentToolPermissionInput,
-  ): Promise<AgentToolPermissionRecord> {
-    const server = await this.serverRepository.findOne({
-      where: { providedId },
+  /**
+   * Checks grants addressed by server provided id against this workspace.
+   * Read-only, so callers can reject a definition before changing anything.
+   */
+  async resolveToolGrants(
+    grants: { serverProvidedId: string; scopeIds: string[] }[],
+  ): Promise<ResolvedAgentToolGrants> {
+    const servers = await this.serverRepository.find({
+      where: { providedId: In(grants.map((grant) => grant.serverProvidedId)) },
+      relations: ['scopes'],
     });
-    if (!server) {
-      throw new ServerNotFoundError(providedId);
+    const serverByProvidedId = new Map(
+      servers.map((server) => [server.providedId, server]),
+    );
+
+    const resolved = new Map<string, ResolvedAgentToolGrant>();
+    const missingServers: string[] = [];
+    const invalidScopes: ResolvedAgentToolGrants['invalidScopes'] = [];
+
+    for (const grant of grants) {
+      const server = serverByProvidedId.get(grant.serverProvidedId);
+      if (!server) {
+        missingServers.push(grant.serverProvidedId);
+        continue;
+      }
+
+      const scopeIds = Array.from(new Set(grant.scopeIds));
+      const available = new Set((server.scopes ?? []).map((scope) => scope.id));
+      const unavailable = scopeIds.filter((scopeId) => !available.has(scopeId));
+      if (unavailable.length > 0) {
+        invalidScopes.push({
+          serverProvidedId: grant.serverProvidedId,
+          scopeIds: unavailable,
+        });
+        continue;
+      }
+
+      resolved.set(server.id, { serverId: server.id, scopeIds });
     }
 
-    return this.upsertAgentToolPermission(actorId, server.id, input);
+    return { grants: [...resolved.values()], missingServers, invalidScopes };
+  }
+
+  /**
+   * Makes `grants` the agent's complete set of stored tool grants. Either all
+   * of it applies or the agent keeps the grants it had.
+   */
+  async replaceAgentToolPermissions(
+    actorId: string,
+    grants: ResolvedAgentToolGrant[],
+  ): Promise<void> {
+    await this.assertAgentExists(actorId);
+
+    await this.permissionRepository.manager.transaction(async (manager) => {
+      await manager
+        .getRepository(AgentToolPermissionEntity)
+        .delete({ agentActorId: actorId });
+
+      for (const grant of grants) {
+        await this.writePermission(manager, actorId, grant);
+      }
+    });
   }
 
   async upsertAgentToolPermission(
@@ -133,35 +184,12 @@ export class AgentToolPermissionsService {
       throw new InvalidAgentToolPermissionScopeError(serverId, invalidScopeIds);
     }
 
-    await this.permissionRepository.manager.transaction(async (manager) => {
-      const permissionRepo = manager.getRepository(AgentToolPermissionEntity);
-      const permissionScopeRepo = manager.getRepository(AgentToolPermissionScopeEntity);
-
-      await permissionRepo.save(
-        permissionRepo.create({
-          agentActorId: actorId,
-          serverId,
-        }),
-      );
-
-      await permissionScopeRepo.delete({
-        agentActorId: actorId,
+    await this.permissionRepository.manager.transaction((manager) =>
+      this.writePermission(manager, actorId, {
         serverId,
-      });
-
-      if (normalizedScopeIds.length === 0) {
-        return;
-      }
-
-      const grantedScopeRows = normalizedScopeIds.map((scopeId) =>
-        permissionScopeRepo.create({
-          agentActorId: actorId,
-          serverId,
-          scopeId,
-        }),
-      );
-      await permissionScopeRepo.save(grantedScopeRows);
-    });
+        scopeIds: normalizedScopeIds,
+      }),
+    );
 
     return {
       serverId: server.id,
@@ -192,6 +220,41 @@ export class AgentToolPermissionsService {
     if (!result.affected) {
       throw new AgentToolPermissionNotFoundError(actorId, serverId);
     }
+  }
+
+  private async writePermission(
+    manager: EntityManager,
+    actorId: string,
+    { serverId, scopeIds }: ResolvedAgentToolGrant,
+  ): Promise<void> {
+    const permissionRepo = manager.getRepository(AgentToolPermissionEntity);
+    const permissionScopeRepo = manager.getRepository(AgentToolPermissionScopeEntity);
+
+    await permissionRepo.save(
+      permissionRepo.create({
+        agentActorId: actorId,
+        serverId,
+      }),
+    );
+
+    await permissionScopeRepo.delete({
+      agentActorId: actorId,
+      serverId,
+    });
+
+    if (scopeIds.length === 0) {
+      return;
+    }
+
+    await permissionScopeRepo.save(
+      scopeIds.map((scopeId) =>
+        permissionScopeRepo.create({
+          agentActorId: actorId,
+          serverId,
+          scopeId,
+        }),
+      ),
+    );
   }
 
   private async assertAgentExists(actorId: string): Promise<void> {

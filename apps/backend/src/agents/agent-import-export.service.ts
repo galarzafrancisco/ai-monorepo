@@ -12,11 +12,8 @@ import {
   CreateAgentInput,
   PatchAgentInput,
 } from './dto/service/agents.service.types';
-import {
-  AgentNotFoundError,
-  InvalidAgentToolPermissionScopeError,
-} from './errors/agents.errors';
-import { ServerNotFoundError } from '../mcp-registry/errors/mcp-registry.errors';
+import { ResolvedAgentToolGrants } from './dto/service/agent-tool-permissions.service.types';
+import { AgentNotFoundError } from './errors/agents.errors';
 
 @Injectable()
 export class AgentImportExportService {
@@ -69,19 +66,28 @@ export class AgentImportExportService {
       seenSlugs.add(definition.slug);
 
       try {
-        const outcome = await this.upsertAgent(definition);
-        result[outcome].push(definition.slug);
-        try {
-          const warnings = await this.syncToolPermissions(definition);
-          result.warnings.push(...warnings);
-        } catch (error) {
-          this.logger.warn(
-            `Imported agent ${definition.slug} without all tool grants: ${errorMessage(error)}`,
-          );
-          result.warnings.push({
+        // Resolved before the agent is touched, so a rejected definition
+        // changes nothing and can't leave older, broader grants in place.
+        const toolGrants = await this.resolveToolGrants(definition);
+        if (toolGrants && toolGrants.invalidScopes.length > 0) {
+          result.failed.push({
             slug: definition.slug,
-            reason: errorMessage(error),
+            reason: invalidScopesReason(toolGrants),
           });
+          continue;
+        }
+
+        const { outcome, actorId } = await this.upsertAgent(definition);
+        result[outcome].push(definition.slug);
+
+        if (toolGrants) {
+          result.warnings.push(
+            ...(await this.applyToolGrants(
+              definition.slug,
+              actorId,
+              toolGrants,
+            )),
+          );
         }
       } catch (error) {
         this.logger.warn(
@@ -97,9 +103,20 @@ export class AgentImportExportService {
     return result;
   }
 
+  private async resolveToolGrants(
+    definition: AgentDefinition,
+  ): Promise<ResolvedAgentToolGrants | undefined> {
+    if (definition.toolPermissions === undefined) {
+      return undefined;
+    }
+    return this.agentToolPermissionsService.resolveToolGrants(
+      definition.toolPermissions,
+    );
+  }
+
   private async upsertAgent(
     definition: AgentDefinition,
-  ): Promise<'created' | 'updated'> {
+  ): Promise<{ outcome: 'created' | 'updated'; actorId: string }> {
     try {
       const existing = await this.agentsService.getAgentBySlug({
         slug: definition.slug,
@@ -108,65 +125,42 @@ export class AgentImportExportService {
         existing.actorId,
         toPatchInput(definition),
       );
-      return 'updated';
+      return { outcome: 'updated', actorId: existing.actorId };
     } catch (error) {
       if (!(error instanceof AgentNotFoundError)) {
         throw error;
       }
     }
 
-    await this.agentsService.createAgent(toCreateInput(definition));
-    return 'created';
+    const created = await this.agentsService.createAgent(
+      toCreateInput(definition),
+    );
+    return { outcome: 'created', actorId: created.actorId };
   }
 
-  private async syncToolPermissions(
-    definition: AgentDefinition,
+  private async applyToolGrants(
+    slug: string,
+    actorId: string,
+    toolGrants: ResolvedAgentToolGrants,
   ): Promise<ImportAgentsResult['warnings']> {
-    if (definition.toolPermissions === undefined) {
-      return [];
-    }
+    const warnings = toolGrants.missingServers.map((serverProvidedId) => ({
+      slug,
+      reason: `Tool grant for MCP server '${serverProvidedId}' was skipped because that server is not in this workspace.`,
+    }));
 
-    const agent = await this.agentsService.getAgentBySlug({
-      slug: definition.slug,
-    });
-    const warnings: ImportAgentsResult['warnings'] = [];
-    const desiredProvidedIds = new Set<string>();
-
-    for (const grant of definition.toolPermissions) {
-      desiredProvidedIds.add(grant.serverProvidedId);
-      try {
-        await this.agentToolPermissionsService.upsertAgentToolPermissionByProvidedId(
-          agent.actorId,
-          grant.serverProvidedId,
-          { scopeIds: grant.scopeIds },
-        );
-      } catch (error) {
-        if (
-          error instanceof ServerNotFoundError ||
-          error instanceof InvalidAgentToolPermissionScopeError
-        ) {
-          warnings.push({
-            slug: definition.slug,
-            reason: toolGrantWarning(grant.serverProvidedId, error),
-          });
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    const stored =
-      await this.agentToolPermissionsService.listStoredAgentToolPermissions(
-        agent.actorId,
+    try {
+      await this.agentToolPermissionsService.replaceAgentToolPermissions(
+        actorId,
+        toolGrants.grants,
       );
-    for (const permission of stored) {
-      if (desiredProvidedIds.has(permission.serverProvidedId)) {
-        continue;
-      }
-      await this.agentToolPermissionsService.deleteAgentToolPermission(
-        agent.actorId,
-        permission.serverId,
+    } catch (error) {
+      this.logger.warn(
+        `Imported agent ${slug} without its tool grants: ${errorMessage(error)}`,
       );
+      warnings.push({
+        slug,
+        reason: `Tool grants were left unchanged: ${errorMessage(error)}`,
+      });
     }
 
     return warnings;
@@ -240,11 +234,12 @@ function toPatchInput(definition: AgentDefinition): PatchAgentInput {
   return input;
 }
 
-function toolGrantWarning(serverProvidedId: string, error: Error): string {
-  if (error instanceof ServerNotFoundError) {
-    return `Tool grant for MCP server '${serverProvidedId}' was skipped because that server is not in this workspace.`;
-  }
-  return `Tool grant for MCP server '${serverProvidedId}' was skipped: ${error.message}`;
+function invalidScopesReason(toolGrants: ResolvedAgentToolGrants): string {
+  const details = toolGrants.invalidScopes.map(
+    ({ serverProvidedId, scopeIds }) =>
+      `'${serverProvidedId}' does not have ${scopeIds.join(', ')}`,
+  );
+  return `Agent was not changed because its tool grants use unavailable scopes: ${details.join('; ')}.`;
 }
 
 function errorMessage(error: unknown): string {

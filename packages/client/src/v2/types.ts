@@ -1019,6 +1019,24 @@ export interface AgentTemplateCatalogResponseDto {
   avatars: AgentAvatarDto[];
 }
 
+export interface PatchAgentDto {
+  slug?: string;
+  name?: string;
+  systemPrompt?: string;
+  followUpPrompt?: string | null;
+  providerId?: string;
+  modelId?: string;
+  statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
+  tagTriggers?: string[];
+  type?: 'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other';
+  description?: string | null;
+  introduction?: string | null;
+  avatarUrl?: string | null;
+  allowedTools?: string[];
+  isActive?: boolean;
+  concurrencyLimit?: number | null;
+}
+
 export interface AgentToolPermissionDefinitionDto {
   serverProvidedId: string;
   scopeIds: string[];
@@ -1058,24 +1076,6 @@ export interface ImportAgentsResponseDto {
   updated: string[];
   failed: ImportAgentIssueDto[];
   warnings: ImportAgentIssueDto[];
-}
-
-export interface PatchAgentDto {
-  slug?: string;
-  name?: string;
-  systemPrompt?: string;
-  followUpPrompt?: string | null;
-  providerId?: string;
-  modelId?: string;
-  statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
-  tagTriggers?: string[];
-  type?: 'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other';
-  description?: string | null;
-  introduction?: string | null;
-  avatarUrl?: string | null;
-  allowedTools?: string[];
-  isActive?: boolean;
-  concurrencyLimit?: number | null;
 }
 
 export interface AgentToolPermissionServerResponseDto {

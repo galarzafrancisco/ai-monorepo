@@ -122,7 +122,7 @@ describe('Agent definition import/export (e2e)', () => {
       .expect(201);
 
     const exported = await request(httpServer)
-      .get('/api/v1/agents/export')
+      .get('/api/v1/agent-definitions/export')
       .query({ slug: agentSlug })
       .set('Cookie', authCookies)
       .expect(200);
@@ -154,7 +154,7 @@ describe('Agent definition import/export (e2e)', () => {
   it('creates a missing agent and updates an existing one by slug', async () => {
     const agentSlug = slug();
     const created = await request(httpServer)
-      .post('/api/v1/agents/import')
+      .post('/api/v1/agent-definitions/import')
       .set('Cookie', authCookies)
       .send({
         version: AGENT_DEFINITION_VERSION,
@@ -175,7 +175,7 @@ describe('Agent definition import/export (e2e)', () => {
     expect(fetched.body.providerId).toBe('xai');
 
     const updated = await request(httpServer)
-      .post('/api/v1/agents/import')
+      .post('/api/v1/agent-definitions/import')
       .set('Cookie', authCookies)
       .send({
         version: AGENT_DEFINITION_VERSION,
@@ -204,7 +204,7 @@ describe('Agent definition import/export (e2e)', () => {
       .expect(201);
 
     const imported = await request(httpServer)
-      .post('/api/v1/agents/import')
+      .post('/api/v1/agent-definitions/import')
       .set('Cookie', authCookies)
       .send({
         version: AGENT_DEFINITION_VERSION,
@@ -247,11 +247,204 @@ describe('Agent definition import/export (e2e)', () => {
     ]);
   });
 
+  describe('importing over existing tool grants', () => {
+    const grantsFor = async (actorId: string) => {
+      const permissions = await request(httpServer)
+        .get(`/api/v1/agents/${actorId}/tool-permissions`)
+        .set('Cookie', authCookies)
+        .expect(200);
+      return permissions.body as {
+        server: { providedId: string };
+        grantedScopes: { id: string }[];
+      }[];
+    };
+
+    const importedAgentWithWriteGrant = async () => {
+      const agentSlug = slug();
+      const server = await createServer();
+      await request(httpServer)
+        .post(`/api/v1/mcp/servers/${server.id}/scopes`)
+        .set('Cookie', authCookies)
+        .send([
+          { id: 'tasks:read', description: 'Read tasks' },
+          { id: 'tasks:write', description: 'Write tasks' },
+        ])
+        .expect(201);
+
+      const imported = await request(httpServer)
+        .post('/api/v1/agent-definitions/import')
+        .set('Cookie', authCookies)
+        .send({
+          version: AGENT_DEFINITION_VERSION,
+          agents: [
+            {
+              ...definition(agentSlug),
+              toolPermissions: [
+                { serverProvidedId: server.providedId, scopeIds: ['tasks:write'] },
+              ],
+            },
+          ],
+        })
+        .expect(200);
+      expect(imported.body.created).toEqual([agentSlug]);
+
+      const agent = await request(httpServer)
+        .get(`/api/v1/agents/${agentSlug}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      return { agentSlug, server, actorId: agent.body.actorId as string };
+    };
+
+    it('fails the agent and changes nothing when a scope is unavailable', async () => {
+      const { agentSlug, server, actorId } = await importedAgentWithWriteGrant();
+
+      const imported = await request(httpServer)
+        .post('/api/v1/agent-definitions/import')
+        .set('Cookie', authCookies)
+        .send({
+          version: AGENT_DEFINITION_VERSION,
+          agents: [
+            {
+              ...definition(agentSlug, 'Must not be applied'),
+              toolPermissions: [
+                { serverProvidedId: server.providedId, scopeIds: ['tasks:admin'] },
+              ],
+            },
+          ],
+        })
+        .expect(200);
+
+      expect(imported.body.updated).toEqual([]);
+      expect(imported.body.warnings).toEqual([]);
+      expect(imported.body.failed).toEqual([
+        {
+          slug: agentSlug,
+          reason: `Agent was not changed because its tool grants use unavailable scopes: '${server.providedId}' does not have tasks:admin.`,
+        },
+      ]);
+
+      const agent = await request(httpServer)
+        .get(`/api/v1/agents/${agentSlug}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+      expect(agent.body.systemPrompt).toBe('Do the work.');
+
+      const grant = (await grantsFor(actorId)).find(
+        (item) => item.server.providedId === server.providedId,
+      );
+      expect(grant?.grantedScopes.map((scope) => scope.id)).toEqual(['tasks:write']);
+    });
+
+    it('does not create an agent when a scope is unavailable', async () => {
+      const agentSlug = slug();
+      const server = await createServer();
+
+      const imported = await request(httpServer)
+        .post('/api/v1/agent-definitions/import')
+        .set('Cookie', authCookies)
+        .send({
+          version: AGENT_DEFINITION_VERSION,
+          agents: [
+            {
+              ...definition(agentSlug),
+              toolPermissions: [
+                { serverProvidedId: server.providedId, scopeIds: ['tasks:admin'] },
+              ],
+            },
+          ],
+        })
+        .expect(200);
+
+      expect(imported.body.created).toEqual([]);
+      expect(imported.body.failed).toHaveLength(1);
+
+      await request(httpServer)
+        .get(`/api/v1/agents/${agentSlug}`)
+        .set('Cookie', authCookies)
+        .expect(404);
+    });
+
+    it('narrows a grant and removes grants that are not in the file', async () => {
+      const { agentSlug, server, actorId } = await importedAgentWithWriteGrant();
+
+      await request(httpServer)
+        .post('/api/v1/agent-definitions/import')
+        .set('Cookie', authCookies)
+        .send({
+          version: AGENT_DEFINITION_VERSION,
+          agents: [
+            {
+              ...definition(agentSlug),
+              toolPermissions: [
+                { serverProvidedId: server.providedId, scopeIds: ['tasks:read'] },
+              ],
+            },
+          ],
+        })
+        .expect(200);
+
+      const narrowed = (await grantsFor(actorId)).find(
+        (item) => item.server.providedId === server.providedId,
+      );
+      expect(narrowed?.grantedScopes.map((scope) => scope.id)).toEqual(['tasks:read']);
+
+      await request(httpServer)
+        .post('/api/v1/agent-definitions/import')
+        .set('Cookie', authCookies)
+        .send({
+          version: AGENT_DEFINITION_VERSION,
+          agents: [
+            {
+              ...definition(agentSlug),
+              toolPermissions: [
+                { serverProvidedId: 'missing-server', scopeIds: ['tasks:write'] },
+              ],
+            },
+          ],
+        })
+        .expect(200);
+
+      expect(
+        (await grantsFor(actorId)).find(
+          (item) => item.server.providedId === server.providedId,
+        ),
+      ).toBeUndefined();
+    });
+  });
+
+  it.each(['export', 'import'])(
+    'keeps an agent with the slug %s reachable by slug',
+    async (reservedLookingSlug) => {
+      const imported = await request(httpServer)
+        .post('/api/v1/agent-definitions/import')
+        .set('Cookie', authCookies)
+        .send({
+          version: AGENT_DEFINITION_VERSION,
+          agents: [definition(reservedLookingSlug)],
+        })
+        .expect(200);
+      expect(imported.body.failed).toEqual([]);
+
+      const agent = await request(httpServer)
+        .get(`/api/v1/agents/${reservedLookingSlug}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+      expect(agent.body.slug).toBe(reservedLookingSlug);
+      expect(agent.body.actorId).toEqual(expect.any(String));
+
+      await request(httpServer)
+        .delete(`/api/v1/agents/${agent.body.actorId}`)
+        .set('Cookie', authCookies)
+        .expect(204);
+    },
+  );
+
   it('rejects database ids and unknown document versions', async () => {
     const agentSlug = slug();
 
     await request(httpServer)
-      .post('/api/v1/agents/import')
+      .post('/api/v1/agent-definitions/import')
       .set('Cookie', authCookies)
       .send({
         version: AGENT_DEFINITION_VERSION,
@@ -260,7 +453,7 @@ describe('Agent definition import/export (e2e)', () => {
       .expect(400);
 
     await request(httpServer)
-      .post('/api/v1/agents/import')
+      .post('/api/v1/agent-definitions/import')
       .set('Cookie', authCookies)
       .send({
         version: 99,
@@ -271,7 +464,7 @@ describe('Agent definition import/export (e2e)', () => {
 
   it('returns not found when exporting a missing slug', async () => {
     await request(httpServer)
-      .get('/api/v1/agents/export')
+      .get('/api/v1/agent-definitions/export')
       .query({ slug: slug() })
       .set('Cookie', authCookies)
       .expect(404);

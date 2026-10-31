@@ -1706,40 +1706,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/agents/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Export agent definitions as portable JSON */
-        get: operations["AgentsController_exportAgents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Import agent definitions, creating or updating by slug */
-        post: operations["AgentsController_importAgents"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/agents/{slug}": {
         parameters: {
             query?: never;
@@ -1773,6 +1739,40 @@ export interface paths {
         head?: never;
         /** Patch an agent and its linked actor fields */
         patch: operations["AgentsController_patchAgent"];
+        trace?: never;
+    };
+    "/api/v1/agent-definitions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export agent definitions as portable JSON */
+        get: operations["AgentDefinitionsController_exportAgents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent-definitions/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import agent definitions, creating or updating by slug */
+        post: operations["AgentDefinitionsController_importAgents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/agents/{actorId}/tool-permissions": {
@@ -6137,6 +6137,92 @@ export interface components {
             harnesses: components["schemas"]["AgentTemplateHarnessDto"][];
             avatars: components["schemas"]["AgentAvatarDto"][];
         };
+        PatchAgentDto: {
+            /**
+             * @description Updated actor slug for the agent
+             * @example code-reviewer
+             */
+            slug?: string;
+            /**
+             * @description Updated actor display name for the agent
+             * @example Code Reviewer
+             */
+            name?: string;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt?: string;
+            /**
+             * @description Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.
+             * @example Did you put the task in review? If not, do it now.
+             */
+            followUpPrompt?: string | null;
+            /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.4
+             */
+            modelId?: string;
+            /**
+             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
+             * @example [
+             *       "NOT_STARTED"
+             *     ]
+             */
+            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
+             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
+             * @example [
+             *       "code"
+             *     ]
+             */
+            tagTriggers?: string[];
+            /**
+             * @description Type of agent (provider)
+             * @example claude
+             * @enum {string}
+             */
+            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: string | null;
+            /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: string | null;
+            /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @example [
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
+             *     ]
+             */
+            allowedTools?: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @example true
+             */
+            isActive?: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number | null;
+        };
         AgentToolPermissionDefinitionDto: {
             /**
              * @description Portable MCP server identifier. Database server IDs are not accepted.
@@ -6243,92 +6329,6 @@ export interface components {
             failed: components["schemas"]["ImportAgentIssueDto"][];
             /** @description Agents that were created or updated, but with a related record skipped */
             warnings: components["schemas"]["ImportAgentIssueDto"][];
-        };
-        PatchAgentDto: {
-            /**
-             * @description Updated actor slug for the agent
-             * @example code-reviewer
-             */
-            slug?: string;
-            /**
-             * @description Updated actor display name for the agent
-             * @example Code Reviewer
-             */
-            name?: string;
-            /**
-             * @description Core instructions/persona for this agent
-             * @example You are a helpful assistant that helps users with tasks.
-             */
-            systemPrompt?: string;
-            /**
-             * @description Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.
-             * @example Did you put the task in review? If not, do it now.
-             */
-            followUpPrompt?: string | null;
-            /**
-             * @description Provider ID to select a model runtime
-             * @example openai
-             */
-            providerId?: string;
-            /**
-             * @description Model ID used by the agent runtime
-             * @example gpt-5.4
-             */
-            modelId?: string;
-            /**
-             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
-             * @example [
-             *       "NOT_STARTED"
-             *     ]
-             */
-            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
-            /**
-             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
-             * @example [
-             *       "code"
-             *     ]
-             */
-            tagTriggers?: string[];
-            /**
-             * @description Type of agent (provider)
-             * @example claude
-             * @enum {string}
-             */
-            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
-            /**
-             * @description Short description of what this agent does
-             * @example A helpful assistant agent
-             */
-            description?: string | null;
-            /**
-             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
-             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
-             */
-            introduction?: string | null;
-            /**
-             * @description Optional avatar URL for the agent actor
-             * @example https://example.com/avatar.png
-             */
-            avatarUrl?: string | null;
-            /**
-             * @description List of tool identifiers this agent is allowed to use
-             * @example [
-             *       "tasks.createTask",
-             *       "tasks.readTask",
-             *       "context.search"
-             *     ]
-             */
-            allowedTools?: string[];
-            /**
-             * @description Whether this agent is available for assignment
-             * @example true
-             */
-            isActive?: boolean;
-            /**
-             * @description Max number of tasks this agent can process in parallel
-             * @example 5
-             */
-            concurrencyLimit?: number | null;
         };
         AgentToolPermissionServerResponseDto: {
             /**
@@ -12239,51 +12239,6 @@ export interface operations {
             };
         };
     };
-    AgentsController_exportAgents: {
-        parameters: {
-            query?: {
-                /** @description Export a single agent by slug. Omit to export every agent. */
-                slug?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentDefinitionsDocumentDto"];
-                };
-            };
-        };
-    };
-    AgentsController_importAgents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AgentDefinitionsDocumentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportAgentsResponseDto"];
-                };
-            };
-        };
-    };
     AgentsController_getAgentBySlug: {
         parameters: {
             query?: never;
@@ -12348,6 +12303,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentDefinitionsController_exportAgents: {
+        parameters: {
+            query?: {
+                /** @description Export a single agent by slug. Omit to export every agent. */
+                slug?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDefinitionsDocumentDto"];
+                };
+            };
+        };
+    };
+    AgentDefinitionsController_importAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentDefinitionsDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportAgentsResponseDto"];
                 };
             };
         };

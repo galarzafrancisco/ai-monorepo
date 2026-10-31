@@ -97,7 +97,7 @@ export function SettingsDataPage() {
     setAgentSuccess('');
 
     try {
-      const document = await AgentService.agentsControllerExportAgents();
+      const document = await AgentService.agentDefinitionsControllerExportAgents();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       downloadJson(`agents-${timestamp}.json`, document);
       setAgentSuccess('Agent definitions downloaded.');
@@ -121,9 +121,9 @@ export function SettingsDataPage() {
 
     try {
       const parsed = JSON.parse(await selectedAgentFile.text()) as Parameters<
-        typeof AgentService.agentsControllerImportAgents
+        typeof AgentService.agentDefinitionsControllerImportAgents
       >[0];
-      const payload = (await AgentService.agentsControllerImportAgents(
+      const payload = (await AgentService.agentDefinitionsControllerImportAgents(
         parsed,
       )) as AgentImportResponse;
       const created = payload.created?.length ?? 0;
@@ -293,7 +293,7 @@ export function SettingsDataPage() {
           <Stack spacing="1">
             <Text size="4" weight="semibold">Import Agents</Text>
             <Text tone="muted">
-              Upload an agent definition file. An existing slug is updated; a new slug is created. Tool grants for MCP servers that are not in this workspace are skipped.
+              Upload an agent definition file. An existing slug is updated; a new slug is created. Tool grants in the file replace the agent's existing grants. Grants for MCP servers that are not in this workspace are skipped, and an agent is left unchanged if a grant uses a scope its server doesn't have.
             </Text>
           </Stack>
 

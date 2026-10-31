@@ -69,41 +69,6 @@ export class AgentService {
         });
     }
     /**
-     * Export agent definitions as portable JSON
-     * @param slug Export a single agent by slug. Omit to export every agent.
-     * @returns AgentDefinitionsDocumentDto
-     * @throws ApiError
-     */
-    public static agentsControllerExportAgents(
-        slug?: string,
-        config: OpenAPIConfig = OpenAPI,
-    ): CancelablePromise<AgentDefinitionsDocumentDto> {
-        return __request(config, {
-            method: 'GET',
-            url: '/api/v1/agents/export',
-            query: {
-                'slug': slug,
-            },
-        });
-    }
-    /**
-     * Import agent definitions, creating or updating by slug
-     * @param requestBody
-     * @returns ImportAgentsResponseDto
-     * @throws ApiError
-     */
-    public static agentsControllerImportAgents(
-        requestBody: AgentDefinitionsDocumentDto,
-        config: OpenAPIConfig = OpenAPI,
-    ): CancelablePromise<ImportAgentsResponseDto> {
-        return __request(config, {
-            method: 'POST',
-            url: '/api/v1/agents/import',
-            body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-    /**
      * Get an agent by slug
      * @param slug Agent slug
      * @returns AgentResponseDto
@@ -159,6 +124,41 @@ export class AgentService {
             path: {
                 'actorId': actorId,
             },
+        });
+    }
+    /**
+     * Export agent definitions as portable JSON
+     * @param slug Export a single agent by slug. Omit to export every agent.
+     * @returns AgentDefinitionsDocumentDto
+     * @throws ApiError
+     */
+    public static agentDefinitionsControllerExportAgents(
+        slug?: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<AgentDefinitionsDocumentDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/agent-definitions/export',
+            query: {
+                'slug': slug,
+            },
+        });
+    }
+    /**
+     * Import agent definitions, creating or updating by slug
+     * @param requestBody
+     * @returns ImportAgentsResponseDto
+     * @throws ApiError
+     */
+    public static agentDefinitionsControllerImportAgents(
+        requestBody: AgentDefinitionsDocumentDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ImportAgentsResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/agent-definitions/import',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

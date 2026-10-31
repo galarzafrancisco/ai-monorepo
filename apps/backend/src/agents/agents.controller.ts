@@ -9,7 +9,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -19,9 +18,7 @@ import {
   ApiCreatedResponse,
   ApiCookieAuth,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
 import { AgentsService } from './agents.service';
-import { AgentImportExportService } from './agent-import-export.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { PatchAgentDto } from './dto/patch-agent.dto';
 import { AgentResponseDto } from './dto/agent-response.dto';
@@ -30,11 +27,6 @@ import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
 import { AgentActorParamsDto } from './dto/agent-actor-params.dto';
 import { AgentTemplateCatalogResponseDto } from './dto/agent-template-catalog-response.dto';
-import {
-  AgentDefinitionsDocumentDto,
-  ImportAgentsResponseDto,
-} from './dto/agent-definition.dto';
-import { ExportAgentsQueryDto } from './dto/export-agents-query.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { AgentsScopes } from './agents.scopes';
@@ -46,10 +38,7 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.READ.id)
 export class AgentsController {
-  constructor(
-    private readonly agentsService: AgentsService,
-    private readonly agentImportExportService: AgentImportExportService,
-  ) {}
+  constructor(private readonly agentsService: AgentsService) {}
 
   @Post()
   @RequireScopes(AgentsScopes.WRITE.id)
@@ -104,44 +93,6 @@ export class AgentsController {
   @ApiOkResponse({ type: AgentTemplateCatalogResponseDto })
   listAgentTemplates(): AgentTemplateCatalogResponseDto {
     return this.agentsService.getTemplateCatalog();
-  }
-
-  @Get('export')
-  @ApiOperation({
-    summary: 'Export agent definitions as portable JSON',
-  })
-  @ApiOkResponse({ type: AgentDefinitionsDocumentDto })
-  async exportAgents(
-    @Query() query: ExportAgentsQueryDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<AgentDefinitionsDocumentDto> {
-    const document = await this.agentImportExportService.exportAgents(
-      query.slug,
-    );
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="agents-${timestamp}.json"`,
-    );
-    return AgentDefinitionsDocumentDto.fromDocument(document);
-  }
-
-  @Post('import')
-  @RequireScopes(AgentsScopes.WRITE.id)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Import agent definitions, creating or updating by slug',
-  })
-  @ApiOkResponse({ type: ImportAgentsResponseDto })
-  async importAgents(
-    @Body() dto: AgentDefinitionsDocumentDto,
-  ): Promise<ImportAgentsResponseDto> {
-    const result = await this.agentImportExportService.importAgents({
-      version: dto.version,
-      agents: dto.agents,
-    });
-    return ImportAgentsResponseDto.fromResult(result);
   }
 
   @Get(':slug')

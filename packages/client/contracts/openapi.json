@@ -5730,81 +5730,6 @@
         ]
       }
     },
-    "/api/v1/agents/export": {
-      "get": {
-        "operationId": "AgentsController_exportAgents",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": false,
-            "in": "query",
-            "description": "Export a single agent by slug. Omit to export every agent.",
-            "schema": {
-              "example": "buddy",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentDefinitionsDocumentDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Export agent definitions as portable JSON",
-        "tags": [
-          "Agent"
-        ]
-      }
-    },
-    "/api/v1/agents/import": {
-      "post": {
-        "operationId": "AgentsController_importAgents",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AgentDefinitionsDocumentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImportAgentsResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Import agent definitions, creating or updating by slug",
-        "tags": [
-          "Agent"
-        ]
-      }
-    },
     "/api/v1/agents/{slug}": {
       "get": {
         "operationId": "AgentsController_getAgentBySlug",
@@ -5920,6 +5845,81 @@
           }
         ],
         "summary": "Delete an agent",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agent-definitions/export": {
+      "get": {
+        "operationId": "AgentDefinitionsController_exportAgents",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": false,
+            "in": "query",
+            "description": "Export a single agent by slug. Omit to export every agent.",
+            "schema": {
+              "example": "buddy",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDefinitionsDocumentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Export agent definitions as portable JSON",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agent-definitions/import": {
+      "post": {
+        "operationId": "AgentDefinitionsController_importAgents",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentDefinitionsDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportAgentsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Import agent definitions, creating or updating by slug",
         "tags": [
           "Agent"
         ]
@@ -14335,6 +14335,122 @@
           "avatars"
         ]
       },
+      "PatchAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Updated actor slug for the agent",
+            "example": "code-reviewer"
+          },
+          "name": {
+            "type": "string",
+            "description": "Updated actor display name for the agent",
+            "example": "Code Reviewer"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "followUpPrompt": {
+            "type": "string",
+            "description": "Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.",
+            "example": "Did you put the task in review? If not, do it now.",
+            "nullable": true
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.4"
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
+            "example": [
+              "NOT_STARTED"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
+            "example": [
+              "code"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of agent (provider)",
+            "example": "claude",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent",
+            "nullable": true
+          },
+          "introduction": {
+            "type": "string",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance.",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5,
+            "nullable": true
+          }
+        }
+      },
       "AgentToolPermissionDefinitionDto": {
         "type": "object",
         "properties": {
@@ -14553,122 +14669,6 @@
           "failed",
           "warnings"
         ]
-      },
-      "PatchAgentDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string",
-            "description": "Updated actor slug for the agent",
-            "example": "code-reviewer"
-          },
-          "name": {
-            "type": "string",
-            "description": "Updated actor display name for the agent",
-            "example": "Code Reviewer"
-          },
-          "systemPrompt": {
-            "type": "string",
-            "description": "Core instructions/persona for this agent",
-            "example": "You are a helpful assistant that helps users with tasks."
-          },
-          "followUpPrompt": {
-            "type": "string",
-            "description": "Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.",
-            "example": "Did you put the task in review? If not, do it now.",
-            "nullable": true
-          },
-          "providerId": {
-            "type": "string",
-            "description": "Provider ID to select a model runtime",
-            "example": "openai"
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.4"
-          },
-          "statusTriggers": {
-            "type": "array",
-            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
-            "example": [
-              "NOT_STARTED"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "FOR_REVIEW",
-                "DONE"
-              ]
-            }
-          },
-          "tagTriggers": {
-            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
-            "example": [
-              "code"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of agent (provider)",
-            "example": "claude",
-            "enum": [
-              "claude",
-              "codex",
-              "opencode",
-              "adk",
-              "githubcopilot",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "string",
-            "description": "Short description of what this agent does",
-            "example": "A helpful assistant agent",
-            "nullable": true
-          },
-          "introduction": {
-            "type": "string",
-            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
-            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance.",
-            "nullable": true
-          },
-          "avatarUrl": {
-            "type": "string",
-            "description": "Optional avatar URL for the agent actor",
-            "example": "https://example.com/avatar.png",
-            "nullable": true
-          },
-          "allowedTools": {
-            "description": "List of tool identifiers this agent is allowed to use",
-            "example": [
-              "tasks.createTask",
-              "tasks.readTask",
-              "context.search"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Whether this agent is available for assignment",
-            "example": true
-          },
-          "concurrencyLimit": {
-            "type": "number",
-            "description": "Max number of tasks this agent can process in parallel",
-            "example": 5,
-            "nullable": true
-          }
-        }
       },
       "AgentToolPermissionServerResponseDto": {
         "type": "object",
