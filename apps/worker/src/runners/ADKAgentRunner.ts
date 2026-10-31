@@ -169,8 +169,10 @@ export class ADKAgentRunner extends BaseAgentRunner {
         ? [ctx.prompt, ctx.followUpPrompt]
         : [ctx.prompt];
 
+      let turnFailed = false;
+
       for (const [turn, text] of prompts.entries()) {
-        if (aborted) {
+        if (aborted || turnFailed) {
           break;
         }
         if (turn > 0) {
@@ -191,6 +193,10 @@ export class ADKAgentRunner extends BaseAgentRunner {
           if (aborted) {
             console.log('[ADKAgentRunner] Breaking out of message loop due to abort');
             break;
+          }
+
+          if (msg.errorCode) {
+            turnFailed = true;
           }
 
           if (msg.content?.parts) {

@@ -90,6 +90,24 @@ test('does not follow up a turn that did not succeed', async () => {
   assert.equal(calls.length, 1);
 });
 
+test('does not follow up a success result flagged as an error', async () => {
+  const { runner, calls } = runnerWith([
+    [init, { ...success('quota exceeded'), is_error: true }],
+  ]);
+  const errors: string[] = [];
+
+  const result = await runner.run(ctx({ followUpPrompt: 'check your work' }), {
+    onHeartbeat: () => undefined,
+    onError: ({ message }) => {
+      errors.push(message);
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.deepEqual(errors, ['quota exceeded']);
+  assert.equal(result.result, 'quota exceeded');
+});
+
 test('does not follow up after the run was interrupted', async () => {
   const abort = new AbortController();
   abort.abort();

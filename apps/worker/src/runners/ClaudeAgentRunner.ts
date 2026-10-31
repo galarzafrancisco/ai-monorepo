@@ -160,7 +160,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
               }
             }
             finalResult = msg.result;
-            turnSucceeded = true;
+            turnSucceeded = msg.is_error !== true;
           }
         }
 
