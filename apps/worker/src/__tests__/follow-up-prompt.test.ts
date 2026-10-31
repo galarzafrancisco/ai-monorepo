@@ -8,7 +8,17 @@ import type { AgentRunContext, TokenUsage } from '../runners/AgentRunner.js';
 type Message = Record<string, unknown>;
 type Call = { prompt: string; resume?: string };
 
-const init = { type: 'system', subtype: 'init', session_id: 'session-1' };
+const init = {
+  type: 'system',
+  subtype: 'init',
+  session_id: 'session-1',
+  model: 'test-model',
+  tools: [],
+  mcp_servers: [],
+  slash_commands: [],
+  skills: [],
+  plugins: [],
+};
 const success = (result: string, tokens = 10) => ({
   type: 'result',
   subtype: 'success',

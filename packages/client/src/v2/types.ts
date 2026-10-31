@@ -932,6 +932,7 @@ export interface CreateAgentDto {
   introduction?: string;
   avatarUrl?: string | null;
   systemPrompt: string;
+  followUpPrompt?: string | null;
   providerId?: string;
   modelId?: string;
   statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
@@ -950,6 +951,7 @@ export interface AgentResponseDto {
   introduction?: Record<string, any>;
   avatarUrl?: string | null;
   systemPrompt: string;
+  followUpPrompt?: string | null;
   providerId?: string | null;
   modelId?: string | null;
   statusTriggers: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
@@ -979,6 +981,7 @@ export interface AgentTemplateDto {
   providerId?: string;
   modelId?: string;
   systemPrompt: string;
+  followUpPrompt?: string;
   agentDescription?: string;
   statusTriggers: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
   tagTriggers: string[];
@@ -1018,6 +1021,7 @@ export interface PatchAgentDto {
   slug?: string;
   name?: string;
   systemPrompt?: string;
+  followUpPrompt?: string | null;
   providerId?: string;
   modelId?: string;
   statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
