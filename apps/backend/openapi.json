@@ -9216,6 +9216,13 @@
       "ProjectResponseDto": {
         "type": "object",
         "properties": {
+          "autoTagIds": {
+            "description": "Tag IDs automatically applied to tasks assigned to this project",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "string",
             "description": "Project unique identifier",
@@ -9274,6 +9281,7 @@
           }
         },
         "required": [
+          "autoTagIds",
           "id",
           "tagId",
           "tagName",
@@ -9288,6 +9296,13 @@
       "PatchProjectDto": {
         "type": "object",
         "properties": {
+          "autoTagIds": {
+            "description": "Tag IDs automatically applied to tasks assigned to this project",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "description": {
             "type": "string",
             "description": "Project description",

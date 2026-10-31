@@ -28,6 +28,7 @@ export interface CreateProjectDto {
 }
 
 export interface ProjectResponseDto {
+  autoTagIds: string[];
   id: string;
   tagId: string;
   tagName: string;
@@ -42,6 +43,7 @@ export interface ProjectResponseDto {
 }
 
 export interface PatchProjectDto {
+  autoTagIds?: string[];
   description?: string;
   repoUrl?: string;
   githubConnectionId?: string | null;

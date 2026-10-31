@@ -2899,6 +2899,8 @@ export interface components {
             color?: string;
         };
         ProjectResponseDto: {
+            /** @description Tag IDs automatically applied to tasks assigned to this project */
+            autoTagIds: string[];
             /**
              * @description Project unique identifier
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -2956,6 +2958,8 @@ export interface components {
             updatedAt: string;
         };
         PatchProjectDto: {
+            /** @description Tag IDs automatically applied to tasks assigned to this project */
+            autoTagIds?: string[];
             /**
              * @description Project description
              * @example AI task management platform

@@ -12,6 +12,7 @@ export type CreateProjectInput = {
 };
 
 export type UpdateProjectInput = {
+  autoTagIds?: string[];
   description?: string;
   repoUrl?: string;
   /** Null: pick the connection automatically. */
@@ -20,6 +21,7 @@ export type UpdateProjectInput = {
 };
 
 export type ProjectResult = {
+  autoTagIds: string[];
   id: string;
   tagId: string;
   tagName: string;

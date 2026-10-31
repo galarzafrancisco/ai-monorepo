@@ -1,8 +1,13 @@
-import { IsString, IsOptional, IsUUID, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsBoolean, IsArray } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsGitUrl } from '../validators/is-git-url.validator';
 
 export class PatchProjectDto {
+  @ApiPropertyOptional({ type: [String], description: 'Tag IDs automatically applied to tasks assigned to this project' })
+  @IsArray()
+  @IsUUID('all', { each: true })
+  @IsOptional()
+  autoTagIds?: string[];
   @ApiPropertyOptional({
     description: 'Project description',
     example: 'AI task management platform',

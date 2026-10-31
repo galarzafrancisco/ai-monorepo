@@ -5,6 +5,7 @@ import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
 import { MetaService } from './meta.service';
 import { ProjectsService } from './projects.service';
+import { ProjectAutoTagsService } from './project-auto-tags.service';
 import { MetaController } from './meta.controller';
 import { ProjectsController } from './projects.controller';
 import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
@@ -19,7 +20,7 @@ import { SearchModule } from '../search/search.module';
     SearchModule,
   ],
   controllers: [MetaController, ProjectsController],
-  providers: [MetaService, ProjectsService],
-  exports: [MetaService, ProjectsService],
+  providers: [MetaService, ProjectsService, ProjectAutoTagsService],
+  exports: [MetaService, ProjectsService, ProjectAutoTagsService],
 })
 export class MetaModule {}

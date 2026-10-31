@@ -50,6 +50,7 @@ describe('TasksService addArtefact', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     return { service, artefactRepository, eventEmitter };

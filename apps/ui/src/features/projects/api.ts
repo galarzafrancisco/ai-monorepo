@@ -9,5 +9,6 @@ const client = new ApiClient({
 });
 
 export const ProjectsService = client.metaProjects;
+export const MetaService = client.meta;
 export const TasksService = client.task;
 export const GithubConnectionsService = client.integrationsGithub;

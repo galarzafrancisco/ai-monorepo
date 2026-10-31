@@ -88,6 +88,7 @@ describe('TasksService auto-prune', () => {
       {} as any,
       threadsService as any,
       {} as any,
+      {} as any,
     );
 
     return {

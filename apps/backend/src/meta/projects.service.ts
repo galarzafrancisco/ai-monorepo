@@ -1,9 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TaskEntity } from '../tasks/task.entity';
+import { TaskUpdatedEvent } from '../tasks/events/tasks.events';
 import { ProjectEntity } from './project.entity';
 import { MetaService } from './meta.service';
 import { SearchService } from '../search/search.service';
+import { ProjectAutoTagsService } from './project-auto-tags.service';
 import { GithubConnectionNotFoundError } from '../integrations/errors/integrations.errors';
 import {
   CreateProjectInput,
@@ -22,6 +26,8 @@ export class ProjectsService {
     private readonly metaService: MetaService,
     private readonly searchService: SearchService,
     private readonly dataSource: DataSource,
+    private readonly projectAutoTags: ProjectAutoTagsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private async assertGithubConnectionExists(connectionId: string | null | undefined): Promise<void> {
@@ -54,7 +60,7 @@ export class ProjectsService {
     // Check if project already exists
     let project = await this.projectRepository.findOne({
       where: { tagId: tag.id },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
@@ -69,6 +75,7 @@ export class ProjectsService {
       });
       project = await this.projectRepository.save(project);
       project.tag = tag;
+      project.autoTags = [];
 
       this.logger.log({
         message: 'Project created',
@@ -106,7 +113,7 @@ export class ProjectsService {
     this.logger.log({ message: 'Getting all projects' });
 
     const projects = await this.projectRepository.find({
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
       order: { slug: 'ASC' },
     });
 
@@ -124,7 +131,7 @@ export class ProjectsService {
   async getProjectById(projectId: string): Promise<ProjectResult> {
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
@@ -140,7 +147,7 @@ export class ProjectsService {
   async getProjectBySlug(slug: string): Promise<ProjectResult | null> {
     const project = await this.projectRepository.findOne({
       where: { slug },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     return project ? this.mapProjectToResult(project) : null;
@@ -191,7 +198,7 @@ export class ProjectsService {
 
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
@@ -212,6 +219,14 @@ export class ProjectsService {
     }
     if (input.githubForWorker !== undefined) {
       project.githubForWorker = input.githubForWorker;
+    }
+    if (input.autoTagIds !== undefined) {
+      const ids = [...new Set(input.autoTagIds)];
+      const tags = await this.metaService.getTagEntities(ids);
+      if (tags.length !== ids.length || tags.some((tag) => tag.name.startsWith('project:'))) {
+        throw new BadRequestException('Auto tags must be existing non-project tags');
+      }
+      project.autoTags = tags;
     }
 
     const updatedProject = await this.projectRepository.save(project);
@@ -245,11 +260,35 @@ export class ProjectsService {
       return;
     }
 
-    // Soft delete project
-    await this.projectRepository.softDelete(projectId);
+    // Commit the membership removal and its provenance cleanup together. Listeners
+    // must only see tasks after the project tag has gone away.
+    const taskIds = await this.dataSource.transaction(async (manager) => {
+      await manager.softDelete(ProjectEntity, projectId);
+      const affected: { task_id: string }[] = await manager.query(
+        'SELECT task_id FROM task_tags WHERE tag_id = $1', [project.tagId],
+      );
+      for (const { task_id: taskId } of affected) {
+        await this.projectAutoTags.syncTask(taskId, [], [], manager);
+      }
+      await manager.delete('tags', project.tagId);
+      return affected;
+    });
 
-    // Also delete the associated tag
-    await this.metaService.deleteTag(project.tagId);
+    for (const { task_id: taskId } of taskIds) {
+      const task = await this.dataSource.getRepository(TaskEntity).findOne({
+        where: { id: taskId },
+        relations: [
+          'tags', 'dependsOn', 'assigneeActor', 'createdByActor',
+          'comments', 'comments.commenterActor', 'artefacts', 'inputRequests',
+        ],
+      });
+      if (task) {
+        this.eventEmitter.emit(
+          TaskUpdatedEvent.INTERNAL,
+          new TaskUpdatedEvent({ id: task.createdByActorId }, task),
+        );
+      }
+    }
 
     this.logger.log({
       message: 'Project deleted',
@@ -259,6 +298,7 @@ export class ProjectsService {
 
   private mapProjectToResult(project: ProjectEntity): ProjectResult {
     return {
+      autoTagIds: (project.autoTags ?? []).map((tag) => tag.id),
       id: project.id,
       tagId: project.tagId,
       tagName: project.tag.name,

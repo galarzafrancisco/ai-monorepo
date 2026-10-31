@@ -42,6 +42,7 @@ describe('TasksService.createTaskInThread', () => {
       agentRunsService as any,
       threadsService as any,
       executionContextResolver as any,
+      {} as any,
     );
 
     jest.spyOn(service, 'createTask').mockResolvedValue({ id: 'child-task-1' } as any);
