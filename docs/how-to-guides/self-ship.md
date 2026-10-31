@@ -20,7 +20,7 @@ The shipper doesn't try to fix anything itself.
 
 ## Stopping a merge
 
-Say so in the task description or a comment, for example "don't merge this until Friday". That overrides the tag. The shipper asks about it with an input request and waits. It only continues once the question is answered. If the answer is a clear go-ahead, it ships. Otherwise it assigns the task to whoever answered and leaves it in review. Assign it back to `@shipper` with a comment when it's ready to ship.
+Say so in the task description or a comment, for example "don't merge this until Friday". That overrides the tag. The shipper asks the person who said it with an input request, or the task creator if an agent said it, and waits. It only continues once the question is answered. If the answer is a clear go-ahead, it ships. Otherwise it assigns the task to the person it asked, even if someone else answered, and leaves it in review. Assign it back to `@shipper` with a comment when it's ready to ship.
 
 ## Setup
 

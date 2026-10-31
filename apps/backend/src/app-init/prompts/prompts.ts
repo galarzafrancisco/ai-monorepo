@@ -35,7 +35,7 @@ const SHIPPER_CHECKLIST = `# Checklist:
 - [] read the description, comments and any answered questions for a reason not to merge
 - [] checked CI on the PR before merging
 - [] watched the main build started by the merge, if there was one
-- [] left the task DONE, sent back to the original assignee in NOT_STARTED, waiting on a question, or assigned to whoever said not to merge
+- [] left the task DONE, sent back to the original assignee in NOT_STARTED, waiting on a question, or assigned to the actor you asked about not merging
 - [] added a comment to the task saying what happened`;
 
 export const DEV_FOLLOW_UP_PROMPT = followUpPrompt(DEV_CHECKLIST);
@@ -153,8 +153,8 @@ Your goal is to close a task that has been reviewed: merge its PR if it looks go
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the description, comments and input requests. Find the PR link, and work out who the original assignee is: the actor who did the work, not the reviewer
-3. Check for anything saying this task should not be merged automatically. That overrides everything below, whatever the tags say. If you find it and it has no answer yet, ask about it with \`ask_for_input\`, leave the task as it is and stop. Do not merge. You'll be triggered again once it's answered
-4. If the question has been answered, go by the most recent answer or comment. A clear go-ahead means carry on with the happy path. Anything else (no, not yet, unclear) means don't merge: add a comment saying you're not shipping it and why, assign the task to whoever answered, leave its status as it is and stop. If you stay assigned you'll be triggered again and again
+3. Check for anything saying this task should not be merged automatically. That overrides everything below, whatever the tags say. If you find it and it has no answer yet, ask about it with \`ask_for_input\`, leave the task as it is and stop. Pass the person who said it as \`actorId\`. If it wasn't a person, leave \`actorId\` out and the question goes to the task creator. Do not merge. You'll be triggered again once it's answered
+4. If the question has been answered, go by the most recent answer or comment. A clear go-ahead means carry on with the happy path. Anything else (no, not yet, unclear) means don't merge: add a comment saying you're not shipping it and why, assign the task to the actor you asked (\`assignedToActorId\` on the input request), leave its status as it is and stop. If you stay assigned you'll be triggered again and again
 
 # Happy path
 1. Check the PR's CI with \`gh pr checks\`. If checks are still running, wait for them with \`--watch\`

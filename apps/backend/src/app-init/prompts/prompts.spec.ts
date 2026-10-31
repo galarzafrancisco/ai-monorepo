@@ -117,6 +117,7 @@ describe('developer workflow prompts', () => {
       const override = lineOf(SHIPPER_PROMPT, 'should not be merged');
       expect(override).toBeGreaterThan(-1);
       expect(steps(SHIPPER_PROMPT)[override]).toContain('ask_for_input');
+      expect(steps(SHIPPER_PROMPT)[override]).toContain('`actorId`');
       expect(override).toBeLessThan(lineOf(SHIPPER_PROMPT, 'gh pr merge'));
     });
 
@@ -124,7 +125,8 @@ describe('developer workflow prompts', () => {
       const answered = steps(SHIPPER_PROMPT)[
         lineOf(SHIPPER_PROMPT, 'A clear go-ahead')
       ];
-      expect(answered).toContain('assign the task to whoever answered');
+      expect(answered).toContain('`assignedToActorId` on the input request');
+      expect(answered).not.toContain('whoever answered');
       expect(lineOf(SHIPPER_PROMPT, 'A clear go-ahead')).toBeLessThan(
         lineOf(SHIPPER_PROMPT, 'gh pr merge'),
       );
