@@ -26,7 +26,12 @@ Say so in the task description or a comment, for example "don't merge this until
 2. Comments with the reason, and how to turn auto-shipping back on.
 3. Asks how to proceed with an input request, so the task shows as waiting on you.
 
-Answering that question doesn't ship the task. To retry auto-shipping, add the `self-ship` tag again. The shipper treats that as overriding the reason it already acted on, but a new reason stops it again.
+Answering that question doesn't ship the task. To retry auto-shipping, do these in order:
+
+1. Answer the question. Tasks with an open question aren't picked up, so adding the tag alone does nothing.
+2. Add the `self-ship` tag again.
+
+If you add the tag first, the task ships as soon as the question is answered, so keep the tag off until you've answered. The shipper treats the re-added tag as overriding the reason it already acted on, but a new reason stops it again.
 
 ## Setup
 
