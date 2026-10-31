@@ -5850,6 +5850,81 @@
         ]
       }
     },
+    "/api/v1/agent-definitions/export": {
+      "get": {
+        "operationId": "AgentDefinitionsController_exportAgents",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": false,
+            "in": "query",
+            "description": "Export a single agent by slug. Omit to export every agent.",
+            "schema": {
+              "example": "buddy",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDefinitionsDocumentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Export agent definitions as portable JSON",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agent-definitions/import": {
+      "post": {
+        "operationId": "AgentDefinitionsController_importAgents",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentDefinitionsDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportAgentsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Import agent definitions, creating or updating by slug",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
     "/api/v1/agents/{actorId}/tool-permissions": {
       "get": {
         "operationId": "AgentToolPermissionsController_listAgentToolPermissions",
@@ -14375,6 +14450,225 @@
             "nullable": true
           }
         }
+      },
+      "AgentToolPermissionDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "serverProvidedId": {
+            "type": "string",
+            "description": "Portable MCP server identifier. Database server IDs are not accepted.",
+            "example": "tasks"
+          },
+          "scopeIds": {
+            "description": "Scope identifiers granted on that server",
+            "example": [
+              "tasks:read"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "serverProvidedId",
+          "scopeIds"
+        ]
+      },
+      "AgentDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier for the agent",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of agent (provider)",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ],
+            "example": "claude"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Short description of what this agent does"
+          },
+          "introduction": {
+            "type": "string",
+            "nullable": true,
+            "description": "Introduction used for semantic matching"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Managed avatar URL. External URLs are rejected on import.",
+            "example": "/avatar/claude.webp"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions for this agent",
+            "example": "You are a helpful assistant."
+          },
+          "followUpPrompt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Prompt sent on the same session after the agent finishes its turn"
+          },
+          "providerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider ID used to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.4"
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that trigger this agent",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Task tag names that trigger this agent",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowedTools": {
+            "description": "Tool identifiers this agent is allowed to use",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "nullable": true,
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          },
+          "toolPermissions": {
+            "description": "Stored tool grants, keyed by MCP server providedId. Omitted means leave existing grants unchanged.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolPermissionDefinitionDto"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "systemPrompt"
+        ]
+      },
+      "AgentDefinitionsDocumentDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "description": "Portable agent definition document version",
+            "example": 1
+          },
+          "agents": {
+            "description": "Agent definitions to export or import",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentDefinitionDto"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "agents"
+        ]
+      },
+      "ImportAgentIssueDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Agent slug the issue applies to",
+            "example": "buddy"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the agent failed or was only partially applied",
+            "example": "An agent with this slug already exists."
+          }
+        },
+        "required": [
+          "slug",
+          "reason"
+        ]
+      },
+      "ImportAgentsResponseDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "description": "Slugs created by this import",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updated": {
+            "description": "Slugs updated by this import",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "failed": {
+            "description": "Agents that were not created or updated",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportAgentIssueDto"
+            }
+          },
+          "warnings": {
+            "description": "Agents that were created or updated, but with a related record skipped",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportAgentIssueDto"
+            }
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "failed",
+          "warnings"
+        ]
       },
       "AgentToolPermissionServerResponseDto": {
         "type": "object",

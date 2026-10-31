@@ -155,6 +155,19 @@ export class AgentsService {
     };
   }
 
+  async listAllAgents(): Promise<AgentResult[]> {
+    const agents = await this.agentRepository.find({
+      relations: ['actor'],
+    });
+
+    return agents
+      .filter((agent): agent is AgentEntity & { actor: ActorEntity } =>
+        Boolean(agent.actor),
+      )
+      .map((agent) => this.mapAgentToResult(agent, agent.actor))
+      .sort((left, right) => left.slug.localeCompare(right.slug));
+  }
+
   getTemplateCatalog(): AgentTemplateCatalogResponseDto {
     return AGENT_TEMPLATE_CATALOG;
   }

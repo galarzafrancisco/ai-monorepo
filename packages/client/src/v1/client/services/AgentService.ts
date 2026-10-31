@@ -2,11 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AgentDefinitionsDocumentDto } from '../models/AgentDefinitionsDocumentDto.js';
 import type { AgentListResponseDto } from '../models/AgentListResponseDto.js';
 import type { AgentResponseDto } from '../models/AgentResponseDto.js';
 import type { AgentTemplateCatalogResponseDto } from '../models/AgentTemplateCatalogResponseDto.js';
 import type { AgentToolPermissionResponseDto } from '../models/AgentToolPermissionResponseDto.js';
 import type { CreateAgentDto } from '../models/CreateAgentDto.js';
+import type { ImportAgentsResponseDto } from '../models/ImportAgentsResponseDto.js';
 import type { PatchAgentDto } from '../models/PatchAgentDto.js';
 import type { UpsertAgentToolPermissionDto } from '../models/UpsertAgentToolPermissionDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -122,6 +124,41 @@ export class AgentService {
             path: {
                 'actorId': actorId,
             },
+        });
+    }
+    /**
+     * Export agent definitions as portable JSON
+     * @param slug Export a single agent by slug. Omit to export every agent.
+     * @returns AgentDefinitionsDocumentDto
+     * @throws ApiError
+     */
+    public static agentDefinitionsControllerExportAgents(
+        slug?: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<AgentDefinitionsDocumentDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/agent-definitions/export',
+            query: {
+                'slug': slug,
+            },
+        });
+    }
+    /**
+     * Import agent definitions, creating or updating by slug
+     * @param requestBody
+     * @returns ImportAgentsResponseDto
+     * @throws ApiError
+     */
+    public static agentDefinitionsControllerImportAgents(
+        requestBody: AgentDefinitionsDocumentDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ImportAgentsResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/agent-definitions/import',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

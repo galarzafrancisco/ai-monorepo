@@ -249,12 +249,12 @@ export function SettingsPage() {
     },
     {
       title: 'Data',
-      description: 'Import and export workspace context blocks.',
+      description: 'Import and export context blocks and agent definitions.',
       icon: Database,
       iconTone: 'neutral',
       path: '/settings/data',
       action: 'Import / export',
-      detail: { label: 'Export', value: 'Context blocks', tone: 'default' },
+      detail: { label: 'Export', value: 'Blocks and agents', tone: 'default' },
     },
   ];
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AgentService } from '@taico/client';
 import { Button, Card, Row, Stack, Text } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { BFF_BASE_URL } from '../../config/api';
@@ -10,6 +11,27 @@ type ImportResponse = {
   importedCount?: number;
 };
 
+type AgentImportResponse = {
+  created?: string[];
+  updated?: string[];
+  failed?: Array<{ slug: string; reason: string }>;
+  warnings?: Array<{ slug: string; reason: string }>;
+};
+
+function downloadJson(fileName: string, value: unknown) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], {
+    type: 'application/json',
+  });
+  const objectUrl = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 export function SettingsDataPage() {
   const { setSectionTitle } = useHomeCtx();
   const [isExporting, setIsExporting] = useState(false);
@@ -17,6 +39,12 @@ export function SettingsDataPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isExportingAgents, setIsExportingAgents] = useState(false);
+  const [isImportingAgents, setIsImportingAgents] = useState(false);
+  const [selectedAgentFile, setSelectedAgentFile] = useState<File | null>(null);
+  const [agentFileInputKey, setAgentFileInputKey] = useState(0);
+  const [agentError, setAgentError] = useState('');
+  const [agentSuccess, setAgentSuccess] = useState('');
 
   useEffect(() => {
     setSectionTitle('Import / Export');
@@ -63,6 +91,65 @@ export function SettingsDataPage() {
     }
   };
 
+  const handleExportAgents = async () => {
+    setIsExportingAgents(true);
+    setAgentError('');
+    setAgentSuccess('');
+
+    try {
+      const document = await AgentService.agentDefinitionsControllerExportAgents();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      downloadJson(`agents-${timestamp}.json`, document);
+      setAgentSuccess('Agent definitions downloaded.');
+    } catch {
+      setAgentError('Failed to export agents. Please try again.');
+    } finally {
+      setIsExportingAgents(false);
+    }
+  };
+
+  const handleImportAgents = async () => {
+    if (!selectedAgentFile) {
+      setAgentError('Please choose a .json file first.');
+      setAgentSuccess('');
+      return;
+    }
+
+    setIsImportingAgents(true);
+    setAgentError('');
+    setAgentSuccess('');
+
+    try {
+      const parsed = JSON.parse(await selectedAgentFile.text()) as Parameters<
+        typeof AgentService.agentDefinitionsControllerImportAgents
+      >[0];
+      const payload = (await AgentService.agentDefinitionsControllerImportAgents(
+        parsed,
+      )) as AgentImportResponse;
+      const created = payload.created?.length ?? 0;
+      const updated = payload.updated?.length ?? 0;
+      const failed = payload.failed ?? [];
+      const warnings = payload.warnings ?? [];
+      const summary = `Import complete. ${created} created, ${updated} updated.`;
+      const details = [
+        ...failed.map((item) => `${item.slug}: ${item.reason}`),
+        ...warnings.map((item) => `${item.slug}: ${item.reason}`),
+      ];
+      if (failed.length > 0) {
+        setAgentError(details.join(' '));
+        setAgentSuccess(summary);
+      } else {
+        setAgentSuccess(details.length > 0 ? `${summary} ${details.join(' ')}` : summary);
+      }
+      setSelectedAgentFile(null);
+      setAgentFileInputKey((key) => key + 1);
+    } catch {
+      setAgentError('Failed to import agents. Verify the JSON file and try again.');
+    } finally {
+      setIsImportingAgents(false);
+    }
+  };
+
   const handleImportBlocks = async () => {
     if (!selectedFile) {
       setError('Please choose a .zip file first.');
@@ -102,7 +189,7 @@ export function SettingsDataPage() {
   return (
     <Stack spacing="6" className="settings-subpage">
       <Text tone="muted" className="settings-subpage__intro">
-        Import and export workspace data. Blocks are available now; task support can be added in this section later.
+        Import and export workspace data. Context blocks use a markdown archive. Agent definitions use a portable JSON file with no database IDs or secrets.
       </Text>
 
       {error ? (
@@ -165,6 +252,74 @@ export function SettingsDataPage() {
               disabled={isImporting}
             >
               {isImporting ? 'Importing...' : 'Import Blocks'}
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5" className="settings-panel-card">
+        <Stack spacing="4">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Export Agents</Text>
+            <Text tone="muted">
+              Download agent configuration as JSON. Database IDs, timestamps, and tokens are left out.
+            </Text>
+          </Stack>
+          {agentError ? (
+            <ErrorText size="2" weight="medium">
+              {agentError}
+            </ErrorText>
+          ) : null}
+          {agentSuccess ? (
+            <Text size="2" className="settings-data__success">
+              {agentSuccess}
+            </Text>
+          ) : null}
+          <Row justify="end">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleExportAgents}
+              disabled={isExportingAgents}
+            >
+              {isExportingAgents ? 'Exporting...' : 'Export Agents'}
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5" className="settings-panel-card">
+        <Stack spacing="4">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Import Agents</Text>
+            <Text tone="muted">
+              Upload an agent definition file. An existing slug is updated; a new slug is created. Tool grants in the file replace the agent's existing grants. Grants for MCP servers that are not in this workspace are skipped, and an agent is left unchanged if a grant uses a scope its server doesn't have.
+            </Text>
+          </Stack>
+
+          <label htmlFor="agents-import-file" className="settings-data__file-label">
+            Select definitions (.json)
+          </label>
+          <input
+            id="agents-import-file"
+            key={agentFileInputKey}
+            type="file"
+            accept=".json,application/json"
+            onChange={(event) => setSelectedAgentFile(event.target.files?.[0] ?? null)}
+            className="settings-data__file-input"
+          />
+          <Text size="1" tone="muted">
+            {selectedAgentFile ? `Selected: ${selectedAgentFile.name}` : 'No file selected'}
+          </Text>
+
+          <Row justify="end">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleImportAgents}
+              disabled={isImportingAgents}
+            >
+              {isImportingAgents ? 'Importing...' : 'Import Agents'}
             </Button>
           </Row>
         </Stack>
