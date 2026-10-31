@@ -11,7 +11,7 @@ export const createShipper: CreateAgentInput = {
   type: AgentType.OPENCODE,
   providerId: GPT_6_1_TERRA.providerId,
   modelId: GPT_6_1_TERRA.modelId,
-  avatarUrl: getAgentAvatarUrlById('openai'),
+  avatarUrl: getAgentAvatarUrlById('shipper'),
   description:
     'Merges reviewed PRs on self-ship tasks, watches the main build and closes the task',
   systemPrompt: SHIPPER_PROMPT,
