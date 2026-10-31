@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AgentListResponseDto, AgentResponseDto, AgentTemplateCatalogResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
+import type { AgentDefinitionsDocumentDto, AgentListResponseDto, AgentResponseDto, AgentTemplateCatalogResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, ImportAgentsResponseDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
 
 export class AgentResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -19,6 +19,16 @@ export class AgentResource extends BaseClient {
   /** List available agent creation templates */
   async AgentsController_listAgentTemplates(params?: { signal?: AbortSignal }): Promise<AgentTemplateCatalogResponseDto> {
     return this.request('GET', '/api/v1/agents/templates', { signal: params?.signal });
+  }
+
+  /** Export agent definitions as portable JSON */
+  async AgentsController_exportAgents(params?: { slug?: string; signal?: AbortSignal }): Promise<AgentDefinitionsDocumentDto> {
+    return this.request('GET', '/api/v1/agents/export', { params: { slug: params?.slug }, signal: params?.signal });
+  }
+
+  /** Import agent definitions, creating or updating by slug */
+  async AgentsController_importAgents(params: { body: AgentDefinitionsDocumentDto; signal?: AbortSignal }): Promise<ImportAgentsResponseDto> {
+    return this.request('POST', '/api/v1/agents/import', { body: params.body, signal: params?.signal });
   }
 
   /** Get an agent by slug */

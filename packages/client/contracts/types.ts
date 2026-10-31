@@ -1706,6 +1706,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export agent definitions as portable JSON */
+        get: operations["AgentsController_exportAgents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import agent definitions, creating or updating by slug */
+        post: operations["AgentsController_importAgents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agents/{slug}": {
         parameters: {
             query?: never;
@@ -6102,6 +6136,113 @@ export interface components {
             templates: components["schemas"]["AgentTemplateDto"][];
             harnesses: components["schemas"]["AgentTemplateHarnessDto"][];
             avatars: components["schemas"]["AgentAvatarDto"][];
+        };
+        AgentToolPermissionDefinitionDto: {
+            /**
+             * @description Portable MCP server identifier. Database server IDs are not accepted.
+             * @example tasks
+             */
+            serverProvidedId: string;
+            /**
+             * @description Scope identifiers granted on that server
+             * @example [
+             *       "tasks:read"
+             *     ]
+             */
+            scopeIds: string[];
+        };
+        AgentDefinitionDto: {
+            /**
+             * @description Unique, human-readable identifier for the agent
+             * @example buddy
+             */
+            slug: string;
+            /**
+             * @description Display name for the agent
+             * @example Buddy
+             */
+            name: string;
+            /**
+             * @description Type of agent (provider)
+             * @example claude
+             * @enum {string}
+             */
+            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /** @description Short description of what this agent does */
+            description?: string | null;
+            /** @description Introduction used for semantic matching */
+            introduction?: string | null;
+            /**
+             * @description Managed avatar URL. External URLs are rejected on import.
+             * @example /avatar/claude.webp
+             */
+            avatarUrl?: string | null;
+            /**
+             * @description Core instructions for this agent
+             * @example You are a helpful assistant.
+             */
+            systemPrompt: string;
+            /** @description Prompt sent on the same session after the agent finishes its turn */
+            followUpPrompt?: string | null;
+            /**
+             * @description Provider ID used to select a model runtime
+             * @example openai
+             */
+            providerId?: string | null;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.4
+             */
+            modelId?: string | null;
+            /** @description Task statuses that trigger this agent */
+            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /** @description Task tag names that trigger this agent */
+            tagTriggers?: string[];
+            /** @description Tool identifiers this agent is allowed to use */
+            allowedTools?: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @example true
+             */
+            isActive?: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number | null;
+            /** @description Stored tool grants, keyed by MCP server providedId. Omitted means leave existing grants unchanged. */
+            toolPermissions?: components["schemas"]["AgentToolPermissionDefinitionDto"][];
+        };
+        AgentDefinitionsDocumentDto: {
+            /**
+             * @description Portable agent definition document version
+             * @example 1
+             */
+            version: number;
+            /** @description Agent definitions to export or import */
+            agents: components["schemas"]["AgentDefinitionDto"][];
+        };
+        ImportAgentIssueDto: {
+            /**
+             * @description Agent slug the issue applies to
+             * @example buddy
+             */
+            slug: string;
+            /**
+             * @description Why the agent failed or was only partially applied
+             * @example An agent with this slug already exists.
+             */
+            reason: string;
+        };
+        ImportAgentsResponseDto: {
+            /** @description Slugs created by this import */
+            created: string[];
+            /** @description Slugs updated by this import */
+            updated: string[];
+            /** @description Agents that were not created or updated */
+            failed: components["schemas"]["ImportAgentIssueDto"][];
+            /** @description Agents that were created or updated, but with a related record skipped */
+            warnings: components["schemas"]["ImportAgentIssueDto"][];
         };
         PatchAgentDto: {
             /**
@@ -12094,6 +12235,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentTemplateCatalogResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_exportAgents: {
+        parameters: {
+            query?: {
+                /** @description Export a single agent by slug. Omit to export every agent. */
+                slug?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDefinitionsDocumentDto"];
+                };
+            };
+        };
+    };
+    AgentsController_importAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentDefinitionsDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportAgentsResponseDto"];
                 };
             };
         };

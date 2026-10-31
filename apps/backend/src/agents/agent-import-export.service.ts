@@ -32,7 +32,7 @@ export class AgentImportExportService {
       ? [await this.agentsService.getAgentBySlug({ slug })]
       : await this.agentsService.listAllAgents();
 
-    const definitions = [];
+    const definitions: AgentDefinition[] = [];
     for (const agent of agents) {
       const permissions =
         await this.agentToolPermissionsService.listStoredAgentToolPermissions(

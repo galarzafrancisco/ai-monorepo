@@ -1019,6 +1019,47 @@ export interface AgentTemplateCatalogResponseDto {
   avatars: AgentAvatarDto[];
 }
 
+export interface AgentToolPermissionDefinitionDto {
+  serverProvidedId: string;
+  scopeIds: string[];
+}
+
+export interface AgentDefinitionDto {
+  slug: string;
+  name: string;
+  type?: 'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other';
+  description?: string | null;
+  introduction?: string | null;
+  avatarUrl?: string | null;
+  systemPrompt: string;
+  followUpPrompt?: string | null;
+  providerId?: string | null;
+  modelId?: string | null;
+  statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
+  tagTriggers?: string[];
+  allowedTools?: string[];
+  isActive?: boolean;
+  concurrencyLimit?: number | null;
+  toolPermissions?: AgentToolPermissionDefinitionDto[];
+}
+
+export interface AgentDefinitionsDocumentDto {
+  version: number;
+  agents: AgentDefinitionDto[];
+}
+
+export interface ImportAgentIssueDto {
+  slug: string;
+  reason: string;
+}
+
+export interface ImportAgentsResponseDto {
+  created: string[];
+  updated: string[];
+  failed: ImportAgentIssueDto[];
+  warnings: ImportAgentIssueDto[];
+}
+
 export interface PatchAgentDto {
   slug?: string;
   name?: string;
