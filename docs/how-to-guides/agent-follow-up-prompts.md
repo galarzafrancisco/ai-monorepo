@@ -22,8 +22,10 @@ Status changes and reassignments made during the first turn take effect straight
 | --- | --- |
 | Claude Code | A new query that resumes the session |
 | Codex, OpenCode | A second prompt on the session after `session.idle` for that session. Subagent sessions are ignored |
-| GitHub Copilot | A second `send` on the session after `session.idle` |
+| GitHub Copilot | A second `send` on the session after `session.idle`. Subagent events are ignored |
 | ADK | A second run on the same session |
+
+If a turn fails, the run fails with the provider's error, and the step that was running shows as failed: Run agent for the first turn, Final checks for the follow-up. On Codex and OpenCode a `session.error` only counts if the session goes idle without getting busy again, because OpenCode reports a context overflow as an error and then compacts and carries on. Errors with no session, which come from loading plugins and skills, are ignored.
 
 Thread agents don't use follow-up prompts. Only task runs do.
 

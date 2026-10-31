@@ -1,11 +1,20 @@
 // OpenCodeAgentRunner.ts
 import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { createOpencodeClient, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
+import {
+  createOpencodeClient,
+  EventSessionError,
+  OpencodeClient,
+  TextPartInput,
+} from "@opencode-ai/sdk";
 import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model, TokenUsage } from "./AgentRunner.js";
-import { InterruptedExecutionError } from "../task-execution-errors.js";
+import {
+  classifyAgentError,
+  InterruptedExecutionError,
+  TaskExecutionError,
+} from "../task-execution-errors.js";
 
 type OpenCodeMcpServerConfig =
   | {
@@ -460,7 +469,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       };
       let finalResult = '';
       let pendingFollowUp = ctx.followUpPrompt;
-      let turnFailed = false;
+      let turnFailure: EventSessionError | undefined;
       await sendPrompt(ctx.prompt);
 
       if (this.interruptRequested && await this.wasAbortApplied()) {
@@ -478,12 +487,21 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
         // The event stream is server-wide, so it also carries the sessions of any
         // subagents. Only this session decides whether the turn is over or failed.
-        // An error with no session can't be attributed, so it counts as ours.
+        // Errors with no session come from loading plugins and skills, which
+        // doesn't stop the turn.
+        if (event.type === 'session.error' && event.properties.sessionID === session.id) {
+          turnFailure ??= event;
+        }
+
+        // Not every session error ends the turn: on a context overflow OpenCode
+        // compacts and carries on. So the error only counts if the session goes
+        // idle without getting busy again.
         if (
-          event.type === 'session.error' &&
-          (event.properties.sessionID ?? session.id) === session.id
+          event.type === 'session.status' &&
+          event.properties.sessionID === session.id &&
+          event.properties.status.type === 'busy'
         ) {
-          turnFailed = true;
+          turnFailure = undefined;
         }
 
         // Detect end of session
@@ -492,7 +510,10 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           if (this.interruptRequested && await this.wasAbortApplied()) {
             throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
           }
-          if (pendingFollowUp && !turnFailed && !this.interruptRequested) {
+          if (turnFailure) {
+            throw toTurnError(turnFailure);
+          }
+          if (pendingFollowUp && !this.interruptRequested) {
             const followUp = pendingFollowUp;
             pendingFollowUp = undefined;
             await this.startFollowUp(emit);
@@ -596,6 +617,27 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   }
 
   private runtimeMcpServers?: AgentRunContext['mcpServers'];
+}
+
+function toTurnError(event: EventSessionError): TaskExecutionError {
+  const { error } = event.properties;
+  if (error?.name === 'MessageAbortedError') {
+    return new InterruptedExecutionError(error.data.message, event);
+  }
+  return classifyAgentError({
+    message: formatOpencodeError(error),
+    rawMessage: event,
+  });
+}
+
+function formatOpencodeError(error: EventSessionError['properties']['error']): string {
+  if (!error) {
+    return 'OpenCode session failed';
+  }
+  const status = error.name === 'APIError' ? error.data.statusCode : undefined;
+  const code = ['OpenCode', error.name, status].filter(Boolean).join(' ');
+  const { message } = error.data;
+  return typeof message === 'string' && message ? `${code}: ${message}` : code;
 }
 
 type OpencodeTokenCounts = {

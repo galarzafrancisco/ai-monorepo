@@ -21,6 +21,14 @@ import {
 } from '../worker-app.js';
 import { HarnessTraceRecorder } from '../harness-trace-recorder.js';
 import type { ExecutionActivityGatewayClient } from '../execution-activity-gateway-client.js';
+import {
+  copilotError,
+  copilotIdle,
+  mockCopilot,
+  mockOpencode,
+  opencodeError,
+  opencodeIdle,
+} from './harness-fakes.js';
 
 for (const outcome of [
   'success',
@@ -190,6 +198,58 @@ for (const outcome of [
 
 const adkError = { errorCode: '429', errorMessage: 'Resource exhausted' };
 const adkReply = { content: { role: 'model', parts: [{ text: 'Done' }] } };
+const opencodeFailure = opencodeError('parent', {
+  name: 'APIError',
+  data: { message: 'Provider broke', statusCode: 500, isRetryable: false },
+});
+const copilotFailure = copilotError({
+  errorType: 'query',
+  message: 'Provider broke',
+});
+const followUpFailed = [
+  'agent:running',
+  'follow_up:pending',
+  'agent:completed',
+  'follow_up:running',
+  'follow_up:failed',
+];
+const firstTurnFailed = ['agent:running', 'follow_up:pending', 'agent:failed'];
+const harnessScenarios = [
+  ...(['opencode', 'codex'] as const).flatMap((harness) => [
+    {
+      name: `${harness} follow-up error`,
+      harness,
+      opencodeEvents: [
+        opencodeIdle('parent'),
+        opencodeFailure,
+        opencodeIdle('parent'),
+      ],
+      failureMessage: 'OpenCode APIError 500: Provider broke',
+      expected: followUpFailed,
+    },
+    {
+      name: `${harness} first-turn error`,
+      harness,
+      opencodeEvents: [opencodeFailure, opencodeIdle('parent')],
+      failureMessage: 'OpenCode APIError 500: Provider broke',
+      expected: firstTurnFailed,
+    },
+  ]),
+  {
+    name: 'Copilot follow-up error',
+    harness: 'githubcopilot',
+    copilotTurns: [[copilotIdle()], [copilotFailure]],
+    failureMessage: 'Copilot query: Provider broke',
+    expected: followUpFailed,
+  },
+  {
+    name: 'Copilot first-turn error',
+    harness: 'githubcopilot',
+    copilotTurns: [[copilotFailure]],
+    failureMessage: 'Copilot query: Provider broke',
+    expected: firstTurnFailed,
+  },
+];
 
 for (const scenario of [
   {
@@ -227,15 +287,32 @@ for (const scenario of [
   {
     name: 'ADK first-turn error',
     adkTurns: [[adkError], [adkReply]],
-    expected: ['agent:running', 'follow_up:pending', 'agent:failed'],
+    expected: firstTurnFailed,
   },
-]) {
+  ...harnessScenarios,
+] as Array<{
+  name: string;
+  expected: string[];
+  runError?: string;
+  adkTurns?: object[][];
+  harness?: string;
+  opencodeEvents?: Array<Record<string, unknown>>;
+  copilotTurns?: Array<Array<Record<string, unknown>>>;
+  failureMessage?: string;
+}>) {
   test(`final checks step records ${scenario.name}`, async (t) => {
     const directory = await mkdtemp(join(tmpdir(), 'taico-follow-up-'));
     const batches: PostExecutionTracePayload[] = [];
-    const { adkTurns, runError } = scenario;
-    const failed = Boolean(adkTurns ?? runError);
-    if (adkTurns) {
+    const { adkTurns, runError, opencodeEvents, copilotTurns } = scenario;
+    const failed = scenario.name !== 'follow-up success';
+    const failureMessage =
+      scenario.failureMessage ??
+      (adkTurns ? 'ADK error 429: Resource exhausted' : undefined);
+    if (opencodeEvents) {
+      mockOpencode(t, opencodeEvents);
+    } else if (copilotTurns) {
+      mockCopilot(t, copilotTurns);
+    } else if (adkTurns) {
       const turns = [...adkTurns];
       t.mock.method(Runner.prototype, 'runAsync', async function* () {
         yield* turns.shift() ?? [];
@@ -263,7 +340,7 @@ for (const scenario of [
         AgentsController_getAgentBySlug: async () => ({
           actorId: 'actor',
           slug: 'agent',
-          type: adkTurns ? 'adk' : 'claude',
+          type: scenario.harness ?? (adkTurns ? 'adk' : 'claude'),
           systemPrompt: 'test',
           followUpPrompt: 'check your work',
         }),
@@ -312,8 +389,8 @@ for (const scenario of [
         steps.map((event) => `${event.step}:${event.status}`),
         scenario.expected,
       );
-      if (adkTurns) {
-        assert.equal(steps.at(-1)?.message, 'ADK error 429: Resource exhausted');
+      if (failureMessage) {
+        assert.equal(steps.at(-1)?.message, failureMessage);
       }
     } finally {
       await rm(directory, { recursive: true, force: true });
