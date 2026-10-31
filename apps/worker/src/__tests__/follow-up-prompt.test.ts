@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import type { AgentResponseDto } from '@taico/client/v2';
 import { buildFollowUpPrompt } from '../prompt.js';
 import { ClaudeAgentRunner } from '../runners/ClaudeAgentRunner.js';
+import { CodexAgentRunner } from '../runners/CodexAgentRunner.js';
+import { OpencodeAgentRunner } from '../runners/OpenCodeAgentRunner.js';
 import type { AgentRunContext, TokenUsage } from '../runners/AgentRunner.js';
 
 type Message = Record<string, unknown>;
@@ -145,3 +147,97 @@ test('buildFollowUpPrompt only applies to normal runs with a prompt set', () => 
   assert.equal(buildFollowUpPrompt(agent(null), 'normal'), undefined);
   assert.equal(buildFollowUpPrompt(agent('   '), 'normal'), undefined);
 });
+
+const idle = (sessionID: string) => ({
+  type: 'session.idle',
+  properties: { sessionID },
+});
+const failed = (sessionID?: string) => ({
+  type: 'session.error',
+  properties: { sessionID },
+});
+
+/**
+ * Replays events on a server-wide stream and records how many prompts had been
+ * sent by the time each event was read.
+ */
+async function runOpencode(
+  Runner: typeof OpencodeAgentRunner | typeof CodexAgentRunner,
+  events: Message[],
+) {
+  const prompts: string[] = [];
+  const promptsSentBefore: number[] = [];
+  const runner = new Runner();
+  runner.initBullshit = async () => {
+    Object.assign(runner, {
+      client: {
+        session: {
+          create: async () => ({ data: { id: 'parent', directory: '/tmp' } }),
+          promptAsync: async ({
+            body,
+          }: {
+            body: { parts: Array<{ text: string }> };
+          }) => {
+            prompts.push(body.parts[0].text);
+            return {};
+          },
+        },
+        event: {
+          subscribe: async () => ({
+            stream: (async function* () {
+              for (const event of events) {
+                promptsSentBefore.push(prompts.length);
+                yield event;
+              }
+            })(),
+          }),
+        },
+      },
+    });
+  };
+
+  await runner.run(ctx({ followUpPrompt: 'check your work' }));
+  return { prompts, promptsSentBefore };
+}
+
+for (const Runner of [OpencodeAgentRunner, CodexAgentRunner]) {
+  test(`${Runner.name}: subagent sessions don't move the parent's turn along`, async () => {
+    const { prompts, promptsSentBefore } = await runOpencode(Runner, [
+      idle('child'),
+      idle('parent'),
+      idle('child'),
+      idle('parent'),
+      idle('never-read'),
+    ]);
+
+    assert.deepEqual(prompts, ['do the work', 'check your work']);
+    // Sent only after the parent's first idle, and the run ended on its second.
+    assert.deepEqual(promptsSentBefore, [1, 1, 2, 2]);
+  });
+
+  test(`${Runner.name}: a subagent error doesn't cancel the follow-up`, async () => {
+    const { prompts } = await runOpencode(Runner, [
+      failed('child'),
+      idle('child'),
+      idle('parent'),
+      idle('parent'),
+    ]);
+
+    assert.deepEqual(prompts, ['do the work', 'check your work']);
+  });
+
+  test(`${Runner.name}: an error on the session cancels the follow-up`, async () => {
+    const { prompts } = await runOpencode(Runner, [
+      failed('parent'),
+      idle('parent'),
+    ]);
+
+    assert.deepEqual(prompts, ['do the work']);
+  });
+
+  test(`${Runner.name}: an error with no session cancels the follow-up`, async () => {
+    const { prompts } = await runOpencode(Runner, [failed(), idle('parent')]);
+
+    assert.deepEqual(prompts, ['do the work']);
+  });
+}

@@ -476,12 +476,18 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
         }
 
-        if (event.type === 'session.error') {
+        // The event stream is server-wide, so it also carries the sessions of any
+        // subagents. Only this session decides whether the turn is over or failed.
+        // An error with no session can't be attributed, so it counts as ours.
+        if (
+          event.type === 'session.error' &&
+          (event.properties.sessionID ?? session.id) === session.id
+        ) {
           turnFailed = true;
         }
 
         // Detect end of session
-        if (event.type == 'session.idle') {
+        if (event.type == 'session.idle' && event.properties.sessionID === session.id) {
           console.log('session.idle');
           if (this.interruptRequested && await this.wasAbortApplied()) {
             throw new InterruptedExecutionError('OpenCode agent execution was interrupted');

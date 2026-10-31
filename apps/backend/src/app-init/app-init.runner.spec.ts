@@ -29,9 +29,7 @@ import { createGrokDev } from './agent/grok-dev.agent';
 import { AgentNotFoundError } from 'src/agents/errors/agents.errors';
 import {
   ASSISTANT_PROMPT,
-  DEV_FOLLOW_UP_PROMPT,
   DEV_PROMPT,
-  REVIEWER_FOLLOW_UP_PROMPT,
   REVIEWER_PROMPT,
   TAICO_PROMPT,
 } from './prompts/prompts';
@@ -160,108 +158,15 @@ describe('AppInitRunner seeded prompt sync', () => {
 
     expect(patchedSlugs(agentsService)).toEqual(['developer']);
   });
-});
 
-describe('AppInitRunner follow-up prompt backfill', () => {
-  type StoredAgent = {
-    actorId: string;
-    slug: string;
-    systemPrompt: string;
-    followUpPrompt: string | null;
-  };
+  it('does not bring back a cleared follow-up prompt on restart', async () => {
+    const { runner, agentsService } = buildRunner({
+      taico: TAICO_PROMPT,
+      developer: DEV_PROMPT,
+    });
 
-  function agent(
-    slug: string,
-    systemPrompt: string,
-    followUpPrompt: string | null = null,
-  ): StoredAgent {
-    return { actorId: `actor-${slug}`, slug, systemPrompt, followUpPrompt };
-  }
-
-  function buildRunner(pages: StoredAgent[][]) {
-    const total = pages.flat().length;
-    const agentsService = {
-      listAgents: jest.fn(({ page }: { page: number }) =>
-        Promise.resolve({ items: pages[page - 1] ?? [], total }),
-      ),
-      patchAgent: jest.fn<Promise<void>, [string, unknown]>(() =>
-        Promise.resolve(),
-      ),
-    };
-    const unused = {} as never;
-    const runner = new AppInitRunner(
-      agentsService as unknown as AgentsService,
-      unused,
-      unused,
-      unused,
-      unused,
-      unused,
-      unused,
-      unused,
-      unused,
-      unused,
-    );
-    return { runner, agentsService };
-  }
-
-  it('gives built-in agents their follow-up, even with a customised system prompt', async () => {
-    const { runner, agentsService } = buildRunner([
-      [
-        agent('claude-dev', 'You are a bespoke agent.'),
-        agent('code-reviewer', REVIEWER_PROMPT),
-      ],
-    ]);
-
-    await runner.ensureFollowUpPrompts();
-
-    expect(agentsService.patchAgent.mock.calls).toEqual([
-      ['actor-claude-dev', { followUpPrompt: DEV_FOLLOW_UP_PROMPT }],
-      ['actor-code-reviewer', { followUpPrompt: REVIEWER_FOLLOW_UP_PROMPT }],
-    ]);
-  });
-
-  it('recognises agents created from a template by their system prompt', async () => {
-    const { runner, agentsService } = buildRunner([
-      [
-        agent('my-dev', DEV_PROMPT),
-        agent('my-old-dev', LEGACY_DEV_PROMPTS[0]),
-      ],
-    ]);
-
-    await runner.ensureFollowUpPrompts();
-
-    expect(agentsService.patchAgent.mock.calls).toEqual([
-      ['actor-my-dev', { followUpPrompt: DEV_FOLLOW_UP_PROMPT }],
-      ['actor-my-old-dev', { followUpPrompt: DEV_FOLLOW_UP_PROMPT }],
-    ]);
-  });
-
-  it('leaves edited, cleared and unrelated agents alone', async () => {
-    const { runner, agentsService } = buildRunner([
-      [
-        agent('claude-dev', DEV_PROMPT, 'My own checks'),
-        agent('developer', DEV_PROMPT, ''),
-        agent('custom-agent', 'You are a bespoke agent.'),
-      ],
-    ]);
-
-    await runner.ensureFollowUpPrompts();
+    await runner.ensureAgents();
 
     expect(agentsService.patchAgent).not.toHaveBeenCalled();
-  });
-
-  it('walks every page of agents', async () => {
-    const firstPage = Array.from({ length: 100 }, (_, index) =>
-      agent(`custom-${index}`, 'bespoke'),
-    );
-    const { runner, agentsService } = buildRunner([
-      firstPage,
-      [agent('my-dev', DEV_PROMPT)],
-    ]);
-
-    await runner.ensureFollowUpPrompts();
-
-    expect(agentsService.listAgents).toHaveBeenCalledTimes(2);
-    expect(agentsService.patchAgent).toHaveBeenCalledTimes(1);
   });
 });

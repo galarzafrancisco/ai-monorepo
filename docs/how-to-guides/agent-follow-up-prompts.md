@@ -19,7 +19,7 @@ Status changes and reassignments made during the first turn take effect straight
 | Harness | How the follow-up is sent |
 | --- | --- |
 | Claude Code | A new query that resumes the session |
-| Codex, OpenCode | A second prompt on the session after `session.idle` |
+| Codex, OpenCode | A second prompt on the session after `session.idle` for that session. Subagent sessions are ignored |
 | GitHub Copilot | A second `send` on the session after `session.idle` |
 | ADK | A second run on the same session |
 
@@ -27,11 +27,13 @@ Thread agents don't use follow-up prompts. Only task runs do.
 
 ## Built-in agents and templates
 
-The developer, code reviewer and helper templates and built-in agents come with a follow-up built from the checklist in their system prompt. The text lives in `apps/backend/src/app-init/prompts/prompts.ts`. To add one to another template, set `followUpPrompt` in `agent-template.catalog.ts`. For a built-in agent, set it on the agent seed and add the seed to `AGENTS_WITH_FOLLOW_UP` in `app-init.runner.ts`.
+The developer, code reviewer and helper templates and built-in agents come with a follow-up built from the checklist in their system prompt. The text lives in `apps/backend/src/app-init/prompts/prompts.ts`. To add one to another template, set `followUpPrompt` in `agent-template.catalog.ts`. For a built-in agent, set it on the agent seed. New agents pick it up from there; an agent that already exists needs its own data migration.
 
-On startup, `AppInitRunner.ensureFollowUpPrompts` fills in agents whose follow-up is `null`:
+Agents that already existed when follow-up prompts shipped got theirs once, from the `BackfillAgentFollowUpPrompts` migration:
 
-- Built-in agents are matched by slug, even if their system prompt was edited.
-- Agents created from a template are matched by their exact system prompt, including earlier seeded versions.
+- Built-in agents were matched by slug, even if their system prompt was edited.
+- Agents created from a template were matched by their exact system prompt, including earlier seeded versions.
 
-Clearing a follow-up in the UI stores an empty string, not `null`, so it stays cleared across restarts. An edited follow-up is never overwritten, and changing a seeded follow-up doesn't update agents that already have one.
+The migration doesn't run again, so clearing a follow-up sticks whether it is stored as `null` or an empty string. Nothing overwrites an edited follow-up, and changing a seeded follow-up only affects agents created afterwards.
+
+Databases in `TYPEORM_SCHEMA_MODE=sync` don't run migrations, so their existing agents get no follow-up until you set one.

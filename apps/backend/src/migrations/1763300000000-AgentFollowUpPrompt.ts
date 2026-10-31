@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Optional prompt sent to an agent after it finishes its turn. Existing agents
- * start with none; AppInitRunner fills in the seeded ones on startup.
+ * start with none; the next migration fills in the seeded ones.
  */
 export class AgentFollowUpPrompt1763300000000 implements MigrationInterface {
   name = 'AgentFollowUpPrompt1763300000000';
