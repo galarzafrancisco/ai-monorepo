@@ -4,6 +4,10 @@
 /* eslint-disable */
 export type ProjectResponseDto = {
     /**
+     * Tag IDs automatically applied to tasks assigned to this project
+     */
+    autoTagIds: Array<string>;
+    /**
      * Project unique identifier
      */
     id: string;

@@ -461,6 +461,13 @@ export class MetaService implements OnModuleInit {
     const blockCount = tagWithRelations.blocks?.length || 0;
 
     if (taskCount === 0 && blockCount === 0) {
+      // A configured auto tag must survive even when no task currently uses it.
+      const configured: unknown[] = await this.tagRepository.query(
+        'SELECT 1 FROM project_auto_tags WHERE tag_id = $1 LIMIT 1',
+        [tagId],
+      );
+      if (configured.length > 0) return;
+
       // A project's tag outlives its tasks: deleting it would cascade to the project
       // (description, repository) just because its last task moved elsewhere.
       const project = await this.projectRepository.findOne({

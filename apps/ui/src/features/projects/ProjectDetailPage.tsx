@@ -7,7 +7,8 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { elapsedTime } from '../../shared/helpers/elapsedTime';
 import { TaskStatus, TASKS_STATUS } from '../../shared/const/taskStatus';
 import { storeSelectedProjectId } from '../tasks/selectedProject';
-import { ProjectsService, TasksService } from './api';
+import { MetaService, ProjectsService, TasksService } from './api';
+import type { MetaTagResponseDto } from '@taico/client/v2';
 import { useProjectsCtx } from './ProjectsProvider';
 import { errorDetail } from './useProjects';
 import { toRepoLink } from './repoLink';
@@ -208,10 +209,77 @@ export function ProjectDetailPage() {
 
         <Stack spacing="4" className="projects-detail__side">
           <ProjectSettingsCard project={project} onSave={updateProject} onSaved={handleSaved} />
+          <ProjectAutoTagsCard project={project} onSave={updateProject} onSaved={handleSaved} />
           <ProjectGithubCard project={project} onSave={updateProject} onSaved={handleSaved} />
         </Stack>
       </div>
     </div>
+  );
+}
+
+function ProjectAutoTagsCard({ project, onSave, onSaved }: {
+  project: Project;
+  onSave: (projectId: string, input: { autoTagIds: string[] }) => Promise<Project>;
+  onSaved: (project: Project) => void;
+}) {
+  const [tags, setTags] = useState<MetaTagResponseDto[]>([]);
+  const [selected, setSelected] = useState<string[]>(project.autoTagIds);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => { setSelected(project.autoTagIds); }, [project.autoTagIds]);
+  useEffect(() => {
+    let cancelled = false;
+    MetaService.MetaController_getAllTags({})
+      .then((result) => { if (!cancelled) setTags(result.filter((tag) => !tag.name.startsWith('project:'))); })
+      .catch((err) => { if (!cancelled) setError(errorDetail(err, 'Failed to load tags')); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const save = async (ids: string[]) => {
+    setSaving(true);
+    setError('');
+    try {
+      onSaved(await onSave(project.id, { autoTagIds: ids }));
+    } catch (err) {
+      setError(errorDetail(err, 'Failed to update auto tags'));
+      setSelected(project.autoTagIds);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card padding="4">
+      <Stack spacing="3">
+        <Text size="3" weight="semibold">Automatic task tags</Text>
+        <Text size="1" tone="muted">Applied when a task is added to this project; removed when it leaves, unless another project supplies the same tag.</Text>
+        <label htmlFor="project-auto-tag" className="login-label"><Text size="2">Add tag</Text></label>
+        <select id="project-auto-tag" className="login-input" value="" disabled={saving} onChange={(event) => {
+          if (event.target.value) {
+            const ids = [...selected, event.target.value];
+            setSelected(ids);
+            void save(ids);
+          }
+        }}>
+          <option value="">Choose a tag…</option>
+          {tags.filter((tag) => !selected.includes(tag.id)).map((tag) => (
+            <option key={tag.id} value={tag.id}>{tag.name}</option>
+          ))}
+        </select>
+        {selected.map((id) => (
+          <Row key={id} justify="space-between" align="center">
+            <Chip color="gray">{tags.find((tag) => tag.id === id)?.name ?? id}</Chip>
+            <Button size="sm" variant="ghost" disabled={saving} onClick={() => {
+              const ids = selected.filter((tagId) => tagId !== id);
+              setSelected(ids);
+              void save(ids);
+            }}>Remove</Button>
+          </Row>
+        ))}
+        {error ? <ErrorText size="2">{error}</ErrorText> : null}
+      </Stack>
+    </Card>
   );
 }
 

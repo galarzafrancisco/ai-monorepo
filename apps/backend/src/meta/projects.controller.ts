@@ -156,6 +156,7 @@ export class ProjectsController {
     @Body() dto: PatchProjectDto,
   ): Promise<ProjectResponseDto> {
     const result = await this.projectsService.updateProject(projectId, {
+      autoTagIds: dto.autoTagIds,
       description: dto.description,
       repoUrl: dto.repoUrl,
       githubConnectionId: dto.githubConnectionId,
@@ -178,6 +179,7 @@ export class ProjectsController {
     result: ProjectResult,
   ): ProjectResponseDto {
     return {
+      autoTagIds: result.autoTagIds,
       id: result.id,
       tagId: result.tagId,
       tagName: result.tagName,

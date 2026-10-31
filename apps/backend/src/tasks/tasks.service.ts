@@ -49,6 +49,7 @@ import {
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
 import { MetaService } from '../meta/meta.service';
+import { ProjectAutoTagsService } from '../meta/project-auto-tags.service';
 import { isSystemTagName } from '../meta/system-tags';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
@@ -81,6 +82,7 @@ export class TasksService {
     private readonly agentRunsService: AgentRunsService,
     private readonly threadsService: ThreadsService,
     private readonly executionContextResolver: ActiveExecutionContextResolverService,
+    private readonly projectAutoTags: ProjectAutoTagsService,
   ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -135,6 +137,7 @@ export class TasksService {
       // Increment usage tracking for all tags
       await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
     }
+    await this.projectAutoTags.syncTask(savedTask.id);
 
     // Handle dependencies if provided
     if (input.dependsOnIds && input.dependsOnIds.length > 0) {
@@ -341,6 +344,9 @@ export class TasksService {
     }
 
     const updatedTask = await this.taskRepository.save(task);
+    if (input.tagNames !== undefined) {
+      await this.projectAutoTags.syncTask(updatedTask.id);
+    }
 
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
@@ -944,6 +950,12 @@ export class TasksService {
         tagId: tag.id,
       });
     }
+    if (tag.name.startsWith('project:')) {
+      await this.projectAutoTags.syncTask(taskId);
+    } else {
+      // An explicit add of an existing auto tag makes it a manual tag too.
+      await this.projectAutoTags.syncTask(taskId, [tag.id]);
+    }
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
@@ -1002,6 +1014,10 @@ export class TasksService {
 
     task.tags = task.tags.filter((tag) => tag.id !== tagId);
     await this.taskRepository.save(task);
+    await this.projectAutoTags.forgetManualRemoval(taskId, tagId);
+    if ((await this.metaService.getTagById(tagId))?.name.startsWith('project:')) {
+      await this.projectAutoTags.syncTask(taskId);
+    }
 
     this.logger.log({
       message: 'Tag removed from task',

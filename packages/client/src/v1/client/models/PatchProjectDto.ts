@@ -4,6 +4,10 @@
 /* eslint-disable */
 export type PatchProjectDto = {
     /**
+     * Tag IDs automatically applied to tasks assigned to this project
+     */
+    autoTagIds?: Array<string>;
+    /**
      * Project description
      */
     description?: string;

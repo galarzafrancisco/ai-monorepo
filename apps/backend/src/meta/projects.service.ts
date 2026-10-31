@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ProjectEntity } from './project.entity';
 import { MetaService } from './meta.service';
 import { SearchService } from '../search/search.service';
+import { ProjectAutoTagsService } from './project-auto-tags.service';
 import { GithubConnectionNotFoundError } from '../integrations/errors/integrations.errors';
 import {
   CreateProjectInput,
@@ -22,6 +23,7 @@ export class ProjectsService {
     private readonly metaService: MetaService,
     private readonly searchService: SearchService,
     private readonly dataSource: DataSource,
+    private readonly projectAutoTags: ProjectAutoTagsService,
   ) {}
 
   private async assertGithubConnectionExists(connectionId: string | null | undefined): Promise<void> {
@@ -54,7 +56,7 @@ export class ProjectsService {
     // Check if project already exists
     let project = await this.projectRepository.findOne({
       where: { tagId: tag.id },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
@@ -69,6 +71,7 @@ export class ProjectsService {
       });
       project = await this.projectRepository.save(project);
       project.tag = tag;
+      project.autoTags = [];
 
       this.logger.log({
         message: 'Project created',
@@ -106,7 +109,7 @@ export class ProjectsService {
     this.logger.log({ message: 'Getting all projects' });
 
     const projects = await this.projectRepository.find({
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
       order: { slug: 'ASC' },
     });
 
@@ -124,7 +127,7 @@ export class ProjectsService {
   async getProjectById(projectId: string): Promise<ProjectResult> {
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
@@ -140,7 +143,7 @@ export class ProjectsService {
   async getProjectBySlug(slug: string): Promise<ProjectResult | null> {
     const project = await this.projectRepository.findOne({
       where: { slug },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     return project ? this.mapProjectToResult(project) : null;
@@ -191,7 +194,7 @@ export class ProjectsService {
 
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
-      relations: ['tag'],
+      relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
@@ -212,6 +215,14 @@ export class ProjectsService {
     }
     if (input.githubForWorker !== undefined) {
       project.githubForWorker = input.githubForWorker;
+    }
+    if (input.autoTagIds !== undefined) {
+      const ids = [...new Set(input.autoTagIds)];
+      const tags = await this.metaService.getTagEntities(ids);
+      if (tags.length !== ids.length || tags.some((tag) => tag.name.startsWith('project:'))) {
+        throw new BadRequestException('Auto tags must be existing non-project tags');
+      }
+      project.autoTags = tags;
     }
 
     const updatedProject = await this.projectRepository.save(project);
@@ -245,8 +256,16 @@ export class ProjectsService {
       return;
     }
 
-    // Soft delete project
+    const taskIds: { task_id: string }[] = await this.dataSource.query(
+      'SELECT task_id FROM task_tags WHERE tag_id = $1',
+      [project.tagId],
+    );
+
+    // Soft deletion removes this project from the set of active auto-tag providers.
     await this.projectRepository.softDelete(projectId);
+    for (const { task_id: taskId } of taskIds) {
+      await this.projectAutoTags.syncTask(taskId);
+    }
 
     // Also delete the associated tag
     await this.metaService.deleteTag(project.tagId);
@@ -259,6 +278,7 @@ export class ProjectsService {
 
   private mapProjectToResult(project: ProjectEntity): ProjectResult {
     return {
+      autoTagIds: (project.autoTags ?? []).map((tag) => tag.id),
       id: project.id,
       tagId: project.tagId,
       tagName: project.tag.name,

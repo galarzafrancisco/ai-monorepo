@@ -8,6 +8,8 @@ import {
   VersionColumn,
   OneToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { TagEntity } from './tag.entity';
 
@@ -22,6 +24,10 @@ export class ProjectEntity {
   @OneToOne(() => TagEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tagId' })
   tag!: TagEntity;
+
+  @ManyToMany(() => TagEntity)
+  @JoinTable({ name: 'project_auto_tags', joinColumn: { name: 'project_id' }, inverseJoinColumn: { name: 'tag_id' } })
+  autoTags!: TagEntity[];
 
   @Column({ type: 'text', unique: true })
   slug!: string;
