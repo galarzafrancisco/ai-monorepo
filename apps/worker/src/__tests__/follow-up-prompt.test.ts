@@ -72,6 +72,35 @@ test('sends the follow-up once on the same session, then finishes', async () => 
   assert.equal(result.result, 'second');
 });
 
+test('reports the follow-up start between the two turns', async () => {
+  const { runner, calls } = runnerWith([
+    [init, success('first')],
+    [init, success('second')],
+  ]);
+  const queriesAtStart: number[] = [];
+
+  await runner.run(ctx({ followUpPrompt: 'check your work' }), {
+    onHeartbeat: () => undefined,
+    onFollowUpStart: () => queriesAtStart.push(calls.length),
+  });
+
+  assert.deepEqual(queriesAtStart, [1]);
+});
+
+test('does not report a follow-up start when none is sent', async () => {
+  const { runner } = runnerWith([[init, success('only')]]);
+  let started = false;
+
+  await runner.run(ctx(), {
+    onHeartbeat: () => undefined,
+    onFollowUpStart: () => {
+      started = true;
+    },
+  });
+
+  assert.equal(started, false);
+});
+
 test('without a follow-up the run ends after the first turn', async () => {
   const { runner, calls } = runnerWith([[init, success('only')]]);
 

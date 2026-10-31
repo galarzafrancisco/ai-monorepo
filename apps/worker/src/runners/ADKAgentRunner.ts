@@ -176,7 +176,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
           break;
         }
         if (turn > 0) {
-          await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+          await this.startFollowUp(emit);
         }
 
         const stream = runner.runAsync({

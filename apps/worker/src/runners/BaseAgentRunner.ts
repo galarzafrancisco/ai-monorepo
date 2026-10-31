@@ -17,6 +17,7 @@ export abstract class BaseAgentRunner implements AgentRunner {
 
   abstract readonly kind: string;
   private onRawEvent?: (event: unknown) => void;
+  private onFollowUpStart?: () => void;
 
   protected emitRawEvent(event: unknown): void {
     this.onRawEvent?.(event);
@@ -35,6 +36,7 @@ export abstract class BaseAgentRunner implements AgentRunner {
     cb: AgentRunCallbacks = BaseAgentRunner.DEFAULT_CALLBACKS
   ): Promise<AgentRunResult> {
     this.onRawEvent = cb.onRawEvent;
+    this.onFollowUpStart = cb.onFollowUpStart;
     const events: string[] = [];
     let sessionId: string | null = null;
     let result = '';
@@ -94,6 +96,7 @@ export abstract class BaseAgentRunner implements AgentRunner {
       throw err;
     } finally {
       this.onRawEvent = undefined;
+      this.onFollowUpStart = undefined;
       if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
       }
@@ -119,8 +122,16 @@ export abstract class BaseAgentRunner implements AgentRunner {
     return { ...inherited, ...ctx.env };
   }
 
-  protected static readonly FOLLOW_UP_MESSAGE =
+  private static readonly FOLLOW_UP_MESSAGE =
     '↩️ Turn finished. Sending the follow-up prompt.';
+
+  /** Call right before sending the follow-up prompt. */
+  protected async startFollowUp(
+    emit: (msg: string) => Promise<void>,
+  ): Promise<void> {
+    this.onFollowUpStart?.();
+    await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+  }
 
   protected abstract runInternal(
     ctx: AgentRunContext,

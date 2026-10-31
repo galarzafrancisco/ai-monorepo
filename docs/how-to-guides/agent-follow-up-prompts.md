@@ -12,6 +12,8 @@ The worker sends the follow-up once per run, after the first turn. It doesn't se
 - the run answers an input request, because those runs are told to answer and stop
 - the first turn failed or the run was interrupted
 
+The follow-up appears as **Final checks** in a run's Execution progress, between Run agent and Finish execution. Runs without a follow-up don't show the step.
+
 Status changes and reassignments made during the first turn take effect straight away, but the next agent can only claim the task once this run ends. Keep follow-ups short.
 
 ## How each harness sends it

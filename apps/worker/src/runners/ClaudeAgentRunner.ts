@@ -174,7 +174,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
           pendingFollowUp = undefined;
           overloadedResumeAttempts = 0;
           Object.assign(completedUsage, cumulativeUsage);
-          await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+          await this.startFollowUp(emit);
           continue;
         }
 

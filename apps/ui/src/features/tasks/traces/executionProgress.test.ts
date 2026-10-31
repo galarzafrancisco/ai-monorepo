@@ -97,6 +97,69 @@ describe('execution progress', () => {
     expect(steps[0].status).toBe('stale');
     expect(steps[0].repositories[0].status).toBe('stopped');
   });
+  describe('final checks', () => {
+    const ids = (steps: ReturnType<typeof buildExecutionSteps>) =>
+      steps.map((step) => step.id);
+    const untilAgent = [
+      step(1, 'workspace', 'completed'),
+      step(2, 'setup', 'completed'),
+      step(3, 'agent', 'running'),
+    ];
+
+    it('is hidden when the run has no follow-up', () => {
+      expect(ids(buildExecutionSteps(untilAgent, false, false))).toEqual([
+        'workspace',
+        'setup',
+        'agent',
+        'finish',
+      ]);
+    });
+    it('waits after the agent and before the finish step', () => {
+      const steps = buildExecutionSteps(
+        [...untilAgent, step(4, 'follow_up', 'pending')],
+        false,
+        false,
+      );
+      expect(ids(steps)).toEqual([
+        'workspace',
+        'setup',
+        'agent',
+        'follow_up',
+        'finish',
+      ]);
+      expect(steps[3].status).toBe('pending');
+      expect(steps[3].label).toBe('Final checks');
+    });
+    it('counts as complete like any other step', () => {
+      const steps = buildExecutionSteps(
+        [
+          ...untilAgent,
+          step(4, 'follow_up', 'pending'),
+          step(5, 'agent', 'completed'),
+          step(6, 'follow_up', 'running'),
+          step(7, 'follow_up', 'completed'),
+          step(8, 'finish', 'completed'),
+        ],
+        true,
+        false,
+      );
+      expect(steps.every((step) => step.status === 'completed')).toBe(true);
+    });
+    it('does not look like it is waiting once the run ended without it', () => {
+      const steps = buildExecutionSteps(
+        [
+          ...untilAgent,
+          step(4, 'follow_up', 'pending'),
+          step(5, 'agent', 'failed'),
+          step(6, 'finish', 'completed'),
+        ],
+        true,
+        false,
+      );
+      expect(steps[2].status).toBe('failed');
+      expect(steps[3].status).toBe('not_run');
+    });
+  });
   it('preserves explicit no-repository preparation details', () => {
     expect(
       buildExecutionSteps(

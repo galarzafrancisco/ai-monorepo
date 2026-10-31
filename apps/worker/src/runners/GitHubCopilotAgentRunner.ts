@@ -99,7 +99,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
             const prompt = pendingFollowUp;
             pendingFollowUp = undefined;
             try {
-              await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+              await this.startFollowUp(emit);
               await session.send({ prompt });
               return;
             } catch (err) {

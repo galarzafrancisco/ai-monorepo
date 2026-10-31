@@ -187,6 +187,89 @@ for (const outcome of [
   });
 }
 
+for (const outcome of ['success', 'failure'] as const) {
+  test(`final checks step records follow-up ${outcome}`, async (t) => {
+    const directory = await mkdtemp(join(tmpdir(), 'taico-follow-up-'));
+    const batches: PostExecutionTracePayload[] = [];
+    t.mock.method(
+      ClaudeAgentRunner.prototype,
+      'run',
+      async (_ctx, callbacks) => {
+        callbacks?.onFollowUpStart?.();
+        if (outcome === 'failure') throw new Error('follow-up failed');
+        return { result: 'done', events: [], sessionId: null };
+      },
+    );
+    const client = {
+      task: {
+        TasksController_getTask: async () => ({
+          id: 'task',
+          assigneeActor: { slug: 'agent' },
+          tags: [],
+        }),
+      },
+      agent: {
+        AgentsController_getAgentBySlug: async () => ({
+          actorId: 'actor',
+          slug: 'agent',
+          type: 'claude',
+          systemPrompt: 'test',
+          followUpPrompt: 'check your work',
+        }),
+        AgentToolPermissionsController_listAgentToolPermissions: async () => [],
+      },
+      threads: { ThreadsController_getThreadByTaskId: async () => null },
+      agentExecutionTokens: {
+        AgentExecutionTokensController_requestExecutionToken: async () => ({
+          token: 'fixture-token',
+        }),
+      },
+      executions: {
+        TaskExecutionQueueController_claimTask: async () => ({
+          id: `execution-follow-up-${outcome}`,
+          taskId: 'task',
+        }),
+        ActiveTaskExecutionController_updateExecutionStats: async () => ({}),
+        ActiveTaskExecutionController_stopTaskExecution: async ({
+          body,
+        }: {
+          body: { status: string };
+        }) => ({ status: body.status }),
+      },
+    } as unknown as ApiClient;
+    try {
+      const work = pickTask({
+        client,
+        taskId: 'task',
+        baseDir: directory,
+        baseUrl: 'http://unused',
+        activityGatewayClient: {
+          queueTrace: async (batch: PostExecutionTracePayload) => {
+            batches.push(batch);
+          },
+        } as unknown as ExecutionActivityGatewayClient,
+      });
+      if (outcome === 'failure') await assert.rejects(work);
+      else await work;
+      const followUp = batches
+        .flatMap((batch) => (batch.source === 'worker' ? batch.events : []))
+        .map((event) => event.payload as unknown as ExecutionStepEvent)
+        .filter((event) => event.step === 'agent' || event.step === 'follow_up')
+        .map((event) => `${event.step}:${event.status}`);
+      assert.deepEqual(followUp, [
+        'agent:running',
+        'follow_up:pending',
+        'agent:completed',
+        'follow_up:running',
+        outcome === 'success' ? 'follow_up:completed' : 'follow_up:failed',
+      ]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+      t.mock.restoreAll();
+    }
+  });
+}
+
 test('one sequence spans alternating worker and harness batches', async () => {
   const batches: PostExecutionTracePayload[] = [];
   const recorder = new HarnessTraceRecorder(

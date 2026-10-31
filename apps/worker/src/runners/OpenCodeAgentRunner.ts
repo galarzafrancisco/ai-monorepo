@@ -495,7 +495,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           if (pendingFollowUp && !turnFailed && !this.interruptRequested) {
             const followUp = pendingFollowUp;
             pendingFollowUp = undefined;
-            await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+            await this.startFollowUp(emit);
             await sendPrompt(followUp);
             continue;
           }

@@ -89,6 +89,9 @@ export type AgentRunCallbacks = {
   /** Every SDK event, before formatting or filtering. */
   onRawEvent?: (event: unknown) => void;
 
+  /** Called once, right before the follow-up prompt is sent */
+  onFollowUpStart?: () => void;
+
   /** Called for every human-readable event */
   onEvent?: (message: string) => void | Promise<void>;
 
