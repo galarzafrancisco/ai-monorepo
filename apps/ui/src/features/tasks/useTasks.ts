@@ -21,6 +21,7 @@ import {
   TaskAssignedWireEvent,
   TaskStatusChangedWireEvent,
   TaskCommentedWireEvent,
+  TaskArtefactAddedWireEvent,
   InputRequestAnsweredWireEvent,
   TaskActivityWireEvent,
 } from "@taico/events";
@@ -350,6 +351,11 @@ export const useTasks = () => {
     newSocket.on(TaskWireEvents.TASK_COMMENTED, async (event: TaskCommentedWireEvent) => {
       console.log('task.commented', event);
       await refreshTaskFromEvent(event.payload.taskId, 'Failed to refresh task after comment');
+    });
+
+    newSocket.on(TaskWireEvents.TASK_ARTEFACT_ADDED, async (event: TaskArtefactAddedWireEvent) => {
+      console.log('task.artefact_added', event);
+      await refreshTaskFromEvent(event.payload.taskId, 'Failed to refresh task after artefact');
     });
 
     // Handle input request answered event
