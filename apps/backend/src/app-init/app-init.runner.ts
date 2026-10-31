@@ -48,11 +48,16 @@ import { createPlanReviewer } from './agent/plan-reviewer.agent';
 import { createTaskmaster } from './agent/taskmaster.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
-import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './prompts/prompts';
+import {
+  ASSISTANT_PROMPT,
+  DEV_PROMPT,
+  REVIEWER_PROMPT,
+} from './prompts/prompts';
 import {
   LEGACY_ASSISTANT_PROMPTS,
   LEGACY_DEV_PROMPTS,
 } from './prompts/legacy-prompts';
+import { normalizePrompt } from './seeded-follow-ups';
 import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
 import { createChromeDevTools } from './mcp/chrome-devtools.mcp';
@@ -603,8 +608,4 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring default AI providers exist');
     }
   }
-}
-
-function normalizePrompt(prompt: string | null | undefined): string {
-  return (prompt ?? '').replace(/\r\n/g, '\n').trim();
 }

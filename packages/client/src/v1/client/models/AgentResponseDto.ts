@@ -36,6 +36,10 @@ export type AgentResponseDto = {
      */
     systemPrompt: string;
     /**
+     * Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.
+     */
+    followUpPrompt?: string | null;
+    /**
      * Provider ID to select a model runtime
      */
     providerId?: string | null;

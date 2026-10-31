@@ -1,3 +1,40 @@
+const DEV_CHECKLIST = `# Checklist:
+- [] put the task in progress as the first step
+- [] (repo) cut a feature branch
+- [] (repo) opened a draft PR early and attached it to the task
+- [] (repo) ran \`npm run build:dev\` to confirm build works
+- [] (repo) ran \`npm run dev:[1-5]\` to ensure app starts (some AppInitRunner errors expected during startup)
+- [] (repo) marked the PR ready, put the task in review and assigned to @code-reviewer
+- [] (no repo changes) posted findings, put the task in review and assigned it to its creator
+- [] meditated on pain points and logged if any are relevant`;
+
+const ASSISTANT_CHECKLIST = `# Checklist:
+- [] put the task in progress when starting to work
+- [] put the task in review when done`;
+
+const REVIEWER_CHECKLIST = `# Checklist:
+- [] fetched and reviewed the PR using gh CLI
+- [] checked out the branch and reviewed code files
+- [] examined diffs and compared before/after
+- [] either approved or requested changes with detailed feedback
+- [] added a comment to the GitHub PR`;
+
+/**
+ * Sent on the same session once the agent ends its turn, so a skipped step gets
+ * done before the run closes.
+ */
+const followUpPrompt = (checklist: string) => `You stopped working. Before this run closes, go through this checklist against what you actually did.
+Do anything that is missing now. If a step doesn't apply or you can't do it, say why in a task comment.
+If you are waiting on an input request, leave the task as it is.
+When everything is covered, stop. Don't repeat work that is already done.
+
+${checklist}
+`;
+
+export const DEV_FOLLOW_UP_PROMPT = followUpPrompt(DEV_CHECKLIST);
+export const ASSISTANT_FOLLOW_UP_PROMPT = followUpPrompt(ASSISTANT_CHECKLIST);
+export const REVIEWER_FOLLOW_UP_PROMPT = followUpPrompt(REVIEWER_CHECKLIST);
+
 export const DEV_PROMPT = `# Start task
 Your goal is to pick up a task and work on it, taking it all the way from "not started" to "for review". A task is a unit of work, a commitment.
 You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
@@ -32,15 +69,7 @@ If the task changes files in the repo (code or docs), follow every step. If it d
   - Start work again
 12. When done, reflect on the work you did. If you encountered any pain points and have ideas of what could be either refactored or improved via documentation to make your job easier, please use the context tool to find the "Pain Points Log" block and append an entry. Mention what project this relates to if any.
 
-# Checklist:
-- [] put the task in progress as the first step
-- [] (repo) cut a feature branch
-- [] (repo) opened a draft PR early and attached it to the task
-- [] (repo) ran \`npm run build:dev\` to confirm build works
-- [] (repo) ran \`npm run dev:[1-5]\` to ensure app starts (some AppInitRunner errors expected during startup)
-- [] (repo) marked the PR ready, put the task in review and assigned to @code-reviewer
-- [] (no repo changes) posted findings, put the task in review and assigned it to its creator
-- [] meditated on pain points and logged if any are relevant
+${DEV_CHECKLIST}
 `;
 
 export const ASSISTANT_PROMPT = `# Start task
@@ -65,9 +94,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 ### Finish
 7. Mark the task as \`in review\` adding a comment that you've finish implementation
 
-# Checklist:
-- [] put the task in progress when starting to work
-- [] put the task in review when done
+${ASSISTANT_CHECKLIST}
 `;
 
 export const REVIEWER_PROMPT = `# Code Review Task
@@ -110,12 +137,7 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
    - Assign the task back to the original assignee
 
 
-# Checklist:
-- [] fetched and reviewed the PR using gh CLI
-- [] checked out the branch and reviewed code files
-- [] examined diffs and compared before/after
-- [] either approved or requested changes with detailed feedback
-- [] added a comment to the GitHub PR
+${REVIEWER_CHECKLIST}
 `;
 
 export const PLANNER_PROMPT = `# Start task

@@ -1,6 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ASSISTANT_PROMPT, DEV_PROMPT } from './prompts';
+import {
+  ASSISTANT_FOLLOW_UP_PROMPT,
+  ASSISTANT_PROMPT,
+  DEV_FOLLOW_UP_PROMPT,
+  DEV_PROMPT,
+  REVIEWER_FOLLOW_UP_PROMPT,
+  REVIEWER_PROMPT,
+} from './prompts';
 import { LEGACY_ASSISTANT_PROMPTS, LEGACY_DEV_PROMPTS } from './legacy-prompts';
 
 /**
@@ -77,6 +84,16 @@ describe('developer workflow prompts', () => {
   it('legacy prompts are different from the current ones, so the sync can tell them apart', () => {
     expect(LEGACY_DEV_PROMPTS).not.toContain(DEV_PROMPT);
     expect(LEGACY_ASSISTANT_PROMPTS).not.toContain(ASSISTANT_PROMPT);
+  });
+
+  it.each([
+    ['developer', DEV_PROMPT, DEV_FOLLOW_UP_PROMPT],
+    ['assistant', ASSISTANT_PROMPT, ASSISTANT_FOLLOW_UP_PROMPT],
+    ['reviewer', REVIEWER_PROMPT, REVIEWER_FOLLOW_UP_PROMPT],
+  ])('%s follow-up repeats the checklist the system prompt keeps', (_, prompt, followUp) => {
+    const checklist = prompt.slice(prompt.indexOf('# Checklist:')).trim();
+    expect(checklist).toMatch(/^# Checklist:\n- \[\]/);
+    expect(followUp).toContain(checklist);
   });
 
   describe('local start-task entry points', () => {

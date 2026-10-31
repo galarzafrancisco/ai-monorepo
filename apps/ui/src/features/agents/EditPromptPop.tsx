@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import "./EditSystemPromptPop.css";
+import "./EditPromptPop.css";
 
-type EditSystemPromptPopProps = {
+type EditPromptPopProps = {
+  title: string;
+  placeholder: string;
   initialValue: string;
   onCancel?: () => void;
-  onSave: (payload: { systemPrompt: string }) => Promise<boolean>;
+  onSave: (content: string) => Promise<boolean>;
 };
 
 const resizeTextarea = (el: HTMLTextAreaElement | null) => {
@@ -16,7 +18,7 @@ const resizeTextarea = (el: HTMLTextAreaElement | null) => {
   el.style.height = `${el.scrollHeight}px`;
 };
 
-export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSystemPromptPopProps) {
+export function EditPromptPop({ title, placeholder, initialValue, onCancel, onSave }: EditPromptPopProps) {
   const [content, setContent] = useState(initialValue);
 
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
@@ -34,28 +36,21 @@ export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSyst
     resizeTextarea(e.target);
   }
 
-  async function handleSave(): Promise<boolean> {
-    return onSave({ systemPrompt: content });
-  }
-
   return (
     <PopShell
-      title="Edit System Prompt"
+      title={title}
       onCancel={onCancel}
-      onSave={handleSave}
+      onSave={() => onSave(content)}
     >
-      <>
-        {/* System Prompt */}
-        <div className="edit-system-prompt-pop__input-wrapper">
-          <textarea
-            className="edit-system-prompt-pop__input-content"
-            ref={contentRef}
-            placeholder="Enter system prompt..."
-            value={content}
-            onChange={handleContentChange}
-          />
-        </div>
-      </>
+      <div className="edit-prompt-pop__input-wrapper">
+        <textarea
+          className="edit-prompt-pop__input-content"
+          ref={contentRef}
+          placeholder={placeholder}
+          value={content}
+          onChange={handleContentChange}
+        />
+      </div>
     </PopShell>
   );
 }

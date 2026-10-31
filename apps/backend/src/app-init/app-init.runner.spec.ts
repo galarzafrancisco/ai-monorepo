@@ -27,7 +27,12 @@ import { createDeveloper } from './agent/developer.agent';
 import { createCodexDev } from './agent/codex-dev.agent';
 import { createGrokDev } from './agent/grok-dev.agent';
 import { AgentNotFoundError } from 'src/agents/errors/agents.errors';
-import { DEV_PROMPT, ASSISTANT_PROMPT, TAICO_PROMPT } from './prompts/prompts';
+import {
+  ASSISTANT_PROMPT,
+  DEV_PROMPT,
+  REVIEWER_PROMPT,
+  TAICO_PROMPT,
+} from './prompts/prompts';
 import {
   LEGACY_ASSISTANT_PROMPTS,
   LEGACY_DEV_PROMPTS,
@@ -152,5 +157,16 @@ describe('AppInitRunner seeded prompt sync', () => {
     await runner.ensureAgents();
 
     expect(patchedSlugs(agentsService)).toEqual(['developer']);
+  });
+
+  it('does not bring back a cleared follow-up prompt on restart', async () => {
+    const { runner, agentsService } = buildRunner({
+      taico: TAICO_PROMPT,
+      developer: DEV_PROMPT,
+    });
+
+    await runner.ensureAgents();
+
+    expect(agentsService.patchAgent).not.toHaveBeenCalled();
   });
 });

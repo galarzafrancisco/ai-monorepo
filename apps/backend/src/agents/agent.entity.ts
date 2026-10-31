@@ -39,6 +39,9 @@ export class AgentEntity {
   @Column({ type: 'text', name: 'system_prompt' })
   systemPrompt!: string;
 
+  @Column({ type: 'text', name: 'follow_up_prompt', nullable: true })
+  followUpPrompt!: string | null;
+
   @Column({ type: 'text', name: 'provider_id', nullable: true })
   providerId!: string | null;
 

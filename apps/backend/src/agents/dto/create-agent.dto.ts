@@ -74,6 +74,17 @@ export class CreateAgentDto {
   systemPrompt!: string;
 
   @ApiPropertyOptional({
+    type: String,
+    description:
+      'Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.',
+    example: 'Did you put the task in review? If not, do it now.',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  followUpPrompt?: string | null;
+
+  @ApiPropertyOptional({
     description: 'Provider ID to select a model runtime',
     example: 'openai',
   })

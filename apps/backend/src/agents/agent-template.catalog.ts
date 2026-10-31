@@ -1,7 +1,10 @@
 import { TaskStatus } from 'src/tasks/enums';
 import {
+  ASSISTANT_FOLLOW_UP_PROMPT,
   ASSISTANT_PROMPT,
+  DEV_FOLLOW_UP_PROMPT,
   DEV_PROMPT,
+  REVIEWER_FOLLOW_UP_PROMPT,
   REVIEWER_PROMPT,
 } from 'src/app-init/prompts/prompts';
 import {
@@ -177,6 +180,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     modelId: GPT_5_5.modelId,
     agentDescription: 'Developer agent for implementation tasks.',
     systemPrompt: DEV_PROMPT,
+    followUpPrompt: DEV_FOLLOW_UP_PROMPT,
     statusTriggers: [TaskStatus.NOT_STARTED],
     tagTriggers: [],
     avatarUrl: getAgentAvatarUrlById('openai') ?? undefined,
@@ -192,6 +196,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     agentDescription:
       'Automated code reviewer that examines PRs and provides feedback on tasks marked for review.',
     systemPrompt: REVIEWER_PROMPT,
+    followUpPrompt: REVIEWER_FOLLOW_UP_PROMPT,
     statusTriggers: [TaskStatus.FOR_REVIEW],
     tagTriggers: ['code'],
     avatarUrl: getAgentAvatarUrlById('cockatoo') ?? undefined,
@@ -205,6 +210,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     modelId: GEMINI_FLASH.modelId,
     agentDescription: 'General helper for task execution.',
     systemPrompt: ASSISTANT_PROMPT,
+    followUpPrompt: ASSISTANT_FOLLOW_UP_PROMPT,
     statusTriggers: [TaskStatus.NOT_STARTED],
     tagTriggers: [],
     avatarUrl: getAgentAvatarUrlById('gemini') ?? undefined,

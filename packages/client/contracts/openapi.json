@@ -13763,6 +13763,12 @@
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
           },
+          "followUpPrompt": {
+            "type": "string",
+            "description": "Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.",
+            "example": "Did you put the task in review? If not, do it now.",
+            "nullable": true
+          },
           "providerId": {
             "type": "string",
             "description": "Provider ID to select a model runtime",
@@ -13883,6 +13889,12 @@
             "type": "string",
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "followUpPrompt": {
+            "type": "string",
+            "description": "Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.",
+            "example": "Did you put the task in review? If not, do it now.",
+            "nullable": true
           },
           "providerId": {
             "type": "string",
@@ -14065,6 +14077,10 @@
           "systemPrompt": {
             "type": "string",
             "description": "Default system prompt for this template."
+          },
+          "followUpPrompt": {
+            "type": "string",
+            "description": "Default follow-up prompt for this template."
           },
           "agentDescription": {
             "type": "string",
@@ -14261,6 +14277,12 @@
             "type": "string",
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "followUpPrompt": {
+            "type": "string",
+            "description": "Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.",
+            "example": "Did you put the task in review? If not, do it now.",
+            "nullable": true
           },
           "providerId": {
             "type": "string",

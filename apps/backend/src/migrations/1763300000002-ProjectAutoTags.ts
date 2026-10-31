@@ -1,18 +1,18 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class ProjectAutoTags1763300000000 implements MigrationInterface {
-  name = 'ProjectAutoTags1763300000000';
+export class ProjectAutoTags1763300000002 implements MigrationInterface {
+  name = 'ProjectAutoTags1763300000002';
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE project_auto_tags (
+       CREATE TABLE IF NOT EXISTS project_auto_tags (
         project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         tag_id uuid NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
         PRIMARY KEY (project_id, tag_id)
       )
     `);
     await queryRunner.query(`
-      CREATE TABLE task_auto_tags (
+       CREATE TABLE IF NOT EXISTS task_auto_tags (
         task_id uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
         project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         tag_id uuid NOT NULL REFERENCES tags(id) ON DELETE CASCADE,

@@ -33,6 +33,12 @@ export type AgentRunContext = {
   /** Initial input */
   prompt: string;
 
+  /**
+   * Sent once on the same session after the first turn ends successfully. The
+   * run finishes when the agent is done with it.
+   */
+  followUpPrompt?: string;
+
   /** Working directory or sandbox */
   cwd: string;
 

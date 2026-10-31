@@ -155,19 +155,6 @@ export class ADKAgentRunner extends BaseAgentRunner {
         sessionService: this.sessionService,
       });
 
-      const stream = runner.runAsync({
-        userId: session.userId,
-        sessionId: session.id,
-        newMessage: {
-          parts: [
-            {
-              text: ctx.prompt,
-            }
-          ],
-          role: 'user',
-        }
-      });
-
       // Set up abort signal handler if provided
       // Note: ADK doesn't have native abort support, so we'll break out of the loop
       let aborted = false;
@@ -178,31 +165,59 @@ export class ADKAgentRunner extends BaseAgentRunner {
         });
       }
 
-      for await (const msg of stream) {
-          this.emitRawEvent(msg);
-        if (aborted) {
-          console.log('[ADKAgentRunner] Breaking out of message loop due to abort');
+      const prompts = ctx.followUpPrompt
+        ? [ctx.prompt, ctx.followUpPrompt]
+        : [ctx.prompt];
+
+      let turnFailed = false;
+
+      for (const [turn, text] of prompts.entries()) {
+        if (aborted || turnFailed) {
           break;
         }
+        if (turn > 0) {
+          await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+        }
 
-        if (msg.content?.parts) {
-          for (const part of msg.content.parts) {
-            if (part.functionCall?.name) {
-              await onToolCall?.(part.functionCall.name);
+        const stream = runner.runAsync({
+          userId: session.userId,
+          sessionId: session.id,
+          newMessage: {
+            parts: [{ text }],
+            role: 'user',
+          }
+        });
+
+        for await (const msg of stream) {
+          this.emitRawEvent(msg);
+          if (aborted) {
+            console.log('[ADKAgentRunner] Breaking out of message loop due to abort');
+            break;
+          }
+
+          if (msg.errorCode) {
+            turnFailed = true;
+          }
+
+          if (msg.content?.parts) {
+            for (const part of msg.content.parts) {
+              if (part.functionCall?.name) {
+                await onToolCall?.(part.functionCall.name);
+              }
             }
           }
-        }
 
-        const usage = extractAdkTokenUsage(msg);
-        if (usage) {
-          await onTokenUsage?.(usage);
-        }
+          const usage = extractAdkTokenUsage(msg);
+          if (usage) {
+            await onTokenUsage?.(usage);
+          }
 
-        // map → string
-        const messages = formatter.format(msg);
-        messages.forEach(async (message) => {
-          await emit(message);
-        });
+          // map → string
+          const messages = formatter.format(msg);
+          messages.forEach(async (message) => {
+            await emit(message);
+          });
+        }
       }
 
       // If we were aborted, throw an error instead of returning success

@@ -43,6 +43,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
 
     // Track abort state
     let aborted = false;
+    let sessionFailed = false;
 
     // Check if already aborted before we even started
     if (ctx.abortSignal?.aborted) {
@@ -89,10 +90,24 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         console.log(`created session ${session.sessionId} in ${session.workspacePath}`);
 
         let lastAssistantMessage = '';
+        let pendingFollowUp = ctx.followUpPrompt;
 
         // Subscribe to events
         session.on('session.idle', async () => {
           console.log('session.idle');
+          if (pendingFollowUp && !aborted && !sessionFailed) {
+            const prompt = pendingFollowUp;
+            pendingFollowUp = undefined;
+            try {
+              await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+              await session.send({ prompt });
+              return;
+            } catch (err) {
+              await this.client?.stop();
+              reject(err);
+              return;
+            }
+          }
           if (this.client) {
             await this.client.stop();
           }
@@ -102,6 +117,9 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           } else {
             resolve(lastAssistantMessage);
           }
+        });
+        session.on('session.error', () => {
+          sessionFailed = true;
         });
         session.on('assistant.reasoning', (reasoning) => {
           const usage = extractCopilotTokenUsage(reasoning);
