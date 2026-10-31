@@ -150,7 +150,9 @@ export class TasksService {
     }
     await this.projectAutoTags.syncTask(
       savedTask.id,
-      savedTask.tags?.filter((tag) => tag.name.startsWith('project:')).map((tag) => tag.id) ?? [],
+      savedTask.tags
+        ?.filter((tag) => tag.name.startsWith('project:'))
+        .map((tag) => tag.id) ?? [],
     );
 
     // Reload with relations
@@ -280,83 +282,100 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
+    await this.projectAutoTags.withLockedTask(taskId, async (manager) => {
+      const task = await manager.getRepository(TaskEntity).findOne({
+        where: { id: taskId },
+        relations: [
+          'comments',
+          'comments.commenterActor',
+          'artefacts',
+          'inputRequests',
+          'tags',
+          'dependsOn',
+          'assigneeActor',
+          'createdByActor',
+        ],
+      });
 
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
+      if (!task) {
+        throw new TaskNotFoundError(taskId);
+      }
 
-    // Apply partial updates
-    if (input.name !== undefined) task.name = input.name;
-    if (input.description !== undefined) task.description = input.description;
-    if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
+      // Apply partial updates
+      if (input.name !== undefined) task.name = input.name;
+      if (input.description !== undefined) task.description = input.description;
+      if (input.sessionId !== undefined)
+        task.sessionId = input.sessionId ?? null;
 
-    // Look up actor IDs from slugs for assignee and createdBy
-    if (input.assigneeActorId !== undefined) {
-      if (input.assigneeActorId === null) {
-        task.assigneeActorId = null; // defined but null means they're removing assignee
-      } else {
-        const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
-          input.assigneeActorId,
-        );
-        if (assigneeActor) {
-          task.assigneeActorId = assigneeActor.id;
+      // Look up actor IDs from slugs for assignee and createdBy
+      if (input.assigneeActorId !== undefined) {
+        if (input.assigneeActorId === null) {
+          task.assigneeActorId = null; // defined but null means they're removing assignee
         } else {
-          // TODO: Assignee doesn't exist. Should we throw?
+          const assigneeActor =
+            await this.actorService.getActiveActorByIdOrSlug(
+              input.assigneeActorId,
+            );
+          if (assigneeActor) {
+            task.assigneeActorId = assigneeActor.id;
+          } else {
+            // TODO: Assignee doesn't exist. Should we throw?
+          }
         }
       }
-    }
 
-    const previousProjectTags = new Set(
-      task.tags.filter((tag) => tag.name.startsWith('project:')).map((tag) => tag.id),
-    );
+      const previousProjectTags = new Set(
+        task.tags
+          .filter((tag) => tag.name.startsWith('project:'))
+          .map((tag) => tag.id),
+      );
 
-    // Handle tags if provided
-    if (input.tagNames !== undefined) {
-      if (input.tagNames.length === 0) {
-        task.tags = [];
-      } else {
-        task.tags = await this.metaService.findOrCreateTagEntities(
-          input.tagNames,
+      // Handle tags if provided
+      if (input.tagNames !== undefined) {
+        if (input.tagNames.length === 0) {
+          task.tags = [];
+        } else {
+          task.tags = await this.metaService.findOrCreateTagEntities(
+            input.tagNames,
+          );
+        }
+      }
+
+      // Handle dependencies if provided
+      if (input.dependsOnIds !== undefined) {
+        if (input.dependsOnIds.length === 0) {
+          task.dependsOn = [];
+        } else {
+          const dependencyTasks = await manager
+            .getRepository(TaskEntity)
+            .findBy({
+              id: In(input.dependsOnIds),
+            });
+          if (dependencyTasks.length !== input.dependsOnIds.length) {
+            throw new Error('One or more dependency tasks not found');
+          }
+          task.dependsOn = dependencyTasks;
+        }
+      }
+
+      const updatedTask = await manager.getRepository(TaskEntity).save(task);
+      if (input.tagNames !== undefined) {
+        await this.projectAutoTags.syncTask(
+          updatedTask.id,
+          task.tags
+            .filter(
+              (tag) =>
+                tag.name.startsWith('project:') &&
+                !previousProjectTags.has(tag.id),
+            )
+            .map((tag) => tag.id),
+          task.tags
+            .filter((tag) => !tag.name.startsWith('project:'))
+            .map((tag) => tag.id),
+          manager,
         );
       }
-    }
-
-    // Handle dependencies if provided
-    if (input.dependsOnIds !== undefined) {
-      if (input.dependsOnIds.length === 0) {
-        task.dependsOn = [];
-      } else {
-        const dependencyTasks = await this.taskRepository.findBy({
-          id: In(input.dependsOnIds),
-        });
-        if (dependencyTasks.length !== input.dependsOnIds.length) {
-          throw new Error('One or more dependency tasks not found');
-        }
-        task.dependsOn = dependencyTasks;
-      }
-    }
-
-    const updatedTask = await this.taskRepository.save(task);
-    if (input.tagNames !== undefined) {
-      await this.projectAutoTags.syncTask(
-        updatedTask.id,
-        task.tags.filter((tag) => tag.name.startsWith('project:') && !previousProjectTags.has(tag.id)).map((tag) => tag.id),
-        task.tags.filter((tag) => !tag.name.startsWith('project:')).map((tag) => tag.id),
-      );
-    }
+    });
 
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
@@ -491,7 +510,8 @@ export class TasksService {
     }
 
     // Check if task is a parent of any threads
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(taskId);
+    const threadsWithParent =
+      await this.threadsService.findThreadsByParentTaskId(taskId);
     if (threadsWithParent.length > 0) {
       throw new TaskIsThreadParentError(taskId, threadsWithParent.length);
     }
@@ -526,61 +546,63 @@ export class TasksService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const result = await this.taskRepository.manager.transaction(async (manager) => {
-      const taskRepository = manager.getRepository(TaskEntity);
+    const result = await this.taskRepository.manager.transaction(
+      async (manager) => {
+        const taskRepository = manager.getRepository(TaskEntity);
 
-      if (input.status) {
-        const queryBuilder = this.createListTasksQuery(taskRepository, input)
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit);
-        const [tasks, total] = await queryBuilder.getManyAndCount();
+        if (input.status) {
+          const queryBuilder = this.createListTasksQuery(taskRepository, input)
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit);
+          const [tasks, total] = await queryBuilder.getManyAndCount();
+
+          return {
+            tasks,
+            total,
+            totalPages: Math.ceil(total / input.limit),
+          };
+        }
+
+        const tasks: TaskEntity[] = [];
+        const totalsByStatus: number[] = [];
+
+        for (const status of Object.values(TaskStatus)) {
+          const count = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          ).getCount();
+          totalsByStatus.push(count);
+
+          if (count <= skip) {
+            continue;
+          }
+
+          const statusTasks = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          )
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit)
+            .getMany();
+          tasks.push(...statusTasks);
+        }
+
+        tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
         return {
           tasks,
-          total,
-          totalPages: Math.ceil(total / input.limit),
+          total: totalsByStatus.reduce((sum, count) => sum + count, 0),
+          totalPages: Math.max(
+            0,
+            ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
+          ),
         };
-      }
-
-      const tasks: TaskEntity[] = [];
-      const totalsByStatus: number[] = [];
-
-      for (const status of Object.values(TaskStatus)) {
-        const count = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        ).getCount();
-        totalsByStatus.push(count);
-
-        if (count <= skip) {
-          continue;
-        }
-
-        const statusTasks = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        )
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit)
-          .getMany();
-        tasks.push(...statusTasks);
-      }
-
-      tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-
-      return {
-        tasks,
-        total: totalsByStatus.reduce((sum, count) => sum + count, 0),
-        totalPages: Math.max(
-          0,
-          ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
-        ),
-      };
-    });
+      },
+    );
 
     this.logger.log({
       message: 'Tasks listed',
@@ -884,9 +906,8 @@ export class TasksService {
     taskId: string,
     actorId: string,
   ): Promise<void> {
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(
-      taskId,
-    );
+    const threadsWithParent =
+      await this.threadsService.findThreadsByParentTaskId(taskId);
     if (threadsWithParent.length > 0) {
       this.logger.log({
         message: 'Auto-prune skipped because task is a thread parent',
@@ -925,50 +946,52 @@ export class TasksService {
       tagName: input.name,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
+    // Resolve the tag before locking the task so parallel additions serialize on
+    // the task row, then read its current memberships under that lock.
+    const tag = await this.metaService.findOrCreateTagEntity(input.name);
+    const newlyAdded = await this.projectAutoTags.withLockedTask(taskId, async (manager) => {
+      const task = await manager.getRepository(TaskEntity).findOne({
+        where: { id: taskId },
+        relations: [
+          'comments',
+          'comments.commenterActor',
+          'artefacts',
+          'inputRequests',
+          'tags',
+          'dependsOn',
+          'assigneeActor',
+          'createdByActor',
+        ],
+      });
+
+      if (!task) {
+        throw new TaskNotFoundError(taskId);
+      }
+
+      // Add tag to task if not already present
+      const newlyAdded = !task.tags.some((t) => t.id === tag.id);
+      if (newlyAdded) {
+        task.tags.push(tag);
+        await manager.getRepository(TaskEntity).save(task);
+
+        this.logger.log({
+          message: 'Tag added to task',
+          taskId,
+          tagId: tag.id,
+        });
+      }
+      if (tag.name.startsWith('project:')) {
+        if (newlyAdded) {
+          await this.projectAutoTags.syncTask(taskId, [tag.id], [], manager);
+        }
+      } else {
+        // An explicit add of an existing auto tag makes it a manual tag too.
+        await this.projectAutoTags.syncTask(taskId, [], [tag.id], manager);
+      }
+      return newlyAdded;
     });
 
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    // Find or create the tag using MetaService
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
-
-    // Add tag to task if not already present
-    const newlyAdded = !task.tags.some((t) => t.id === tag.id);
-    if (newlyAdded) {
-      task.tags.push(tag);
-      await this.taskRepository.save(task);
-
-      // Increment tag usage tracking
-      await this.metaService.incrementTagUsage(tag.id);
-
-      this.logger.log({
-        message: 'Tag added to task',
-        taskId,
-        tagId: tag.id,
-      });
-    }
-    if (tag.name.startsWith('project:')) {
-      if (newlyAdded) {
-        await this.projectAutoTags.syncTask(taskId, [tag.id]);
-      }
-    } else {
-      // An explicit add of an existing auto tag makes it a manual tag too.
-      await this.projectAutoTags.syncTask(taskId, [], [tag.id]);
-    }
+    if (newlyAdded) await this.metaService.incrementTagUsage(tag.id);
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
@@ -1007,30 +1030,34 @@ export class TasksService {
       tagId,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
+    await this.projectAutoTags.withLockedTask(taskId, async (manager) => {
+      const task = await manager.getRepository(TaskEntity).findOne({
+        where: { id: taskId },
+        relations: [
+          'comments',
+          'comments.commenterActor',
+          'artefacts',
+          'inputRequests',
+          'tags',
+          'dependsOn',
+          'assigneeActor',
+          'createdByActor',
+        ],
+      });
+
+      if (!task) {
+        throw new TaskNotFoundError(taskId);
+      }
+
+      task.tags = task.tags.filter((tag) => tag.id !== tagId);
+      await manager.getRepository(TaskEntity).save(task);
+      await this.projectAutoTags.forgetManualRemoval(taskId, tagId, manager);
+      if (
+        (await this.metaService.getTagById(tagId))?.name.startsWith('project:')
+      ) {
+        await this.projectAutoTags.syncTask(taskId, [], [], manager);
+      }
     });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    task.tags = task.tags.filter((tag) => tag.id !== tagId);
-    await this.taskRepository.save(task);
-    await this.projectAutoTags.forgetManualRemoval(taskId, tagId);
-    if ((await this.metaService.getTagById(tagId))?.name.startsWith('project:')) {
-      await this.projectAutoTags.syncTask(taskId);
-    }
 
     this.logger.log({
       message: 'Tag removed from task',
@@ -1310,7 +1337,8 @@ export class TasksService {
     return results.map((result) => ({
       id: result.id,
       name: result.title,
-      status: typeof result.meta.status === 'string' ? result.meta.status : null,
+      status:
+        typeof result.meta.status === 'string' ? result.meta.status : null,
       score: result.score,
       matchedBy: result.matchedBy,
       matchedOn: result.matchedOn,

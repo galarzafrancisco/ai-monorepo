@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Raw, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -7,7 +12,11 @@ import { join } from 'path';
 import { TagEntity } from './tag.entity';
 import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
-import { CreateTagInput, TagResult, VersionResult } from './dto/service/meta.service.types';
+import {
+  CreateTagInput,
+  TagResult,
+  VersionResult,
+} from './dto/service/meta.service.types';
 import { SYSTEM_TAGS, isSystemTagName } from './system-tags';
 
 /**
@@ -258,6 +267,14 @@ export class MetaService implements OnModuleInit {
         tagName: tag.name,
       });
       return;
+    }
+
+    // Deleting the membership tag directly would cascade the project and its
+    // provenance without removing automatically applied task tags or notifying listeners.
+    if (await this.projectRepository.exists({ where: { tagId } })) {
+      throw new BadRequestException(
+        'Delete the project through the projects endpoint',
+      );
     }
 
     const result = await this.tagRepository.delete(tagId);
@@ -585,14 +602,19 @@ export class MetaService implements OnModuleInit {
       } catch {
         // If not found, try development path
         try {
-          const uiDevPackageJsonPath = join(__dirname, '../../../ui/package.json');
+          const uiDevPackageJsonPath = join(
+            __dirname,
+            '../../../ui/package.json',
+          );
           const uiPackageJson = JSON.parse(
             readFileSync(uiDevPackageJsonPath, 'utf-8'),
           );
           uiVersion = uiPackageJson.version;
         } catch {
           // If still not found, use backend version as fallback
-          this.logger.warn('Could not read UI package.json, using backend version as fallback');
+          this.logger.warn(
+            'Could not read UI package.json, using backend version as fallback',
+          );
         }
       }
 
