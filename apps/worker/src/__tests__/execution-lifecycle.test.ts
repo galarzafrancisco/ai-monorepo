@@ -9,6 +9,7 @@ import type {
   ExecutionStepEvent,
 } from '@taico/events';
 import { pickTask } from '../task-picker.js';
+import { Runner } from '@google/adk';
 import { ClaudeAgentRunner } from '../runners/ClaudeAgentRunner.js';
 import {
   InterruptedExecutionError,
@@ -187,19 +188,69 @@ for (const outcome of [
   });
 }
 
-for (const outcome of ['success', 'failure'] as const) {
-  test(`final checks step records follow-up ${outcome}`, async (t) => {
+const adkError = { errorCode: '429', errorMessage: 'Resource exhausted' };
+const adkReply = { content: { role: 'model', parts: [{ text: 'Done' }] } };
+
+for (const scenario of [
+  {
+    name: 'follow-up success',
+    expected: [
+      'agent:running',
+      'follow_up:pending',
+      'agent:completed',
+      'follow_up:running',
+      'follow_up:completed',
+    ],
+  },
+  {
+    name: 'follow-up failure',
+    runError: 'follow-up failed',
+    expected: [
+      'agent:running',
+      'follow_up:pending',
+      'agent:completed',
+      'follow_up:running',
+      'follow_up:failed',
+    ],
+  },
+  {
+    name: 'ADK follow-up error',
+    adkTurns: [[adkReply], [adkError]],
+    expected: [
+      'agent:running',
+      'follow_up:pending',
+      'agent:completed',
+      'follow_up:running',
+      'follow_up:failed',
+    ],
+  },
+  {
+    name: 'ADK first-turn error',
+    adkTurns: [[adkError], [adkReply]],
+    expected: ['agent:running', 'follow_up:pending', 'agent:failed'],
+  },
+]) {
+  test(`final checks step records ${scenario.name}`, async (t) => {
     const directory = await mkdtemp(join(tmpdir(), 'taico-follow-up-'));
     const batches: PostExecutionTracePayload[] = [];
-    t.mock.method(
-      ClaudeAgentRunner.prototype,
-      'run',
-      async (_ctx, callbacks) => {
-        callbacks?.onFollowUpStart?.();
-        if (outcome === 'failure') throw new Error('follow-up failed');
-        return { result: 'done', events: [], sessionId: null };
-      },
-    );
+    const { adkTurns, runError } = scenario;
+    const failed = Boolean(adkTurns ?? runError);
+    if (adkTurns) {
+      const turns = [...adkTurns];
+      t.mock.method(Runner.prototype, 'runAsync', async function* () {
+        yield* turns.shift() ?? [];
+      } as unknown as Runner['runAsync']);
+    } else {
+      t.mock.method(
+        ClaudeAgentRunner.prototype,
+        'run',
+        async (_ctx, callbacks) => {
+          callbacks?.onFollowUpStart?.();
+          if (runError) throw new Error(runError);
+          return { result: 'done', events: [], sessionId: null };
+        },
+      );
+    }
     const client = {
       task: {
         TasksController_getTask: async () => ({
@@ -212,7 +263,7 @@ for (const outcome of ['success', 'failure'] as const) {
         AgentsController_getAgentBySlug: async () => ({
           actorId: 'actor',
           slug: 'agent',
-          type: 'claude',
+          type: adkTurns ? 'adk' : 'claude',
           systemPrompt: 'test',
           followUpPrompt: 'check your work',
         }),
@@ -226,10 +277,11 @@ for (const outcome of ['success', 'failure'] as const) {
       },
       executions: {
         TaskExecutionQueueController_claimTask: async () => ({
-          id: `execution-follow-up-${outcome}`,
+          id: `execution-${scenario.name}`,
           taskId: 'task',
         }),
         ActiveTaskExecutionController_updateExecutionStats: async () => ({}),
+        ActiveTaskExecutionController_updateRunnerSessionId: async () => ({}),
         ActiveTaskExecutionController_stopTaskExecution: async ({
           body,
         }: {
@@ -244,25 +296,25 @@ for (const outcome of ['success', 'failure'] as const) {
         baseDir: directory,
         baseUrl: 'http://unused',
         activityGatewayClient: {
+          publishActivity: async () => undefined,
           queueTrace: async (batch: PostExecutionTracePayload) => {
             batches.push(batch);
           },
         } as unknown as ExecutionActivityGatewayClient,
       });
-      if (outcome === 'failure') await assert.rejects(work);
+      if (failed) await assert.rejects(work);
       else await work;
-      const followUp = batches
+      const steps = batches
         .flatMap((batch) => (batch.source === 'worker' ? batch.events : []))
         .map((event) => event.payload as unknown as ExecutionStepEvent)
-        .filter((event) => event.step === 'agent' || event.step === 'follow_up')
-        .map((event) => `${event.step}:${event.status}`);
-      assert.deepEqual(followUp, [
-        'agent:running',
-        'follow_up:pending',
-        'agent:completed',
-        'follow_up:running',
-        outcome === 'success' ? 'follow_up:completed' : 'follow_up:failed',
-      ]);
+        .filter((event) => event.step === 'agent' || event.step === 'follow_up');
+      assert.deepEqual(
+        steps.map((event) => `${event.step}:${event.status}`),
+        scenario.expected,
+      );
+      if (adkTurns) {
+        assert.equal(steps.at(-1)?.message, 'ADK error 429: Resource exhausted');
+      }
     } finally {
       await rm(directory, { recursive: true, force: true });
       t.mock.restoreAll();

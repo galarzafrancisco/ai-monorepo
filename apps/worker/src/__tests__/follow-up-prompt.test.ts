@@ -1,10 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { Runner as AdkRunner } from '@google/adk';
 import type { AgentResponseDto } from '@taico/client/v2';
 import { buildFollowUpPrompt } from '../prompt.js';
+import { ADKAgentRunner } from '../runners/ADKAgentRunner.js';
 import { ClaudeAgentRunner } from '../runners/ClaudeAgentRunner.js';
 import { CodexAgentRunner } from '../runners/CodexAgentRunner.js';
 import { OpencodeAgentRunner } from '../runners/OpenCodeAgentRunner.js';
+import { AgentQuotaExceededError } from '../task-execution-errors.js';
 import type { AgentRunContext, TokenUsage } from '../runners/AgentRunner.js';
 
 type Message = Record<string, unknown>;
@@ -288,3 +291,64 @@ for (const Runner of [OpencodeAgentRunner, CodexAgentRunner]) {
     assert.deepEqual(prompts, ['do the work']);
   });
 }
+
+const adkError = { errorCode: '429', errorMessage: 'quota exceeded' };
+const adkReply = { content: { role: 'model', parts: [{ text: 'done' }] } };
+
+test('ADK: an error event fails the run and skips the follow-up', async (t) => {
+  const turns = [[adkError], [adkReply]];
+  const prompts: unknown[] = [];
+  t.mock.method(AdkRunner.prototype, 'runAsync', async function* (params: {
+    newMessage: { parts: Array<{ text: string }> };
+  }) {
+    prompts.push(params.newMessage.parts[0].text);
+    yield* turns.shift() ?? [];
+  } as unknown as AdkRunner['runAsync']);
+  let followUpStarted = false;
+
+  await assert.rejects(
+    new ADKAgentRunner().run(
+      ctx({ followUpPrompt: 'check your work', mcpServers: {} }),
+      {
+        onHeartbeat: () => undefined,
+        onFollowUpStart: () => {
+          followUpStarted = true;
+        },
+      },
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof AgentQuotaExceededError);
+      assert.equal(error.displayMessage, 'ADK error 429: quota exceeded');
+      return true;
+    },
+  );
+
+  assert.deepEqual(prompts, ['do the work']);
+  assert.equal(followUpStarted, false);
+});
+
+test('ADK: an error event keeps its token usage', async (t) => {
+  t.mock.method(AdkRunner.prototype, 'runAsync', async function* () {
+    yield {
+      errorCode: 'MAX_TOKENS',
+      usageMetadata: { promptTokenCount: 3, candidatesTokenCount: 4 },
+    };
+  } as unknown as AdkRunner['runAsync']);
+  let latest: TokenUsage = {};
+
+  await assert.rejects(
+    new ADKAgentRunner().run(ctx({ mcpServers: {} }), {
+      onHeartbeat: () => undefined,
+      onTokenUsage: (usage) => {
+        latest = usage;
+      },
+    }),
+    /ADK error MAX_TOKENS/,
+  );
+
+  assert.deepEqual(latest, {
+    inputTokens: 3,
+    outputTokens: 4,
+    totalTokens: 7,
+  });
+});

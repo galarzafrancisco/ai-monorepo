@@ -16,7 +16,10 @@ import {
   TokenUsage,
 } from "./AgentRunner.js";
 import { randomUUID } from "node:crypto";
-import { InterruptedExecutionError } from "../task-execution-errors.js";
+import {
+  classifyAgentError,
+  InterruptedExecutionError,
+} from "../task-execution-errors.js";
 
 class NamespacedTool extends BaseTool {
   constructor(
@@ -169,10 +172,8 @@ export class ADKAgentRunner extends BaseAgentRunner {
         ? [ctx.prompt, ctx.followUpPrompt]
         : [ctx.prompt];
 
-      let turnFailed = false;
-
       for (const [turn, text] of prompts.entries()) {
-        if (aborted || turnFailed) {
+        if (aborted) {
           break;
         }
         if (turn > 0) {
@@ -195,10 +196,6 @@ export class ADKAgentRunner extends BaseAgentRunner {
             break;
           }
 
-          if (msg.errorCode) {
-            turnFailed = true;
-          }
-
           if (msg.content?.parts) {
             for (const part of msg.content.parts) {
               if (part.functionCall?.name) {
@@ -217,6 +214,14 @@ export class ADKAgentRunner extends BaseAgentRunner {
           messages.forEach(async (message) => {
             await emit(message);
           });
+
+          // ADK reports model failures as events, not by throwing.
+          if (msg.errorCode) {
+            throw classifyAgentError({
+              message: formatAdkError(msg),
+              rawMessage: msg,
+            });
+          }
         }
       }
 
@@ -308,6 +313,14 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     return [...new Set(details)];
   }
+}
+
+function formatAdkError(event: {
+  errorCode?: string;
+  errorMessage?: string;
+}): string {
+  const code = `ADK error ${event.errorCode}`;
+  return event.errorMessage ? `${code}: ${event.errorMessage}` : code;
 }
 
 type AdkUsageMetadata = {
