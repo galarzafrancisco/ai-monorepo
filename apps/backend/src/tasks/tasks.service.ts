@@ -137,8 +137,6 @@ export class TasksService {
       // Increment usage tracking for all tags
       await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
     }
-    await this.projectAutoTags.syncTask(savedTask.id);
-
     // Handle dependencies if provided
     if (input.dependsOnIds && input.dependsOnIds.length > 0) {
       const dependencyTasks = await this.taskRepository.findBy({
@@ -150,6 +148,10 @@ export class TasksService {
       savedTask.dependsOn = dependencyTasks;
       await this.taskRepository.save(savedTask);
     }
+    await this.projectAutoTags.syncTask(
+      savedTask.id,
+      savedTask.tags?.filter((tag) => tag.name.startsWith('project:')).map((tag) => tag.id) ?? [],
+    );
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
@@ -317,6 +319,10 @@ export class TasksService {
       }
     }
 
+    const previousProjectTags = new Set(
+      task.tags.filter((tag) => tag.name.startsWith('project:')).map((tag) => tag.id),
+    );
+
     // Handle tags if provided
     if (input.tagNames !== undefined) {
       if (input.tagNames.length === 0) {
@@ -345,7 +351,11 @@ export class TasksService {
 
     const updatedTask = await this.taskRepository.save(task);
     if (input.tagNames !== undefined) {
-      await this.projectAutoTags.syncTask(updatedTask.id);
+      await this.projectAutoTags.syncTask(
+        updatedTask.id,
+        task.tags.filter((tag) => tag.name.startsWith('project:') && !previousProjectTags.has(tag.id)).map((tag) => tag.id),
+        task.tags.filter((tag) => !tag.name.startsWith('project:')).map((tag) => tag.id),
+      );
     }
 
     // Reload with relations to ensure we have updated tags
@@ -937,7 +947,8 @@ export class TasksService {
     const tag = await this.metaService.findOrCreateTagEntity(input.name);
 
     // Add tag to task if not already present
-    if (!task.tags.some((t) => t.id === tag.id)) {
+    const newlyAdded = !task.tags.some((t) => t.id === tag.id);
+    if (newlyAdded) {
       task.tags.push(tag);
       await this.taskRepository.save(task);
 
@@ -951,10 +962,12 @@ export class TasksService {
       });
     }
     if (tag.name.startsWith('project:')) {
-      await this.projectAutoTags.syncTask(taskId);
+      if (newlyAdded) {
+        await this.projectAutoTags.syncTask(taskId, [tag.id]);
+      }
     } else {
       // An explicit add of an existing auto tag makes it a manual tag too.
-      await this.projectAutoTags.syncTask(taskId, [tag.id]);
+      await this.projectAutoTags.syncTask(taskId, [], [tag.id]);
     }
 
     // Reload with relations

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 
 type Attribution = { project_id: string; tag_id: string; applied: boolean };
 type Desired = { project_id: string; tag_id: string };
@@ -9,19 +9,36 @@ type Desired = { project_id: string; tag_id: string };
 export class ProjectAutoTagsService {
   constructor(private readonly dataSource: DataSource) {}
 
-  async syncTask(taskId: string, manualTagIds: string[] = []): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+  async syncTask(
+    taskId: string,
+    newProjectTagIds: string[] = [],
+    manualTagIds: string[] = [],
+    transactionManager?: EntityManager,
+  ): Promise<void> {
+    const sync = async (manager: EntityManager) => {
       await manager.query('SELECT id FROM tasks WHERE id = $1 FOR UPDATE', [taskId]);
       const previous: Attribution[] = await manager.query(
         'SELECT project_id, tag_id, applied FROM task_auto_tags WHERE task_id = $1', [taskId],
       );
-      const desired: Desired[] = await manager.query(`
-        SELECT p.id AS project_id, pat.tag_id
+      const memberships: { project_id: string }[] = await manager.query(`
+        SELECT p.id AS project_id
         FROM task_tags membership
         JOIN projects p ON p."tagId" = membership.tag_id AND p.deleted_at IS NULL
-        JOIN project_auto_tags pat ON pat.project_id = p.id
         WHERE membership.task_id = $1
       `, [taskId]);
+      const activeProjects = new Set(memberships.map((row) => row.project_id));
+      // Existing memberships retain their original configuration, including an empty one.
+      const desired: Desired[] = previous.filter((row) => activeProjects.has(row.project_id));
+      if (newProjectTagIds.length > 0) {
+        const added: Desired[] = await manager.query(`
+          SELECT p.id AS project_id, pat.tag_id
+          FROM projects p
+          JOIN task_tags membership ON membership.tag_id = p."tagId" AND membership.task_id = $1
+          JOIN project_auto_tags pat ON pat.project_id = p.id
+          WHERE p."tagId" = ANY($2::uuid[]) AND p.deleted_at IS NULL
+        `, [taskId, newProjectTagIds]);
+        desired.push(...added);
+      }
       const existing: { tag_id: string }[] = await manager.query(
         'SELECT tag_id FROM task_tags WHERE task_id = $1', [taskId],
       );
@@ -56,7 +73,9 @@ export class ProjectAutoTagsService {
           );
         }
       }
-    });
+    };
+    if (transactionManager) await sync(transactionManager);
+    else await this.dataSource.transaction(sync);
   }
 
   async forgetManualRemoval(taskId: string, tagId: string): Promise<void> {

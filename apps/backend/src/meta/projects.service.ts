@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TaskEntity } from '../tasks/task.entity';
+import { TaskUpdatedEvent } from '../tasks/events/tasks.events';
 import { ProjectEntity } from './project.entity';
 import { MetaService } from './meta.service';
 import { SearchService } from '../search/search.service';
@@ -24,6 +27,7 @@ export class ProjectsService {
     private readonly searchService: SearchService,
     private readonly dataSource: DataSource,
     private readonly projectAutoTags: ProjectAutoTagsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private async assertGithubConnectionExists(connectionId: string | null | undefined): Promise<void> {
@@ -256,19 +260,35 @@ export class ProjectsService {
       return;
     }
 
-    const taskIds: { task_id: string }[] = await this.dataSource.query(
-      'SELECT task_id FROM task_tags WHERE tag_id = $1',
-      [project.tagId],
-    );
+    // Commit the membership removal and its provenance cleanup together. Listeners
+    // must only see tasks after the project tag has gone away.
+    const taskIds = await this.dataSource.transaction(async (manager) => {
+      await manager.softDelete(ProjectEntity, projectId);
+      const affected: { task_id: string }[] = await manager.query(
+        'SELECT task_id FROM task_tags WHERE tag_id = $1', [project.tagId],
+      );
+      for (const { task_id: taskId } of affected) {
+        await this.projectAutoTags.syncTask(taskId, [], [], manager);
+      }
+      await manager.delete('tags', project.tagId);
+      return affected;
+    });
 
-    // Soft deletion removes this project from the set of active auto-tag providers.
-    await this.projectRepository.softDelete(projectId);
     for (const { task_id: taskId } of taskIds) {
-      await this.projectAutoTags.syncTask(taskId);
+      const task = await this.dataSource.getRepository(TaskEntity).findOne({
+        where: { id: taskId },
+        relations: [
+          'tags', 'dependsOn', 'assigneeActor', 'createdByActor',
+          'comments', 'comments.commenterActor', 'artefacts', 'inputRequests',
+        ],
+      });
+      if (task) {
+        this.eventEmitter.emit(
+          TaskUpdatedEvent.INTERNAL,
+          new TaskUpdatedEvent({ id: task.createdByActorId }, task),
+        );
+      }
     }
-
-    // Also delete the associated tag
-    await this.metaService.deleteTag(project.tagId);
 
     this.logger.log({
       message: 'Project deleted',
