@@ -300,6 +300,7 @@ function ProjectAutoTagsCard({ project, onSave, onSaved }: {
           existingTags={selected.map((id) => ({ id }))}
           loadTags={loadAutoTags}
           isTagAvailable={isAutoTagAvailable}
+          error={error}
         />
       ) : null}
     </Card>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { Text } from "../../ui/primitives";
+import { ErrorText, Text } from "../../ui/primitives";
 import { MetaService, MetaTagResponseDto } from "@taico/client";
 import "./TagSearchPop.css";
 
@@ -10,9 +10,10 @@ type TagSearchPopProps = {
   existingTags: { id: string }[]; // Tags already on the task (only id is used for filtering)
   loadTags?: () => Promise<MetaTagResponseDto[]>;
   isTagAvailable?: (name: string) => boolean;
+  error?: string;
 };
 
-export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaultLoadTags, isTagAvailable = defaultIsTagAvailable }: TagSearchPopProps) {
+export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaultLoadTags, isTagAvailable = defaultIsTagAvailable, error }: TagSearchPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [query, setQuery] = useState("");
@@ -193,6 +194,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+        {error ? <ErrorText size="2">{error}</ErrorText> : null}
 
         <div className="tag-search-pop__list" ref={listRef} role="listbox" aria-label="Available tags">
           {isLoadingTags ? (
