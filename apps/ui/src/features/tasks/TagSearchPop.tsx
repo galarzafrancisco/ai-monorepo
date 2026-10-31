@@ -8,9 +8,11 @@ type TagSearchPopProps = {
   onCancel?: () => void;
   onSave: (tag: MetaTagResponseDto) => Promise<boolean>;
   existingTags: { id: string }[]; // Tags already on the task (only id is used for filtering)
+  loadTags?: () => Promise<MetaTagResponseDto[]>;
+  isTagAvailable?: (name: string) => boolean;
 };
 
-export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopProps) {
+export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaultLoadTags, isTagAvailable = defaultIsTagAvailable }: TagSearchPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [query, setQuery] = useState("");
@@ -22,9 +24,9 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
 
   // Load all tags on mount
   useEffect(() => {
-    const loadTags = async () => {
+    const fetchTags = async () => {
       try {
-        const tags = await MetaService.metaControllerGetAllTags();
+        const tags = await loadTags();
         setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags:', err);
@@ -32,8 +34,8 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
         setIsLoadingTags(false);
       }
     };
-    loadTags();
-  }, []);
+    void fetchTags();
+  }, [loadTags]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -42,7 +44,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
   // Filter out tags already on the task and rank based on query
   const filteredTags = useMemo(() => {
     const existingTagIds = new Set(existingTags.map(t => t.id));
-    const availableTags = allTags.filter(t => !existingTagIds.has(t.id));
+    const availableTags = allTags.filter(t => !existingTagIds.has(t.id) && isTagAvailable(t.name));
 
     if (!query.trim()) {
       return availableTags;
@@ -69,15 +71,15 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
       .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .map(s => s.tag);
-  }, [allTags, existingTags, query]);
+  }, [allTags, existingTags, isTagAvailable, query]);
 
   // Check if we can create a new tag with this query
   const canCreateNew = useMemo(() => {
-    if (!query.trim()) return false;
+    if (!query.trim() || !isTagAvailable(query.trim())) return false;
     const lowerQuery = query.toLowerCase().trim();
     // Check if any existing tag has this exact name (case-insensitive)
     return !allTags.some(t => t.name.toLowerCase() === lowerQuery);
-  }, [query, allTags]);
+  }, [query, allTags, isTagAvailable]);
 
   // Reset highlighted index when filtered results change
   useEffect(() => {
@@ -242,6 +244,9 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
     </PopShell>
   );
 }
+
+const defaultLoadTags = () => MetaService.metaControllerGetAllTags();
+const defaultIsTagAvailable = () => true;
 
 function buildNewTag(query: string): MetaTagResponseDto {
   return {
