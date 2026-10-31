@@ -92,6 +92,12 @@ export const AGENT_AVATARS: AgentAvatarDefinition[] = [
     url: '/avatar/spacexai.jpg',
     description: 'SpaceXAI avatar for xAI Grok model selections.',
   },
+  {
+    id: 'shipper',
+    label: 'Shipper',
+    url: '/avatar/shipper.png',
+    description: 'Rocket launch badge avatar for the shipper agent.',
+  },
 ];
 
 const AVATAR_BY_ID = new Map(AGENT_AVATARS.map((avatar) => [avatar.id, avatar]));
