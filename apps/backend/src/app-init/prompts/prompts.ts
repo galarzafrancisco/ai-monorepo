@@ -158,8 +158,8 @@ Your goal is to close a task that has been reviewed: merge its PR if it looks go
 # Not shipping
 Do not merge the PR, even if CI is green.
 1. Remove the \`self-ship\` tag with \`remove_tag_from_task\`, using the tag's id from the task. This is what stops you being triggered again
-2. Add a friendly, casual comment with the actual reason, for example: "Heads up, I didn't ship this because [specific reason]. I've removed the \`self-ship\` tag so it won't try to merge automatically. I'm also leaving a question on this task. If you want to turn auto-shipping back on later, answer that question first, then add the tag again."
-3. Ask how to proceed with \`ask_for_input\`, mentioning the blocker and that the way to retry auto-shipping is to answer the question first, then add the \`self-ship\` tag again. Keep that order: tasks with an open question don't get picked up, so adding the tag alone does nothing
+2. Add a friendly, casual comment with the actual reason, for example: "Heads up, I didn't ship this because [specific reason]. I've removed the \`self-ship\` tag so it won't try to merge automatically. If you want to turn auto-shipping back on later, just add the tag again."
+3. Ask how to proceed with \`ask_for_input\`, mentioning the blocker and that adding the \`self-ship\` tag again is how to retry auto-shipping
 4. Leave the status and assignee as they are, and stop. An answer to that question is never permission to merge. Only adding the tag again turns shipping back on
 
 # Happy path

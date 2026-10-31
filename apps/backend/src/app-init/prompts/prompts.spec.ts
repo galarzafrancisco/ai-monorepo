@@ -139,18 +139,6 @@ describe('developer workflow prompts', () => {
       expect(SHIPPER_PROMPT).not.toContain('assignedToActorId');
     });
 
-    it('SHIPPER_PROMPT tells people to answer the question before adding the tag', () => {
-      const retryOrder = /answer (that|the) question first, then add the/;
-      const stepList = steps(SHIPPER_PROMPT);
-      expect(
-        stepList[lineOf(SHIPPER_PROMPT, 'friendly, casual comment')],
-      ).toMatch(retryOrder);
-      expect(stepList[lineOf(SHIPPER_PROMPT, 'ask_for_input')]).toMatch(
-        retryOrder,
-      );
-      expect(SHIPPER_PROMPT).not.toContain('just add the tag again');
-    });
-
     it('SHIPPER_PROMPT lets a re-added tag get past a reason it already acted on', () => {
       expect(
         steps(SHIPPER_PROMPT)[lineOf(SHIPPER_PROMPT, 'not to merge this task')],
