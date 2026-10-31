@@ -411,7 +411,11 @@ describe('Sign in with ChatGPT E2E', () => {
       expect(row!.external_client_id).toMatch(/^oaiapp_/);
       expect(row!.credentials).toBeTruthy();
       expect(row!.credentials).not.toContain(accessToken);
-      expect(row!.credentials).not.toMatch(/rt-\d+|at-\d+|eyJ/);
+      // base64(iv):base64(tag):base64(ciphertext). Random base64 can contain any
+      // short token prefix such as `eyJ`, so check the envelope, not the letters.
+      expect(row!.credentials).toMatch(
+        /^[A-Za-z0-9+/]{16}:[A-Za-z0-9+/]{22}==:[A-Za-z0-9+/]+={0,2}$/,
+      );
 
       const [attempts] = await dataSource.query(
         `SELECT count(*)::int AS count FROM ai_provider_authorization_attempts`,
