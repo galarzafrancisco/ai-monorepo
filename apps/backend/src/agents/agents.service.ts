@@ -93,6 +93,7 @@ export class AgentsService {
       type: input.type ?? AgentType.OTHER,
       description: input.description ?? null,
       systemPrompt: input.systemPrompt ?? '',
+      followUpPrompt: input.followUpPrompt ?? null,
       providerId: this.normalizeOptionalId(input.providerId),
       modelId: this.normalizeOptionalId(input.modelId),
       statusTriggers: input.statusTriggers ?? [],
@@ -345,6 +346,9 @@ export class AgentsService {
     if (input.systemPrompt !== undefined) {
       agent.systemPrompt = input.systemPrompt;
     }
+    if (input.followUpPrompt !== undefined) {
+      agent.followUpPrompt = input.followUpPrompt;
+    }
     if (input.providerId !== undefined) {
       agent.providerId = this.normalizeOptionalId(input.providerId);
     }
@@ -444,6 +448,7 @@ export class AgentsService {
       introduction: actor.introduction,
       avatarUrl: actor.avatarUrl,
       systemPrompt: agent.systemPrompt,
+      followUpPrompt: agent.followUpPrompt ?? null,
       providerId: agent.providerId ?? null,
       modelId: agent.modelId ?? null,
       statusTriggers: agent.statusTriggers,

@@ -1,7 +1,7 @@
 import { CreateAgentInput } from 'src/agents/dto/service/agents.service.types';
 import { AgentType } from 'src/agents/enums';
 import { TaskStatus } from 'src/tasks/enums';
-import { DEV_PROMPT } from '../prompts/prompts';
+import { DEV_PROMPT, DEV_FOLLOW_UP_PROMPT } from '../prompts/prompts';
 
 export const createClaudeDev: CreateAgentInput = {
   slug: 'claude-dev',
@@ -10,6 +10,7 @@ export const createClaudeDev: CreateAgentInput = {
   description:
     'Claude Code with a developer persona running via Claude Code SDK',
   systemPrompt: DEV_PROMPT,
+  followUpPrompt: DEV_FOLLOW_UP_PROMPT,
   statusTriggers: [TaskStatus.NOT_STARTED],
   allowedTools: [],
   isActive: true,

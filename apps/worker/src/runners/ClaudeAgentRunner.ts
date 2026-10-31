@@ -20,6 +20,8 @@ const MAX_OVERLOADED_RESUME_ATTEMPTS = 1;
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
   private readonly model: Model | null;
+  /** Overridable so tests can drive the runner without the Claude CLI. */
+  protected readonly startQuery: typeof query = query;
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
@@ -86,11 +88,16 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
 
     let latestSessionId = ctx.resume;
     let overloadedResumeAttempts = 0;
+    let prompt = ctx.prompt;
+    let pendingFollowUp = ctx.followUpPrompt;
+    // A resumed query reports totals for itself, not for the whole run.
+    const completedUsage: TokenUsage = {};
 
     while (true) {
       try {
-        const stream = query({
-          prompt: ctx.prompt,
+        let turnSucceeded = false;
+        const stream = this.startQuery({
+          prompt,
           options: {
             cwd: ctx.cwd,
             ...(this.harnessEnv(ctx) ? { env: this.harnessEnv(ctx) } : {}),
@@ -127,7 +134,12 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
           const usage = extractClaudeTokenUsage(msg);
           if (usage) {
             if (usage.mode === 'absolute') {
-              await onTokenUsage?.(applyAbsoluteUsage(cumulativeUsage, usage.usage));
+              await onTokenUsage?.(
+                applyAbsoluteUsage(
+                  cumulativeUsage,
+                  addUsage(completedUsage, usage.usage),
+                ),
+              );
             } else {
               await onTokenUsage?.(applySnapshotUsage(cumulativeUsage, usage.usage));
             }
@@ -148,7 +160,22 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
               }
             }
             finalResult = msg.result;
+            turnSucceeded = msg.is_error !== true;
           }
+        }
+
+        if (
+          pendingFollowUp &&
+          turnSucceeded &&
+          latestSessionId &&
+          !ctx.abortSignal?.aborted
+        ) {
+          prompt = pendingFollowUp;
+          pendingFollowUp = undefined;
+          overloadedResumeAttempts = 0;
+          Object.assign(completedUsage, cumulativeUsage);
+          await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+          continue;
         }
 
         return finalResult;
@@ -287,6 +314,17 @@ function applySnapshotUsage(current: TokenUsage, snapshot: TokenUsage): TokenUsa
     inputTokens: current.inputTokens,
     outputTokens: current.outputTokens,
     totalTokens: current.totalTokens,
+  };
+}
+
+function addUsage(base: TokenUsage, usage: TokenUsage): TokenUsage {
+  const add = (a?: number | null, b?: number | null) =>
+    typeof b === 'number' ? (a ?? 0) + b : b;
+
+  return {
+    inputTokens: add(base.inputTokens, usage.inputTokens),
+    outputTokens: add(base.outputTokens, usage.outputTokens),
+    totalTokens: add(base.totalTokens, usage.totalTokens),
   };
 }
 

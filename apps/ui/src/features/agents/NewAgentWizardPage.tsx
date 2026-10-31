@@ -152,6 +152,7 @@ export function NewAgentWizardPage() {
         type: template.type ?? current.draft.type ?? "other",
         description: template.agentDescription || undefined,
         systemPrompt: template.systemPrompt,
+        followUpPrompt: template.followUpPrompt,
         providerId: template.providerId || undefined,
         modelId: template.modelId || undefined,
         statusTriggers: template.statusTriggers,
@@ -343,6 +344,7 @@ export function NewAgentWizardPage() {
         description: draft.description,
         avatarUrl: draft.avatarUrl,
         systemPrompt: draft.systemPrompt,
+        followUpPrompt: draft.followUpPrompt,
         providerId: draft.providerId,
         modelId: draft.modelId,
         statusTriggers: draft.statusTriggers ?? [],
@@ -553,6 +555,20 @@ export function NewAgentWizardPage() {
               placeholder="You are an agent that..."
               aria-label="System prompt"
             />
+            <label className="new-agent-wizard__identity-field">
+              <Text size="1" tone="muted">Follow-up prompt (optional)</Text>
+              <textarea
+                className="new-agent-wizard__prompt-editor new-agent-wizard__prompt-editor--compact"
+                value={draft.followUpPrompt ?? ""}
+                onChange={(event) =>
+                  setWizardState((current) => ({
+                    ...current,
+                    draft: { ...current.draft, followUpPrompt: event.target.value },
+                  }))
+                }
+                placeholder="Sent after the agent finishes its turn. Did you put the task in review?"
+              />
+            </label>
           </WizardSection>
         )}
 

@@ -32,6 +32,10 @@ export type AgentTemplateDto = {
      */
     systemPrompt: string;
     /**
+     * Default follow-up prompt for this template.
+     */
+    followUpPrompt?: string;
+    /**
      * Default agent description.
      */
     agentDescription?: string;

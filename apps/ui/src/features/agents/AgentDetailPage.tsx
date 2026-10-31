@@ -6,7 +6,7 @@ import { Text, Stack, Button, Avatar, Chip, InsetGroup, InsetRow } from '../../u
 import { Agent, AgentAvatarDto } from './types';
 import type { PatchAgentDto, MetaTagResponseDto, AgentToolPermissionResponseDto } from "@taico/client/v2";
 import { AgentsService, AgentToolPermissionsService, MetaService } from './api';
-import { EditSystemPromptPop } from './EditSystemPromptPop';
+import { EditPromptPop } from './EditPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { EditTagTriggersPop } from './EditTagTriggersPop';
 import { EditIntroductionPop } from './EditIntroductionPop';
@@ -33,6 +33,7 @@ import './AgentDetailPage.css';
 type EditField =
   | 'avatar'
   | 'systemPrompt'
+  | 'followUpPrompt'
   | 'introduction'
   | 'type'
   | 'model'
@@ -308,10 +309,21 @@ export function AgentDetailPage() {
   const pops = (
     <>
       {editing === 'systemPrompt' && (
-        <EditSystemPromptPop
+        <EditPromptPop
+          title="Edit System Prompt"
+          placeholder="Enter system prompt..."
           initialValue={agent.systemPrompt}
           onCancel={() => setEditing(null)}
-          onSave={({ systemPrompt }) => save({ systemPrompt })}
+          onSave={(systemPrompt) => save({ systemPrompt })}
+        />
+      )}
+      {editing === 'followUpPrompt' && (
+        <EditPromptPop
+          title="Edit Follow-up Prompt"
+          placeholder="Enter follow-up prompt..."
+          initialValue={agent.followUpPrompt ?? ''}
+          onCancel={() => setEditing(null)}
+          onSave={(followUpPrompt) => save({ followUpPrompt })}
         />
       )}
       {editing === 'statusTriggers' && (
@@ -409,6 +421,13 @@ export function AgentDetailPage() {
               mono
               onEdit={() => setEditing('systemPrompt')}
             />
+            <DocumentCard
+              title="Follow-up prompt"
+              text={agent.followUpPrompt ?? ''}
+              empty="No follow-up prompt. The run ends when the agent finishes its turn."
+              mono
+              onEdit={() => setEditing('followUpPrompt')}
+            />
             <section className="agent-panel">
               <header className="agent-panel__header">
                 <div>
@@ -461,6 +480,11 @@ export function AgentDetailPage() {
         <InsetRow label="System prompt" onClick={() => setEditing('systemPrompt')}>
           <span className="agent-detail-page__preview agent-detail-page__preview--mono">
             {agent.systemPrompt || 'None'}
+          </span>
+        </InsetRow>
+        <InsetRow label="Follow-up prompt" onClick={() => setEditing('followUpPrompt')}>
+          <span className="agent-detail-page__preview agent-detail-page__preview--mono">
+            {agent.followUpPrompt || 'None'}
           </span>
         </InsetRow>
       </InsetGroup>

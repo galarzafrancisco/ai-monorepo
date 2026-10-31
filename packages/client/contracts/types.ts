@@ -5784,6 +5784,11 @@ export interface components {
              */
             systemPrompt: string;
             /**
+             * @description Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.
+             * @example Did you put the task in review? If not, do it now.
+             */
+            followUpPrompt?: string | null;
+            /**
              * @description Provider ID to select a model runtime
              * @example openai
              */
@@ -5873,6 +5878,11 @@ export interface components {
              * @example You are a helpful assistant that helps users with tasks.
              */
             systemPrompt: string;
+            /**
+             * @description Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.
+             * @example Did you put the task in review? If not, do it now.
+             */
+            followUpPrompt?: string | null;
             /**
              * @description Provider ID to select a model runtime
              * @example openai
@@ -5997,6 +6007,8 @@ export interface components {
             modelId?: string;
             /** @description Default system prompt for this template. */
             systemPrompt: string;
+            /** @description Default follow-up prompt for this template. */
+            followUpPrompt?: string;
             /** @description Default agent description. */
             agentDescription?: string;
             /** @description Default statuses that trigger the agent. */
@@ -6103,6 +6115,11 @@ export interface components {
              * @example You are a helpful assistant that helps users with tasks.
              */
             systemPrompt?: string;
+            /**
+             * @description Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.
+             * @example Did you put the task in review? If not, do it now.
+             */
+            followUpPrompt?: string | null;
             /**
              * @description Provider ID to select a model runtime
              * @example openai

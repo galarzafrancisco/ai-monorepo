@@ -436,29 +436,32 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
       const events = await this.client.event.subscribe(); // SSE stream
 
-      const prompt: TextPartInput = {
-        type: 'text',
-        text: ctx.prompt,
-      }
-      let finalResult = '';
-      await this.client.session.promptAsync({
-        path: {
-          id: session.id,
-        },
-        // NOTE: adding a directory breaks realtime events 🤷🏻‍♂️: https://github.com/anomalyco/opencode/issues/11522
-        // NOTE: Good news is we don't need it because the session carries the dir.
-        // NOTE: Acutally we need to. I've implemented a horrible hack to CD before starting the server.
-        // query: {
-        //   directory: ctx.cwd,
-        // },
-        body: {
-          model: {
-            providerID: this.model.providerId,
-            modelID: this.model.modelId,
+      const client = this.client;
+      const sendPrompt = (text: string) => {
+        const prompt: TextPartInput = { type: 'text', text };
+        return client.session.promptAsync({
+          path: {
+            id: session.id,
           },
-          parts: [prompt],
-        }
-      })
+          // NOTE: adding a directory breaks realtime events 🤷🏻‍♂️: https://github.com/anomalyco/opencode/issues/11522
+          // NOTE: Good news is we don't need it because the session carries the dir.
+          // NOTE: Acutally we need to. I've implemented a horrible hack to CD before starting the server.
+          // query: {
+          //   directory: ctx.cwd,
+          // },
+          body: {
+            model: {
+              providerID: this.model.providerId,
+              modelID: this.model.modelId,
+            },
+            parts: [prompt],
+          }
+        });
+      };
+      let finalResult = '';
+      let pendingFollowUp = ctx.followUpPrompt;
+      let turnFailed = false;
+      await sendPrompt(ctx.prompt);
 
       if (this.interruptRequested && await this.wasAbortApplied()) {
         throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
@@ -473,11 +476,28 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
         }
 
+        // The event stream is server-wide, so it also carries the sessions of any
+        // subagents. Only this session decides whether the turn is over or failed.
+        // An error with no session can't be attributed, so it counts as ours.
+        if (
+          event.type === 'session.error' &&
+          (event.properties.sessionID ?? session.id) === session.id
+        ) {
+          turnFailed = true;
+        }
+
         // Detect end of session
-        if (event.type == 'session.idle') {
+        if (event.type == 'session.idle' && event.properties.sessionID === session.id) {
           console.log('session.idle');
           if (this.interruptRequested && await this.wasAbortApplied()) {
             throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
+          }
+          if (pendingFollowUp && !turnFailed && !this.interruptRequested) {
+            const followUp = pendingFollowUp;
+            pendingFollowUp = undefined;
+            await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+            await sendPrompt(followUp);
+            continue;
           }
           break;
         }
