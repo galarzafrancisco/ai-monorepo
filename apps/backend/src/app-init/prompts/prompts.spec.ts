@@ -120,6 +120,21 @@ describe('developer workflow prompts', () => {
       expect(override).toBeLessThan(lineOf(SHIPPER_PROMPT, 'gh pr merge'));
     });
 
+    it('SHIPPER_PROMPT hands the task off when the answer is not a go-ahead', () => {
+      const answered = steps(SHIPPER_PROMPT)[
+        lineOf(SHIPPER_PROMPT, 'A clear go-ahead')
+      ];
+      expect(answered).toContain('assign the task to whoever answered');
+      expect(lineOf(SHIPPER_PROMPT, 'A clear go-ahead')).toBeLessThan(
+        lineOf(SHIPPER_PROMPT, 'gh pr merge'),
+      );
+    });
+
+    it('SHIPPER_PROMPT waits up to 2 minutes for the main build', () => {
+      const build = steps(SHIPPER_PROMPT)[lineOf(SHIPPER_PROMPT, 'gh run list')];
+      expect(build).toContain('up to 2 minutes');
+    });
+
     it('SHIPPER_PROMPT checks CI, merges, then watches the main build', () => {
       const ci = lineOf(SHIPPER_PROMPT, 'gh pr checks');
       const merge = lineOf(SHIPPER_PROMPT, 'gh pr merge');

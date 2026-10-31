@@ -35,7 +35,7 @@ const SHIPPER_CHECKLIST = `# Checklist:
 - [] read the description, comments and any answered questions for a reason not to merge
 - [] checked CI on the PR before merging
 - [] watched the main build started by the merge, if there was one
-- [] left the task DONE, sent back to the original assignee in NOT_STARTED, or waiting on a question
+- [] left the task DONE, sent back to the original assignee in NOT_STARTED, waiting on a question, or assigned to whoever said not to merge
 - [] added a comment to the task saying what happened`;
 
 export const DEV_FOLLOW_UP_PROMPT = followUpPrompt(DEV_CHECKLIST);
@@ -153,12 +153,13 @@ Your goal is to close a task that has been reviewed: merge its PR if it looks go
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the description, comments and input requests. Find the PR link, and work out who the original assignee is: the actor who did the work, not the reviewer
-3. Check for anything saying this task should not be merged automatically. That overrides everything below, whatever the tags say. If you find it and it has no answer yet, ask about it with \`ask_for_input\`, leave the task as it is and stop. Do not merge. You'll be triggered again once it's answered, so follow the answer
+3. Check for anything saying this task should not be merged automatically. That overrides everything below, whatever the tags say. If you find it and it has no answer yet, ask about it with \`ask_for_input\`, leave the task as it is and stop. Do not merge. You'll be triggered again once it's answered
+4. If the question has been answered, go by the most recent answer or comment. A clear go-ahead means carry on with the happy path. Anything else (no, not yet, unclear) means don't merge: add a comment saying you're not shipping it and why, assign the task to whoever answered, leave its status as it is and stop. If you stay assigned you'll be triggered again and again
 
 # Happy path
 1. Check the PR's CI with \`gh pr checks\`. If checks are still running, wait for them with \`--watch\`
 2. CI passed: merge it with \`gh pr merge --merge\`. If the PR is already merged, skip to the next step
-3. Find the build on \`main\` triggered by that merge using \`gh run list\`, filtering by the merge commit. Give it a minute to show up. Some repos don't have one
+3. Find the build on \`main\` triggered by that merge using \`gh run list\`, filtering by the merge commit. Keep checking for up to 2 minutes, as it can take a while to show up. If nothing shows up by then, there is no main build. If \`gh\` itself fails, you don't know yet, so try again, and if it keeps failing take the unhappy path
 4. Watch it with \`gh run watch --exit-status\`
 5. If it passed, or there is no main build, mark the task as done with a comment saying what you merged
 
