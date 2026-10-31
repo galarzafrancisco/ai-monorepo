@@ -10,8 +10,12 @@ import {
   approveAll,
   CopilotClient,
   MCPServerConfig,
+  SessionEvent,
 } from "@github/copilot-sdk";
-import { InterruptedExecutionError } from "../task-execution-errors.js";
+import {
+  classifyAgentError,
+  InterruptedExecutionError,
+} from "../task-execution-errors.js";
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
@@ -93,13 +97,18 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         let pendingFollowUp = ctx.followUpPrompt;
 
         // Subscribe to events
-        session.on('session.idle', async () => {
+        // Events with an agentId belong to subagents, not to this run's turn.
+        session.on('session.idle', async (event) => {
+          if (event.agentId || sessionFailed) {
+            return;
+          }
           console.log('session.idle');
-          if (pendingFollowUp && !aborted && !sessionFailed) {
+          aborted ||= event.data.aborted === true;
+          if (pendingFollowUp && !aborted) {
             const prompt = pendingFollowUp;
             pendingFollowUp = undefined;
             try {
-              await emit(BaseAgentRunner.FOLLOW_UP_MESSAGE);
+              await this.startFollowUp(emit);
               await session.send({ prompt });
               return;
             } catch (err) {
@@ -118,8 +127,26 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
             resolve(lastAssistantMessage);
           }
         });
-        session.on('session.error', () => {
+        // Same contract as the SDK's sendAndWait: an error from the main agent
+        // ends the turn, and session.idle isn't guaranteed to follow it.
+        session.on('session.error', async (event) => {
+          if (event.agentId || sessionFailed) {
+            return;
+          }
           sessionFailed = true;
+          try {
+            await this.client?.stop();
+          } catch (err) {
+            console.warn('[GitHubCopilotAgentRunner] Failed to stop client:', err);
+          }
+          reject(
+            aborted
+              ? new InterruptedExecutionError('GitHub Copilot agent execution was interrupted')
+              : classifyAgentError({
+                  message: formatCopilotError(event),
+                  rawMessage: event,
+                }),
+          );
         });
         session.on('assistant.reasoning', (reasoning) => {
           const usage = extractCopilotTokenUsage(reasoning);
@@ -213,6 +240,15 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
       tools: ["*"],
     };
   }
+}
+
+function formatCopilotError({
+  data,
+}: Extract<SessionEvent, { type: 'session.error' }>): string {
+  // "rate_limit" -> "rate limit", which is what the quota check looks for.
+  const category = data.errorType.replace(/_/g, ' ');
+  const code = ['Copilot', category, data.statusCode].filter(Boolean).join(' ');
+  return `${code}: ${data.message}`;
 }
 
 type CopilotUsage = {

@@ -44,8 +44,15 @@ export const EXECUTION_TRACE_MAX_BYTES = 16 * 1024 * 1024;
 export const EXECUTION_TRACE_BATCH_SIZE = 100;
 
 /** Worker lifecycle records share the execution sequence with harness events. */
-export type ExecutionStep = "workspace" | "setup" | "agent" | "finish";
+export type ExecutionStep =
+  | "workspace"
+  | "setup"
+  | "agent"
+  | "follow_up"
+  | "finish";
+/** `pending` announces a step that may run later in this execution. */
 export type ExecutionStepStatus =
+  | "pending"
   | "running"
   | "completed"
   | "failed"

@@ -9,6 +9,8 @@ const definitions: Array<{
   id: ExecutionStep;
   label: string;
   description: string;
+  /** Only shown when the worker reports it for this run. */
+  optional?: boolean;
 }> = [
   {
     id: 'workspace',
@@ -24,6 +26,12 @@ const definitions: Array<{
     id: 'agent',
     label: 'Run agent',
     description: 'The agent works on the task.',
+  },
+  {
+    id: 'follow_up',
+    label: 'Final checks',
+    description: 'The agent reviews its work before the run ends.',
+    optional: true,
   },
   {
     id: 'finish',
@@ -58,22 +66,26 @@ export function buildExecutionSteps(
     )
   )
     return [];
-  return definitions.map((definition) => {
-    const records = events
-      .filter((event) => event.source === 'worker')
-      .map((event) => event.payload as unknown as ExecutionStepEvent)
-      .filter(
-        (record) =>
-          record?.type === 'taico.execution.step' &&
-          record.step === definition.id,
-      );
+  const allRecords = events
+    .filter((event) => event.source === 'worker')
+    .map((event) => event.payload as unknown as ExecutionStepEvent)
+    .filter((record) => record?.type === 'taico.execution.step');
+  const reported = definitions.filter(
+    (definition) =>
+      !definition.optional ||
+      allRecords.some((record) => record.step === definition.id),
+  );
+  return reported.map((definition) => {
+    const records = allRecords.filter(
+      (record) => record.step === definition.id,
+    );
     const latest = records.at(-1);
     const repositories = new Map<string, ExecutionRepositoryProgress>();
     for (const record of records)
       if (record.repository)
         repositories.set(record.repository.slug, record.repository);
-    let status: ExecutionProgressStep['status'] =
-      latest?.status ?? (terminal ? 'not_run' : 'pending');
+    let status: ExecutionProgressStep['status'] = latest?.status ?? 'pending';
+    if (status === 'pending' && terminal) status = 'not_run';
     if (status === 'running' && terminal) status = stale ? 'stale' : 'not_run';
     return {
       ...definition,

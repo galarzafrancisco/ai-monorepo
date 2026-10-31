@@ -233,6 +233,11 @@ export async function executeTask({
     trace.workerStep({ step, status: 'running' });
     throwIfInterrupted();
 
+    const followUpPrompt = buildFollowUpPrompt(agent, mode);
+    if (followUpPrompt) {
+      trace.workerStep({ step: 'follow_up', status: 'pending' });
+    }
+
     // Run and pipe results
     try {
       let latestRunnerSessionId: string | null = null;
@@ -244,7 +249,7 @@ export async function executeTask({
             ...workspace,
             skipped: skippedProjects,
           }),
-          followUpPrompt: buildFollowUpPrompt(agent, mode),
+          followUpPrompt,
           cwd: workDir,
           baseUrl,
           accessToken: agentToken.token,
@@ -258,6 +263,11 @@ export async function executeTask({
         },
         {
           onRawEvent: (event) => trace.capture(event),
+          onFollowUpStart: () => {
+            trace.workerStep({ step, status: 'completed' });
+            step = 'follow_up';
+            trace.workerStep({ step, status: 'running' });
+          },
           onHeartbeat: async () => {
             throwIfInterrupted();
             await activityGatewayClient.publishHeartbeat({ executionId });

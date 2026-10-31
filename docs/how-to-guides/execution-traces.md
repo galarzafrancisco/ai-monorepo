@@ -109,13 +109,17 @@ Older workers and existing agent traces default to `source: "harness"`.
 
 New workers record `taico.execution.step` JSON events with `source: "worker"`.
 They share the execution's sequence and durable spool with unchanged harness
-payloads. The UI shows Prepare workspace, Set up agent, Run agent and Finish
-execution with the walkthrough's connected status indicators. Repository events
+payloads. The UI shows Prepare workspace, Set up agent, Run agent, Final checks
+and Finish execution with the walkthrough's connected status indicators. Final
+checks only appears for runs that have a [follow-up prompt](agent-follow-up-prompts.md):
+the worker reports it as `pending` before the first turn and it starts when the
+follow-up is sent. If the run ends without sending it, it shows as not recorded. Repository events
 report actual clone/fetch progress per project, including failures; remote URL
 credentials are excluded from the display name. A workspace with no repositories
 is reported explicitly.
 
-The Run agent step includes harness-specific shutdown. Finish execution covers
+The last agent step (Run agent, or Final checks when there is one) includes
+harness-specific shutdown. Finish execution covers
 saving the outcome (or returning an unsupported task to the queue); the workspace
 is retained. Failed, cancelled and interrupted steps retain their actual outcome,
 and finalization is recorded on those paths too. Missing completion events are

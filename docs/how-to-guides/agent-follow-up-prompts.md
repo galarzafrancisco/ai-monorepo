@@ -12,6 +12,8 @@ The worker sends the follow-up once per run, after the first turn. It doesn't se
 - the run answers an input request, because those runs are told to answer and stop
 - the first turn failed or the run was interrupted
 
+The follow-up appears as **Final checks** in a run's Execution progress, between Run agent and Finish execution. Runs without a follow-up don't show the step.
+
 Status changes and reassignments made during the first turn take effect straight away, but the next agent can only claim the task once this run ends. Keep follow-ups short.
 
 ## How each harness sends it
@@ -20,8 +22,10 @@ Status changes and reassignments made during the first turn take effect straight
 | --- | --- |
 | Claude Code | A new query that resumes the session |
 | Codex, OpenCode | A second prompt on the session after `session.idle` for that session. Subagent sessions are ignored |
-| GitHub Copilot | A second `send` on the session after `session.idle` |
+| GitHub Copilot | A second `send` on the session after `session.idle`. Subagent events are ignored |
 | ADK | A second run on the same session |
+
+If a turn fails, the run fails with the provider's error, and the step that was running shows as failed: Run agent for the first turn, Final checks for the follow-up. On Codex and OpenCode a `session.error` only counts if the session goes idle without getting busy again, because OpenCode reports a context overflow as an error and then compacts and carries on. Errors with no session, which come from loading plugins and skills, are ignored.
 
 Thread agents don't use follow-up prompts. Only task runs do.
 

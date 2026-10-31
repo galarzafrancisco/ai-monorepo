@@ -9,6 +9,7 @@ import type {
   ExecutionStepEvent,
 } from '@taico/events';
 import { pickTask } from '../task-picker.js';
+import { Runner } from '@google/adk';
 import { ClaudeAgentRunner } from '../runners/ClaudeAgentRunner.js';
 import {
   InterruptedExecutionError,
@@ -20,6 +21,14 @@ import {
 } from '../worker-app.js';
 import { HarnessTraceRecorder } from '../harness-trace-recorder.js';
 import type { ExecutionActivityGatewayClient } from '../execution-activity-gateway-client.js';
+import {
+  copilotError,
+  copilotIdle,
+  mockCopilot,
+  mockOpencode,
+  opencodeError,
+  opencodeIdle,
+} from './harness-fakes.js';
 
 for (const outcome of [
   'success',
@@ -180,6 +189,209 @@ for (const outcome of [
       }
       assert.equal(activeExecutionAbortControllers.has(executionId), false);
       assert.equal(activeExecutionInterruptHandlers.has(executionId), false);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+      t.mock.restoreAll();
+    }
+  });
+}
+
+const adkError = { errorCode: '429', errorMessage: 'Resource exhausted' };
+const adkReply = { content: { role: 'model', parts: [{ text: 'Done' }] } };
+const opencodeFailure = opencodeError('parent', {
+  name: 'APIError',
+  data: { message: 'Provider broke', statusCode: 500, isRetryable: false },
+});
+const copilotFailure = copilotError({
+  errorType: 'query',
+  message: 'Provider broke',
+});
+const followUpFailed = [
+  'agent:running',
+  'follow_up:pending',
+  'agent:completed',
+  'follow_up:running',
+  'follow_up:failed',
+];
+const firstTurnFailed = ['agent:running', 'follow_up:pending', 'agent:failed'];
+const harnessScenarios = [
+  ...(['opencode', 'codex'] as const).flatMap((harness) => [
+    {
+      name: `${harness} follow-up error`,
+      harness,
+      opencodeEvents: [
+        opencodeIdle('parent'),
+        opencodeFailure,
+        opencodeIdle('parent'),
+      ],
+      failureMessage: 'OpenCode APIError 500: Provider broke',
+      expected: followUpFailed,
+    },
+    {
+      name: `${harness} first-turn error`,
+      harness,
+      opencodeEvents: [opencodeFailure, opencodeIdle('parent')],
+      failureMessage: 'OpenCode APIError 500: Provider broke',
+      expected: firstTurnFailed,
+    },
+  ]),
+  {
+    name: 'Copilot follow-up error',
+    harness: 'githubcopilot',
+    copilotTurns: [[copilotIdle()], [copilotFailure]],
+    failureMessage: 'Copilot query: Provider broke',
+    expected: followUpFailed,
+  },
+  {
+    name: 'Copilot first-turn error',
+    harness: 'githubcopilot',
+    copilotTurns: [[copilotFailure]],
+    failureMessage: 'Copilot query: Provider broke',
+    expected: firstTurnFailed,
+  },
+];
+
+for (const scenario of [
+  {
+    name: 'follow-up success',
+    expected: [
+      'agent:running',
+      'follow_up:pending',
+      'agent:completed',
+      'follow_up:running',
+      'follow_up:completed',
+    ],
+  },
+  {
+    name: 'follow-up failure',
+    runError: 'follow-up failed',
+    expected: [
+      'agent:running',
+      'follow_up:pending',
+      'agent:completed',
+      'follow_up:running',
+      'follow_up:failed',
+    ],
+  },
+  {
+    name: 'ADK follow-up error',
+    adkTurns: [[adkReply], [adkError]],
+    expected: [
+      'agent:running',
+      'follow_up:pending',
+      'agent:completed',
+      'follow_up:running',
+      'follow_up:failed',
+    ],
+  },
+  {
+    name: 'ADK first-turn error',
+    adkTurns: [[adkError], [adkReply]],
+    expected: firstTurnFailed,
+  },
+  ...harnessScenarios,
+] as Array<{
+  name: string;
+  expected: string[];
+  runError?: string;
+  adkTurns?: object[][];
+  harness?: string;
+  opencodeEvents?: Array<Record<string, unknown>>;
+  copilotTurns?: Array<Array<Record<string, unknown>>>;
+  failureMessage?: string;
+}>) {
+  test(`final checks step records ${scenario.name}`, async (t) => {
+    const directory = await mkdtemp(join(tmpdir(), 'taico-follow-up-'));
+    const batches: PostExecutionTracePayload[] = [];
+    const { adkTurns, runError, opencodeEvents, copilotTurns } = scenario;
+    const failed = scenario.name !== 'follow-up success';
+    const failureMessage =
+      scenario.failureMessage ??
+      (adkTurns ? 'ADK error 429: Resource exhausted' : undefined);
+    if (opencodeEvents) {
+      mockOpencode(t, opencodeEvents);
+    } else if (copilotTurns) {
+      mockCopilot(t, copilotTurns);
+    } else if (adkTurns) {
+      const turns = [...adkTurns];
+      t.mock.method(Runner.prototype, 'runAsync', async function* () {
+        yield* turns.shift() ?? [];
+      } as unknown as Runner['runAsync']);
+    } else {
+      t.mock.method(
+        ClaudeAgentRunner.prototype,
+        'run',
+        async (_ctx, callbacks) => {
+          callbacks?.onFollowUpStart?.();
+          if (runError) throw new Error(runError);
+          return { result: 'done', events: [], sessionId: null };
+        },
+      );
+    }
+    const client = {
+      task: {
+        TasksController_getTask: async () => ({
+          id: 'task',
+          assigneeActor: { slug: 'agent' },
+          tags: [],
+        }),
+      },
+      agent: {
+        AgentsController_getAgentBySlug: async () => ({
+          actorId: 'actor',
+          slug: 'agent',
+          type: scenario.harness ?? (adkTurns ? 'adk' : 'claude'),
+          systemPrompt: 'test',
+          followUpPrompt: 'check your work',
+        }),
+        AgentToolPermissionsController_listAgentToolPermissions: async () => [],
+      },
+      threads: { ThreadsController_getThreadByTaskId: async () => null },
+      agentExecutionTokens: {
+        AgentExecutionTokensController_requestExecutionToken: async () => ({
+          token: 'fixture-token',
+        }),
+      },
+      executions: {
+        TaskExecutionQueueController_claimTask: async () => ({
+          id: `execution-${scenario.name}`,
+          taskId: 'task',
+        }),
+        ActiveTaskExecutionController_updateExecutionStats: async () => ({}),
+        ActiveTaskExecutionController_updateRunnerSessionId: async () => ({}),
+        ActiveTaskExecutionController_stopTaskExecution: async ({
+          body,
+        }: {
+          body: { status: string };
+        }) => ({ status: body.status }),
+      },
+    } as unknown as ApiClient;
+    try {
+      const work = pickTask({
+        client,
+        taskId: 'task',
+        baseDir: directory,
+        baseUrl: 'http://unused',
+        activityGatewayClient: {
+          publishActivity: async () => undefined,
+          queueTrace: async (batch: PostExecutionTracePayload) => {
+            batches.push(batch);
+          },
+        } as unknown as ExecutionActivityGatewayClient,
+      });
+      if (failed) await assert.rejects(work);
+      else await work;
+      const steps = batches
+        .flatMap((batch) => (batch.source === 'worker' ? batch.events : []))
+        .map((event) => event.payload as unknown as ExecutionStepEvent)
+        .filter((event) => event.step === 'agent' || event.step === 'follow_up');
+      assert.deepEqual(
+        steps.map((event) => `${event.step}:${event.status}`),
+        scenario.expected,
+      );
+      if (failureMessage) {
+        assert.equal(steps.at(-1)?.message, failureMessage);
+      }
     } finally {
       await rm(directory, { recursive: true, force: true });
       t.mock.restoreAll();
