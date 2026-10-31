@@ -7,8 +7,14 @@ import {
   DEV_PROMPT,
   REVIEWER_FOLLOW_UP_PROMPT,
   REVIEWER_PROMPT,
+  SHIPPER_FOLLOW_UP_PROMPT,
+  SHIPPER_PROMPT,
 } from './prompts';
-import { LEGACY_ASSISTANT_PROMPTS, LEGACY_DEV_PROMPTS } from './legacy-prompts';
+import {
+  LEGACY_ASSISTANT_PROMPTS,
+  LEGACY_DEV_PROMPTS,
+  LEGACY_REVIEWER_PROMPTS,
+} from './legacy-prompts';
 
 /**
  * Guards the task-start workflow: claim the task before anything else, open a
@@ -84,16 +90,81 @@ describe('developer workflow prompts', () => {
   it('legacy prompts are different from the current ones, so the sync can tell them apart', () => {
     expect(LEGACY_DEV_PROMPTS).not.toContain(DEV_PROMPT);
     expect(LEGACY_ASSISTANT_PROMPTS).not.toContain(ASSISTANT_PROMPT);
+    expect(LEGACY_REVIEWER_PROMPTS).not.toContain(REVIEWER_PROMPT);
   });
 
   it.each([
     ['developer', DEV_PROMPT, DEV_FOLLOW_UP_PROMPT],
     ['assistant', ASSISTANT_PROMPT, ASSISTANT_FOLLOW_UP_PROMPT],
     ['reviewer', REVIEWER_PROMPT, REVIEWER_FOLLOW_UP_PROMPT],
+    ['shipper', SHIPPER_PROMPT, SHIPPER_FOLLOW_UP_PROMPT],
   ])('%s follow-up repeats the checklist the system prompt keeps', (_, prompt, followUp) => {
     const checklist = prompt.slice(prompt.indexOf('# Checklist:')).trim();
     expect(checklist).toMatch(/^# Checklist:\n- \[\]/);
     expect(followUp).toContain(checklist);
+  });
+
+  describe('self-ship workflow', () => {
+    it('REVIEWER_PROMPT routes approved self-ship tasks to the shipper', () => {
+      const approved = REVIEWER_PROMPT.slice(
+        REVIEWER_PROMPT.indexOf('If the code looks good'),
+      );
+      expect(approved).toMatch(/`self-ship` tag, assign the task to @shipper/);
+      expect(approved).toMatch(/Otherwise, assign the task back/);
+    });
+
+    it('SHIPPER_PROMPT checks for a reason not to merge before merging', () => {
+      const override = lineOf(SHIPPER_PROMPT, 'not to merge this task');
+      expect(override).toBeGreaterThan(-1);
+      expect(steps(SHIPPER_PROMPT)[override]).toContain('Not shipping');
+      expect(override).toBeLessThan(lineOf(SHIPPER_PROMPT, 'gh pr merge'));
+    });
+
+    it('SHIPPER_PROMPT vetoes by removing the tag, then comments, then asks', () => {
+      const removeTag = lineOf(SHIPPER_PROMPT, 'remove_tag_from_task');
+      const comment = lineOf(SHIPPER_PROMPT, 'friendly, casual comment');
+      const ask = lineOf(SHIPPER_PROMPT, 'ask_for_input');
+      expect(lineOf(SHIPPER_PROMPT, '# Not shipping')).toBeLessThan(removeTag);
+      expect(removeTag).toBeLessThan(comment);
+      expect(comment).toBeLessThan(ask);
+      expect(ask).toBeLessThan(lineOf(SHIPPER_PROMPT, '# Happy path'));
+    });
+
+    it('SHIPPER_PROMPT never treats an answer as permission to merge', () => {
+      expect(SHIPPER_PROMPT).toContain(
+        'An answer to that question is never permission to merge',
+      );
+      expect(SHIPPER_PROMPT).toContain('Only adding the tag again');
+      expect(SHIPPER_PROMPT).not.toContain('go-ahead');
+      expect(SHIPPER_PROMPT).not.toContain('assignedToActorId');
+    });
+
+    it('SHIPPER_PROMPT lets a re-added tag get past a reason it already acted on', () => {
+      expect(
+        steps(SHIPPER_PROMPT)[lineOf(SHIPPER_PROMPT, 'not to merge this task')],
+      ).toContain('the tag is back');
+    });
+
+    it('SHIPPER_PROMPT waits up to 2 minutes for the main build', () => {
+      const build = steps(SHIPPER_PROMPT)[lineOf(SHIPPER_PROMPT, 'gh run list')];
+      expect(build).toContain('up to 2 minutes');
+    });
+
+    it('SHIPPER_PROMPT checks CI, merges, then watches the main build', () => {
+      const ci = lineOf(SHIPPER_PROMPT, 'gh pr checks');
+      const merge = lineOf(SHIPPER_PROMPT, 'gh pr merge');
+      expect(ci).toBeGreaterThan(-1);
+      expect(ci).toBeLessThan(merge);
+      expect(merge).toBeLessThan(lineOf(SHIPPER_PROMPT, 'gh run watch'));
+    });
+
+    it('SHIPPER_PROMPT sends failures back so the original assignee re-triggers', () => {
+      const unhappy = SHIPPER_PROMPT.slice(
+        SHIPPER_PROMPT.indexOf('# Unhappy path'),
+      );
+      expect(unhappy).toContain('original assignee');
+      expect(unhappy).toContain('NOT_STARTED');
+    });
   });
 
   describe('local start-task entry points', () => {

@@ -36,6 +36,7 @@ import {
 import {
   LEGACY_ASSISTANT_PROMPTS,
   LEGACY_DEV_PROMPTS,
+  LEGACY_REVIEWER_PROMPTS,
 } from './prompts/legacy-prompts';
 
 /**
@@ -108,6 +109,20 @@ describe('AppInitRunner seeded prompt sync', () => {
     for (const call of agentsService.patchAgent.mock.calls) {
       expect(call[1]).toEqual({ systemPrompt: DEV_PROMPT });
     }
+  });
+
+  it('moves an unedited code reviewer to the current reviewer prompt', async () => {
+    const { runner, agentsService } = buildRunner({
+      taico: TAICO_PROMPT,
+      'code-reviewer': LEGACY_REVIEWER_PROMPTS[0],
+    });
+
+    await runner.ensureAgents();
+
+    expect(agentsService.patchAgent).toHaveBeenCalledWith(
+      'actor-code-reviewer',
+      { systemPrompt: REVIEWER_PROMPT },
+    );
   });
 
   it('moves an unedited gemini assistant to the current assistant prompt', async () => {

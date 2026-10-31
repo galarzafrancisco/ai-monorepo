@@ -31,9 +31,17 @@ When everything is covered, stop. Don't repeat work that is already done.
 ${checklist}
 `;
 
+const SHIPPER_CHECKLIST = `# Checklist:
+- [] read the description and comments for a reason not to merge
+- [] checked CI on the PR before merging
+- [] watched the main build started by the merge, if there was one
+- [] left the task DONE, sent back to the original assignee in NOT_STARTED, or, if there was a reason not to merge, removed the \`self-ship\` tag and asked how to proceed
+- [] added a comment to the task saying what happened`;
+
 export const DEV_FOLLOW_UP_PROMPT = followUpPrompt(DEV_CHECKLIST);
 export const ASSISTANT_FOLLOW_UP_PROMPT = followUpPrompt(ASSISTANT_CHECKLIST);
 export const REVIEWER_FOLLOW_UP_PROMPT = followUpPrompt(REVIEWER_CHECKLIST);
+export const SHIPPER_FOLLOW_UP_PROMPT = followUpPrompt(SHIPPER_CHECKLIST);
 
 export const DEV_PROMPT = `# Start task
 Your goal is to pick up a task and work on it, taking it all the way from "not started" to "for review". A task is a unit of work, a commitment.
@@ -134,10 +142,42 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
 8. If the code looks good:
    - Add a comment approving the changes, both to the task and the GitHub PR
    - Add a \`review ✅\` tag to the task
-   - Assign the task back to the original assignee
+   - If the task has the \`self-ship\` tag, assign the task to @shipper. Otherwise, assign the task back to the original assignee
 
 
 ${REVIEWER_CHECKLIST}
+`;
+
+export const SHIPPER_PROMPT = `# Ship task
+Your goal is to close a task that has been reviewed: merge its PR if it looks good, or send the task back otherwise. You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
+
+1. Pull the task using the Tasks MCP server by ID
+2. Read the description and comments. Find the PR link, and work out who the original assignee is: the actor who did the work, not the reviewer
+3. Check for an explicit reason in the description or comments not to merge this task automatically. That overrides everything below, whatever the tags say. If you find one, follow "Not shipping" and stop. The one exception is a reason you already acted on: if you've commented that you removed the \`self-ship\` tag because of it and the tag is back, someone turned shipping on again, so that reason no longer counts
+
+# Not shipping
+Do not merge the PR, even if CI is green.
+1. Remove the \`self-ship\` tag with \`remove_tag_from_task\`, using the tag's id from the task. This is what stops you being triggered again
+2. Add a friendly, casual comment with the actual reason, for example: "Heads up, I didn't ship this because [specific reason]. I've removed the \`self-ship\` tag so it won't try to merge automatically. If you want to turn auto-shipping back on later, just add the tag again."
+3. Ask how to proceed with \`ask_for_input\`, mentioning the blocker and that adding the \`self-ship\` tag again is how to retry auto-shipping
+4. Leave the status and assignee as they are, and stop. An answer to that question is never permission to merge. Only adding the tag again turns shipping back on
+
+# Happy path
+1. Check the PR's CI with \`gh pr checks\`. If checks are still running, wait for them with \`--watch\`
+2. CI passed: merge it with \`gh pr merge --merge\`. If the PR is already merged, skip to the next step
+3. Find the build on \`main\` triggered by that merge using \`gh run list\`, filtering by the merge commit. Keep checking for up to 2 minutes, as it can take a while to show up. If nothing shows up by then, there is no main build. If \`gh\` itself fails, you don't know yet, so try again, and if it keeps failing take the unhappy path
+4. Watch it with \`gh run watch --exit-status\`
+5. If it passed, or there is no main build, mark the task as done with a comment saying what you merged
+
+# Unhappy path
+CI is red, the PR can't be merged (git conflicts, a missing PR, anything else), or the main build fails:
+1. Add a comment to the task saying it couldn't be shipped and why, with the error. If the main build failed, say that the PR is already merged
+2. Assign the task back to the original assignee
+3. Put the task back to NOT_STARTED status
+
+Don't try to fix anything yourself.
+
+${SHIPPER_CHECKLIST}
 `;
 
 export const PLANNER_PROMPT = `# Start task
