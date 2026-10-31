@@ -77,7 +77,56 @@ You are in headless mode, and the only way to communicate with the user is throu
 - [] put the task in review when done
 `;
 
+const REVIEWER_PROMPT_V1 = `# Code Review Task
+Your goal is to review code changes in a task that is in "for review" status. You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
+
+1. Pull the task using the Tasks MCP server by ID
+2. Read the content and comments to find the PR link
+3. Use the MCP server to add a comment saying that you're starting the review
+4. If the task has a \`review ✅\` or \`review ❌\` tag, remove it
+
+# Workflow
+
+### Preparation
+1. Navigate to the repository
+2. Fetch the PR using the \`gh\` CLI to get details about the changes
+3. Check out the feature branch to review the code
+
+### Review Process
+4. Examine the PR diff using \`gh pr diff\` to understand what changed
+5. Review the actual code files to understand the implementation:
+   - Check for code quality and best practices
+   - Verify consistency with existing patterns
+   - Look for potential bugs or edge cases
+   - Ensure proper error handling
+   - Check for security issues
+   - Verify test coverage if applicable
+6. Compare before and after to understand the impact
+
+### Decision
+7. If issues are found:
+   - Add a \`review ❌\` tag to the task
+   - Add a detailed comment to the task listing all issues found
+   - Include specific suggestions for fixes
+   - Add a short comment on the GitHub PR saying you requested changes with a quick summary of the issues found
+   - Assign the task back to the original assignee
+   - Put the task back to NOT_STARTED status
+8. If the code looks good:
+   - Add a comment approving the changes, both to the task and the GitHub PR
+   - Add a \`review ✅\` tag to the task
+   - Assign the task back to the original assignee
+
+
+# Checklist:
+- [] fetched and reviewed the PR using gh CLI
+- [] checked out the branch and reviewed code files
+- [] examined diffs and compared before/after
+- [] either approved or requested changes with detailed feedback
+- [] added a comment to the GitHub PR
+`;
+
 export const LEGACY_DEV_PROMPTS: readonly string[] = [DEV_PROMPT_V1];
 export const LEGACY_ASSISTANT_PROMPTS: readonly string[] = [
   ASSISTANT_PROMPT_V1,
 ];
+export const LEGACY_REVIEWER_PROMPTS: readonly string[] = [REVIEWER_PROMPT_V1];

@@ -45,6 +45,7 @@ import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { createLead } from './agent/lead.agent';
 import { createPlanner } from './agent/planner.agent';
 import { createPlanReviewer } from './agent/plan-reviewer.agent';
+import { createShipper } from './agent/shipper.agent';
 import { createTaskmaster } from './agent/taskmaster.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
@@ -56,6 +57,7 @@ import {
 import {
   LEGACY_ASSISTANT_PROMPTS,
   LEGACY_DEV_PROMPTS,
+  LEGACY_REVIEWER_PROMPTS,
 } from './prompts/legacy-prompts';
 import { normalizePrompt } from './seeded-follow-ups';
 import { createTaico } from './agent/taico.agent';
@@ -254,9 +256,18 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring grok-dev Agent exists');
     }
     try {
-      await this.ensureAgentExists(createCodeReviewer);
+      await this.syncSeededPrompt(
+        await this.ensureAgentExists(createCodeReviewer),
+        createCodeReviewer,
+        LEGACY_REVIEWER_PROMPTS,
+      );
     } catch (error) {
       this.logger.error('Error ensuring code-reviewer Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createShipper);
+    } catch (error) {
+      this.logger.error('Error ensuring shipper Agent exists');
     }
     try {
       await this.ensureAgentExists(createLead);

@@ -41,6 +41,12 @@ export const GPT_5_5: MODEL_CONFIG = {
   name: 'gpt-5.5',
 };
 
+export const GPT_6_1_TERRA: MODEL_CONFIG = {
+  providerId: 'openai',
+  modelId: 'gpt-6.1-terra',
+  name: 'gpt-6.1-terra',
+};
+
 // Good for OpenCode runner
 export const GROK_4_7: MODEL_CONFIG = {
   providerId: 'xai',

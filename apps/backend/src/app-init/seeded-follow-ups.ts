@@ -5,6 +5,7 @@ import { createCodexDev } from './agent/codex-dev.agent';
 import { createDeveloper } from './agent/developer.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
 import { createGrokDev } from './agent/grok-dev.agent';
+import { createShipper } from './agent/shipper.agent';
 import {
   ASSISTANT_FOLLOW_UP_PROMPT,
   ASSISTANT_PROMPT,
@@ -16,6 +17,7 @@ import {
 import {
   LEGACY_ASSISTANT_PROMPTS,
   LEGACY_DEV_PROMPTS,
+  LEGACY_REVIEWER_PROMPTS,
 } from './prompts/legacy-prompts';
 
 /** Built-in agents that come with a follow-up prompt. */
@@ -25,6 +27,7 @@ const AGENTS_WITH_FOLLOW_UP: readonly CreateAgentInput[] = [
   createCodexDev,
   createGrokDev,
   createCodeReviewer,
+  createShipper,
   createGeminiAssistant,
 ];
 
@@ -42,7 +45,7 @@ const FOLLOW_UPS_BY_SYSTEM_PROMPT: readonly {
     followUpPrompt: ASSISTANT_FOLLOW_UP_PROMPT,
   },
   {
-    systemPrompts: [REVIEWER_PROMPT],
+    systemPrompts: [REVIEWER_PROMPT, ...LEGACY_REVIEWER_PROMPTS],
     followUpPrompt: REVIEWER_FOLLOW_UP_PROMPT,
   },
 ];

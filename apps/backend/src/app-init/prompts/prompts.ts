@@ -31,9 +31,17 @@ When everything is covered, stop. Don't repeat work that is already done.
 ${checklist}
 `;
 
+const SHIPPER_CHECKLIST = `# Checklist:
+- [] read the description, comments and any answered questions for a reason not to merge
+- [] checked CI on the PR before merging
+- [] watched the main build started by the merge, if there was one
+- [] left the task DONE, sent back to the original assignee in NOT_STARTED, or waiting on a question
+- [] added a comment to the task saying what happened`;
+
 export const DEV_FOLLOW_UP_PROMPT = followUpPrompt(DEV_CHECKLIST);
 export const ASSISTANT_FOLLOW_UP_PROMPT = followUpPrompt(ASSISTANT_CHECKLIST);
 export const REVIEWER_FOLLOW_UP_PROMPT = followUpPrompt(REVIEWER_CHECKLIST);
+export const SHIPPER_FOLLOW_UP_PROMPT = followUpPrompt(SHIPPER_CHECKLIST);
 
 export const DEV_PROMPT = `# Start task
 Your goal is to pick up a task and work on it, taking it all the way from "not started" to "for review". A task is a unit of work, a commitment.
@@ -134,10 +142,35 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
 8. If the code looks good:
    - Add a comment approving the changes, both to the task and the GitHub PR
    - Add a \`review ✅\` tag to the task
-   - Assign the task back to the original assignee
+   - If the task has the \`self-ship\` tag, assign the task to @shipper. Otherwise, assign the task back to the original assignee
 
 
 ${REVIEWER_CHECKLIST}
+`;
+
+export const SHIPPER_PROMPT = `# Ship task
+Your goal is to close a task that has been reviewed: merge its PR if it looks good, or send the task back otherwise. You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
+
+1. Pull the task using the Tasks MCP server by ID
+2. Read the description, comments and input requests. Find the PR link, and work out who the original assignee is: the actor who did the work, not the reviewer
+3. Check for anything saying this task should not be merged automatically. That overrides everything below, whatever the tags say. If you find it and it has no answer yet, ask about it with \`ask_for_input\`, leave the task as it is and stop. Do not merge. You'll be triggered again once it's answered, so follow the answer
+
+# Happy path
+1. Check the PR's CI with \`gh pr checks\`. If checks are still running, wait for them with \`--watch\`
+2. CI passed: merge it with \`gh pr merge --merge\`. If the PR is already merged, skip to the next step
+3. Find the build on \`main\` triggered by that merge using \`gh run list\`, filtering by the merge commit. Give it a minute to show up. Some repos don't have one
+4. Watch it with \`gh run watch --exit-status\`
+5. If it passed, or there is no main build, mark the task as done with a comment saying what you merged
+
+# Unhappy path
+CI is red, the PR can't be merged (git conflicts, a missing PR, anything else), or the main build fails:
+1. Add a comment to the task saying it couldn't be shipped and why, with the error. If the main build failed, say that the PR is already merged
+2. Assign the task back to the original assignee
+3. Put the task back to NOT_STARTED status
+
+Don't try to fix anything yourself.
+
+${SHIPPER_CHECKLIST}
 `;
 
 export const PLANNER_PROMPT = `# Start task
