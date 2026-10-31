@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { Text } from "../../ui/primitives";
+import { Button, ErrorText, Text } from "../../ui/primitives";
 import { MetaService, MetaTagResponseDto } from "@taico/client";
 import "./TagSearchPop.css";
 
@@ -8,11 +8,16 @@ type TagSearchPopProps = {
   onCancel?: () => void;
   onSave: (tag: MetaTagResponseDto) => Promise<boolean>;
   existingTags: { id: string }[]; // Tags already on the task (only id is used for filtering)
+  loadTags?: () => Promise<MetaTagResponseDto[]>;
+  isTagAvailable?: (name: string) => boolean;
+  error?: string;
 };
 
-export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopProps) {
+export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaultLoadTags, isTagAvailable = defaultIsTagAvailable, error }: TagSearchPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -22,18 +27,23 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
 
   // Load all tags on mount
   useEffect(() => {
-    const loadTags = async () => {
+    let cancelled = false;
+    setIsLoadingTags(true);
+    setLoadError(false);
+    const fetchTags = async () => {
       try {
-        const tags = await MetaService.metaControllerGetAllTags();
-        setAllTags(tags);
+        const tags = await loadTags();
+        if (!cancelled) setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags:', err);
+        if (!cancelled) setLoadError(true);
       } finally {
-        setIsLoadingTags(false);
+        if (!cancelled) setIsLoadingTags(false);
       }
     };
-    loadTags();
-  }, []);
+    void fetchTags();
+    return () => { cancelled = true; };
+  }, [loadTags, retryCount]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -42,7 +52,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
   // Filter out tags already on the task and rank based on query
   const filteredTags = useMemo(() => {
     const existingTagIds = new Set(existingTags.map(t => t.id));
-    const availableTags = allTags.filter(t => !existingTagIds.has(t.id));
+    const availableTags = allTags.filter(t => !existingTagIds.has(t.id) && isTagAvailable(t.name));
 
     if (!query.trim()) {
       return availableTags;
@@ -69,15 +79,15 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
       .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .map(s => s.tag);
-  }, [allTags, existingTags, query]);
+  }, [allTags, existingTags, isTagAvailable, query]);
 
   // Check if we can create a new tag with this query
   const canCreateNew = useMemo(() => {
-    if (!query.trim()) return false;
+    if (isLoadingTags || loadError || !query.trim() || !isTagAvailable(query.trim())) return false;
     const lowerQuery = query.toLowerCase().trim();
     // Check if any existing tag has this exact name (case-insensitive)
     return !allTags.some(t => t.name.toLowerCase() === lowerQuery);
-  }, [query, allTags]);
+  }, [query, allTags, isTagAvailable, isLoadingTags, loadError]);
 
   // Reset highlighted index when filtered results change
   useEffect(() => {
@@ -86,7 +96,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
 
   // Scroll highlighted item into view
   useEffect(() => {
-    if (listRef.current) {
+    if (listRef.current && !isLoadingTags && !loadError) {
       const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
       if (highlightedIndex < totalItems) {
         const highlightedEl = listRef.current.children[highlightedIndex] as HTMLElement;
@@ -95,10 +105,10 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
         }
       }
     }
-  }, [highlightedIndex, filteredTags.length, canCreateNew]);
+  }, [highlightedIndex, filteredTags.length, canCreateNew, isLoadingTags, loadError]);
 
   const submitTag = useCallback(async (tag: MetaTagResponseDto): Promise<boolean> => {
-    if (isSaving) {
+    if (isSaving || isLoadingTags || loadError) {
       return false;
     }
 
@@ -112,14 +122,14 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, onCancel, onSave]);
+  }, [isSaving, isLoadingTags, loadError, onCancel, onSave]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.nativeEvent.isComposing) {
       return;
     }
 
-    const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
+    const totalItems = isLoadingTags || loadError ? 0 : filteredTags.length + (canCreateNew ? 1 : 0);
 
     switch (e.key) {
       case 'ArrowDown':
@@ -151,9 +161,10 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
         onCancel?.();
         break;
     }
-  }, [canCreateNew, filteredTags, highlightedIndex, onCancel, query, submitTag]);
+  }, [canCreateNew, filteredTags, highlightedIndex, isLoadingTags, loadError, onCancel, query, submitTag]);
 
   async function handleSave(): Promise<boolean> {
+    if (isLoadingTags || loadError) return false;
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) {
       return false;
@@ -180,6 +191,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
       title="Add Tag"
       onCancel={onCancel}
       onSave={handleSave}
+      saveDisabled={isLoadingTags || loadError || isSaving}
     >
       <div className="tag-search-pop">
         <input
@@ -191,11 +203,17 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+        {error ? <ErrorText size="2">{error}</ErrorText> : null}
 
         <div className="tag-search-pop__list" ref={listRef} role="listbox" aria-label="Available tags">
           {isLoadingTags ? (
             <div className="tag-search-pop__empty">
               <Text tone="muted">Loading tags...</Text>
+            </div>
+          ) : loadError ? (
+            <div className="tag-search-pop__empty">
+              <ErrorText size="2">Failed to load tags</ErrorText>
+              <Button variant="secondary" size="sm" onClick={() => setRetryCount((count) => count + 1)}>Retry</Button>
             </div>
           ) : filteredTags.length === 0 && !canCreateNew ? (
             <div className="tag-search-pop__empty">
@@ -242,6 +260,9 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
     </PopShell>
   );
 }
+
+const defaultLoadTags = () => MetaService.metaControllerGetAllTags();
+const defaultIsTagAvailable = () => true;
 
 function buildNewTag(query: string): MetaTagResponseDto {
   return {

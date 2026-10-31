@@ -7,6 +7,7 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { elapsedTime } from '../../shared/helpers/elapsedTime';
 import { TaskStatus, TASKS_STATUS } from '../../shared/const/taskStatus';
 import { storeSelectedProjectId } from '../tasks/selectedProject';
+import { TagSearchPop } from '../tasks/TagSearchPop';
 import { MetaService, ProjectsService, TasksService } from './api';
 import type { MetaTagResponseDto } from '@taico/client/v2';
 import { useProjectsCtx } from './ProjectsProvider';
@@ -20,6 +21,8 @@ import './ProjectsPage.css';
 /** Matches the Tasks board's page size; the API caps a page at 100. */
 const TASKS_LIMIT = 100;
 const RECENT_TASKS = 8;
+const isAutoTagAvailable = (name: string) => !name.toLowerCase().startsWith('project:');
+const loadAutoTags = () => MetaService.MetaController_getAllTags({});
 
 const STATUS_ORDER: ProjectTask['status'][] = [
   TaskStatus.NOT_STARTED,
@@ -217,7 +220,7 @@ export function ProjectDetailPage() {
   );
 }
 
-function ProjectAutoTagsCard({ project, onSave, onSaved }: {
+export function ProjectAutoTagsCard({ project, onSave, onSaved }: {
   project: Project;
   onSave: (projectId: string, input: { autoTagIds: string[] }) => Promise<Project>;
   onSaved: (project: Project) => void;
@@ -226,24 +229,45 @@ function ProjectAutoTagsCard({ project, onSave, onSaved }: {
   const [selected, setSelected] = useState<string[]>(project.autoTagIds);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [showTagPop, setShowTagPop] = useState(false);
 
   useEffect(() => { setSelected(project.autoTagIds); }, [project.autoTagIds]);
   useEffect(() => {
     let cancelled = false;
     MetaService.MetaController_getAllTags({})
-      .then((result) => { if (!cancelled) setTags(result.filter((tag) => !tag.name.startsWith('project:'))); })
+      .then((result) => { if (!cancelled) setTags(result.filter((tag) => isAutoTagAvailable(tag.name))); })
       .catch((err) => { if (!cancelled) setError(errorDetail(err, 'Failed to load tags')); });
     return () => { cancelled = true; };
   }, []);
 
-  const save = async (ids: string[]) => {
+  const save = async (ids: string[]): Promise<boolean> => {
     setSaving(true);
     setError('');
     try {
       onSaved(await onSave(project.id, { autoTagIds: ids }));
+      return true;
     } catch (err) {
       setError(errorDetail(err, 'Failed to update auto tags'));
       setSelected(project.autoTagIds);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addTag = async (tag: MetaTagResponseDto): Promise<boolean> => {
+    setSaving(true);
+    setError('');
+    try {
+      const created = tag.id ? tag : await MetaService.MetaController_createTag({ body: { name: tag.name } });
+      if (!isAutoTagAvailable(created.name)) return false;
+      setTags((current) => current.some((item) => item.id === created.id) ? current : [...current, created]);
+      const ids = [...selected, created.id];
+      setSelected(ids);
+      return await save(ids);
+    } catch (err) {
+      setError(errorDetail(err, 'Failed to create tag'));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -254,31 +278,31 @@ function ProjectAutoTagsCard({ project, onSave, onSaved }: {
       <Stack spacing="3">
         <Text size="3" weight="semibold">Automatic task tags</Text>
         <Text size="1" tone="muted">Applied when a task is added to this project; removed when it leaves, unless another project supplies the same tag.</Text>
-        <label htmlFor="project-auto-tag" className="login-label"><Text size="2">Add tag</Text></label>
-        <select id="project-auto-tag" className="login-input" value="" disabled={saving} onChange={(event) => {
-          if (event.target.value) {
-            const ids = [...selected, event.target.value];
-            setSelected(ids);
-            void save(ids);
-          }
-        }}>
-          <option value="">Choose a tag…</option>
-          {tags.filter((tag) => !selected.includes(tag.id)).map((tag) => (
-            <option key={tag.id} value={tag.id}>{tag.name}</option>
-          ))}
-        </select>
-        {selected.map((id) => (
-          <Row key={id} justify="space-between" align="center">
-            <Chip color="gray">{tags.find((tag) => tag.id === id)?.name ?? id}</Chip>
-            <Button size="sm" variant="ghost" disabled={saving} onClick={() => {
-              const ids = selected.filter((tagId) => tagId !== id);
-              setSelected(ids);
-              void save(ids);
-            }}>Remove</Button>
-          </Row>
-        ))}
+        <div className="projects-detail__auto-tags">
+          {selected.map((id) => {
+            const name = tags.find((tag) => tag.id === id)?.name ?? id;
+            return (
+              <Chip key={id} color="gray" onRemove={saving ? undefined : () => {
+                const ids = selected.filter((tagId) => tagId !== id);
+                setSelected(ids);
+                void save(ids);
+              }} removeLabel={`Remove tag ${name}`}>{name}</Chip>
+            );
+          })}
+          {!saving ? <Chip onClick={() => setShowTagPop(true)} clickLabel="Add tag">+ add tag</Chip> : null}
+        </div>
         {error ? <ErrorText size="2">{error}</ErrorText> : null}
       </Stack>
+      {showTagPop ? (
+        <TagSearchPop
+          onCancel={() => setShowTagPop(false)}
+          onSave={addTag}
+          existingTags={selected.map((id) => ({ id }))}
+          loadTags={loadAutoTags}
+          isTagAvailable={isAutoTagAvailable}
+          error={error}
+        />
+      ) : null}
     </Card>
   );
 }
