@@ -113,23 +113,36 @@ describe('developer workflow prompts', () => {
       expect(approved).toMatch(/Otherwise, assign the task back/);
     });
 
-    it('SHIPPER_PROMPT checks for a do-not-merge override before merging', () => {
-      const override = lineOf(SHIPPER_PROMPT, 'should not be merged');
+    it('SHIPPER_PROMPT checks for a reason not to merge before merging', () => {
+      const override = lineOf(SHIPPER_PROMPT, 'not to merge this task');
       expect(override).toBeGreaterThan(-1);
-      expect(steps(SHIPPER_PROMPT)[override]).toContain('ask_for_input');
-      expect(steps(SHIPPER_PROMPT)[override]).toContain('`actorId`');
+      expect(steps(SHIPPER_PROMPT)[override]).toContain('Not shipping');
       expect(override).toBeLessThan(lineOf(SHIPPER_PROMPT, 'gh pr merge'));
     });
 
-    it('SHIPPER_PROMPT hands the task off when the answer is not a go-ahead', () => {
-      const answered = steps(SHIPPER_PROMPT)[
-        lineOf(SHIPPER_PROMPT, 'A clear go-ahead')
-      ];
-      expect(answered).toContain('`assignedToActorId` on the input request');
-      expect(answered).not.toContain('whoever answered');
-      expect(lineOf(SHIPPER_PROMPT, 'A clear go-ahead')).toBeLessThan(
-        lineOf(SHIPPER_PROMPT, 'gh pr merge'),
+    it('SHIPPER_PROMPT vetoes by removing the tag, then comments, then asks', () => {
+      const removeTag = lineOf(SHIPPER_PROMPT, 'remove_tag_from_task');
+      const comment = lineOf(SHIPPER_PROMPT, 'friendly, casual comment');
+      const ask = lineOf(SHIPPER_PROMPT, 'ask_for_input');
+      expect(lineOf(SHIPPER_PROMPT, '# Not shipping')).toBeLessThan(removeTag);
+      expect(removeTag).toBeLessThan(comment);
+      expect(comment).toBeLessThan(ask);
+      expect(ask).toBeLessThan(lineOf(SHIPPER_PROMPT, '# Happy path'));
+    });
+
+    it('SHIPPER_PROMPT never treats an answer as permission to merge', () => {
+      expect(SHIPPER_PROMPT).toContain(
+        'An answer to that question is never permission to merge',
       );
+      expect(SHIPPER_PROMPT).toContain('Only adding the tag again');
+      expect(SHIPPER_PROMPT).not.toContain('go-ahead');
+      expect(SHIPPER_PROMPT).not.toContain('assignedToActorId');
+    });
+
+    it('SHIPPER_PROMPT lets a re-added tag get past a reason it already acted on', () => {
+      expect(
+        steps(SHIPPER_PROMPT)[lineOf(SHIPPER_PROMPT, 'not to merge this task')],
+      ).toContain('the tag is back');
     });
 
     it('SHIPPER_PROMPT waits up to 2 minutes for the main build', () => {

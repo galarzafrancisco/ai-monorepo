@@ -20,7 +20,13 @@ The shipper doesn't try to fix anything itself.
 
 ## Stopping a merge
 
-Say so in the task description or a comment, for example "don't merge this until Friday". That overrides the tag. The shipper asks the person who said it with an input request, or the task creator if an agent said it, and waits. It only continues once the question is answered. If the answer is a clear go-ahead, it ships. Otherwise it assigns the task to the person it asked, even if someone else answered, and leaves it in review. Assign it back to `@shipper` with a comment when it's ready to ship.
+Say so in the task description or a comment, for example "don't merge this until Friday". That overrides the tag. The shipper doesn't merge. Instead it:
+
+1. Removes the `self-ship` tag, so it won't be triggered for this task again.
+2. Comments with the reason, and how to turn auto-shipping back on.
+3. Asks how to proceed with an input request, so the task shows as waiting on you.
+
+Answering that question doesn't ship the task. To retry auto-shipping, add the `self-ship` tag again. The shipper treats that as overriding the reason it already acted on, but a new reason stops it again.
 
 ## Setup
 

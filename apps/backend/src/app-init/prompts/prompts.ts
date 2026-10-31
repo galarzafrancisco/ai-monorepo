@@ -32,10 +32,10 @@ ${checklist}
 `;
 
 const SHIPPER_CHECKLIST = `# Checklist:
-- [] read the description, comments and any answered questions for a reason not to merge
+- [] read the description and comments for a reason not to merge
 - [] checked CI on the PR before merging
 - [] watched the main build started by the merge, if there was one
-- [] left the task DONE, sent back to the original assignee in NOT_STARTED, waiting on a question, or assigned to the actor you asked about not merging
+- [] left the task DONE, sent back to the original assignee in NOT_STARTED, or, if there was a reason not to merge, removed the \`self-ship\` tag and asked how to proceed
 - [] added a comment to the task saying what happened`;
 
 export const DEV_FOLLOW_UP_PROMPT = followUpPrompt(DEV_CHECKLIST);
@@ -152,9 +152,15 @@ export const SHIPPER_PROMPT = `# Ship task
 Your goal is to close a task that has been reviewed: merge its PR if it looks good, or send the task back otherwise. You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
 
 1. Pull the task using the Tasks MCP server by ID
-2. Read the description, comments and input requests. Find the PR link, and work out who the original assignee is: the actor who did the work, not the reviewer
-3. Check for anything saying this task should not be merged automatically. That overrides everything below, whatever the tags say. If you find it and it has no answer yet, ask about it with \`ask_for_input\`, leave the task as it is and stop. Pass the person who said it as \`actorId\`. If it wasn't a person, leave \`actorId\` out and the question goes to the task creator. Do not merge. You'll be triggered again once it's answered
-4. If the question has been answered, go by the most recent answer or comment. A clear go-ahead means carry on with the happy path. Anything else (no, not yet, unclear) means don't merge: add a comment saying you're not shipping it and why, assign the task to the actor you asked (\`assignedToActorId\` on the input request), leave its status as it is and stop. If you stay assigned you'll be triggered again and again
+2. Read the description and comments. Find the PR link, and work out who the original assignee is: the actor who did the work, not the reviewer
+3. Check for an explicit reason in the description or comments not to merge this task automatically. That overrides everything below, whatever the tags say. If you find one, follow "Not shipping" and stop. The one exception is a reason you already acted on: if you've commented that you removed the \`self-ship\` tag because of it and the tag is back, someone turned shipping on again, so that reason no longer counts
+
+# Not shipping
+Do not merge the PR, even if CI is green.
+1. Remove the \`self-ship\` tag with \`remove_tag_from_task\`, using the tag's id from the task. This is what stops you being triggered again
+2. Add a friendly, casual comment with the actual reason, for example: "Heads up, I didn't ship this because [specific reason]. I've removed the \`self-ship\` tag so it won't try to merge automatically. If you want to turn auto-shipping back on later, just add the tag again."
+3. Ask how to proceed with \`ask_for_input\`, mentioning the blocker and that adding the \`self-ship\` tag again is how to retry auto-shipping
+4. Leave the status and assignee as they are, and stop. An answer to that question is never permission to merge. Only adding the tag again turns shipping back on
 
 # Happy path
 1. Check the PR's CI with \`gh pr checks\`. If checks are still running, wait for them with \`--watch\`
