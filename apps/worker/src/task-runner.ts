@@ -19,7 +19,7 @@ import { CodexAgentRunner } from './runners/CodexAgentRunner.js';
 import { OpencodeAgentRunner } from './runners/OpenCodeAgentRunner.js';
 import { ADKAgentRunner } from './runners/ADKAgentRunner.js';
 import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js';
-import { buildPrompt } from './prompt.js';
+import { buildFollowUpPrompt, buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 import { HarnessTraceRecorder } from './harness-trace-recorder.js';
@@ -244,6 +244,7 @@ export async function executeTask({
             ...workspace,
             skipped: skippedProjects,
           }),
+          followUpPrompt: buildFollowUpPrompt(agent, mode),
           cwd: workDir,
           baseUrl,
           accessToken: agentToken.token,

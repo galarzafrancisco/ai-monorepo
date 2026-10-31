@@ -128,6 +128,11 @@ export class AgentTemplateDto {
   systemPrompt!: string;
 
   @ApiPropertyOptional({
+    description: 'Default follow-up prompt for this template.',
+  })
+  followUpPrompt?: string;
+
+  @ApiPropertyOptional({
     description: 'Default agent description.',
   })
   agentDescription?: string;

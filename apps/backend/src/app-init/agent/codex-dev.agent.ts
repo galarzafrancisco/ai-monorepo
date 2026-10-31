@@ -2,7 +2,7 @@ import { CreateAgentInput } from 'src/agents/dto/service/agents.service.types';
 import { getAgentAvatarUrlById } from 'src/agents/agent-avatar.library';
 import { AgentType } from 'src/agents/enums';
 import { TaskStatus } from 'src/tasks/enums';
-import { DEV_PROMPT } from '../prompts/prompts';
+import { DEV_PROMPT, DEV_FOLLOW_UP_PROMPT } from '../prompts/prompts';
 import { CODEX } from '../models/models';
 
 export const createCodexDev: CreateAgentInput = {
@@ -15,6 +15,7 @@ export const createCodexDev: CreateAgentInput = {
   description:
     'GPT Codex with a Developer persona, running on the Codex harness',
   systemPrompt: DEV_PROMPT,
+  followUpPrompt: DEV_FOLLOW_UP_PROMPT,
   statusTriggers: [TaskStatus.NOT_STARTED],
   allowedTools: [],
   isActive: true,

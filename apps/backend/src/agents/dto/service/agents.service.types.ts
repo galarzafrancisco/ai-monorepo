@@ -8,6 +8,7 @@ export type CreateAgentInput = {
   description?: string;
   introduction?: string;
   systemPrompt: string;
+  followUpPrompt?: string | null;
   providerId?: string;
   modelId?: string;
   statusTriggers: TaskStatus[];
@@ -24,6 +25,7 @@ export type PatchAgentInput = {
   slug?: string;
   name?: string;
   systemPrompt?: string;
+  followUpPrompt?: string | null;
   statusTriggers?: TaskStatus[];
   tagTriggers?: string[];
   type?: AgentType;
@@ -46,6 +48,7 @@ export type AgentResult = {
   introduction: string | null;
   avatarUrl: string | null;
   systemPrompt: string;
+  followUpPrompt: string | null;
   providerId: string | null;
   modelId: string | null;
   statusTriggers: TaskStatus[];

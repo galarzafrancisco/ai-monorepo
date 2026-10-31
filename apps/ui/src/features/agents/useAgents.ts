@@ -84,6 +84,7 @@ export const useAgents = () => {
           name: params.name,
           slug: params.slug,
           systemPrompt: params.systemPrompt,
+          followUpPrompt: params.followUpPrompt,
           allowedTools: params.allowedTools ?? [],
           type: params.type,
           description: params.description,

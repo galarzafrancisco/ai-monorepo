@@ -58,6 +58,15 @@ export class AgentResponseDto {
 
   @ApiPropertyOptional({
     type: String,
+    description:
+      'Sent to the agent on the same session after it finishes its turn, for example a checklist of the intended workflow. Null or blank means no follow-up.',
+    example: 'Did you put the task in review? If not, do it now.',
+    nullable: true,
+  })
+  followUpPrompt!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description: 'Provider ID to select a model runtime',
     example: 'openai',
@@ -146,6 +155,7 @@ export class AgentResponseDto {
       introduction: result.introduction,
       avatarUrl: result.avatarUrl,
       systemPrompt: result.systemPrompt,
+      followUpPrompt: result.followUpPrompt,
       providerId: result.providerId,
       modelId: result.modelId,
       statusTriggers: result.statusTriggers,

@@ -48,7 +48,14 @@ import { createPlanReviewer } from './agent/plan-reviewer.agent';
 import { createTaskmaster } from './agent/taskmaster.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
-import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './prompts/prompts';
+import {
+  ASSISTANT_FOLLOW_UP_PROMPT,
+  ASSISTANT_PROMPT,
+  DEV_FOLLOW_UP_PROMPT,
+  DEV_PROMPT,
+  REVIEWER_FOLLOW_UP_PROMPT,
+  REVIEWER_PROMPT,
+} from './prompts/prompts';
 import {
   LEGACY_ASSISTANT_PROMPTS,
   LEGACY_DEV_PROMPTS,
@@ -65,6 +72,35 @@ import {
   createDisplayAuthScopes,
   createDisplayAuthTarget,
 } from './mcp/internal-worker-auth.mcp';
+
+/** Built-in agents that come with a follow-up prompt. */
+const AGENTS_WITH_FOLLOW_UP: readonly CreateAgentInput[] = [
+  createClaudeDev,
+  createDeveloper,
+  createCodexDev,
+  createGrokDev,
+  createCodeReviewer,
+  createGeminiAssistant,
+];
+
+/** Agents made from a template keep its prompt, which identifies the template. */
+const FOLLOW_UPS_BY_SYSTEM_PROMPT: readonly {
+  systemPrompts: readonly string[];
+  followUpPrompt: string;
+}[] = [
+  {
+    systemPrompts: [DEV_PROMPT, ...LEGACY_DEV_PROMPTS],
+    followUpPrompt: DEV_FOLLOW_UP_PROMPT,
+  },
+  {
+    systemPrompts: [ASSISTANT_PROMPT, ...LEGACY_ASSISTANT_PROMPTS],
+    followUpPrompt: ASSISTANT_FOLLOW_UP_PROMPT,
+  },
+  {
+    systemPrompts: [REVIEWER_PROMPT],
+    followUpPrompt: REVIEWER_FOLLOW_UP_PROMPT,
+  },
+];
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -94,6 +130,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     await this.ensureActorMigration();
 
     await this.ensureAgents();
+    await this.ensureFollowUpPrompts();
     await this.ensureMcpServers();
     await this.ensurePromptTag();
     await this.ensurePromptContextBlocks();
@@ -294,6 +331,32 @@ export class AppInitRunner implements OnApplicationBootstrap {
       systemPrompt: seed.systemPrompt,
     });
     this.logger.log(`Updated ${agent.slug} to the current seeded prompt`);
+  }
+
+  /**
+   * Give existing agents the follow-up prompt of the built-in or template they
+   * came from. Only a null prompt is filled in: clearing one stores an empty
+   * string, so it stays cleared across restarts.
+   */
+  async ensureFollowUpPrompts(): Promise<void> {
+    try {
+      const limit = 100;
+      for (let page = 1; ; page += 1) {
+        const { items, total } = await this.agentsService.listAgents({
+          page,
+          limit,
+        });
+        for (const agent of items) {
+          const followUpPrompt = seededFollowUpFor(agent);
+          if (agent.followUpPrompt !== null || !followUpPrompt) continue;
+          await this.agentsService.patchAgent(agent.actorId, { followUpPrompt });
+          this.logger.log(`Added the seeded follow-up prompt to ${agent.slug}`);
+        }
+        if (page * limit >= total) return;
+      }
+    } catch (error) {
+      this.logger.error('Error ensuring agent follow-up prompts');
+    }
   }
 
   async ensureMcpServers() {
@@ -603,6 +666,16 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring default AI providers exist');
     }
   }
+}
+
+function seededFollowUpFor(agent: AgentResult): string | undefined {
+  const seeded = AGENTS_WITH_FOLLOW_UP.find((seed) => seed.slug === agent.slug);
+  if (seeded?.followUpPrompt) return seeded.followUpPrompt;
+
+  const stored = normalizePrompt(agent.systemPrompt);
+  return FOLLOW_UPS_BY_SYSTEM_PROMPT.find(({ systemPrompts }) =>
+    systemPrompts.some((prompt) => normalizePrompt(prompt) === stored),
+  )?.followUpPrompt;
 }
 
 function normalizePrompt(prompt: string | null | undefined): string {

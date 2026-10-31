@@ -65,6 +65,20 @@ function buildThreadContextInstructions(task: TaskResponseDto, thread: ThreadRes
   ];
 }
 
+/**
+ * What to send after the agent's first turn. Input request runs are told to
+ * answer and stop, so they never get one.
+ */
+export function buildFollowUpPrompt(
+  agent: AgentResponseDto,
+  mode: RunMode,
+): string | undefined {
+  if (mode !== 'normal') {
+    return undefined;
+  }
+  return agent.followUpPrompt?.trim() || undefined;
+}
+
 export function buildPrompt(
   task: TaskResponseDto,
   agent: AgentResponseDto,

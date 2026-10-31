@@ -116,6 +116,11 @@
   line-height: 1.6;
 }
 
+.new-agent-wizard__prompt-editor--compact {
+  flex: none;
+  min-height: 120px;
+}
+
 .new-agent-wizard__prompt-editor:focus {
   outline: none;
 }

@@ -119,6 +119,9 @@ export abstract class BaseAgentRunner implements AgentRunner {
     return { ...inherited, ...ctx.env };
   }
 
+  protected static readonly FOLLOW_UP_MESSAGE =
+    '↩️ Turn finished. Sending the follow-up prompt.';
+
   protected abstract runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
