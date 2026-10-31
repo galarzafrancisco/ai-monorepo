@@ -220,7 +220,7 @@ export function ProjectDetailPage() {
   );
 }
 
-function ProjectAutoTagsCard({ project, onSave, onSaved }: {
+export function ProjectAutoTagsCard({ project, onSave, onSaved }: {
   project: Project;
   onSave: (projectId: string, input: { autoTagIds: string[] }) => Promise<Project>;
   onSaved: (project: Project) => void;

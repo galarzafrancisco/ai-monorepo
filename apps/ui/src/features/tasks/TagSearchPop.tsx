@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { ErrorText, Text } from "../../ui/primitives";
+import { Button, ErrorText, Text } from "../../ui/primitives";
 import { MetaService, MetaTagResponseDto } from "@taico/client";
 import "./TagSearchPop.css";
 
@@ -16,6 +16,8 @@ type TagSearchPopProps = {
 export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaultLoadTags, isTagAvailable = defaultIsTagAvailable, error }: TagSearchPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -25,18 +27,23 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
 
   // Load all tags on mount
   useEffect(() => {
+    let cancelled = false;
+    setIsLoadingTags(true);
+    setLoadError(false);
     const fetchTags = async () => {
       try {
         const tags = await loadTags();
-        setAllTags(tags);
+        if (!cancelled) setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags:', err);
+        if (!cancelled) setLoadError(true);
       } finally {
-        setIsLoadingTags(false);
+        if (!cancelled) setIsLoadingTags(false);
       }
     };
     void fetchTags();
-  }, [loadTags]);
+    return () => { cancelled = true; };
+  }, [loadTags, retryCount]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -76,11 +83,11 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
 
   // Check if we can create a new tag with this query
   const canCreateNew = useMemo(() => {
-    if (!query.trim() || !isTagAvailable(query.trim())) return false;
+    if (isLoadingTags || loadError || !query.trim() || !isTagAvailable(query.trim())) return false;
     const lowerQuery = query.toLowerCase().trim();
     // Check if any existing tag has this exact name (case-insensitive)
     return !allTags.some(t => t.name.toLowerCase() === lowerQuery);
-  }, [query, allTags, isTagAvailable]);
+  }, [query, allTags, isTagAvailable, isLoadingTags, loadError]);
 
   // Reset highlighted index when filtered results change
   useEffect(() => {
@@ -89,7 +96,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
 
   // Scroll highlighted item into view
   useEffect(() => {
-    if (listRef.current) {
+    if (listRef.current && !isLoadingTags && !loadError) {
       const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
       if (highlightedIndex < totalItems) {
         const highlightedEl = listRef.current.children[highlightedIndex] as HTMLElement;
@@ -98,10 +105,10 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
         }
       }
     }
-  }, [highlightedIndex, filteredTags.length, canCreateNew]);
+  }, [highlightedIndex, filteredTags.length, canCreateNew, isLoadingTags, loadError]);
 
   const submitTag = useCallback(async (tag: MetaTagResponseDto): Promise<boolean> => {
-    if (isSaving) {
+    if (isSaving || isLoadingTags || loadError) {
       return false;
     }
 
@@ -115,14 +122,14 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, onCancel, onSave]);
+  }, [isSaving, isLoadingTags, loadError, onCancel, onSave]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.nativeEvent.isComposing) {
       return;
     }
 
-    const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
+    const totalItems = isLoadingTags || loadError ? 0 : filteredTags.length + (canCreateNew ? 1 : 0);
 
     switch (e.key) {
       case 'ArrowDown':
@@ -154,9 +161,10 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
         onCancel?.();
         break;
     }
-  }, [canCreateNew, filteredTags, highlightedIndex, onCancel, query, submitTag]);
+  }, [canCreateNew, filteredTags, highlightedIndex, isLoadingTags, loadError, onCancel, query, submitTag]);
 
   async function handleSave(): Promise<boolean> {
+    if (isLoadingTags || loadError) return false;
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) {
       return false;
@@ -183,6 +191,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
       title="Add Tag"
       onCancel={onCancel}
       onSave={handleSave}
+      saveDisabled={isLoadingTags || loadError || isSaving}
     >
       <div className="tag-search-pop">
         <input
@@ -200,6 +209,11 @@ export function TagSearchPop({ onCancel, onSave, existingTags, loadTags = defaul
           {isLoadingTags ? (
             <div className="tag-search-pop__empty">
               <Text tone="muted">Loading tags...</Text>
+            </div>
+          ) : loadError ? (
+            <div className="tag-search-pop__empty">
+              <ErrorText size="2">Failed to load tags</ErrorText>
+              <Button variant="secondary" size="sm" onClick={() => setRetryCount((count) => count + 1)}>Retry</Button>
             </div>
           ) : filteredTags.length === 0 && !canCreateNew ? (
             <div className="tag-search-pop__empty">
