@@ -8,13 +8,13 @@ export const isPullRequestWatch = (watch: ThreadWatchResponseDto) => watch.kind 
 
 /**
  * Pull requests attached as links to the thread's tasks. Fetched again when the thread changes (tasks
- * attached, watches added) and when the window regains focus.
+ * attached, watches added), when a task artefact is added (`linksRevision`), and when the window regains focus.
  */
-export function useThreadPullRequests(thread: Thread): PullRequest[] {
+export function useThreadPullRequests(thread: Thread, linksRevision = 0): PullRequest[] {
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [focusCount, setFocusCount] = useState(0);
   const threadId = thread.id;
-  const version = `${thread.updatedAt}|${thread.tasks.map((task) => task.id).join(",")}|${thread.watches.length}|${focusCount}`;
+  const version = `${thread.updatedAt}|${thread.tasks.map((task) => task.id).join(",")}|${thread.watches.length}|${focusCount}|${linksRevision}`;
 
   useEffect(() => {
     const controller = new AbortController();

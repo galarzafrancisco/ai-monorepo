@@ -5,6 +5,7 @@ import { Bot, Info } from "lucide-react";
 import type { ThreadTokenUsageResponseDto } from "@taico/client/v2";
 import {
   MessageCreatedWireEvent,
+  TaskArtefactAddedWireEvent,
   TaskAssignedWireEvent,
   TaskDeletedWireEvent,
   TaskStatusChangedWireEvent,
@@ -202,6 +203,7 @@ export function ThreadDetailPage() {
   const [thread, setThread] = useState<Thread | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [linksRevision, setLinksRevision] = useState(0);
   const threadTaskIdsRef = useRef<Set<string>>(new Set());
   const { usage: tokenUsage, refresh: refreshTokenUsage } = useThreadTokenUsage(threadId);
 
@@ -311,6 +313,13 @@ export function ThreadDetailPage() {
       refreshIfTaskBelongsToThread(event.payload.taskId);
     });
 
+    taskSocket.on(TaskWireEvents.TASK_ARTEFACT_ADDED, (event: TaskArtefactAddedWireEvent) => {
+      if (!threadTaskIdsRef.current.has(event.payload.taskId)) {
+        return;
+      }
+      setLinksRevision((revision) => revision + 1);
+    });
+
     return () => {
       threadSocket.emit('threads.unsubscribe', { threadId });
       threadSocket.close();
@@ -361,9 +370,9 @@ export function ThreadDetailPage() {
   };
 
   if (isDesktop) {
-    return <ThreadDetailPageDesktop thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} onRenamed={(title) => setThread((prev) => (prev ? { ...prev, title } : prev))} />;
+    return <ThreadDetailPageDesktop thread={thread} tokenUsage={tokenUsage} linksRevision={linksRevision} onDelete={handleDelete} onRenamed={(title) => setThread((prev) => (prev ? { ...prev, title } : prev))} />;
   } else {
-    return <ThreadDetailPageMobile thread={thread} tokenUsage={tokenUsage} onDelete={handleDelete} />;
+    return <ThreadDetailPageMobile thread={thread} tokenUsage={tokenUsage} linksRevision={linksRevision} onDelete={handleDelete} />;
   }
 }
 
@@ -456,11 +465,13 @@ const THREAD_RAIL_KEY = 'taico.threadRail.open';
 function ThreadDetailPageDesktop({
   thread,
   tokenUsage,
+  linksRevision,
   onDelete,
   onRenamed,
 }: {
   thread: Thread;
   tokenUsage: ThreadTokenUsageResponseDto | null;
+  linksRevision: number;
   onDelete: () => Promise<void>;
   onRenamed: (title: string) => void;
 }) {
@@ -480,8 +491,8 @@ function ThreadDetailPageDesktop({
   };
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
-  const pullRequests = useThreadPullRequests(thread);
-  const issues = useThreadIssues(thread);
+  const pullRequests = useThreadPullRequests(thread, linksRevision);
+  const issues = useThreadIssues(thread, linksRevision);
 
   return (
     <div className="thread-detail-page thread-detail-page--desktop">
@@ -624,18 +635,20 @@ function ThreadDetailPageDesktop({
 function ThreadDetailPageMobile({
   thread,
   tokenUsage,
+  linksRevision,
   onDelete,
 }: {
   thread: Thread;
   tokenUsage: ThreadTokenUsageResponseDto | null;
+  linksRevision: number;
   onDelete: () => Promise<void>;
 }) {
   const { conversationModel } = useChatReadiness();
   const navigate = useNavigate();
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
-  const pullRequests = useThreadPullRequests(thread);
-  const issues = useThreadIssues(thread);
+  const pullRequests = useThreadPullRequests(thread, linksRevision);
+  const issues = useThreadIssues(thread, linksRevision);
   const [mobileView, setMobileView] = useState<"chat" | "tasks" | "context" | "more">("chat");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 

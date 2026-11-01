@@ -5,13 +5,13 @@ import type { Thread } from "./types";
 
 /**
  * Issues attached as links to the thread's tasks. Fetched again when the thread changes (tasks
- * attached) and when the window regains focus.
+ * attached), when a task artefact is added (`linksRevision`), and when the window regains focus.
  */
-export function useThreadIssues(thread: Thread): Issue[] {
+export function useThreadIssues(thread: Thread, linksRevision = 0): Issue[] {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [focusCount, setFocusCount] = useState(0);
   const threadId = thread.id;
-  const version = `${thread.updatedAt}|${thread.tasks.map((task) => task.id).join(",")}|${focusCount}`;
+  const version = `${thread.updatedAt}|${thread.tasks.map((task) => task.id).join(",")}|${focusCount}|${linksRevision}`;
 
   useEffect(() => {
     const controller = new AbortController();
