@@ -13,11 +13,16 @@ import {
   DEV_PROMPT,
   REVIEWER_FOLLOW_UP_PROMPT,
   REVIEWER_PROMPT,
+  SHIPPER_FOLLOW_UP_PROMPT,
 } from './prompts/prompts';
 import {
+  LEGACY_ASSISTANT_FOLLOW_UP_PROMPTS,
   LEGACY_ASSISTANT_PROMPTS,
+  LEGACY_DEV_FOLLOW_UP_PROMPTS,
   LEGACY_DEV_PROMPTS,
+  LEGACY_REVIEWER_FOLLOW_UP_PROMPTS,
   LEGACY_REVIEWER_PROMPTS,
+  LEGACY_SHIPPER_FOLLOW_UP_PROMPTS,
 } from './prompts/legacy-prompts';
 
 /** Built-in agents that come with a follow-up prompt. */
@@ -62,6 +67,38 @@ export function seededFollowUpFor(agent: {
   return FOLLOW_UPS_BY_SYSTEM_PROMPT.find(({ systemPrompts }) =>
     systemPrompts.some((prompt) => normalizePrompt(prompt) === stored),
   )?.followUpPrompt;
+}
+
+const CURRENT_FOLLOW_UPS: readonly {
+  legacy: readonly string[];
+  current: string;
+}[] = [
+  { legacy: LEGACY_DEV_FOLLOW_UP_PROMPTS, current: DEV_FOLLOW_UP_PROMPT },
+  {
+    legacy: LEGACY_ASSISTANT_FOLLOW_UP_PROMPTS,
+    current: ASSISTANT_FOLLOW_UP_PROMPT,
+  },
+  {
+    legacy: LEGACY_REVIEWER_FOLLOW_UP_PROMPTS,
+    current: REVIEWER_FOLLOW_UP_PROMPT,
+  },
+  {
+    legacy: LEGACY_SHIPPER_FOLLOW_UP_PROMPTS,
+    current: SHIPPER_FOLLOW_UP_PROMPT,
+  },
+];
+
+/**
+ * The current text for a follow-up still stored as an earlier release seeded
+ * it. Anything else, such as an edited or cleared follow-up, has no replacement.
+ */
+export function currentFollowUpFor(
+  storedFollowUp: string | null,
+): string | undefined {
+  const stored = normalizePrompt(storedFollowUp);
+  return CURRENT_FOLLOW_UPS.find(({ legacy }) =>
+    legacy.some((prompt) => normalizePrompt(prompt) === stored),
+  )?.current;
 }
 
 export function normalizePrompt(prompt: string | null | undefined): string {

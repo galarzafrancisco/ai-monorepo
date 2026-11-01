@@ -64,6 +64,7 @@ import { McpServerAuthType1763200000000 } from './migrations/1763200000000-McpSe
 import { AgentFollowUpPrompt1763300000000 } from './migrations/1763300000000-AgentFollowUpPrompt';
 import { BackfillAgentFollowUpPrompts1763300000001 } from './migrations/1763300000001-BackfillAgentFollowUpPrompts';
 import { ProjectAutoTags1763300000002 } from './migrations/1763300000002-ProjectAutoTags';
+import { SilentAgentFollowUpPrompts1763300000003 } from './migrations/1763300000003-SilentAgentFollowUpPrompts';
 import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-ExecutionTraceJson';
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
@@ -117,6 +118,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         AgentFollowUpPrompt1763300000000,
         BackfillAgentFollowUpPrompts1763300000001,
         ProjectAutoTags1763300000002,
+        SilentAgentFollowUpPrompts1763300000003,
       ],
     }),
     EventEmitterModule.forRoot(),
