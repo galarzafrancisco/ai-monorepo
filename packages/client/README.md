@@ -1,3 +1,3 @@
 # @taico/client
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/client/0.11.2)](https://badge.socket.dev/npm/package/@taico/client/0.11.2)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/client/0.11.3)](https://badge.socket.dev/npm/package/@taico/client/0.11.3)
