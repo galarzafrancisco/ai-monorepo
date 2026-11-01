@@ -22,6 +22,8 @@ A follow-up is a check, not a report. Tell the agent to do whatever is missing, 
 
 If a follow-up asks agents to explain each step, they will, and the task fills up with comments like "all checks passed" or "this step doesn't apply". Comments a step asks for and real status changes, handoffs and PR links still happen. The seeded follow-ups in `prompts.ts` are a good starting point.
 
+Silent doesn't mean skipping checks on rework and re-review rounds. An earlier round only covers a step if its result still holds. A claimed task, a branch or an open PR carry over, but builds, CI, review decisions and PR comments have to cover the current revision. Otherwise a follow-up could pass a stale approval or an unreviewed change. Status and assignee only need to be right when the run ends: if the current revision is already handed off, the agent leaves them alone, because repeating a status change posts another comment and wakes the assignee again.
+
 ## How each harness sends it
 
 | Harness | How the follow-up is sent |

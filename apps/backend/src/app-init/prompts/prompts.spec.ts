@@ -124,7 +124,43 @@ describe('developer workflow prompts', () => {
     it('does not ask for a comment about a step that does not apply', () => {
       expect(followUp).not.toMatch(/say why in a task comment/i);
       expect(followUp).toContain("Skip steps that don't apply");
-      expect(followUp).toMatch(/rework and re-review rounds/);
+    });
+
+    it('stays quiet on rework rounds when an earlier result still holds', () => {
+      expect(followUp).toContain(
+        'an earlier round only covers a step if its result still holds',
+      );
+      expect(followUp).toContain('One-time setup carries over');
+      expect(followUp).toContain("Don't repeat work whose result still holds");
+    });
+
+    it('does not let an earlier round cover checks and handoffs for changed work', () => {
+      expect(followUp).not.toMatch(/already covered/);
+      expect(followUp).not.toContain("Don't repeat work that is already done");
+      expect(followUp).toContain(
+        'Builds, app starts, CI, review decisions and PR comments must cover the current revision',
+      );
+      expect(followUp).toContain(
+        'if they were done for an older revision, do them again now',
+      );
+      expect(followUp).toContain(
+        'if the current revision still needs handing off, hand it off',
+      );
+    });
+
+    it('does not redo a status change or handoff that already stands', () => {
+      expect(followUp).toContain(
+        'Status and assignee only need to be right when this run ends',
+      );
+      expect(followUp).toContain(
+        'if it was already handed off, leave them alone',
+      );
+    });
+
+    it('keeps comments a step asks for', () => {
+      expect(followUp).toContain(
+        'Beyond what a step asks for, only add a task comment',
+      );
     });
 
     it('forbids routine completion comments', () => {

@@ -29,12 +29,13 @@ const REVIEWER_CHECKLIST = `# Checklist:
  */
 const followUpPrompt = (checklist: string) => `You stopped working. Before this run closes, go through this checklist against what you actually did. This check is silent: run it, but don't report on it.
 Do anything that is missing now, including any status change, handoff or comment a step asks for.
-Skip steps that don't apply, and steps an earlier round of this task already covered. This goes for rework and re-review rounds too.
-Only add a task comment if it says something people need that isn't already on the task or PR: a failed check you can't fix, a blocker, an incident or risk, a decision for a human, a change of plan, or a result not recorded yet. Write about that, not about this checklist.
+Skip steps that don't apply.
+On rework and re-review rounds, an earlier round only covers a step if its result still holds. One-time setup carries over, such as a claimed task, a branch or an open PR. Builds, app starts, CI, review decisions and PR comments must cover the current revision: if they were done for an older revision, do them again now. Status and assignee only need to be right when this run ends: if the current revision still needs handing off, hand it off, and if it was already handed off, leave them alone.
+Beyond what a step asks for, only add a task comment if it says something people need that isn't already on the task or PR: a failed check you can't fix, a blocker, an incident or risk, a decision for a human, a change of plan, or a result not recorded yet. Write about that, not about this checklist.
 Don't post that checks passed, that everything is done, that a step doesn't apply, or that you started or opened a PR.
 If a step you can't do means the task can't be safely completed, say so on the task.
 If you are waiting on an input request, leave the task as it is.
-When everything is covered, stop. Don't repeat work that is already done.
+When everything is covered, stop. Don't repeat work whose result still holds.
 
 ${checklist}
 `;
