@@ -28,41 +28,23 @@ export class WorkersService {
   }
 
   async recordWorkerSeen(input: RecordWorkerSeenInput): Promise<WorkerEntity> {
-    const worker = await this.workersRepository.findOne({
-      where: { oauthClientId: input.oauthClientId },
-    });
-
-    const nextSeenAt = input.seenAt ?? new Date();
-
-    let savedWorker: WorkerEntity;
-
-    if (!worker) {
-      savedWorker = await this.workersRepository.save(
-        this.workersRepository.create({
-          oauthClientId: input.oauthClientId,
-          lastSeenAt: nextSeenAt,
+    // Upsert only supplied fields: a heartbeat must never write back a stale
+    // capability report read before another socket message updated it.
+    await this.workersRepository.upsert(
+      {
+        oauthClientId: input.oauthClientId,
+        lastSeenAt: input.seenAt ?? new Date(),
+        ...(input.workerVersion !== undefined && {
           workerVersion: normalizeWorkerVersion(input.workerVersion),
-          harnesses: input.harnesses ?? [],
-          capabilities: input.capabilities ?? null,
         }),
-      );
-    } else {
-      worker.lastSeenAt = nextSeenAt;
-
-      if (input.workerVersion !== undefined) {
-        worker.workerVersion = normalizeWorkerVersion(input.workerVersion);
-      }
-
-      if (input.harnesses) {
-        worker.harnesses = input.harnesses;
-      }
-
-      if (input.capabilities) {
-        worker.capabilities = input.capabilities;
-      }
-
-      savedWorker = await this.workersRepository.save(worker);
-    }
+        ...(input.harnesses !== undefined && { harnesses: input.harnesses }),
+        ...(input.capabilities !== undefined && { capabilities: input.capabilities }),
+      },
+      { conflictPaths: ['oauthClientId'] },
+    );
+    const savedWorker = await this.workersRepository.findOneByOrFail({
+      oauthClientId: input.oauthClientId,
+    });
 
     // Emit event for realtime updates
     this.eventEmitter.emit(
