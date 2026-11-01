@@ -20,6 +20,7 @@ import {
   type PostExecutionHeartbeatPayload,
   type PostExecutionActivityPayload,
   type PostWorkerHeartbeatPayload,
+  type WorkerCapabilities,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
@@ -222,6 +223,27 @@ export class ExecutionsWorkerGateway
     }
   }
 
+  @SubscribeMessage(ExecutionWireEvents.WORKER_CAPABILITIES_POST)
+  async postWorkerCapabilities(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: WorkerCapabilities,
+  ) {
+    if (!isWorkerCapabilities(body)) {
+      return { ok: false, error: 'invalid worker capabilities' };
+    }
+    const oauthClientId = this.getOauthClientId(client);
+    if (!oauthClientId) return { ok: false, error: 'missing worker identity' };
+
+    try {
+      await this.workersService.recordWorkerSeen({ oauthClientId, capabilities: body });
+      return { ok: true };
+    } catch (error) {
+      this.logger.error({ message: 'Failed to store worker capabilities', socketId: client.id,
+        error: error instanceof Error ? error.message : String(error) });
+      return { ok: false, error: 'internal error' };
+    }
+  }
+
   private scheduleTokenExpiryDisconnect(client: Socket): void {
     this.clearTokenExpiryDisconnect(client.id);
 
@@ -393,4 +415,12 @@ export class ExecutionsWorkerGateway
       `Finished emitting ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker client ${event.payload.workerClientId}`,
     );
   }
+}
+
+function isWorkerCapabilities(value: unknown): value is WorkerCapabilities {
+  if (!value || typeof value !== 'object') return false;
+  const report = value as Record<string, unknown>;
+  return typeof report.os === 'string' && report.os.length > 0 && report.os.length <= 100 &&
+    typeof report.architecture === 'string' && report.architecture.length > 0 && report.architecture.length <= 100 &&
+    ['opencode', 'claudeAuthenticated', 'git', 'gh'].every((key) => typeof report[key] === 'boolean');
 }

@@ -6,12 +6,14 @@ import {
   type ExecutionTraceAck,
   type PostExecutionHeartbeatPayload,
   type PostWorkerHeartbeatPayload,
+  type WorkerCapabilities,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
 import { ExecutionTraceSpool } from './execution-trace-spool.js';
 import { WorkerAuth } from './auth/worker-auth.js';
 import { WORKER_VERSION } from './version.js';
+import { detectWorkerCapabilities } from './worker-capabilities.js';
 
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
@@ -121,7 +123,8 @@ export class ExecutionActivityGatewayClient {
     payload?:
       | PostExecutionActivityPayload
       | PostExecutionHeartbeatPayload
-      | PostWorkerHeartbeatPayload,
+      | PostWorkerHeartbeatPayload
+      | WorkerCapabilities,
   ): Promise<boolean> {
     return (await this.emitAcknowledgement(eventName, payload)).ok;
   }
@@ -132,7 +135,8 @@ export class ExecutionActivityGatewayClient {
       | PostExecutionTracePayload
       | PostExecutionActivityPayload
       | PostExecutionHeartbeatPayload
-      | PostWorkerHeartbeatPayload,
+      | PostWorkerHeartbeatPayload
+      | WorkerCapabilities,
   ): Promise<ActivityAck> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
@@ -315,8 +319,14 @@ export class ExecutionActivityGatewayClient {
   }
 
   private handleHarnessesReportRequested(): void {
-    console.log('[execution-activity] worker harnesses report requested');
-    // TODO: Check which harnesses and models are available, then report them via REST.
+    const capabilities = detectWorkerCapabilities();
+    void this.emitWithAck(ExecutionWireEvents.WORKER_CAPABILITIES_POST, capabilities)
+      .then((ok) => {
+        if (!ok) console.warn('[worker] Could not report worker capabilities');
+      })
+      .catch((error: unknown) => {
+        console.warn('[worker] Could not report worker capabilities:', error);
+      });
   }
 
   private scheduleTokenRefresh(expiresAtIso: string): void {

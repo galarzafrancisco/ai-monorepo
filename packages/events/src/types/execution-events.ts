@@ -25,6 +25,7 @@ export const ExecutionWireEvents = {
   EXECUTION_HEARTBEAT_POST: 'execution.heartbeat.post',
   WORKER_HEARTBEAT_POST: 'worker.heartbeat.post',
   WORKER_HARNESSES_REPORT_REQUESTED: 'worker.harnesses.report.requested',
+  WORKER_CAPABILITIES_POST: 'worker.capabilities.post',
   TASK_EXECUTION_QUEUED: 'task.execution.queued',
   EXECUTION_INTERRUPT_REQUEST: 'execution.interrupt.request',
   EXECUTIONS_CHANGED: 'executions.changed',
@@ -113,6 +114,15 @@ export interface PostExecutionHeartbeatPayload {
 
 export interface PostWorkerHeartbeatPayload {
   workerVersion?: string | null;
+}
+
+export interface WorkerCapabilities {
+  os: string;
+  architecture: string;
+  opencode: boolean;
+  claudeAuthenticated: boolean;
+  git: boolean;
+  gh: boolean;
 }
 
 /**

@@ -8,6 +8,7 @@
  * Import these types in both backend (for emission) and frontend (for reception)
  * to ensure type safety across the wire protocol.
  */
+import type { WorkerCapabilities } from './execution-events.js';
 
 /**
  * Wire event names for Workers domain
@@ -30,6 +31,7 @@ export interface WorkerWirePayload {
   workerVersion: string | null;
   lastSeenAt: string;
   harnesses: string[];
+  capabilities: WorkerCapabilities | null;
   createdAt: string;
   updatedAt: string;
 }

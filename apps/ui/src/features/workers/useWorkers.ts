@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { WorkerSeenWireEvent } from '@taico/events';
 import { WorkerWireEvents } from '@taico/events';
+import type { WorkerCapabilities } from '@taico/events';
 import { getUIWebSocketUrl } from '../../config/api';
 import { WorkersService } from './api';
 
@@ -19,6 +20,7 @@ export interface Worker {
   workerVersion: string | null;
   lastSeenAt: string;
   harnesses: string[];
+  capabilities?: WorkerCapabilities | null;
   createdAt: string;
   updatedAt: string;
 }

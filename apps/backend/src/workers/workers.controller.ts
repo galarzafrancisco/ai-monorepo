@@ -34,6 +34,7 @@ export class WorkersController {
       workerVersion: worker.workerVersion,
       lastSeenAt: worker.lastSeenAt.toISOString(),
       harnesses: worker.harnesses,
+      capabilities: worker.capabilities,
       createdAt: worker.createdAt.toISOString(),
       updatedAt: worker.updatedAt.toISOString(),
     };

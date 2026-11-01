@@ -1,4 +1,5 @@
 import { AgentType } from 'src/agents/enums';
+import type { WorkerCapabilities } from '@taico/events';
 import { RegisteredClientEntity } from 'src/authorization-server/entities/registered-client.entity';
 import {
   Column,
@@ -31,6 +32,9 @@ export class WorkerEntity {
 
   @Column({ type: 'simple-json', default: '[]' })
   harnesses!: AgentType[];
+
+  @Column({ type: 'simple-json', nullable: true })
+  capabilities!: WorkerCapabilities | null;
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

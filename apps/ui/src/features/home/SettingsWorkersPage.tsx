@@ -2,10 +2,12 @@ import { Stack, Text, Card, Row, Button } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
 import { useEffect, useState } from 'react';
 import { useWorkers } from '../workers/useWorkers';
+import type { Worker } from '../workers/useWorkers';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import {
   Heart,
   HeartCrack,
+  Check, X,
 } from "lucide-react";
 
 import './SettingsPage.css';
@@ -157,12 +159,41 @@ export function SettingsWorkersPage() {
                       </div>
                     </Stack>
                   )}
+                  <WorkerCapabilityChecklist worker={worker} />
                 </Stack>
               </Card>
             );
           })
         )}
       </Stack>
+    </Stack>
+  );
+}
+
+function WorkerCapabilityChecklist({ worker }: { worker: Worker }) {
+  const capabilities = worker.capabilities;
+  if (!capabilities) return <Text size="2" tone="muted">Capabilities not reported by this worker yet.</Text>;
+
+  const checks = [
+    { label: 'OpenCode CLI', available: capabilities.opencode, instruction: 'Install OpenCode: https://opencode.ai/docs/' },
+    { label: 'Claude authenticated', available: capabilities.claudeAuthenticated, instruction: 'Install Claude Code and run claude login: https://code.claude.com/docs/en/setup' },
+    { label: 'Git CLI', available: capabilities.git, instruction: 'Install Git: https://git-scm.com/downloads' },
+    { label: 'GitHub CLI', available: capabilities.gh, instruction: 'Install gh: https://cli.github.com/' },
+  ];
+
+  return (
+    <Stack spacing="2">
+      <Text size="2" weight="medium">Capabilities</Text>
+      <Text size="1" tone="muted">{capabilities.os} · {capabilities.architecture}</Text>
+      <ul className="settings-workers__capabilities">
+        {checks.map(({ label, available, instruction }) => (
+          <li key={label}>
+            {available ? <Check size={16} className="settings-workers__available" aria-label="Available" />
+              : <X size={16} className="settings-workers__missing" aria-label="Missing" />}
+            <span>{label}{!available && <> — {instruction}</>}</span>
+          </li>
+        ))}
+      </ul>
     </Stack>
   );
 }

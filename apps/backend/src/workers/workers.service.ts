@@ -43,6 +43,7 @@ export class WorkersService {
           lastSeenAt: nextSeenAt,
           workerVersion: normalizeWorkerVersion(input.workerVersion),
           harnesses: input.harnesses ?? [],
+          capabilities: input.capabilities ?? null,
         }),
       );
     } else {
@@ -54,6 +55,10 @@ export class WorkersService {
 
       if (input.harnesses) {
         worker.harnesses = input.harnesses;
+      }
+
+      if (input.capabilities) {
+        worker.capabilities = input.capabilities;
       }
 
       savedWorker = await this.workersRepository.save(worker);
@@ -78,6 +83,7 @@ export class WorkersService {
       workerVersion: worker.workerVersion,
       lastSeenAt: worker.lastSeenAt,
       harnesses: worker.harnesses,
+      capabilities: worker.capabilities,
       createdAt: worker.createdAt,
       updatedAt: worker.updatedAt,
     };
