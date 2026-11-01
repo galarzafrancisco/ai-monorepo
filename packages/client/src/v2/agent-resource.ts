@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AgentListResponseDto, AgentResponseDto, AgentTemplateCatalogResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
+import type { AgentDefinitionsDocumentDto, AgentListResponseDto, AgentResponseDto, AgentTemplateCatalogResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, ImportAgentsResponseDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
 
 export class AgentResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -34,6 +34,16 @@ export class AgentResource extends BaseClient {
   /** Delete an agent */
   async AgentsController_deleteAgent(params: { actorId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('DELETE', `/api/v1/agents/${params.actorId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Export agent definitions as portable JSON */
+  async AgentDefinitionsController_exportAgents(params?: { slug?: string; signal?: AbortSignal }): Promise<AgentDefinitionsDocumentDto> {
+    return this.request('GET', '/api/v1/agent-definitions/export', { params: { slug: params?.slug }, signal: params?.signal });
+  }
+
+  /** Import agent definitions, creating or updating by slug */
+  async AgentDefinitionsController_importAgents(params: { body: AgentDefinitionsDocumentDto; signal?: AbortSignal }): Promise<ImportAgentsResponseDto> {
+    return this.request('POST', '/api/v1/agent-definitions/import', { body: params.body, signal: params?.signal });
   }
 
   /** List tool permissions for an agent */

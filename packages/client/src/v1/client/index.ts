@@ -19,6 +19,8 @@ export type { ActiveTaskExecutionTagSnapshotResponseDto } from './models/ActiveT
 export { ActorResponseDto } from './models/ActorResponseDto.js';
 export type { AddParticipantDto } from './models/AddParticipantDto.js';
 export type { AgentAvatarDto } from './models/AgentAvatarDto.js';
+export { AgentDefinitionDto } from './models/AgentDefinitionDto.js';
+export type { AgentDefinitionsDocumentDto } from './models/AgentDefinitionsDocumentDto.js';
 export type { AgentExecutionTokenResponseDto } from './models/AgentExecutionTokenResponseDto.js';
 export type { AgentListResponseDto } from './models/AgentListResponseDto.js';
 export { AgentResponseDto } from './models/AgentResponseDto.js';
@@ -28,6 +30,7 @@ export type { AgentTemplateCatalogResponseDto } from './models/AgentTemplateCata
 export { AgentTemplateDto } from './models/AgentTemplateDto.js';
 export { AgentTemplateHarnessDto } from './models/AgentTemplateHarnessDto.js';
 export type { AgentTemplateModelOptionDto } from './models/AgentTemplateModelOptionDto.js';
+export type { AgentToolPermissionDefinitionDto } from './models/AgentToolPermissionDefinitionDto.js';
 export type { AgentToolPermissionResponseDto } from './models/AgentToolPermissionResponseDto.js';
 export type { AgentToolPermissionScopeResponseDto } from './models/AgentToolPermissionScopeResponseDto.js';
 export { AgentToolPermissionServerResponseDto } from './models/AgentToolPermissionServerResponseDto.js';
@@ -100,6 +103,8 @@ export type { GithubRepositoryRefDto } from './models/GithubRepositoryRefDto.js'
 export type { GithubWebhookSettingsResponseDto } from './models/GithubWebhookSettingsResponseDto.js';
 export type { GithubWebhookSourceDto } from './models/GithubWebhookSourceDto.js';
 export type { GlobalSearchResultDto } from './models/GlobalSearchResultDto.js';
+export type { ImportAgentIssueDto } from './models/ImportAgentIssueDto.js';
+export type { ImportAgentsResponseDto } from './models/ImportAgentsResponseDto.js';
 export type { ImportBlocksResponseDto } from './models/ImportBlocksResponseDto.js';
 export type { InputRequestResponseDto } from './models/InputRequestResponseDto.js';
 export { IntrospectTokenRequestDto } from './models/IntrospectTokenRequestDto.js';

@@ -18,3 +18,16 @@ export type AgentToolPermissionRecord = {
 export type UpsertAgentToolPermissionInput = {
   scopeIds: string[];
 };
+
+export type ResolvedAgentToolGrant = {
+  serverId: string;
+  scopeIds: string[];
+};
+
+export type ResolvedAgentToolGrants = {
+  grants: ResolvedAgentToolGrant[];
+  /** Provided ids of servers that aren't in this workspace. */
+  missingServers: string[];
+  /** Scopes the named server doesn't offer. */
+  invalidScopes: { serverProvidedId: string; scopeIds: string[] }[];
+};

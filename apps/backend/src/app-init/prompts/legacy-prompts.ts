@@ -130,3 +130,81 @@ export const LEGACY_ASSISTANT_PROMPTS: readonly string[] = [
   ASSISTANT_PROMPT_V1,
 ];
 export const LEGACY_REVIEWER_PROMPTS: readonly string[] = [REVIEWER_PROMPT_V1];
+
+/**
+ * Follow-up prompts as earlier releases seeded them. Agents store their own
+ * copy, so a migration matches on these to find the ones nobody edited.
+ *
+ * When you change a seeded follow-up, add the old text here.
+ */
+const followUpPromptV1 = (checklist: string) => `You stopped working. Before this run closes, go through this checklist against what you actually did.
+Do anything that is missing now. If a step doesn't apply or you can't do it, say why in a task comment.
+If you are waiting on an input request, leave the task as it is.
+When everything is covered, stop. Don't repeat work that is already done.
+
+${checklist}
+`;
+
+const shipperChecklistV1 = (
+  readBy: string,
+  finalState: string,
+) => `# Checklist:
+- [] read the description${readBy} for a reason not to merge
+- [] checked CI on the PR before merging
+- [] watched the main build started by the merge, if there was one
+- [] left the task DONE, sent back to the original assignee in NOT_STARTED, ${finalState}
+- [] added a comment to the task saying what happened`;
+
+export const LEGACY_DEV_FOLLOW_UP_PROMPTS: readonly string[] = [
+  followUpPromptV1(`# Checklist:
+- [] put the task in progress as the first step
+- [] (repo) cut a feature branch
+- [] (repo) opened a draft PR early and attached it to the task
+- [] (repo) ran \`npm run build:dev\` to confirm build works
+- [] (repo) ran \`npm run dev:[1-5]\` to ensure app starts (some AppInitRunner errors expected during startup)
+- [] (repo) marked the PR ready, put the task in review and assigned to @code-reviewer
+- [] (no repo changes) posted findings, put the task in review and assigned it to its creator
+- [] meditated on pain points and logged if any are relevant`),
+];
+
+export const LEGACY_ASSISTANT_FOLLOW_UP_PROMPTS: readonly string[] = [
+  followUpPromptV1(`# Checklist:
+- [] put the task in progress when starting to work
+- [] put the task in review when done`),
+];
+
+export const LEGACY_REVIEWER_FOLLOW_UP_PROMPTS: readonly string[] = [
+  followUpPromptV1(`# Checklist:
+- [] fetched and reviewed the PR using gh CLI
+- [] checked out the branch and reviewed code files
+- [] examined diffs and compared before/after
+- [] either approved or requested changes with detailed feedback
+- [] added a comment to the GitHub PR`),
+];
+
+export const LEGACY_SHIPPER_FOLLOW_UP_PROMPTS: readonly string[] = [
+  followUpPromptV1(
+    shipperChecklistV1(
+      ', comments and any answered questions',
+      'or waiting on a question',
+    ),
+  ),
+  followUpPromptV1(
+    shipperChecklistV1(
+      ', comments and any answered questions',
+      'waiting on a question, or assigned to whoever said not to merge',
+    ),
+  ),
+  followUpPromptV1(
+    shipperChecklistV1(
+      ', comments and any answered questions',
+      'waiting on a question, or assigned to the actor you asked about not merging',
+    ),
+  ),
+  followUpPromptV1(
+    shipperChecklistV1(
+      ' and comments',
+      'or, if there was a reason not to merge, removed the \`self-ship\` tag and asked how to proceed',
+    ),
+  ),
+];
