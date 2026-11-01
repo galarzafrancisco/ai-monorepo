@@ -16,6 +16,12 @@ The follow-up appears as **Final checks** in a run's Execution progress, between
 
 Status changes and reassignments made during the first turn take effect straight away, but the next agent can only claim the task once this run ends. Keep follow-ups short.
 
+## Keep follow-ups silent
+
+A follow-up is a check, not a report. Tell the agent to do whatever is missing, and to comment only if someone needs to know or act on the result: a failed check it can't fix, a blocker, an incident or risk, a decision for a human, a change of plan, or a result not recorded yet.
+
+If a follow-up asks agents to explain each step, they will, and the task fills up with comments like "all checks passed" or "this step doesn't apply". Comments a step asks for and real status changes, handoffs and PR links still happen. The seeded follow-ups in `prompts.ts` are a good starting point.
+
 ## How each harness sends it
 
 | Harness | How the follow-up is sent |
@@ -39,5 +45,7 @@ Agents that already existed when follow-up prompts shipped got theirs once, from
 - Agents created from a template were matched by their exact system prompt, including earlier seeded versions.
 
 The migration doesn't run again, so clearing a follow-up sticks whether it is stored as `null` or an empty string. Nothing overwrites an edited follow-up, and changing a seeded follow-up only affects agents created afterwards.
+
+To change a seeded follow-up for existing agents too, add the old text to `legacy-prompts.ts` and write a migration like `SilentAgentFollowUpPrompts`. It replaces a follow-up only if it still exactly matches a text we seeded, so edited and cleared follow-ups stay as they are.
 
 Databases in `TYPEORM_SCHEMA_MODE=sync` don't run migrations, so their existing agents get no follow-up until you set one.

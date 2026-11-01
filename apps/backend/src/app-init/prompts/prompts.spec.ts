@@ -11,9 +11,13 @@ import {
   SHIPPER_PROMPT,
 } from './prompts';
 import {
+  LEGACY_ASSISTANT_FOLLOW_UP_PROMPTS,
   LEGACY_ASSISTANT_PROMPTS,
+  LEGACY_DEV_FOLLOW_UP_PROMPTS,
   LEGACY_DEV_PROMPTS,
+  LEGACY_REVIEWER_FOLLOW_UP_PROMPTS,
   LEGACY_REVIEWER_PROMPTS,
+  LEGACY_SHIPPER_FOLLOW_UP_PROMPTS,
 } from './legacy-prompts';
 
 /**
@@ -102,6 +106,56 @@ describe('developer workflow prompts', () => {
     const checklist = prompt.slice(prompt.indexOf('# Checklist:')).trim();
     expect(checklist).toMatch(/^# Checklist:\n- \[\]/);
     expect(followUp).toContain(checklist);
+  });
+
+  describe.each([
+    ['developer', DEV_FOLLOW_UP_PROMPT],
+    ['assistant', ASSISTANT_FOLLOW_UP_PROMPT],
+    ['reviewer', REVIEWER_FOLLOW_UP_PROMPT],
+    ['shipper', SHIPPER_FOLLOW_UP_PROMPT],
+  ])('%s follow-up stays silent unless there is something to say', (_, followUp) => {
+    it('still runs the checks and fixes what was missed', () => {
+      expect(followUp).toContain('go through this checklist');
+      expect(followUp).toContain(
+        'Do anything that is missing now, including any status change, handoff or comment a step asks for',
+      );
+    });
+
+    it('does not ask for a comment about a step that does not apply', () => {
+      expect(followUp).not.toMatch(/say why in a task comment/i);
+      expect(followUp).toContain("Skip steps that don't apply");
+      expect(followUp).toMatch(/rework and re-review rounds/);
+    });
+
+    it('forbids routine completion comments', () => {
+      expect(followUp).toMatch(
+        /Don't post that checks passed, that everything is done, that a step doesn't apply, or that you started or opened a PR/,
+      );
+    });
+
+    it('keeps failures, blockers and incidents visible', () => {
+      for (const reason of [
+        'a failed check',
+        'a blocker',
+        'an incident',
+        'a decision for a human',
+        'a change of plan',
+      ]) {
+        expect(followUp).toContain(reason);
+      }
+      expect(followUp).toMatch(/can't be safely completed, say so on the task/);
+    });
+  });
+
+  it('legacy follow-ups are different from the current ones, so the migration can tell them apart', () => {
+    for (const [legacy, current] of [
+      [LEGACY_DEV_FOLLOW_UP_PROMPTS, DEV_FOLLOW_UP_PROMPT],
+      [LEGACY_ASSISTANT_FOLLOW_UP_PROMPTS, ASSISTANT_FOLLOW_UP_PROMPT],
+      [LEGACY_REVIEWER_FOLLOW_UP_PROMPTS, REVIEWER_FOLLOW_UP_PROMPT],
+      [LEGACY_SHIPPER_FOLLOW_UP_PROMPTS, SHIPPER_FOLLOW_UP_PROMPT],
+    ] as const) {
+      expect(legacy).not.toContain(current);
+    }
   });
 
   describe('self-ship workflow', () => {
