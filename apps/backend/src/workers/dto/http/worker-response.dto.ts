@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AgentType } from 'src/agents/enums';
+import type { WorkerCapabilities } from '@taico/events';
 
 export class WorkerResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -16,6 +17,9 @@ export class WorkerResponseDto {
 
   @ApiProperty({ enum: AgentType, isArray: true })
   harnesses!: AgentType[];
+
+  @ApiProperty({ type: 'object', nullable: true, additionalProperties: true })
+  capabilities!: WorkerCapabilities | null;
 
   @ApiProperty({ format: 'date-time' })
   createdAt!: string;

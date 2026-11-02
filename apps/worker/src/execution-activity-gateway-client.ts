@@ -6,16 +6,20 @@ import {
   type ExecutionTraceAck,
   type PostExecutionHeartbeatPayload,
   type PostWorkerHeartbeatPayload,
+  type WorkerCapabilities,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
 import { ExecutionTraceSpool } from './execution-trace-spool.js';
 import { WorkerAuth } from './auth/worker-auth.js';
 import { WORKER_VERSION } from './version.js';
+import { detectWorkerCapabilities } from './worker-capabilities.js';
 
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
 const WORKER_HEARTBEAT_INTERVAL_MS = 30_000;
+const CAPABILITY_REFRESH_INTERVAL_MS = 60_000;
+const CAPABILITY_RETRY_DELAY_MS = 10_000;
 const RECONNECT_RETRY_DELAY_MS = 5_000;
 
 type ActivityAck = ExecutionTraceAck;
@@ -47,6 +51,9 @@ export class ExecutionActivityGatewayClient {
   private reconnectRetryTimer?: ReturnType<typeof setTimeout>;
   private reconnectRetryForceRefresh = false;
   private workerHeartbeatTimer?: ReturnType<typeof setInterval>;
+  private capabilityRefreshTimer?: ReturnType<typeof setInterval>;
+  private capabilityRetryTimer?: ReturnType<typeof setTimeout>;
+  private capabilityReportInFlight = false;
   private reconnectPromise: Promise<void> | null = null;
   private resolveInitialConnect?: () => void;
 
@@ -82,6 +89,7 @@ export class ExecutionActivityGatewayClient {
     this.clearTokenRefreshTimer();
     this.clearReconnectRetryTimer();
     this.clearWorkerHeartbeatTimer();
+    this.clearCapabilityTimers();
     this.clearInitialConnectHandlers();
 
     const socket = this.socket;
@@ -121,7 +129,8 @@ export class ExecutionActivityGatewayClient {
     payload?:
       | PostExecutionActivityPayload
       | PostExecutionHeartbeatPayload
-      | PostWorkerHeartbeatPayload,
+      | PostWorkerHeartbeatPayload
+      | WorkerCapabilities,
   ): Promise<boolean> {
     return (await this.emitAcknowledgement(eventName, payload)).ok;
   }
@@ -132,7 +141,8 @@ export class ExecutionActivityGatewayClient {
       | PostExecutionTracePayload
       | PostExecutionActivityPayload
       | PostExecutionHeartbeatPayload
-      | PostWorkerHeartbeatPayload,
+      | PostWorkerHeartbeatPayload
+      | WorkerCapabilities,
   ): Promise<ActivityAck> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
@@ -246,6 +256,7 @@ export class ExecutionActivityGatewayClient {
       this.clearReconnectRetryTimer();
       this.scheduleTokenRefresh(credentials.expiresAt);
       this.startWorkerHeartbeatTimer();
+      this.startCapabilityRefreshTimer();
       this.resolveInitialConnect?.();
       this.clearInitialConnectHandlers();
     });
@@ -257,6 +268,7 @@ export class ExecutionActivityGatewayClient {
 
       this.clearTokenRefreshTimer();
       this.clearWorkerHeartbeatTimer();
+      this.clearCapabilityTimers();
 
       if (!this.started) {
         return;
@@ -315,8 +327,52 @@ export class ExecutionActivityGatewayClient {
   }
 
   private handleHarnessesReportRequested(): void {
-    console.log('[execution-activity] worker harnesses report requested');
-    // TODO: Check which harnesses and models are available, then report them via REST.
+    void this.reportCapabilities();
+  }
+
+  private async reportCapabilities(): Promise<void> {
+    if (this.capabilityReportInFlight || !this.socket?.connected) return;
+    this.capabilityReportInFlight = true;
+    try {
+      const capabilities = await detectWorkerCapabilities();
+      if (!await this.emitWithAck(ExecutionWireEvents.WORKER_CAPABILITIES_POST, capabilities)) {
+        console.warn('[worker] Could not report worker capabilities');
+        this.scheduleCapabilityRetry();
+      } else {
+        this.clearCapabilityRetryTimer();
+      }
+    } catch (error) {
+      console.warn('[worker] Could not report worker capabilities:', error);
+      this.scheduleCapabilityRetry();
+    } finally {
+      this.capabilityReportInFlight = false;
+    }
+  }
+
+  private startCapabilityRefreshTimer(): void {
+    this.clearCapabilityTimers();
+    this.capabilityRefreshTimer = setInterval(() => {
+      void this.reportCapabilities();
+    }, CAPABILITY_REFRESH_INTERVAL_MS);
+  }
+
+  private scheduleCapabilityRetry(): void {
+    if (this.capabilityRetryTimer || !this.socket?.connected) return;
+    this.capabilityRetryTimer = setTimeout(() => {
+      this.capabilityRetryTimer = undefined;
+      void this.reportCapabilities();
+    }, CAPABILITY_RETRY_DELAY_MS);
+  }
+
+  private clearCapabilityRetryTimer(): void {
+    if (this.capabilityRetryTimer) clearTimeout(this.capabilityRetryTimer);
+    this.capabilityRetryTimer = undefined;
+  }
+
+  private clearCapabilityTimers(): void {
+    if (this.capabilityRefreshTimer) clearInterval(this.capabilityRefreshTimer);
+    this.capabilityRefreshTimer = undefined;
+    this.clearCapabilityRetryTimer();
   }
 
   private scheduleTokenRefresh(expiresAtIso: string): void {

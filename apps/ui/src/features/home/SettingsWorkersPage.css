@@ -71,3 +71,22 @@
   font-family: var(--font-mono);
   color: var(--text-muted);
 }
+
+.settings-workers__capabilities {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.settings-workers__capabilities li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.settings-workers__capabilities svg { flex-shrink: 0; }
+.settings-workers__available { color: var(--success); }
+.settings-workers__missing { color: var(--danger); }

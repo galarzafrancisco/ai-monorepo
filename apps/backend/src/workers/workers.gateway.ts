@@ -80,6 +80,7 @@ export class WorkersGateway
       workerVersion: event.payload.workerVersion,
       lastSeenAt: event.payload.lastSeenAt.toISOString(),
       harnesses: event.payload.harnesses,
+      capabilities: event.payload.capabilities,
       createdAt: event.payload.createdAt.toISOString(),
       updatedAt: event.payload.updatedAt.toISOString(),
     };
