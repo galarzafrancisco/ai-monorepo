@@ -123,6 +123,10 @@
   gap: 6px;
 }
 
+.task-bar__projects {
+  display: none;
+}
+
 /* Live activity sits on the bar's bottom border, in the gap above the details,
    so it comes and goes without moving anything. */
 .task-bar__activity {
@@ -467,6 +471,44 @@
 
   .task-bar__thread {
     min-height: 40px;
+  }
+
+  .task-bar__projects {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 40px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-3);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: var(--fs-2);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .task-bar__projects:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .task-bar__projects-label {
+    color: var(--text-muted);
+  }
+
+  .task-bar__projects-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .task-bar__projects-add {
+    color: var(--accent);
   }
 
   .task-props {

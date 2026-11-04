@@ -8,6 +8,7 @@ import type { Project } from '../projects/types';
 import { hitsForQuery, initialHighlightIndex, isCurrentProjectChoice } from './projectPicker';
 import { activityByProjectTag, matchesClearProject, projectSections, type ProjectSection } from './projectSuggestions';
 import { recentProjectIdsForPicker, rememberRecentProject } from './recentProjects';
+import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './ProjectSelector.css';
 
 const CLEAR_ID = '__no_project__';
@@ -49,6 +50,7 @@ export function ProjectSelector({
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
+  const isDesktop = useIsDesktop();
   const [serverSearch, setServerSearch] = useState<{ query: string; hits: Project[] }>({ query: '', hits: [] });
   const [searchState, setSearchState] = useState<'idle' | 'searching' | 'done' | 'error'>('idle');
   const [highlighted, setHighlighted] = useState(0);
@@ -147,7 +149,8 @@ export function ProjectSelector({
     }
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
     if (event.nativeEvent.isComposing) return;
     if (event.key === 'ArrowDown' && rows.length > 0) {
       event.preventDefault();
@@ -176,14 +179,25 @@ export function ProjectSelector({
   const groups = groupedRows(rows, sections);
 
   return (
-    <Modal open onOpenChange={(open) => { if (!open) onClose(); }} title="Projects" className="project-selector">
+    <Modal
+      open
+      onOpenChange={(open) => { if (!open) onClose(); }}
+      onOpenAutoFocus={(event) => {
+        if (!isDesktop) {
+          event.preventDefault();
+          listRef.current?.focus();
+        }
+      }}
+      title="Projects"
+      className="project-selector"
+    >
       <p className="project-selector__lede">
         Add a project to <strong>{taskName}</strong>, or clear them all.
       </p>
       <label className="project-selector__search">
         <Search size={16} aria-hidden="true" />
         <input
-          autoFocus
+          autoFocus={isDesktop}
           type="text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -194,7 +208,16 @@ export function ProjectSelector({
           aria-activedescendant={rows[highlighted] ? `project-option-${rows[highlighted].id}` : undefined}
         />
       </label>
-      <div id="project-selector-list" className="project-selector__list" ref={listRef} role="listbox" aria-label="Projects">
+      <div
+        id="project-selector-list"
+        className="project-selector__list"
+        ref={listRef}
+        role="listbox"
+        aria-label="Projects"
+        aria-activedescendant={rows[highlighted] ? `project-option-${rows[highlighted].id}` : undefined}
+        tabIndex={-1}
+        onKeyDown={onKeyDown}
+      >
         {showEmpty ? (
           <p className="project-selector__empty">{emptyMessage}</p>
         ) : groups.map((group) => (
