@@ -8,6 +8,7 @@ import type { Project } from '../projects/types';
 import { hitsForQuery, initialHighlightIndex, isCurrentProjectChoice } from './projectPicker';
 import { activityByProjectTag, matchesClearProject, projectSections, type ProjectSection } from './projectSuggestions';
 import { recentProjectIdsForPicker, rememberRecentProject } from './recentProjects';
+import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './ProjectSelector.css';
 
 const CLEAR_ID = '__no_project__';
@@ -49,6 +50,7 @@ export function ProjectSelector({
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
+  const isDesktop = useIsDesktop();
   const [serverSearch, setServerSearch] = useState<{ query: string; hits: Project[] }>({ query: '', hits: [] });
   const [searchState, setSearchState] = useState<'idle' | 'searching' | 'done' | 'error'>('idle');
   const [highlighted, setHighlighted] = useState(0);
@@ -183,7 +185,7 @@ export function ProjectSelector({
       <label className="project-selector__search">
         <Search size={16} aria-hidden="true" />
         <input
-          autoFocus
+          autoFocus={isDesktop}
           type="text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}

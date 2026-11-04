@@ -729,6 +729,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             </Button>
           </div>
         </div>
+        <button
+          type="button"
+          className="task-bar__projects"
+          onClick={() => setShowProjectPop(true)}
+          aria-label={`Projects: ${projectAssignments.length ? projectAssignments.map((item) => item.label).join(', ') : 'none'}. Add a project`}
+        >
+          <span className="task-bar__projects-label">Projects</span>
+          <span className="task-bar__projects-value">
+            {projectAssignments.length ? projectAssignments.map((item) => item.label).join(', ') : 'No project'}
+          </span>
+          <span className="task-bar__projects-add">+ add</span>
+        </button>
         {liveActivity ? (
           <div
             className={`task-bar__activity ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
