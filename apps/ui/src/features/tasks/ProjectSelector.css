@@ -53,7 +53,8 @@
 }
 
 .project-selector__list:focus {
-  outline: none;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
 }
 
 .project-selector__group--end {

@@ -149,7 +149,8 @@ export function ProjectSelector({
     }
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
     if (event.nativeEvent.isComposing) return;
     if (event.key === 'ArrowDown' && rows.length > 0) {
       event.preventDefault();
@@ -207,7 +208,16 @@ export function ProjectSelector({
           aria-activedescendant={rows[highlighted] ? `project-option-${rows[highlighted].id}` : undefined}
         />
       </label>
-      <div id="project-selector-list" className="project-selector__list" ref={listRef} role="listbox" aria-label="Projects" tabIndex={-1}>
+      <div
+        id="project-selector-list"
+        className="project-selector__list"
+        ref={listRef}
+        role="listbox"
+        aria-label="Projects"
+        aria-activedescendant={rows[highlighted] ? `project-option-${rows[highlighted].id}` : undefined}
+        tabIndex={-1}
+        onKeyDown={onKeyDown}
+      >
         {showEmpty ? (
           <p className="project-selector__empty">{emptyMessage}</p>
         ) : groups.map((group) => (
