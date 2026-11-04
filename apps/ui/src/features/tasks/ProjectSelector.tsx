@@ -178,7 +178,18 @@ export function ProjectSelector({
   const groups = groupedRows(rows, sections);
 
   return (
-    <Modal open onOpenChange={(open) => { if (!open) onClose(); }} title="Projects" className="project-selector">
+    <Modal
+      open
+      onOpenChange={(open) => { if (!open) onClose(); }}
+      onOpenAutoFocus={(event) => {
+        if (!isDesktop) {
+          event.preventDefault();
+          listRef.current?.focus();
+        }
+      }}
+      title="Projects"
+      className="project-selector"
+    >
       <p className="project-selector__lede">
         Add a project to <strong>{taskName}</strong>, or clear them all.
       </p>
@@ -196,7 +207,7 @@ export function ProjectSelector({
           aria-activedescendant={rows[highlighted] ? `project-option-${rows[highlighted].id}` : undefined}
         />
       </label>
-      <div id="project-selector-list" className="project-selector__list" ref={listRef} role="listbox" aria-label="Projects">
+      <div id="project-selector-list" className="project-selector__list" ref={listRef} role="listbox" aria-label="Projects" tabIndex={-1}>
         {showEmpty ? (
           <p className="project-selector__empty">{emptyMessage}</p>
         ) : groups.map((group) => (
