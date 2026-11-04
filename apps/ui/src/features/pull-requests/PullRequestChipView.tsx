@@ -47,7 +47,8 @@ export function PullRequestChipView({ refInfo: ref, url, pullRequest, failed = f
     <span className={`pr-chip pr-chip--${variant}`} data-look={look} onClick={(event) => event.stopPropagation()}>
       <Popover
         triggerClassName="pr-chip__trigger"
-        triggerLabel={`${pullRequestLabel(ref)}: ${summary}`}
+        triggerLabel={`${pullRequestLabel(ref)}: ${summary}. Open on GitHub`}
+        triggerHref={url}
         className="pr-card"
         trigger={
           <>
