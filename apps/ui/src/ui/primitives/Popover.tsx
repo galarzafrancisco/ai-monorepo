@@ -10,6 +10,8 @@ export interface PopoverProps {
   triggerLabel?: string;
   className?: string;
   triggerClassName?: string;
+  /** Render the trigger as a link; mouse and keyboard follow it, touch opens the card. */
+  triggerHref?: string;
   children: ReactNode;
 }
 
@@ -26,10 +28,11 @@ const VIEWPORT_MARGIN_PX = 8;
  * Rendered in a portal with fixed positioning so scrolling containers (board
  * columns, sidebars) never clip it.
  */
-export function Popover({ trigger, triggerLabel, className, triggerClassName, children }: PopoverProps) {
+export function Popover({ trigger, triggerLabel, className, triggerClassName, triggerHref, children }: PopoverProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
+  const pointerType = useRef<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const timer = useRef<number | undefined>(undefined);
   const pointerOverCard = useRef(false);
@@ -94,11 +97,16 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
     },
   };
 
+  const Trigger = triggerHref ? 'a' : 'button';
+
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
+      <Trigger
+        ref={(node: HTMLButtonElement | HTMLAnchorElement | null) => { triggerRef.current = node; }}
+        type={triggerHref ? undefined : 'button'}
+        href={triggerHref}
+        target={triggerHref ? '_blank' : undefined}
+        rel={triggerHref ? 'noopener noreferrer' : undefined}
         className={triggerClassName ? `popover__trigger ${triggerClassName}` : 'popover__trigger'}
         aria-label={triggerLabel}
         aria-expanded={open}
@@ -106,10 +114,13 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
         onClick={(event) => {
           // Inside clickable rows and cards the trigger must not also open the row.
           event.stopPropagation();
+          if (triggerHref && pointerType.current !== 'touch' && pointerType.current !== 'pen') return;
           event.preventDefault();
           window.clearTimeout(timer.current);
           setOpen((current) => !current);
         }}
+        onPointerDown={(event) => { pointerType.current = event.pointerType; }}
+        onKeyDown={() => { pointerType.current = null; }}
         onFocus={(event) => {
           if (event.target.matches(':focus-visible')) schedule(true);
         }}
@@ -123,7 +134,7 @@ export function Popover({ trigger, triggerLabel, className, triggerClassName, ch
         {...hoverHandlers}
       >
         {trigger}
-      </button>
+      </Trigger>
       {open
         ? createPortal(
             <div

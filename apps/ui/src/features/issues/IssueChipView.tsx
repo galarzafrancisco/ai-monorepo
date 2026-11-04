@@ -35,7 +35,8 @@ export function IssueChipView({ refInfo: ref, url, issue, failed = false, varian
     <span className={`issue-chip issue-chip--${variant}`} data-look={look} onClick={(event) => event.stopPropagation()}>
       <Popover
         triggerClassName="issue-chip__trigger"
-        triggerLabel={`${issueLabel(ref)}: ${summary}`}
+        triggerLabel={`${issueLabel(ref)}: ${summary}. Open on GitHub`}
+        triggerHref={url}
         className="issue-card"
         trigger={
           <>
