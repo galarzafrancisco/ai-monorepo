@@ -1,6 +1,6 @@
 import { Avatar, DataRow, Text } from "../../ui/primitives";
 import type { TaskSummaryResponseDto } from "@taico/client/v2";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import "../tasks/TaskRow.css";
 import { actorHandle, isDeactivated } from "../actors";
 
@@ -33,7 +33,7 @@ export function ThreadTaskRow({
           src={avatarActor.avatarUrl || undefined}
         />
       }
-      topRight={elapsedTime(task.updatedAt)}
+      topRight={<RelativeTime dateTime={task.updatedAt} />}
       tags={tags}
       highlight={openQuestions > 0}
       onClick={onClick}

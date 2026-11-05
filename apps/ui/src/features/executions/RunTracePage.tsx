@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Avatar, Button, Chip, Text } from "../../ui/primitives";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { isDeactivated, useActorsCtx } from "../actors";
 import { RunTrace } from "../tasks/traces/RunTrace";
@@ -95,7 +95,7 @@ export function RunTracePage() {
             <Text as="div" size="3" weight="semibold" wrap>{entry?.taskName ?? "Run trace"}</Text>
             <Text as="div" size="1" tone="muted">
               {actor?.displayName ?? "Agent"}
-              {run.timestamp ? ` · ${elapsedTime(run.timestamp)}` : ""}
+              {run.timestamp ? <> · <RelativeTime dateTime={run.timestamp} /></> : ""}
               {` · #${run.executionId.slice(0, 6)}`}
             </Text>
           </div>

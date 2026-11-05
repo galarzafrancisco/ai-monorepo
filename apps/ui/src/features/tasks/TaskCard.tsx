@@ -1,6 +1,6 @@
 import { Avatar, BoardCard, BoardCardAnimation } from "../../ui/primitives";
 import { Task } from "./types";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import './TaskCard.css';
 import { actorHandle, isDeactivated } from "../actors";
 import { PullRequestChip, splitArtefactLinks } from "../pull-requests";
@@ -29,7 +29,7 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
   return (
     <BoardCard
       leading={<Avatar name={avatarActor.displayName} inactive={isDeactivated(avatarActor)} size='md' src={avatarActor.avatarUrl || undefined} />}
-      topRight={elapsedTime(task.updatedAt)}
+      topRight={<RelativeTime dateTime={task.updatedAt} />}
       tags={tags}
       tagExtras={pullRequestUrls.length || issueUrls.length ? [
         ...pullRequestUrls.map((url) => <PullRequestChip key={url} url={url} variant="compact" />),

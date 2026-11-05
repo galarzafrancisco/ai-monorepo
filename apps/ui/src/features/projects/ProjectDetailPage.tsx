@@ -4,7 +4,7 @@ import { ArrowLeft, ExternalLink, FolderGit2, KanbanSquare } from 'lucide-react'
 import { Avatar, Button, Card, Chip, DataRow, DataRowContainer, ErrorText, Row, Stack, Text } from '../../ui/primitives';
 import type { DataRowTag } from '../../ui/primitives';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
-import { elapsedTime } from '../../shared/helpers/elapsedTime';
+import { RelativeTime } from '../../shared/components/RelativeTime';
 import { TaskStatus, TASKS_STATUS } from '../../shared/const/taskStatus';
 import { storeSelectedProjectId } from '../tasks/selectedProject';
 import { TagSearchPop } from '../tasks/TagSearchPop';
@@ -153,7 +153,7 @@ export function ProjectDetailPage() {
           <Text size="5" weight="bold">{project.slug}</Text>
           <Row spacing="2">
             <Chip color="gray">{project.tagName}</Chip>
-            <Text size="1" tone="muted" as="span">Updated {elapsedTime(project.updatedAt)}</Text>
+             <Text size="1" tone="muted" as="span">Updated <RelativeTime dateTime={project.updatedAt} /></Text>
           </Row>
         </Stack>
       </div>
@@ -200,7 +200,7 @@ export function ProjectDetailPage() {
                 <DataRow
                   key={task.id}
                   leading={<Avatar name={task.assigneeActor?.displayName ?? task.assignee ?? '?'} src={task.assigneeActor?.avatarUrl ?? undefined} size="md" />}
-                  topRight={elapsedTime(task.updatedAt)}
+                  topRight={<RelativeTime dateTime={task.updatedAt} />}
                   tags={[{ label: TASKS_STATUS[task.status].label, color: STATUS_CHIP[task.status] }]}
                   onClick={() => navigate(`/tasks/task/${task.id}`)}
                 >

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Avatar, DataRow, Text, DataRowAnimation, DataRowTag } from "../../ui/primitives";
 import { Task } from "./types";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import './TaskRow.css';
 import { actorHandle, isDeactivated } from "../actors";
 import { PullRequestChip, splitArtefactLinks } from "../pull-requests";
@@ -45,7 +45,7 @@ export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: 
   return (
     <DataRow
       leading={<Avatar name={avatarActor.displayName} inactive={isDeactivated(avatarActor)} size='lg' src={avatarActor.avatarUrl || undefined}/>}
-      topRight={elapsedTime(task.updatedAt)}
+      topRight={<RelativeTime dateTime={task.updatedAt} />}
       tags={tags}
       tagExtras={pullRequestUrls.length || issueUrls.length ? [
         ...pullRequestUrls.map((url) => <PullRequestChip key={url} url={url} variant="compact" />),

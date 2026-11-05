@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import type { TaskSearchResultDto } from '@taico/client/v2';
 import { Search } from 'lucide-react';
 import { Avatar, Modal } from '../../ui/primitives';
-import { elapsedTime } from '../../shared/helpers/elapsedTime';
+import { RelativeTime } from '../../shared/components/RelativeTime';
 import { TasksService } from './api';
 import { TASKS_STATUS } from './const';
 import { blockedDependencyIds, idPrefixFromQuery, projectName, suggestDependencies } from './dependencySuggestions';
@@ -300,7 +300,7 @@ function DependencyOption({ row, index, query, highlighted, busy, disabled, onHo
             </span>
           ) : row.task ? <span>Unassigned</span> : null}
           {project && <span>{project}</span>}
-          {row.task && <span>updated {elapsedTime(row.task.updatedAt)}</span>}
+           {row.task && <span>updated <RelativeTime dateTime={row.task.updatedAt} /></span>}
           {row.reasons.map((reason) => <span key={reason} className="dependency-option__reason">{reason}</span>)}
         </span>
         {matchLabel && row.match?.excerpt ? (
