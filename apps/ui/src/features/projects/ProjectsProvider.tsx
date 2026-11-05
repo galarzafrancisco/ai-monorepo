@@ -11,12 +11,13 @@ export type ProjectsContextValue = {
   loadProjects: () => Promise<void>;
   createProject: (input: CreateProjectInput) => Promise<Project>;
   updateProject: (projectId: string, input: UpdateProjectInput) => Promise<Project>;
+  deleteProject: (projectId: string) => Promise<void>;
 };
 
 const ProjectsContext = createContext<ProjectsContextValue | null>(null);
 
 export function ProjectsProvider({ children }: { children: React.ReactNode }) {
-  const { projects, isLoading, error, loadProjects, createProject, updateProject } = useProjects();
+  const { projects, isLoading, error, loadProjects, createProject, updateProject, deleteProject } = useProjects();
   const [sectionTitle, setSectionTitle] = useState('Projects');
 
   const value = useMemo<ProjectsContextValue>(() => ({
@@ -28,7 +29,8 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
     loadProjects,
     createProject,
     updateProject,
-  }), [projects, isLoading, error, sectionTitle, loadProjects, createProject, updateProject]);
+    deleteProject,
+  }), [projects, isLoading, error, sectionTitle, loadProjects, createProject, updateProject, deleteProject]);
 
   return <ProjectsContext.Provider value={value}>{children}</ProjectsContext.Provider>;
 }

@@ -48,6 +48,12 @@ export const useProjects = () => {
     return project;
   }, []);
 
+  /** Deletes a project. Throws on failure so the confirmation can show the reason. */
+  const deleteProject = useCallback(async (projectId: string): Promise<void> => {
+    await ProjectsService.ProjectsController_deleteProject({ projectId });
+    setProjects((prev) => prev.filter((p) => p.id !== projectId));
+  }, []);
+
   return {
     projects,
     isLoading,
@@ -55,5 +61,6 @@ export const useProjects = () => {
     loadProjects,
     createProject,
     updateProject,
+    deleteProject,
   };
 };
