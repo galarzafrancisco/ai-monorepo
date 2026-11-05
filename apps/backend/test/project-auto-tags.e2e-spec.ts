@@ -410,4 +410,34 @@ describe('Project automatic task tags', () => {
       ),
     ).toHaveLength(1);
   });
+  it('deletes a project over HTTP, keeping its tasks and freeing the slug', async () => {
+    const cookies = await getAuthCookies(app.getHttpServer());
+    const project = await projects.createProject({ slug: 'http-delete' });
+    const task = await tasks.createTask({
+      name: 'Outlives its project',
+      description: 'HTTP deletion test',
+      createdByActorId: actorId,
+      tagNames: [project.tagName],
+    });
+
+    await request(app.getHttpServer())
+      .delete(`/api/v1/meta/projects/${project.id}`)
+      .set('Cookie', cookies)
+      .expect(204);
+
+    await request(app.getHttpServer())
+      .get(`/api/v1/meta/projects/${project.id}`)
+      .set('Cookie', cookies)
+      .expect(404);
+    const kept = await tasks.getTaskById(task.id);
+    expect(kept.tags.map((tag) => tag.name)).not.toContain(project.tagName);
+
+    // The slug can be reused once the project is gone.
+    const recreated = await request(app.getHttpServer())
+      .post('/api/v1/meta/projects')
+      .set('Cookie', cookies)
+      .send({ slug: 'http-delete' })
+      .expect(201);
+    expect(recreated.body.id).not.toBe(project.id);
+  });
 });

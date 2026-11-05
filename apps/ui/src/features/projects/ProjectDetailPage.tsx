@@ -14,6 +14,7 @@ import { useProjectsCtx } from './ProjectsProvider';
 import { errorDetail } from './useProjects';
 import { toRepoLink } from './repoLink';
 import { ProjectGithubCard } from './ProjectGithubCard';
+import { ProjectDeleteCard } from './ProjectDeleteCard';
 import type { Project, ProjectTask } from './types';
 import '../../auth/LoginPage.css';
 import './ProjectsPage.css';
@@ -41,7 +42,7 @@ const STATUS_CHIP: Record<ProjectTask['status'], DataRowTag['color']> = {
 export function ProjectDetailPage() {
   const { projectId = '' } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { projects, updateProject, setSectionTitle } = useProjectsCtx();
+  const { projects, updateProject, deleteProject, setSectionTitle } = useProjectsCtx();
 
   const cached = projects.find((p) => p.id === projectId) ?? null;
   const [fetched, setFetched] = useState<Project | null>(null);
@@ -214,6 +215,12 @@ export function ProjectDetailPage() {
           <ProjectSettingsCard project={project} onSave={updateProject} onSaved={handleSaved} />
           <ProjectAutoTagsCard project={project} onSave={updateProject} onSaved={handleSaved} />
           <ProjectGithubCard project={project} onSave={updateProject} onSaved={handleSaved} />
+          <ProjectDeleteCard
+            project={project}
+            taskCount={tasksLoading || tasksError ? null : taskTotal}
+            onDelete={deleteProject}
+            onDeleted={() => navigate('/projects', { replace: true })}
+          />
         </Stack>
       </div>
     </div>
