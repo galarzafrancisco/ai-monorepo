@@ -61,4 +61,49 @@ describe('ProjectDeleteCard', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(confirmButton().disabled).toBe(false);
   });
+
+  it('closes on Escape and outside click when idle', async () => {
+    render(<ProjectDeleteCard project={project} taskCount={1} onDelete={vi.fn()} onDeleted={vi.fn()} />);
+
+    openDialog();
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    openDialog();
+    await pressOutside();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('cannot be dismissed while the delete is in flight, so it is never sent twice', async () => {
+    let reject!: (reason: unknown) => void;
+    const onDelete = vi.fn(() => new Promise<void>((_, r) => { reject = r; }));
+    const onDeleted = vi.fn();
+    render(<ProjectDeleteCard project={project} taskCount={1} onDelete={onDelete} onDeleted={onDeleted} />);
+
+    const input = openDialog();
+    fireEvent.change(input, { target: { value: 'acme' } });
+    fireEvent.click(confirmButton());
+    await screen.findByText('Deleting...');
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await pressOutside();
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByText('Deleting...')).toBeTruthy();
+    expect(onDelete).toHaveBeenCalledTimes(1);
+
+    // The first request's failure still reaches the (still mounted) dialog.
+    reject({ body: { detail: 'Insufficient scope' } });
+    expect(await screen.findByText('Insufficient scope')).toBeTruthy();
+    expect(onDeleted).not.toHaveBeenCalled();
+
+    // Once idle again, the dialog can be dismissed.
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
 });
+
+/** Radix registers its outside-pointer listener on the next tick after opening. */
+async function pressOutside() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  fireEvent.pointerDown(document.body);
+}

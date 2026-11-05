@@ -19,6 +19,14 @@ export function ProjectDeleteCard({ project, taskCount, onDelete, onDeleted }: {
   onDeleted: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Lives here, not in the form: while a delete is in flight the dialog must
+  // not close (Escape, outside click), or a reopen would allow a second DELETE
+  // and the first request's outcome would land on an unmounted form.
+  const [isDeleting, setIsDeleting] = useState(false);
+  const handleOpenChange = (next: boolean) => {
+    if (!next && isDeleting) return;
+    setOpen(next);
+  };
 
   return (
     <Card padding="4">
@@ -34,13 +42,15 @@ export function ProjectDeleteCard({ project, taskCount, onDelete, onDeleted }: {
           </Button>
         </Row>
       </Stack>
-      <Modal open={open} onOpenChange={setOpen} title={`Delete ${project.slug}?`}>
+      <Modal open={open} onOpenChange={handleOpenChange} title={`Delete ${project.slug}?`}>
         {/* Remounted each time it opens, so the confirmation starts empty. */}
         {open ? (
           <DeleteProjectForm
             project={project}
             taskCount={taskCount}
-            onCancel={() => setOpen(false)}
+            isDeleting={isDeleting}
+            setIsDeleting={setIsDeleting}
+            onCancel={() => handleOpenChange(false)}
             onDelete={onDelete}
             onDeleted={() => {
               setOpen(false);
@@ -53,15 +63,16 @@ export function ProjectDeleteCard({ project, taskCount, onDelete, onDeleted }: {
   );
 }
 
-function DeleteProjectForm({ project, taskCount, onCancel, onDelete, onDeleted }: {
+function DeleteProjectForm({ project, taskCount, isDeleting, setIsDeleting, onCancel, onDelete, onDeleted }: {
   project: Project;
   taskCount: number | null;
+  isDeleting: boolean;
+  setIsDeleting: (isDeleting: boolean) => void;
   onCancel: () => void;
   onDelete: (projectId: string) => Promise<void>;
   onDeleted: () => void;
 }) {
   const [confirmation, setConfirmation] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   const confirmed = confirmation.trim() === project.slug;
 
@@ -74,6 +85,7 @@ function DeleteProjectForm({ project, taskCount, onCancel, onDelete, onDeleted }
       await onDelete(project.id);
       // Don't leave the Tasks board filtered to a project that no longer exists.
       if (readStoredSelectedProjectId() === project.id) storeSelectedProjectId(null);
+      setIsDeleting(false);
       onDeleted();
     } catch (err) {
       setError(errorDetail(err, 'Failed to delete project'));
