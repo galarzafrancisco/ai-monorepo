@@ -59,6 +59,7 @@ export class McpRegistryController {
   // Server endpoints
 
   @Post('servers')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Register a new MCP server' })
   @ApiResponse({
     status: 201,

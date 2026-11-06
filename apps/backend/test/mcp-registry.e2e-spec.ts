@@ -9,10 +9,16 @@ import { CreateMappingDto } from '../src/mcp-registry/dto/create-mapping.dto';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import cookieParser from 'cookie-parser';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ActorEntity } from '../src/identity-provider/actor.entity';
+import { IssuedAccessTokenService } from '../src/authorization-server/issued-access-token.service';
+import { McpRegistryScopes } from '../src/mcp-registry/mcp-registry.scopes';
 
 describe('Tools (e2e)', () => {
   let app: INestApplication;
   let authCookies: string;
+  let testUserActorId: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -36,7 +42,7 @@ describe('Tools (e2e)', () => {
     await app.init();
 
     // Setup authentication
-    await ensureTestUser(app);
+    testUserActorId = await ensureTestUser(app);
     authCookies = await getAuthCookies(app.getHttpServer());
   });
 
@@ -147,6 +153,71 @@ describe('Tools (e2e)', () => {
         .expect(200);
 
       expect(response.body.providedId).toBe(createDto.providedId);
+    });
+  });
+
+  describe('Server Creation Scopes', () => {
+    async function bearerTokenWithScopes(scopes: string[]): Promise<string> {
+      const actorRepository = app.get<Repository<ActorEntity>>(
+        getRepositoryToken(ActorEntity),
+      );
+      const actor = await actorRepository.findOneOrFail({
+        where: { id: testUserActorId },
+      });
+      const actorInfo = {
+        id: actor.id,
+        slug: actor.slug,
+        type: actor.type,
+        displayName: actor.displayName,
+      };
+      const issued = await app.get(IssuedAccessTokenService).issueSystemToken({
+        subjectActor: actorInfo,
+        issuedByActor: actorInfo,
+        scopes,
+      });
+      return issued.token;
+    }
+
+    function serverDto(): CreateServerDto {
+      return {
+        providedId: `scoped-server-${Math.random()}`,
+        name: 'Scoped Server',
+        description: 'Server created to check registry scopes',
+        type: 'http',
+        url: 'http://localhost:3000/test/mcp',
+      };
+    }
+
+    it('rejects server creation with a read-only token', async () => {
+      const token = await bearerTokenWithScopes([McpRegistryScopes.READ.id]);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Authorization', `Bearer ${token}`)
+        .send(serverDto())
+        .expect(403);
+
+      // The same token can still read the registry.
+      await request(app.getHttpServer())
+        .get('/api/v1/mcp/servers')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+    });
+
+    it('allows server creation with an mcp-registry:write token', async () => {
+      const token = await bearerTokenWithScopes([
+        McpRegistryScopes.READ.id,
+        McpRegistryScopes.WRITE.id,
+      ]);
+      const dto = serverDto();
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Authorization', `Bearer ${token}`)
+        .send(dto)
+        .expect(201);
+
+      expect(response.body.providedId).toBe(dto.providedId);
     });
   });
 
