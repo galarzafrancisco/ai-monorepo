@@ -12047,6 +12047,11 @@
             "description": "Unique identifier for the task",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "url": {
+            "type": "string",
+            "description": "Address of the task in the Taico web app. Use it to link to the task.",
+            "example": "https://taico.example.com/tasks/task/123e4567-e89b-12d3-a456-426614174000"
+          },
           "name": {
             "type": "string",
             "description": "Name of the task",
@@ -12150,6 +12155,7 @@
         },
         "required": [
           "id",
+          "url",
           "name",
           "description",
           "status",
@@ -12290,6 +12296,11 @@
             "description": "Task ID",
             "example": "ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
           },
+          "url": {
+            "type": "string",
+            "description": "Address of the task in the Taico web app. Use it to link to the task.",
+            "example": "https://taico.example.com/tasks/task/123e4567-e89b-12d3-a456-426614174000"
+          },
           "name": {
             "type": "string",
             "description": "Task name/title",
@@ -12353,6 +12364,7 @@
         },
         "required": [
           "id",
+          "url",
           "name",
           "score",
           "matchedBy",
@@ -15080,6 +15092,11 @@
             "description": "Unique identifier for the block",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "url": {
+            "type": "string",
+            "description": "Address of the context block in the Taico web app. Use it to link to the block.",
+            "example": "https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000"
+          },
           "title": {
             "type": "string",
             "description": "Title of the context block",
@@ -15142,6 +15159,7 @@
         },
         "required": [
           "id",
+          "url",
           "title",
           "content",
           "createdByActorId",
@@ -15160,6 +15178,11 @@
             "type": "string",
             "description": "Unique identifier for the block",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "url": {
+            "type": "string",
+            "description": "Address of the context block in the Taico web app. Use it to link to the block.",
+            "example": "https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000"
           },
           "title": {
             "type": "string",
@@ -15218,6 +15241,7 @@
         },
         "required": [
           "id",
+          "url",
           "title",
           "createdByActorId",
           "createdBy",
@@ -15250,6 +15274,11 @@
             "type": "string",
             "description": "Block ID",
             "example": "ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
+          },
+          "url": {
+            "type": "string",
+            "description": "Address of the context block in the Taico web app. Use it to link to the block.",
+            "example": "https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000"
           },
           "title": {
             "type": "string",
@@ -15296,6 +15325,7 @@
         },
         "required": [
           "id",
+          "url",
           "title",
           "score",
           "matchedBy",
@@ -16600,6 +16630,11 @@
               ]
             }
           },
+          "capabilities": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -16615,6 +16650,7 @@
           "workerVersion",
           "lastSeenAt",
           "harnesses",
+          "capabilities",
           "createdAt",
           "updatedAt"
         ]

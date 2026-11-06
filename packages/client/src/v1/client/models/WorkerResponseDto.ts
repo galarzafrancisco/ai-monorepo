@@ -8,6 +8,7 @@ export type WorkerResponseDto = {
     workerVersion: string | null;
     lastSeenAt: string;
     harnesses: Array<'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other'>;
+    capabilities: Record<string, any> | null;
     createdAt: string;
     updatedAt: string;
 };

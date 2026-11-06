@@ -4787,6 +4787,11 @@ export interface components {
              */
             id: string;
             /**
+             * @description Address of the task in the Taico web app. Use it to link to the task.
+             * @example https://taico.example.com/tasks/task/123e4567-e89b-12d3-a456-426614174000
+             */
+            url: string;
+            /**
              * @description Name of the task
              * @example Implement user authentication
              */
@@ -4933,6 +4938,11 @@ export interface components {
              * @example ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
              */
             id: string;
+            /**
+             * @description Address of the task in the Taico web app. Use it to link to the task.
+             * @example https://taico.example.com/tasks/task/123e4567-e89b-12d3-a456-426614174000
+             */
+            url: string;
             /**
              * @description Task name/title
              * @example Implement authentication system
@@ -6612,6 +6622,11 @@ export interface components {
              */
             id: string;
             /**
+             * @description Address of the context block in the Taico web app. Use it to link to the block.
+             * @example https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000
+             */
+            url: string;
+            /**
              * @description Title of the context block
              * @example How to onboard new agents
              */
@@ -6673,6 +6688,11 @@ export interface components {
              */
             id: string;
             /**
+             * @description Address of the context block in the Taico web app. Use it to link to the block.
+             * @example https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000
+             */
+            url: string;
+            /**
              * @description Title of the context block
              * @example How to onboard new agents
              */
@@ -6732,6 +6752,11 @@ export interface components {
              * @example ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
              */
             id: string;
+            /**
+             * @description Address of the context block in the Taico web app. Use it to link to the block.
+             * @example https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000
+             */
+            url: string;
             /**
              * @description Block title
              * @example Authentication Guide
@@ -7486,6 +7511,9 @@ export interface components {
             /** Format: date-time */
             lastSeenAt: string;
             harnesses: ("claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other")[];
+            capabilities: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */

@@ -586,6 +586,7 @@ export interface TagResponseDto {
 
 export interface TaskResponseDto {
   id: string;
+  url: string;
   name: string;
   description: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
@@ -630,6 +631,7 @@ export type SearchMatchField = 'title' | 'content' | 'comment';
 
 export interface TaskSearchResultDto {
   id: string;
+  url: string;
   name: string;
   status?: string | null;
   score: number;
@@ -1160,6 +1162,7 @@ export interface ContextTagResponseDto {
 
 export interface BlockResponseDto {
   id: string;
+  url: string;
   title: string;
   content: string;
   createdByActorId: string;
@@ -1173,6 +1176,7 @@ export interface BlockResponseDto {
 
 export interface BlockSummaryDto {
   id: string;
+  url: string;
   title: string;
   createdByActorId: string;
   createdBy: string | null;
@@ -1189,6 +1193,7 @@ export interface BlockListResponseDto {
 
 export interface BlockSearchResultDto {
   id: string;
+  url: string;
   title: string;
   score: number;
   matchedBy: SearchStrategy[];
@@ -1448,6 +1453,7 @@ export interface WorkerResponseDto {
   workerVersion: string | null;
   lastSeenAt: string;
   harnesses: ('claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other')[];
+  capabilities: Record<string, any> | null;
   createdAt: string;
   updatedAt: string;
 }

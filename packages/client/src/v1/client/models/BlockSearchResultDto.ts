@@ -10,6 +10,10 @@ export type BlockSearchResultDto = {
      */
     id: string;
     /**
+     * Address of the context block in the Taico web app. Use it to link to the block.
+     */
+    url: string;
+    /**
      * Block title
      */
     title: string;
