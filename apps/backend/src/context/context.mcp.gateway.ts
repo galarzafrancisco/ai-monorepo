@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ContextService } from './context.service';
+import { ContextScopes } from './context.scopes';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod/v3';
@@ -37,6 +38,13 @@ export class ContextMcpGateway {
       version: getConfig().appVersion,
     });
 
+    // The MCP route only requires `mcp:use`, so the context scopes are
+    // enforced here: a tool is only exposed when the token holds the scope
+    // the equivalent REST endpoint requires.
+    const canRead = authContext.scopes.includes(ContextScopes.READ.id);
+    const canWrite = authContext.scopes.includes(ContextScopes.WRITE.id);
+
+    canRead &&
     server.registerTool(
       'list_blocks',
       {
@@ -61,6 +69,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'list_blocks_filtered',
       {
@@ -101,6 +110,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'search_blocks',
       {
@@ -132,6 +142,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'get_thread_state_memory',
       {
@@ -162,6 +173,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'attach_block_to_thread',
       {
@@ -185,6 +197,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'detach_block_from_thread',
       {
@@ -208,6 +221,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'get_block',
       {
@@ -232,6 +246,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'create_block',
       {
@@ -264,6 +279,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'update_block',
       {
@@ -320,6 +336,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'append_block',
       {
@@ -347,6 +364,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'delete_block',
       {
@@ -370,6 +388,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'add_tag_to_block',
       {
@@ -399,6 +418,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canWrite &&
     server.registerTool(
       'remove_tag_from_block',
       {
@@ -423,6 +443,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'get_all_tags',
       {
@@ -443,6 +464,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'get_child_blocks',
       {
@@ -467,6 +489,7 @@ export class ContextMcpGateway {
       },
     );
 
+    canRead &&
     server.registerTool(
       'get_block_tree',
       {
