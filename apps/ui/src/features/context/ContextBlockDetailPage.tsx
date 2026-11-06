@@ -10,6 +10,7 @@ import { RelativeTime } from '../../shared/components/RelativeTime';
 import { useToast } from '../../shared/context/ToastContext';
 import './ContextBlockDetailPage.css';
 import Markdown from 'marked-react';
+import { pullRequestMarkdownRenderer } from '../pull-requests';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -218,7 +219,7 @@ export function ContextBlockDetailPage() {
       </Stack>
 
       <div className="context-block-detail__content">
-        <Markdown>
+        <Markdown renderer={pullRequestMarkdownRenderer}>
           {block.content}
         </Markdown>
       </div>

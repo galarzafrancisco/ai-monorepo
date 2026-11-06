@@ -3,11 +3,14 @@ import { PullRequestChip } from './PullRequestChip';
 import { IssueChip } from '../issues/IssueChip';
 import { parseIssueUrl } from '../issues/issueLinks';
 import { parsePullRequestUrl, splitLinks } from './pullRequestLinks';
+import { TaicoLinkChip } from '../taico-links/TaicoLinkChip';
+import { parseTaicoUrl } from '../taico-links/taicoLinks';
 import './LinkifiedText.css';
 
 /**
  * Plain text with its links made clickable. Links to GitHub pull requests and
- * issues are drawn as live chips.
+ * issues are drawn as live chips, and links to tasks and context blocks in
+ * this Taico show their names.
  */
 export function LinkifiedText({ text }: { text: string }) {
   return (
@@ -19,6 +22,9 @@ export function LinkifiedText({ text }: { text: string }) {
         }
         if (parseIssueUrl(segment.url)) {
           return <IssueChip key={index} url={segment.url} variant="inline" />;
+        }
+        if (parseTaicoUrl(segment.url)) {
+          return <TaicoLinkChip key={index} url={segment.url} />;
         }
         return (
           <a
