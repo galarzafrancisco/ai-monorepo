@@ -8,6 +8,7 @@ import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto
 import { TaskEntity } from '../task.entity';
 import { ActorType } from '../../identity-provider/enums/actor-type.enum';
 import { TaskResult } from './service/tasks.service.types';
+import { taskUrl } from '../../config/app-links';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -15,6 +16,12 @@ export class TaskResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
+
+  @ApiProperty({
+    description: 'Address of the task in the Taico web app. Use it to link to the task.',
+    example: 'https://taico.example.com/tasks/task/123e4567-e89b-12d3-a456-426614174000',
+  })
+  url!: string;
 
   @ApiProperty({
     description: 'Name of the task',
@@ -113,6 +120,7 @@ export class TaskResponseDto {
   static fromEntity(task: TaskEntity): TaskResponseDto {
     return {
       id: task.id,
+      url: taskUrl(task.id),
       name: task.name,
       description: task.description,
       status: task.status,
@@ -152,6 +160,7 @@ export class TaskResponseDto {
   static fromResult(result: TaskResult): TaskResponseDto {
     return {
       id: result.id,
+      url: taskUrl(result.id),
       name: result.name,
       description: result.description,
       status: result.status,

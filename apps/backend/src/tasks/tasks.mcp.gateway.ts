@@ -14,6 +14,7 @@ import { ActorService } from 'src/identity-provider/actor.service';
 import { MetaService } from 'src/meta/meta.service';
 import { ThreadsService } from 'src/threads/threads.service';
 import { getConfig } from 'src/config/env.config';
+import { taskUrl, withTaskUrl } from 'src/config/app-links';
 
 @Injectable()
 export class TasksMcpGateway {
@@ -74,6 +75,7 @@ export class TasksMcpGateway {
                     assignee: t.assignee,
                     status: t.status,
                     id: t.id,
+                    url: taskUrl(t.id),
                   };
                 }),
               ),
@@ -99,6 +101,7 @@ export class TasksMcpGateway {
         const tasks = thread.tasks.map((task) => {
           const result = {
             id: task.id,
+            url: taskUrl(task.id),
             name: task.name,
             status: task.status
           }
@@ -208,6 +211,7 @@ export class TasksMcpGateway {
                     assignee: t.assignee,
                     status: t.status,
                     id: t.id,
+                    url: taskUrl(t.id),
                   };
                 }),
               ),
@@ -221,7 +225,8 @@ export class TasksMcpGateway {
       'fetch',
       {
         title: 'Get task details',
-        description: 'Retrieve full details of a task by ID',
+        description:
+          'Retrieve full details of a task by ID. `url` is the task\'s page in Taico: use it to link to the task.',
         annotations: readOnlyAnnotations,
         inputSchema: {
           taskId: z.string(),
@@ -233,7 +238,7 @@ export class TasksMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(task),
+              text: JSON.stringify(withTaskUrl(task)),
             },
           ],
         };
@@ -264,7 +269,7 @@ export class TasksMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(results),
+              text: JSON.stringify(results.map(withTaskUrl)),
             },
           ],
         };
@@ -346,7 +351,7 @@ export class TasksMcpGateway {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(task),
+                text: JSON.stringify(withTaskUrl(task)),
               },
             ],
           };

@@ -35,6 +35,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ContextService } from './context.service';
 import { CreateBlockDto } from './dto/create-block.dto';
 import { BlockResponseDto } from './dto/block-response.dto';
+import { contextBlockUrl } from '../config/app-links';
 import { BlockListResponseDto } from './dto/block-list-response.dto';
 import { BlockSummaryDto } from './dto/block-summary.dto';
 import { BlockParamsDto } from './dto/block-params.dto';
@@ -130,6 +131,7 @@ export class ContextController {
 
     return results.map((result) => ({
       id: result.id,
+      url: contextBlockUrl(result.id),
       title: result.title,
       score: result.score,
       matchedBy: result.matchedBy,
@@ -389,6 +391,7 @@ export class ContextController {
   private mapToResponse(result: BlockResult): BlockResponseDto {
     return {
       id: result.id,
+      url: contextBlockUrl(result.id),
       title: result.title,
       content: result.content,
       createdByActorId: result.createdByActorId,
@@ -404,6 +407,7 @@ export class ContextController {
   private mapToSummary(result: BlockSummaryResult): BlockSummaryDto {
     return {
       id: result.id,
+      url: contextBlockUrl(result.id),
       title: result.title,
       createdByActorId: result.createdByActorId,
       createdBy: result.createdBy,

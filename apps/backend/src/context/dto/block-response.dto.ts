@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ContextTagResponseDto } from './wiki-tag-response.dto';
 import { ContextBlockEntity } from '../block.entity';
+import { contextBlockUrl } from '../../config/app-links';
 
 export class BlockResponseDto {
   @ApiProperty({
@@ -8,6 +9,12 @@ export class BlockResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
+
+  @ApiProperty({
+    description: 'Address of the context block in the Taico web app. Use it to link to the block.',
+    example: 'https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000',
+  })
+  url!: string;
 
   @ApiProperty({
     description: 'Title of the context block',
@@ -83,6 +90,7 @@ export class BlockResponseDto {
   static fromEntity(block: ContextBlockEntity): BlockResponseDto {
     const dto = new BlockResponseDto();
     dto.id = block.id;
+    dto.url = contextBlockUrl(block.id);
     dto.title = block.title;
     dto.content = block.content;
     dto.createdByActorId = block.createdByActorId;

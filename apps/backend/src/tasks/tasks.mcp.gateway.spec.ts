@@ -18,7 +18,7 @@ jest.mock('src/threads/threads.service', () => ({
 }));
 
 jest.mock('src/config/env.config', () => ({
-  getConfig: () => ({ appVersion: 'test' }),
+  getConfig: () => ({ appVersion: 'test', issuerUrl: 'http://taico.test' }),
 }));
 
 jest.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
@@ -95,10 +95,15 @@ describe('TasksMcpGateway', () => {
       'execution-1',
     );
 
-    await server.tools.create_task.handler({
+    const result = await server.tools.create_task.handler({
       name: 'Task with tags',
       description: 'Created through MCP',
       tagNames: ['code'],
+    });
+
+    expect(JSON.parse(result.content[0].text)).toEqual({
+      id: 'task-1',
+      url: 'http://taico.test/tasks/task/task-1',
     });
 
     expect(tasksService.createTaskInThread).toHaveBeenCalledWith({
