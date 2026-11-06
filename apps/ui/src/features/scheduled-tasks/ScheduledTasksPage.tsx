@@ -91,6 +91,8 @@ export function ScheduledTasksPage() {
   const blueprintTasks = useMemo<Task[]>(() => (
     blueprints.map((blueprint) => ({
       id: blueprint.id,
+      // Shown as a task, but it is a blueprint: link to its own page.
+      url: `${window.location.origin}/tasks/blueprints/${blueprint.id}`,
       name: blueprint.name,
       description: blueprint.description,
       status: TaskStatus.NOT_STARTED,

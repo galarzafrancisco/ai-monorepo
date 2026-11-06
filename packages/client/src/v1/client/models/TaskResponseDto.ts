@@ -13,6 +13,10 @@ export type TaskResponseDto = {
      */
     id: string;
     /**
+     * Address of the task in the Taico web app. Use it to link to the task.
+     */
+    url: string;
+    /**
      * Name of the task
      */
     name: string;

@@ -33,6 +33,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateArtefactDto } from './dto/create-artefact.dto';
 import { ChangeTaskStatusDto } from './dto/change-task-status.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
+import { taskUrl } from '../config/app-links';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { ArtefactResponseDto } from './dto/artefact-response.dto';
 import { InputRequestResponseDto } from './dto/input-request-response.dto';
@@ -244,6 +245,7 @@ export class TasksController {
 
     return results.map((result) => ({
       id: result.id,
+      url: taskUrl(result.id),
       name: result.name,
       status: result.status,
       score: result.score,

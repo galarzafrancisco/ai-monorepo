@@ -9,6 +9,10 @@ export type BlockResponseDto = {
      */
     id: string;
     /**
+     * Address of the context block in the Taico web app. Use it to link to the block.
+     */
+    url: string;
+    /**
      * Title of the context block
      */
     title: string;

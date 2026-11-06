@@ -9,6 +9,12 @@ export class BlockSummaryDto {
   id!: string;
 
   @ApiProperty({
+    description: 'Address of the context block in the Taico web app. Use it to link to the block.',
+    example: 'https://taico.example.com/context/block/123e4567-e89b-12d3-a456-426614174000',
+  })
+  url!: string;
+
+  @ApiProperty({
     description: 'Title of the context block',
     example: 'How to onboard new agents',
   })

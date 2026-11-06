@@ -23,6 +23,7 @@ import { ToastProvider } from '../shared/context/ToastContext';
 import { PublicSite } from '../features/marketing/PublicSite';
 import { isPublicPath } from '../features/marketing/publicPaths';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
+import { taicoLinkStore } from '../features/taico-links';
 
 /**
  * Redirects to /walkthrough during render if the user's display mode is FULL_PAGE,
@@ -49,6 +50,19 @@ function WalkthroughGate({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+/**
+ * Tells the task and block link chips who is signed in, so labels looked up
+ * for one account are never shown to the next one in the same tab.
+ */
+function TaicoLinkIdentity() {
+  const { user, isLoading } = useAuth();
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (!isLoading) taicoLinkStore.setIdentity(userId);
+  }, [userId, isLoading]);
+  return null;
 }
 
 function BetaAppRoutes() {
@@ -102,6 +116,7 @@ function AuthenticatedApp() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
+            <TaicoLinkIdentity />
             <ActorsProvider>
               <Routes>
                 <Route path="/onboarding" element={<OnboardingPage />} />

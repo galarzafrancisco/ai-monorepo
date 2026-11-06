@@ -44,7 +44,9 @@ export function useWorkers() {
       setIsLoading(true);
       setError(null);
       const response = await WorkersService.WorkersController_listWorkers();
-      setWorkers(sortWorkers(response));
+      // The spec types capabilities as a free-form object; it has the same shape
+      // as the socket's WorkerCapabilities.
+      setWorkers(sortWorkers(response as Worker[]));
     } catch (err) {
       console.error('Error fetching workers:', err);
       setError(err instanceof Error ? err.message : 'Failed to load workers');

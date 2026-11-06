@@ -3,11 +3,14 @@ import { PullRequestChip } from './PullRequestChip';
 import { parsePullRequestUrl } from './pullRequestLinks';
 import { IssueChip } from '../issues/IssueChip';
 import { parseIssueUrl } from '../issues/issueLinks';
+import { TaicoLinkChip } from '../taico-links/TaicoLinkChip';
+import { parseTaicoUrl } from '../taico-links/taicoLinks';
 
 /**
- * marked-react renderer that draws pull request and issue links as live chips. A link
- * whose text is the URL itself (an autolink) shows owner/repo#n; a link with
- * its own text keeps that text.
+ * marked-react renderer that draws pull request and issue links as live chips,
+ * and links to tasks and context blocks in this Taico with their names. A link
+ * whose text is the URL itself (an autolink) shows owner/repo#n or the name; a
+ * link with its own text keeps that text.
  */
 export const pullRequestMarkdownRenderer = {
   link(this: { elementId: string }, href: string, text: ReactNode) {
@@ -18,6 +21,9 @@ export const pullRequestMarkdownRenderer = {
     }
     if (parseIssueUrl(href)) {
       return <IssueChip key={key} url={href} variant="inline" label={label} />;
+    }
+    if (parseTaicoUrl(href)) {
+      return <TaicoLinkChip key={key} url={href} label={label} />;
     }
     return (
       <a key={key} href={href} target="_blank" rel="noopener noreferrer">

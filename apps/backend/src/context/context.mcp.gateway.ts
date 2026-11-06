@@ -9,6 +9,10 @@ import { MetaService } from 'src/meta/meta.service';
 import { AuthContext, UserContext } from 'src/auth/guards/context/auth-context.types';
 import { ThreadsService } from 'src/threads/threads.service';
 import { getConfig } from 'src/config/env.config';
+import {
+  withContextBlockTreeUrls,
+  withContextBlockUrl,
+} from 'src/config/app-links';
 
 @Injectable()
 export class ContextMcpGateway {
@@ -50,7 +54,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(blocks),
+              text: JSON.stringify(blocks.map(withContextBlockUrl)),
             },
           ],
         };
@@ -90,7 +94,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(blocks),
+              text: JSON.stringify(blocks.map(withContextBlockUrl)),
             },
           ],
         };
@@ -121,7 +125,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(results),
+              text: JSON.stringify(results.map(withContextBlockUrl)),
             },
           ],
         };
@@ -208,7 +212,8 @@ export class ContextMcpGateway {
       'get_block',
       {
         title: 'Get context block',
-        description: 'Retrieve the full content of a context block by ID',
+        description:
+          "Retrieve the full content of a context block by ID. `url` is the block's page in Taico: use it to link to the block.",
         annotations: readOnlyAnnotations,
         inputSchema: {
           blockId: z.string(),
@@ -220,7 +225,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(block),
+              text: JSON.stringify(withContextBlockUrl(block)),
             },
           ],
         };
@@ -252,7 +257,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(block),
+              text: JSON.stringify(withContextBlockUrl(block)),
             },
           ],
         };
@@ -308,7 +313,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(block),
+              text: JSON.stringify(withContextBlockUrl(block)),
             },
           ],
         };
@@ -335,7 +340,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(block),
+              text: JSON.stringify(withContextBlockUrl(block)),
             },
           ],
         };
@@ -455,7 +460,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(children),
+              text: JSON.stringify(children.map(withContextBlockUrl)),
             },
           ],
         };
@@ -476,7 +481,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(tree),
+              text: JSON.stringify(tree.map(withContextBlockTreeUrls)),
             },
           ],
         };

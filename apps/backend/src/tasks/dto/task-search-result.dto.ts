@@ -9,6 +9,12 @@ export class TaskSearchResultDto {
   id!: string;
 
   @ApiProperty({
+    description: 'Address of the task in the Taico web app. Use it to link to the task.',
+    example: 'https://taico.example.com/tasks/task/123e4567-e89b-12d3-a456-426614174000',
+  })
+  url!: string;
+
+  @ApiProperty({
     description: 'Task name/title',
     example: 'Implement authentication system',
   })

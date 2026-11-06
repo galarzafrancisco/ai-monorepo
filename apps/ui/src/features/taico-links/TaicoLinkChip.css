@@ -1,0 +1,41 @@
+/* A task or context block link inside text: underlined name, icon, and a task's status. */
+.taico-link-chip {
+  --taico-link-color: var(--accent);
+  color: var(--taico-link-color);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--taico-link-color) 50%, transparent);
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.taico-link-chip[data-status='IN_PROGRESS'] {
+  --taico-link-color: var(--success);
+}
+
+.taico-link-chip[data-status='FOR_REVIEW'] {
+  --taico-link-color: var(--warning);
+}
+
+.taico-link-chip[data-status='DONE'] {
+  --taico-link-color: var(--pr-merged);
+}
+
+.taico-link-chip[data-missing='true'] {
+  --taico-link-color: var(--text-muted);
+}
+
+.taico-link-chip__icon {
+  margin-right: 2px;
+  vertical-align: -2px;
+}
+
+.taico-link-chip__status {
+  margin-left: var(--space-1);
+  padding: 0 var(--space-1);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--taico-link-color) 14%, transparent);
+  font-size: var(--fs-1);
+  text-decoration: none;
+  display: inline-block;
+}

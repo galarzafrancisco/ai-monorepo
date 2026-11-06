@@ -57,6 +57,7 @@ export const useContext = () => {
           return [
             {
               id: created.id,
+              url: created.url,
               title: created.title,
               createdBy: created.createdBy,
               createdByActorId: created.createdByActorId,
@@ -99,6 +100,7 @@ export const useContext = () => {
             p.id === id
               ? {
                   id: updated.id,
+                  url: updated.url,
                   title: updated.title,
                   createdBy: updated.createdBy,
                   createdByActorId: updated.createdByActorId,
@@ -175,6 +177,7 @@ export const useContext = () => {
             p.id === pageId
               ? {
                   id: updated.id,
+                  url: updated.url,
                   title: updated.title,
                   createdBy: updated.createdBy,
                   createdByActorId: updated.createdByActorId,
@@ -209,6 +212,7 @@ export const useContext = () => {
             p.id === pageId
               ? {
                   id: updated.id,
+                  url: updated.url,
                   title: updated.title,
                   createdBy: updated.createdBy,
                   createdByActorId: updated.createdByActorId,
@@ -256,6 +260,7 @@ export const useContext = () => {
             p.id === pageId
               ? {
                   id: updated.id,
+                  url: updated.url,
                   title: updated.title,
                   createdBy: updated.createdBy,
                   createdByActorId: updated.createdByActorId,
@@ -292,6 +297,7 @@ export const useContext = () => {
             p.id === pageId
               ? {
                   id: updated.id,
+                  url: updated.url,
                   title: updated.title,
                   createdBy: updated.createdBy,
                   createdByActorId: updated.createdByActorId,
@@ -353,6 +359,7 @@ export const useContext = () => {
         return [
           {
             id: page.id,
+            url: page.url,
             title: page.title,
             createdBy: page.createdBy,
             createdByActorId: page.createdByActorId,
@@ -373,6 +380,7 @@ export const useContext = () => {
           p.id === page.id
             ? {
                 id: page.id,
+                url: page.url,
                 title: page.title,
                 createdBy: page.createdBy,
             createdByActorId: page.createdByActorId,
