@@ -2,7 +2,8 @@
  * A task or context block in this Taico. The backend hands these links out as
  * `url` (apps/backend/src/config/app-links.ts); keep the paths in step.
  */
-export type TaicoLinkRef = { kind: 'task' | 'block'; id: string };
+export type TaicoLinkKind = 'task' | 'block';
+export type TaicoLinkRef = { kind: TaicoLinkKind; id: string };
 
 const PATHS: Array<{ kind: TaicoLinkRef['kind']; pattern: RegExp }> = [
   { kind: 'task', pattern: /^\/tasks\/task\/([A-Za-z0-9-]+)\/?$/ },
