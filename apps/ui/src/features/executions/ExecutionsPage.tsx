@@ -496,10 +496,12 @@ function getRunTimeDetail(feedEntry: RunFeedEntry) {
   }
 
   if (feedEntry.kind === "active") {
-    return `heartbeat ${formatRelativeTime(feedEntry.entry.lastHeartbeatAt)}`;
+    const timestamp = feedEntry.entry.lastHeartbeatAt;
+    return <>heartbeat {timestamp ? <time dateTime={timestamp} title={new Date(timestamp).toLocaleString()}>{formatRelativeTime(timestamp)}</time> : 'never'}</>;
   }
 
-  return `${formatDuration(new Date(feedEntry.entry.transitionedAt).getTime() - new Date(feedEntry.entry.claimedAt).getTime())} · ${formatRelativeTime(feedEntry.entry.transitionedAt)}`;
+  const timestamp = feedEntry.entry.transitionedAt;
+  return <>{formatDuration(new Date(timestamp).getTime() - new Date(feedEntry.entry.claimedAt).getTime())} · <time dateTime={timestamp} title={new Date(timestamp).toLocaleString()}>{formatRelativeTime(timestamp)}</time></>;
 }
 
 function getRunToolCount(feedEntry: RunFeedEntry) {

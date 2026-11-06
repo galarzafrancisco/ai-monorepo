@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Avatar, DataRow, Text, DataRowContainer, DataRowTag, Button } from "../../ui/primitives";
 import { useToolsCtx } from "./ToolsProvider";
 import { Tool, ToolClient } from "./types";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import './ClientsPage.css';
 
 export function ClientsPage() {
@@ -106,7 +106,7 @@ function ClientRow({ client, onClick }: { client: ToolClient; onClick?: () => vo
   return (
     <DataRow
       leading={<Avatar name={client.friendlyName} size="lg" />}
-      topRight={elapsedTime(client.updatedAt)}
+      topRight={<RelativeTime dateTime={client.updatedAt} />}
       tags={tags}
       onClick={onClick}
     >

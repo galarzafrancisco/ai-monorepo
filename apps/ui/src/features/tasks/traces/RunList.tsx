@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Avatar, Button, Chip } from '../../../ui/primitives';
 import { elapsedTime } from '../../../shared/helpers/elapsedTime';
+import { RelativeTime } from '../../../shared/components/RelativeTime';
 import { isDeactivated, useActorsCtx } from '../../actors';
 import { isRunPotentiallyStale, POTENTIALLY_STALE_MESSAGE, runStatusTag, type TaskRun } from './runs';
 import './RunList.css';
@@ -79,7 +80,7 @@ export function RunList({
                     {isStale && <span title={POTENTIALLY_STALE_MESSAGE}><Chip color="orange">potentially stale</Chip></span>}
                   </span>
                   <span className="run-list__meta">
-                    {isActive ? `started ${elapsedTime(run.timestamp)}` : elapsedTime(run.timestamp)}
+                    {isActive ? 'started ' : null}<RelativeTime dateTime={run.timestamp} />
                     {' · '}
                     {run.toolCallCount === 1 ? '1 tool call' : `${run.toolCallCount} tool calls`}
                     {' · '}

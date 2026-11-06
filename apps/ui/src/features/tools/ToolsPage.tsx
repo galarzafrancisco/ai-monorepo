@@ -4,7 +4,7 @@ import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/pr
 import { useToolsCtx } from "./ToolsProvider";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Tool } from "./types";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { NewToolPop } from "./NewToolPop";
 import "./ToolsPage.css";
@@ -128,7 +128,7 @@ function ToolRow({ tool, onClick }: { tool: Tool; onClick?: () => void }): React
   return (
     <DataRow
       leading={<Avatar name={tool.name} size="lg" />}
-      topRight={elapsedTime(tool.updatedAt)}
+      topRight={<RelativeTime dateTime={tool.updatedAt} />}
       tags={tags}
       onClick={onClick}
     >

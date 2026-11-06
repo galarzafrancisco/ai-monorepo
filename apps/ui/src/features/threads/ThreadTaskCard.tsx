@@ -1,6 +1,6 @@
 import { Avatar, BoardCard } from "../../ui/primitives";
 import { TaskSummaryResponseDto } from "@taico/client/v2";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { useNavigate } from "react-router-dom";
 import "./ThreadTaskCard.css";
 import { actorHandle, isDeactivated } from "../actors";
@@ -45,7 +45,7 @@ export function ThreadTaskCard({
           src={task.createdByActor.avatarUrl || undefined}
         />
       }
-      topRight={elapsedTime(task.updatedAt)}
+      topRight={<RelativeTime dateTime={task.updatedAt} />}
       tags={tags}
       onClick={handleClick}
       highlight={openQuestions > 0}

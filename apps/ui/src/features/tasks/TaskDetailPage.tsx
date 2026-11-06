@@ -5,7 +5,7 @@ import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
 import { Text, Stack, Button, Avatar, Chip, DataRow, ErrorText, DataRowContainer, useRailOpen } from '../../ui/primitives';
 import { DeleteWithConfirmation, useCommandPalette } from '../../ui/components';
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
@@ -853,7 +853,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         <dd className="task-props__inline">
           <Avatar size="xs" name={task.createdByActor.displayName} inactive={isDeactivated(task.createdByActor)} src={task.createdByActor.avatarUrl || undefined} />
           <span>{task.createdByActor.displayName}</span>
-          <span className="task-props__muted">{elapsedTime(task.createdAt)} · <span className="task-props__mono">#{task.id.slice(0, 6)}</span></span>
+          <span className="task-props__muted"><RelativeTime dateTime={task.createdAt} /> · <span className="task-props__mono">#{task.id.slice(0, 6)}</span></span>
         </dd>
       </dl>
 
@@ -893,7 +893,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                 leading={<Avatar size={'sm'} name={name} inactive={isDeactivated(comment.commenterActor)} src={comment.commenterActor?.avatarUrl || undefined} />}
                 topRight={
                   <span className='task-detail-page__comment-meta'>
-                    <Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>
+                    <Text size='1' tone='muted'><RelativeTime dateTime={comment.createdAt} /></Text>
                     <button
                       type='button'
                       className='task-detail-page__comment-copy'
@@ -953,7 +953,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                 <Avatar size={'sm'} name={name} inactive={isDeactivated(askedByActor)} src={askedByActor?.avatarUrl || undefined} />
               )}
               tags={tags}
-              topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.createdAt)}</Text>}
+               topRight={<Text size='1' tone='muted'><RelativeTime dateTime={inputRequest.createdAt} /></Text>}
             >
               <Stack spacing="2">
                 <div className="task-detail-page__input-request">

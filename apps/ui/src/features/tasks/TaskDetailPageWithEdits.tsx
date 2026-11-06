@@ -7,7 +7,7 @@ import type { Comment } from './types';
 import { Chip, Text, Stack, Row, Button, Divider, Avatar, ErrorText, DataRow, DataRowContainer } from '../../ui/primitives';
 import './TaskDetailPage.css';
 import type { ActorResponseDto } from "@taico/client/v2";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { getTaskStatusTag } from './taskStatusTag';
 
 type EditingField = 'title' | 'description' | 'assignee' | null;
@@ -308,7 +308,7 @@ export function TaskDetailPage() {
             getTaskStatusTag(task.status as TaskStatus),
             ...task.tags.map(tag => ({ label: tag.name })),
           ]}
-          topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
+          topRight={<Text size='1' tone='muted'><RelativeTime dateTime={task.updatedAt} /></Text>}
         >
           <Text as='span' weight='medium' size='3'>
             {task.createdByActor.displayName}
@@ -350,7 +350,7 @@ export function TaskDetailPage() {
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined}/>}
           tags={[]}
-          topRight={<Text size='1' tone='muted'>{elapsedTime(task.createdAt)}</Text>}
+          topRight={<Text size='1' tone='muted'><RelativeTime dateTime={task.createdAt} /></Text>}
         >
           <Text as='span' weight='medium' size='3'>
             {task.createdByActor.displayName}
@@ -377,7 +377,7 @@ export function TaskDetailPage() {
             return (
               <DataRow
                 leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined}/>}
-                topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
+                topRight={<Text size='1' tone='muted'><RelativeTime dateTime={comment.createdAt} /></Text>}
               >
                 <Text as='span' weight='medium' size='3'>
                   {name}

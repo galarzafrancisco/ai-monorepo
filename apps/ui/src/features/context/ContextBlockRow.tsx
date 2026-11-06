@@ -1,6 +1,6 @@
 import { DataRow, Text, Avatar } from '../../ui/primitives';
 import { ContextBlockSummary } from './types';
-import { elapsedTime } from '../../shared/helpers/elapsedTime';
+import { RelativeTime } from '../../shared/components/RelativeTime';
 import type { ContextTagResponseDto } from "@taico/client/v2";
 
 export function ContextBlockRow({ blockSummary, onClick }: { blockSummary: ContextBlockSummary; onClick?: () => void }) {
@@ -9,7 +9,7 @@ export function ContextBlockRow({ blockSummary, onClick }: { blockSummary: Conte
   return (
     <DataRow
       leading={<Avatar name={blockSummary.createdBy || 'unknown'} size='lg' />}
-      topRight={elapsedTime(blockSummary.createdAt)}
+      topRight={<RelativeTime dateTime={blockSummary.createdAt} />}
       tags={tags}
       onClick={onClick}
     >

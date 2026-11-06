@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { Tool, ToolClient } from './types';
 import './ClientDetailPage.css';
 
@@ -80,7 +80,7 @@ export function ClientDetailPage() {
         <DataRow
           leading={<Avatar size="sm" name={client.friendlyName} />}
           tags={statusTags}
-          topRight={<Text size="1" tone="muted">{elapsedTime(client.updatedAt)}</Text>}
+          topRight={<Text size="1" tone="muted"><RelativeTime dateTime={client.updatedAt} /></Text>}
         >
           <Text as="span" weight="medium" size="3">
             {client.friendlyName}

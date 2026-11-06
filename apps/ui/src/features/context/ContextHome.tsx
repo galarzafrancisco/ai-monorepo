@@ -5,7 +5,7 @@ import { useContextCtx } from "./ContextProvider";
 import { ContextBlockTree } from "./ContextBlockTree";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DataRow, Text } from "../../ui/primitives";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import "./ContextHome.css";
 
 export function ContextHome(): React.JSX.Element {
@@ -168,7 +168,7 @@ function DesktopContextHome({
               key={block.id}
               className="context-home-desktop__result"
               onClick={() => onOpenBlock(block.id)}
-              topRight={<Text as="span" size="2" tone="muted">{elapsedTime(block.updatedAt)}</Text>}
+              topRight={<Text as="span" size="2" tone="muted"><RelativeTime dateTime={block.updatedAt} /></Text>}
               tags={block.tags.slice(0, 3).map((tag) => ({ label: tag.name }))}
             >
               <div className="context-home-desktop__result-main">

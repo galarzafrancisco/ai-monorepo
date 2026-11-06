@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check, Search } from 'lucide-react';
 import { Modal } from '../../ui/primitives';
-import { elapsedTime } from '../../shared/helpers/elapsedTime';
+import { RelativeTime } from '../../shared/components/RelativeTime';
 import { ProjectsService } from '../projects/api';
 import { toRepoLink } from '../projects/repoLink';
 import type { Project } from '../projects/types';
@@ -324,7 +324,7 @@ function ProjectOption({
         {project && (repo || activityAt || reasons.length > 0) ? (
           <span className="project-option__meta">
             {repo ? <span>{highlight(repo.label, query)}</span> : null}
-            {activityAt ? <span>active {elapsedTime(new Date(activityAt).toISOString())}</span> : null}
+             {activityAt ? <span>active <RelativeTime dateTime={new Date(activityAt).toISOString()} /></span> : null}
             {reasons.map((reason) => <span key={reason} className="project-option__reason">{reason}</span>)}
           </span>
         ) : null}

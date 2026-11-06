@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { RelativeTime } from "../../shared/components/RelativeTime";
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
@@ -354,7 +354,7 @@ export function ToolDetailPage() {
         <DataRow
           leading={<Avatar name={tool.name} />}
           tags={tags}
-          topRight={<Text size="1" tone="muted">{elapsedTime(tool.updatedAt)}</Text>}
+          topRight={<Text size="1" tone="muted"><RelativeTime dateTime={tool.updatedAt} /></Text>}
         >
           {/* No need to display name as it already is the title of the page */}
           <Text as="span" weight="normal" tone="muted" size="3">
@@ -609,7 +609,6 @@ export function ToolDetailPage() {
               .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
               .map(auth => {
                 const statusDisplay = getAuthStatusDisplay(auth.status);
-                const lastUpdatedAt = elapsedTime(auth.updatedAt);
 
               return (
                 <DataRow key={auth.id}>
@@ -621,7 +620,7 @@ export function ToolDetailPage() {
                   {/* Actor connection info */}
                   {auth.actor && (
                     <Text size="2" tone="muted">
-                      @{auth.actor.slug} updated {lastUpdatedAt}
+                       @{auth.actor.slug} updated <RelativeTime dateTime={auth.updatedAt} />
                     </Text>
                   )}
 

@@ -6,7 +6,7 @@ import { useContextCtx } from './ContextProvider';
 import { ContextService } from './api';
 import { ThreadsService } from '../threads/api';
 import type { ContextTagResponseDto } from "@taico/client/v2";
-import { elapsedTime } from '../../shared/helpers/elapsedTime';
+import { RelativeTime } from '../../shared/components/RelativeTime';
 import { useToast } from '../../shared/context/ToastContext';
 import './ContextBlockDetailPage.css';
 import Markdown from 'marked-react';
@@ -213,7 +213,7 @@ export function ContextBlockDetailPage() {
           <Text size="2" tone="muted">•</Text>
           <Text size="2" tone="muted">{new Date(block.createdAt).toDateString()}</Text>
           <Text size="2" tone="muted">•</Text>
-          <Text size="2" tone="muted">Last edited {elapsedTime(block.updatedAt)}</Text>
+          <Text size="2" tone="muted">Last edited <RelativeTime dateTime={block.updatedAt} /></Text>
         </div>
       </Stack>
 
