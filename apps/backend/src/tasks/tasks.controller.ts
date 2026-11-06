@@ -73,7 +73,7 @@ export class TasksController {
   ) {}
 
   @Post()
-  @RequireScopes(TasksScopes.READ.id)
+  @RequireScopes(TasksScopes.WRITE.id)
   @ApiOperation({ summary: 'Create a new task' })
   @ApiCreatedResponse({
     type: TaskResponseDto,

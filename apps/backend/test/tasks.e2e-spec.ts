@@ -13,6 +13,11 @@ import {
 } from './helpers/auth.helper';
 import cookieParser from 'cookie-parser';
 import { RUN_ID_HEADER } from '../src/auth/guards/constants/headers.constants';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ActorEntity } from '../src/identity-provider/actor.entity';
+import { IssuedAccessTokenService } from '../src/authorization-server/issued-access-token.service';
+import { TasksScopes } from '../src/tasks/tasks.scopes';
 
 describe('Tasks E2E Tests', () => {
   let app: INestApplication<App>;
@@ -106,6 +111,60 @@ describe('Tasks E2E Tests', () => {
       expect(response.body.status).toBe('NOT_STARTED');
 
       taskWithAssigneeId = response.body.id;
+    });
+  });
+
+  describe('Task Creation Scopes', () => {
+    async function bearerTokenWithScopes(scopes: string[]): Promise<string> {
+      const actorRepository = app.get<Repository<ActorEntity>>(getRepositoryToken(ActorEntity));
+      const actor = await actorRepository.findOneOrFail({ where: { id: actorId } });
+      const actorInfo = {
+        id: actor.id,
+        slug: actor.slug,
+        type: actor.type,
+        displayName: actor.displayName,
+      };
+      const issued = await app.get(IssuedAccessTokenService).issueSystemToken({
+        subjectActor: actorInfo,
+        issuedByActor: actorInfo,
+        scopes,
+      });
+      return issued.token;
+    }
+
+    it('rejects task creation with a read-only token', async () => {
+      const token = await bearerTokenWithScopes([TasksScopes.READ.id]);
+
+      await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Should Not Be Created',
+          description: 'A tasks:read token must not create tasks',
+          assigneeActorId: agentAlphaActorId,
+        })
+        .expect(403);
+
+      // The same token can still read tasks.
+      await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+    });
+
+    it('allows task creation with a tasks:write token', async () => {
+      const token = await bearerTokenWithScopes([TasksScopes.READ.id, TasksScopes.WRITE.id]);
+
+      const response = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Created With Write Scope',
+          description: 'A tasks:write token can create tasks',
+        })
+        .expect(201);
+
+      expect(response.body.name).toBe('Created With Write Scope');
     });
   });
 
