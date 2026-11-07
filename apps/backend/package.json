@@ -42,8 +42,10 @@
     "test:e2e:chatgpt-subscription": "node test/run-e2e.mjs chatgpt-subscription.e2e-spec.ts access-requests.e2e-spec.ts",
     "test:live:threads": "node test/thread-agent-live.mjs",
     "test:live:mcp-oauth": "node test/mcp-oauth-live.mjs",
+    "eval": "tsx --tsconfig evals/tsconfig.json evals/cli.ts",
+    "eval:snapshot-mcp": "tsx --tsconfig evals/tsconfig.json evals/mcp/generate-snapshot.ts",
     "dev": "npm run start:dev",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p evals/tsconfig.json",
     "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
     "init-test-user": "npm run build && node dist/scripts/init-test-user.js",
     "create-admin": "npm run build && node dist/scripts/create-admin-user.js",
@@ -120,6 +122,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "4.21.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   }
