@@ -26,6 +26,7 @@ export type ListScheduledTasksInput = {
 // Result types
 export type ScheduledTaskResult = {
   id: string;
+  workspaceId: string;
   taskBlueprintId: string;
   taskBlueprint?: TaskBlueprintResult;
   cronExpression: string;

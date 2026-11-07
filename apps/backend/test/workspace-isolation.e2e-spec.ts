@@ -542,36 +542,114 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
     });
   });
 
-  describe('task blueprints (blueprints themselves are scoped in a later phase)', () => {
-    it('creates the task from a blueprint in the caller workspace', async () => {
-      const blueprint = (
+  describe('task blueprints and schedules', () => {
+    let blueprintA: any;
+
+    beforeAll(async () => {
+      blueprintA = (
         await as(tokenA)
           .post('/task-blueprints')
           .send({
-            name: `Blueprint task ${suffix}`,
-            description: 'From a blueprint',
+            name: `Blueprint in A ${suffix}`,
+            description: 'Only workspace A can see this',
             tagNames: [tagName],
           })
           .expect(201)
       ).body;
+    });
 
-      const taskB = (
-        await as(tokenB)
-          .post(`/task-blueprints/${blueprint.id}/create-task`)
+    it('answers not found for a blueprint in another workspace', async () => {
+      await as(tokenB).get(`/task-blueprints/${blueprintA.id}`).expect(404);
+      await as(tokenB)
+        .patch(`/task-blueprints/${blueprintA.id}`)
+        .send({ tagNames: [`b-tag-${suffix}`] })
+        .expect(404);
+      await as(tokenB)
+        .post(`/task-blueprints/${blueprintA.id}/create-task`)
+        .expect(404);
+      await as(tokenB)
+        .post('/scheduled-tasks')
+        .send({ taskBlueprintId: blueprintA.id, cronExpression: '0 0 1 1 *' })
+        .expect(404);
+      await as(tokenB).delete(`/task-blueprints/${blueprintA.id}`).expect(404);
+
+      const listB = (
+        await as(tokenB).get('/task-blueprints?limit=100').expect(200)
+      ).body;
+      expect(listB.items.map((b: any) => b.id)).not.toContain(blueprintA.id);
+      // A's blueprint keeps its tags.
+      const stillA = (
+        await as(tokenA).get(`/task-blueprints/${blueprintA.id}`).expect(200)
+      ).body;
+      expect(stillA.tags.map((t: any) => t.name)).toEqual([tagName]);
+    });
+
+    it('answers not found for a schedule in another workspace', async () => {
+      const scheduleA = (
+        await as(tokenA)
+          .post('/scheduled-tasks')
+          .send({
+            taskBlueprintId: blueprintA.id,
+            cronExpression: '0 0 1 1 *',
+            enabled: false,
+          })
           .expect(201)
       ).body;
-      await as(tokenB).get(`/tasks/tasks/${taskB.id}`).expect(200);
-      await as(tokenA).get(`/tasks/tasks/${taskB.id}`).expect(404);
-      // The tag was found or created in B, not taken from A.
+      await as(tokenB).get(`/scheduled-tasks/${scheduleA.id}`).expect(404);
+      await as(tokenB)
+        .patch(`/scheduled-tasks/${scheduleA.id}`)
+        .send({ enabled: true })
+        .expect(404);
+      await as(tokenB).delete(`/scheduled-tasks/${scheduleA.id}`).expect(404);
+      const listB = (
+        await as(tokenB).get('/scheduled-tasks?limit=100').expect(200)
+      ).body;
+      expect(listB.items.map((s: any) => s.id)).not.toContain(scheduleA.id);
+    });
+
+    it('creates blueprint tags and projects in the caller workspace', async () => {
+      const freshSlug = `bp-project-${suffix}`;
+      const blueprintB = (
+        await as(tokenB)
+          .post('/task-blueprints')
+          .send({
+            name: `Blueprint in B ${suffix}`,
+            description: 'B only',
+            tagNames: [tagName, `project:${freshSlug}`],
+          })
+          .expect(201)
+      ).body;
+
+      const tagsA = (await as(tokenA).get('/meta/tags').expect(200)).body;
+      expect(tagsA.map((t: any) => t.name)).not.toContain(
+        `project:${freshSlug}`,
+      );
+      await as(tokenA).get(`/meta/projects/by-slug/${freshSlug}`).expect(404);
+      await as(tokenB).get(`/meta/projects/by-slug/${freshSlug}`).expect(200);
+
       const tagsB = (await as(tokenB).get('/meta/tags').expect(200)).body;
       const tagB = tagsB.find((t: any) => t.name === tagName);
-      expect(tagB).toBeDefined();
-      expect(taskB.tags.map((t: any) => t.id)).toEqual([tagB.id]);
+      expect(blueprintB.tags.map((t: any) => t.id)).toContain(tagB.id);
+      expect(blueprintA.tags.map((t: any) => t.id)).not.toContain(tagB.id);
+
+      const listA = (
+        await as(tokenA).get('/task-blueprints?limit=100').expect(200)
+      ).body;
+      expect(listA.items.map((b: any) => b.id)).not.toContain(blueprintB.id);
+
+      // A task made from it lands in B with B's tag.
+      const taskB = (
+        await as(tokenB)
+          .post(`/task-blueprints/${blueprintB.id}/create-task`)
+          .expect(201)
+      ).body;
+      await as(tokenA).get(`/tasks/tasks/${taskB.id}`).expect(404);
+      expect(taskB.tags.map((t: any) => t.id)).toContain(tagB.id);
     });
 
     it('does not create a task depending on a task of another workspace', async () => {
-      const blueprint = (
-        await as(tokenA)
+      const blueprintB = (
+        await as(tokenB)
           .post('/task-blueprints')
           .send({
             name: `Blueprint with A dependency ${suffix}`,
@@ -581,7 +659,7 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
           .expect(201)
       ).body;
       const res = await as(tokenB).post(
-        `/task-blueprints/${blueprint.id}/create-task`,
+        `/task-blueprints/${blueprintB.id}/create-task`,
       );
       expect(res.status).toBeGreaterThanOrEqual(400);
       const tasksB = (
@@ -636,9 +714,9 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
       const ownThread = (
         await as(tokenA).get(`/threads/${threadA.id}`).expect(200)
       ).body;
-      expect(
-        ownThread.referencedContextBlocks.map((b: any) => b.id),
-      ).toContain(blockA.id);
+      expect(ownThread.referencedContextBlocks.map((b: any) => b.id)).toContain(
+        blockA.id,
+      );
     });
 
     it('answers not found for a task in another workspace', async () => {

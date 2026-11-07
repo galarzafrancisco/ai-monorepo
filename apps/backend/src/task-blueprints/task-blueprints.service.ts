@@ -20,8 +20,13 @@ import {
   TaskBlueprintHasActiveSchedulesError,
 } from './errors/task-blueprints.errors';
 import { TagEntity } from '../meta/tag.entity';
-import { ActorResult, TagResult, TaskResult } from '../tasks/dto/service/tasks.service.types';
-import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
+import {
+  ActorResult,
+  TagResult,
+  TaskResult,
+} from '../tasks/dto/service/tasks.service.types';
+import { WorkspacesService } from '../workspaces/workspaces.service';
+import { ActorNotFoundError } from '../tasks/errors/tasks.errors';
 
 @Injectable()
 export class TaskBlueprintsService {
@@ -37,10 +42,12 @@ export class TaskBlueprintsService {
     private readonly metaService: MetaService,
     private readonly actorService: ActorService,
     private readonly tasksService: TasksService,
+    private readonly workspacesService: WorkspacesService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createTaskBlueprint(
+    workspaceId: string,
     input: CreateTaskBlueprintInput,
   ): Promise<TaskBlueprintResult> {
     this.logger.log({
@@ -52,11 +59,12 @@ export class TaskBlueprintsService {
     let assigneeActorId: string | null = null;
 
     if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
+      const assigneeActor = await this.findAssignableActor(
+        workspaceId,
         input.assigneeActorId,
       );
       if (!assigneeActor) {
-        throw new Error(`Assignee actor not found: ${input.assigneeActorId}`);
+        throw new ActorNotFoundError(input.assigneeActorId);
       }
       assigneeActorId = assigneeActor.id;
     }
@@ -71,6 +79,7 @@ export class TaskBlueprintsService {
     const createdByActorId = createdByActor.id;
 
     const blueprint = this.taskBlueprintRepository.create({
+      workspaceId,
       name: input.name,
       description: input.description,
       assigneeActorId,
@@ -87,7 +96,7 @@ export class TaskBlueprintsService {
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.metaService.findOrCreateTagEntities(
-        UNSCOPED_MODULE_WORKSPACE_ID,
+        workspaceId,
         input.tagNames,
       );
       savedBlueprint.tags = tags;
@@ -96,7 +105,7 @@ export class TaskBlueprintsService {
 
     // Reload with relations
     const blueprintWithRelations = await this.taskBlueprintRepository.findOne({
-      where: { id: savedBlueprint.id },
+      where: { workspaceId, id: savedBlueprint.id },
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -114,6 +123,7 @@ export class TaskBlueprintsService {
   }
 
   async updateTaskBlueprint(
+    workspaceId: string,
     blueprintId: string,
     input: UpdateTaskBlueprintInput,
   ): Promise<TaskBlueprintResult> {
@@ -123,7 +133,7 @@ export class TaskBlueprintsService {
     });
 
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { workspaceId, id: blueprintId },
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -141,12 +151,15 @@ export class TaskBlueprintsService {
       if (input.assigneeActorId === null) {
         blueprint.assigneeActorId = null;
       } else {
-        const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
+        const assigneeActor = await this.findAssignableActor(
+          workspaceId,
           input.assigneeActorId,
         );
-        if (assigneeActor) {
-          blueprint.assigneeActorId = assigneeActor.id;
+        if (!assigneeActor) {
+          throw new ActorNotFoundError(input.assigneeActorId);
         }
+        blueprint.assigneeActorId = assigneeActor.id;
+        blueprint.assigneeActor = assigneeActor;
       }
     }
 
@@ -156,7 +169,7 @@ export class TaskBlueprintsService {
         blueprint.tags = [];
       } else {
         blueprint.tags = await this.metaService.findOrCreateTagEntities(
-          UNSCOPED_MODULE_WORKSPACE_ID,
+          workspaceId,
           input.tagNames,
         );
       }
@@ -167,12 +180,11 @@ export class TaskBlueprintsService {
       blueprint.dependsOnIds = input.dependsOnIds;
     }
 
-    const updatedBlueprint =
-      await this.taskBlueprintRepository.save(blueprint);
+    const updatedBlueprint = await this.taskBlueprintRepository.save(blueprint);
 
     // Reload with relations to ensure we have updated tags
     const blueprintWithRelations = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { workspaceId, id: blueprintId },
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -188,14 +200,17 @@ export class TaskBlueprintsService {
     return this.mapBlueprintToResult(blueprintWithRelations);
   }
 
-  async deleteTaskBlueprint(blueprintId: string): Promise<void> {
+  async deleteTaskBlueprint(
+    workspaceId: string,
+    blueprintId: string,
+  ): Promise<void> {
     this.logger.log({
       message: 'Deleting task blueprint',
       blueprintId,
     });
 
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { workspaceId, id: blueprintId },
     });
 
     if (!blueprint) {
@@ -204,6 +219,7 @@ export class TaskBlueprintsService {
 
     const activeSchedules = await this.scheduledTaskRepository.count({
       where: {
+        workspaceId,
         taskBlueprintId: blueprintId,
         enabled: true,
       },
@@ -221,9 +237,12 @@ export class TaskBlueprintsService {
     });
   }
 
-  async getTaskBlueprintById(blueprintId: string): Promise<TaskBlueprintResult> {
+  async getTaskBlueprintById(
+    workspaceId: string,
+    blueprintId: string,
+  ): Promise<TaskBlueprintResult> {
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { workspaceId, id: blueprintId },
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -235,6 +254,7 @@ export class TaskBlueprintsService {
   }
 
   async listTaskBlueprints(
+    workspaceId: string,
     input: ListTaskBlueprintsInput,
   ): Promise<ListTaskBlueprintsResult> {
     this.logger.log({
@@ -250,6 +270,7 @@ export class TaskBlueprintsService {
       .leftJoinAndSelect('blueprint.tags', 'tags')
       .leftJoinAndSelect('blueprint.assigneeActor', 'assigneeActor')
       .leftJoinAndSelect('blueprint.createdByActor', 'createdByActor')
+      .where('blueprint.workspaceId = :workspaceId', { workspaceId })
       .orderBy('blueprint.updatedAt', 'DESC')
       .skip(skip)
       .take(input.limit);
@@ -274,7 +295,7 @@ export class TaskBlueprintsService {
   }
 
   /**
-   * Creates a regular task from a blueprint in the given workspace. Tags are
+   * Creates a regular task from a blueprint of the given workspace. Tags are
    * found or created by name there, and the assignee and dependencies must be
    * in that workspace (TasksService checks both before the first write).
    */
@@ -287,7 +308,7 @@ export class TaskBlueprintsService {
       blueprintId,
     });
 
-    const blueprint = await this.getTaskBlueprintById(blueprintId);
+    const blueprint = await this.getTaskBlueprintById(workspaceId, blueprintId);
 
     const task = await this.tasksService.createTask(workspaceId, {
       name: blueprint.name,
@@ -311,9 +332,7 @@ export class TaskBlueprintsService {
    * Maps a TaskBlueprintEntity to TaskBlueprintResult.
    * Public to allow reuse by ScheduledTasksService.
    */
-  mapBlueprintToResult(
-    blueprint: TaskBlueprintEntity,
-  ): TaskBlueprintResult {
+  mapBlueprintToResult(blueprint: TaskBlueprintEntity): TaskBlueprintResult {
     if (!blueprint.createdByActor) {
       throw new Error(
         `Blueprint ${blueprint.id} is missing createdByActor relation`,
@@ -336,6 +355,17 @@ export class TaskBlueprintsService {
       updatedAt: blueprint.updatedAt,
       deletedAt: blueprint.deletedAt ?? null,
     };
+  }
+
+  private async findAssignableActor(
+    workspaceId: string,
+    idOrSlug: string,
+  ): Promise<ActorEntity | null> {
+    const actor = await this.actorService.getActiveActorByIdOrSlug(idOrSlug);
+    if (!actor) return null;
+    return (await this.workspacesService.isMember(workspaceId, actor.id))
+      ? actor
+      : null;
   }
 
   private mapActorToResult(actor: ActorEntity): ActorResult {

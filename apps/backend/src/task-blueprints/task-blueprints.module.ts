@@ -11,6 +11,7 @@ import { TasksModule } from '../tasks/tasks.module';
 import { MetaModule } from '../meta/meta.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
     MetaModule,
     IdentityProviderModule,
     AuthGuardsModule,
+    WorkspacesModule,
   ],
   controllers: [TaskBlueprintsController, ScheduledTasksController],
   providers: [

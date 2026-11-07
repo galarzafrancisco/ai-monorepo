@@ -32,6 +32,7 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from '../tasks/tasks.scopes';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Scheduled Tasks')
 @ApiCookieAuth('JWT-Cookie')
@@ -51,12 +52,16 @@ export class ScheduledTasksController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createScheduledTask(
     @Body() dto: CreateScheduledTaskDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScheduledTaskResponseDto> {
-    const result = await this.scheduledTasksService.createScheduledTask({
-      taskBlueprintId: dto.taskBlueprintId,
-      cronExpression: dto.cronExpression,
-      enabled: dto.enabled,
-    });
+    const result = await this.scheduledTasksService.createScheduledTask(
+      workspaceId,
+      {
+        taskBlueprintId: dto.taskBlueprintId,
+        cronExpression: dto.cronExpression,
+        enabled: dto.enabled,
+      },
+    );
     return ScheduledTaskResponseDto.fromResult(result);
   }
 
@@ -68,12 +73,16 @@ export class ScheduledTasksController {
   })
   async listScheduledTasks(
     @Query() query: ListScheduledTasksQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScheduledTaskListResponseDto> {
-    const result = await this.scheduledTasksService.listScheduledTasks({
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
-      enabled: query.enabled,
-    });
+    const result = await this.scheduledTasksService.listScheduledTasks(
+      workspaceId,
+      {
+        page: query.page ?? 1,
+        limit: query.limit ?? 20,
+        enabled: query.enabled,
+      },
+    );
     return ScheduledTaskListResponseDto.fromResult(result);
   }
 
@@ -86,8 +95,10 @@ export class ScheduledTasksController {
   @ApiNotFoundResponse({ description: 'Scheduled task not found' })
   async getScheduledTask(
     @Param() params: ScheduledTaskParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScheduledTaskResponseDto> {
     const result = await this.scheduledTasksService.getScheduledTaskById(
+      workspaceId,
       params.id,
     );
     return ScheduledTaskResponseDto.fromResult(result);
@@ -105,8 +116,10 @@ export class ScheduledTasksController {
   async updateScheduledTask(
     @Param() params: ScheduledTaskParamsDto,
     @Body() dto: UpdateScheduledTaskDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScheduledTaskResponseDto> {
     const result = await this.scheduledTasksService.updateScheduledTask(
+      workspaceId,
       params.id,
       {
         cronExpression: dto.cronExpression,
@@ -126,7 +139,11 @@ export class ScheduledTasksController {
   @ApiNotFoundResponse({ description: 'Scheduled task not found' })
   async deleteScheduledTask(
     @Param() params: ScheduledTaskParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.scheduledTasksService.deleteScheduledTask(params.id);
+    await this.scheduledTasksService.deleteScheduledTask(
+      workspaceId,
+      params.id,
+    );
   }
 }
