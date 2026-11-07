@@ -41,7 +41,7 @@ export class UpdateAiProviderDto {
 
   @ApiPropertyOptional({
     type: String,
-    description: 'Google Cloud project for Vertex AI. Blank falls back to the environment.',
+    description: 'Google Cloud project for Vertex AI. Blank falls back to the server environment, in the default workspace only.',
     example: 'my-gcp-project',
     nullable: true,
   })
@@ -52,7 +52,7 @@ export class UpdateAiProviderDto {
 
   @ApiPropertyOptional({
     type: String,
-    description: 'Google Cloud location for Vertex AI. Blank falls back to the environment.',
+    description: 'Google Cloud location for Vertex AI. Blank falls back to the server environment, in the default workspace only.',
     example: 'us-central1',
     nullable: true,
   })

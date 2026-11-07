@@ -22,6 +22,7 @@ import { ChatgptConnectionsService } from './chatgpt-subscription/chatgpt-connec
 import { AiProviderType } from './enums';
 import {
   googleApiKeyFromEnv,
+  mayUseServerCredentials,
   vertexLocationFromEnv,
   vertexProjectFromEnv,
 } from './google-environment';
@@ -35,19 +36,48 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 }
 
 /**
+ * The Google settings a provider gets from the server environment when it
+ * stores none. Empty for providers outside the default workspace.
+ */
+function environmentFallback(provider: AiProviderEntity): {
+  apiKey: string | null;
+  project: string | null;
+  location: string | null;
+} {
+  if (!mayUseServerCredentials(provider.workspaceId)) {
+    return { apiKey: null, project: null, location: null };
+  }
+  switch (provider.type) {
+    case AiProviderType.GOOGLE:
+      return { apiKey: googleApiKeyFromEnv() ?? null, project: null, location: null };
+    case AiProviderType.GOOGLE_VERTEX:
+      return {
+        apiKey: null,
+        project: vertexProjectFromEnv() ?? null,
+        location: vertexLocationFromEnv() ?? null,
+      };
+    default:
+      return { apiKey: null, project: null, location: null };
+  }
+}
+
+/**
  * Whether a provider has the settings it needs to make a call. Vertex AI needs
- * a project and a location, stored or from the environment; its credentials
- * may come from application default credentials, which cannot be checked here.
+ * a project and a location. In the default workspace they may come from the
+ * environment and its credentials from application default credentials, which
+ * cannot be checked here; any other workspace must store all three.
  */
 export function isAiProviderConfigured(provider: AiProviderEntity): boolean {
+  const fallback = environmentFallback(provider);
   switch (provider.type) {
     case AiProviderType.GOOGLE_VERTEX:
       return (
-        !!(provider.project ?? vertexProjectFromEnv()) &&
-        !!(provider.location ?? vertexLocationFromEnv())
+        !!(provider.project ?? fallback.project) &&
+        !!(provider.location ?? fallback.location) &&
+        (!!provider.secretId || mayUseServerCredentials(provider.workspaceId))
       );
     case AiProviderType.GOOGLE:
-      return !!provider.secretId || !!googleApiKeyFromEnv();
+      return !!provider.secretId || !!fallback.apiKey;
     case AiProviderType.OPENAI_COMPATIBLE:
       return !!provider.baseUrl;
     case AiProviderType.CHATGPT_SUBSCRIPTION:
@@ -250,14 +280,16 @@ export class AiProvidersService {
     const secretValue = provider.secretId
       ? await this.secretsService.getSecretValue(provider.workspaceId, provider.secretId)
       : null;
+    const fallback = environmentFallback(provider);
 
     return {
       id: provider.id,
       type: provider.type,
-      apiKey: secretValue?.value ?? null,
+      apiKey: secretValue?.value ?? fallback.apiKey,
       baseUrl: provider.baseUrl,
-      project: provider.project,
-      location: provider.location,
+      project: provider.project ?? fallback.project,
+      location: provider.location ?? fallback.location,
+      serverCredentials: mayUseServerCredentials(provider.workspaceId),
     };
   }
 

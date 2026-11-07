@@ -110,7 +110,7 @@ const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
   },
   google_vertex: {
     label: 'Google Vertex AI',
-    help: 'Serves Gemini and Claude models. Claude needs a location that offers it (for example global or us-east5). Anything left empty falls back to the server environment (application default credentials, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION).',
+    help: 'Serves Gemini and Claude models. Claude needs a location that offers it (for example global or us-east5). In the default workspace, anything left empty falls back to the server environment (application default credentials, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION); other workspaces must store all three.',
     secretLabel: 'Service account JSON (optional)',
     secretPlaceholder: '{ "type": "service_account", ... }',
     secretRequired: false,

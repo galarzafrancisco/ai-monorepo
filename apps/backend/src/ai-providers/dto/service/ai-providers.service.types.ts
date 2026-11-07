@@ -46,6 +46,13 @@ export type AiProviderConfigResult = {
   baseUrl: string | null;
   project: string | null;
   location: string | null;
+  /**
+   * Whether the provider may fall back to the server's own credentials
+   * (application default credentials, GOOGLE_VERTEX_API_KEY). Only the
+   * default workspace's providers may; see `mayUseServerCredentials`.
+   * Environment values the provider may use are already filled in above.
+   */
+  serverCredentials: boolean;
 };
 
 export type AiProviderModelResult = {

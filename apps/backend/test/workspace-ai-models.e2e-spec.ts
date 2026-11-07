@@ -55,6 +55,8 @@ describe('Workspace AI models and secrets (e2e)', () => {
   const KEY_B = `sk-b-${suffix}`;
   /** The Authorization header of every completion request the fake model received. */
   const seenKeys: string[] = [];
+  /** The x-goog-api-key header of every Google request the fake server received. */
+  const seenGoogleKeys: string[] = [];
 
   let adminA: string;
   let adminB: string;
@@ -119,6 +121,18 @@ describe('Workspace AI models and secrets (e2e)', () => {
     fake = createServer((req, res) => {
       req.resume();
       req.on('end', () => {
+        const googleKey = req.headers['x-goog-api-key'];
+        if (typeof googleKey === 'string') {
+          // A Google model list, as a collector would answer it.
+          seenGoogleKeys.push(googleKey);
+          res.setHeader('content-type', 'application/json');
+          res.end(
+            JSON.stringify({
+              models: [{ name: 'models/gemini-canary', supportedGenerationMethods: ['generateContent'] }],
+            }),
+          );
+          return;
+        }
         const authorization = req.headers.authorization ?? '';
         seenKeys.push(authorization);
         const title = authorization === `Bearer ${KEY_B}` ? 'Bravo workspace title' : 'Alpha workspace title';
@@ -354,6 +368,141 @@ describe('Workspace AI models and secrets (e2e)', () => {
         .send({ name: `Shared name ${suffix} API Key`, value: 'v' })
         .expect(409);
       expect(conflict.body.code).toBe('SECRET_NAME_CONFLICT');
+    });
+  });
+
+  describe("the server's own credentials are the default workspace's only", () => {
+    const SERVER_KEY = `server-google-key-${suffix}`;
+    const GOOGLE_ENV = [
+      'GOOGLE_API_KEY',
+      'GEMINI_API_KEY',
+      'GOOGLE_GENERATIVE_AI_API_KEY',
+      'GOOGLE_CLOUD_PROJECT',
+      'GOOGLE_CLOUD_LOCATION',
+      'GOOGLE_VERTEX_PROJECT',
+      'GOOGLE_VERTEX_LOCATION',
+    ];
+    const savedEnv: Record<string, string | undefined> = {};
+    const created: Array<{ token: string; id: string }> = [];
+
+    /** Creates a provider, then stores its key the way Settings → AI models does. */
+    async function createProvider(token: string, { apiKey, ...body }: Record<string, unknown>) {
+      let provider = (
+        await call(token, 'post', '/ai-providers')
+          .send({ name: `Google ${randomBytes(3).toString('hex')}`, ...body })
+          .expect(201)
+      ).body;
+      created.push({ token, id: provider.id });
+      if (apiKey) {
+        provider = (await call(token, 'patch', `/ai-providers/${provider.id}`).send({ apiKey }).expect(200)).body;
+      }
+      return provider;
+    }
+
+    beforeAll(() => {
+      for (const key of GOOGLE_ENV) {
+        savedEnv[key] = process.env[key];
+        delete process.env[key];
+      }
+      // A canary standing in for the installation's key, project and location.
+      process.env.GOOGLE_API_KEY = SERVER_KEY;
+      process.env.GOOGLE_CLOUD_PROJECT = `server-project-${suffix}`;
+      process.env.GOOGLE_CLOUD_LOCATION = 'global';
+    });
+
+    afterAll(async () => {
+      for (const { token, id } of created) {
+        await call(token, 'delete', `/ai-providers/${id}`);
+      }
+      for (const key of GOOGLE_ENV) {
+        if (savedEnv[key] === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = savedEnv[key];
+        }
+      }
+    });
+
+    it("never sends the server's Google key to a URL another workspace chose", async () => {
+      const provider = await createProvider(adminB, { type: 'google', baseUrl });
+      expect(provider.isConfigured).toBe(false);
+
+      const before = seenGoogleKeys.length;
+      const listing = await call(adminB, 'get', `/ai-providers/${provider.id}/models`).expect(400);
+      expect(listing.body.code).toBe('AI_PROVIDER_NOT_CONFIGURED');
+      await expect(
+        app.get(ChatModelFactory).resolve({
+          workspaceId: WORKSPACE_B_ID,
+          job: AiModelJob.CONVERSATION,
+          aiProviderId: provider.id,
+          modelId: 'gemini-canary',
+        }),
+      ).rejects.toMatchObject({ code: 'AI_PROVIDER_NOT_CONFIGURED' });
+      expect(seenGoogleKeys.slice(before)).toEqual([]);
+    });
+
+    it('uses its own stored Google key', async () => {
+      const ownKey = `b-google-key-${suffix}`;
+      const provider = await createProvider(adminB, { type: 'google', baseUrl, apiKey: ownKey });
+      expect(provider.isConfigured).toBe(true);
+
+      const before = seenGoogleKeys.length;
+      const models = (await call(adminB, 'get', `/ai-providers/${provider.id}/models`).expect(200)).body;
+      expect(models.map((m: { id: string }) => m.id)).toEqual(['gemini-canary']);
+      expect(seenGoogleKeys.slice(before)).toEqual([ownKey]);
+    });
+
+    it('cannot run Vertex AI on the server project or application default credentials', async () => {
+      // Nothing stored: the server's project and location would otherwise fill in.
+      const bare = await createProvider(adminB, { type: 'google_vertex' });
+      expect(bare.isConfigured).toBe(false);
+      // Project and location stored, but no service account: that would be the server's ADC.
+      const noAccount = await createProvider(adminB, {
+        type: 'google_vertex',
+        project: `b-project-${suffix}`,
+        location: 'global',
+      });
+      expect(noAccount.isConfigured).toBe(false);
+      for (const id of [bare.id, noAccount.id]) {
+        await expect(
+          app.get(ChatModelFactory).resolve({
+            workspaceId: WORKSPACE_B_ID,
+            job: AiModelJob.CONVERSATION,
+            aiProviderId: id,
+            modelId: 'gemini-canary',
+          }),
+        ).rejects.toMatchObject({ code: 'AI_PROVIDER_NOT_CONFIGURED' });
+      }
+      const listing = await call(adminB, 'get', `/ai-providers/${noAccount.id}/models`).expect(400);
+      expect(listing.body.code).toBe('AI_PROVIDER_NOT_CONFIGURED');
+
+      // With its own service account, project and location it is ready.
+      const own = await createProvider(adminB, {
+        type: 'google_vertex',
+        project: `b-project-${suffix}`,
+        location: 'global',
+        apiKey: JSON.stringify({ type: 'service_account', client_email: 'b@example.com', private_key: 'k' }),
+      });
+      expect(own.isConfigured).toBe(true);
+      await expect(
+        app.get(ChatModelFactory).resolve({
+          workspaceId: WORKSPACE_B_ID,
+          job: AiModelJob.CONVERSATION,
+          aiProviderId: own.id,
+          modelId: 'gemini-canary',
+        }),
+      ).resolves.toMatchObject({ modelId: 'gemini-canary' });
+    });
+
+    it('still lets the default workspace fall back to them', async () => {
+      const google = await createProvider(adminA, { type: 'google', baseUrl });
+      expect(google.isConfigured).toBe(true);
+      const before = seenGoogleKeys.length;
+      await call(adminA, 'get', `/ai-providers/${google.id}/models`).expect(200);
+      expect(seenGoogleKeys.slice(before)).toEqual([SERVER_KEY]);
+
+      const vertex = await createProvider(adminA, { type: 'google_vertex' });
+      expect(vertex.isConfigured).toBe(true);
     });
   });
 

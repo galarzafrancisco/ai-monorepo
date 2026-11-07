@@ -46,11 +46,11 @@ export class AiProviderEntity {
   @Column({ type: 'text', nullable: true, name: 'base_url' })
   baseUrl!: string | null;
 
-  /** Google Cloud project for Vertex AI. Null falls back to the environment. */
+  /** Google Cloud project for Vertex AI. Null falls back to the environment, in the default workspace only. */
   @Column({ type: 'text', nullable: true })
   project!: string | null;
 
-  /** Google Cloud location for Vertex AI. Null falls back to the environment. */
+  /** Google Cloud location for Vertex AI. Null falls back to the environment, in the default workspace only. */
   @Column({ type: 'text', nullable: true })
   location!: string | null;
 

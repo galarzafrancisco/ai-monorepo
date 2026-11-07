@@ -63,6 +63,8 @@ Threads normally store no provider or model and follow the `conversation` select
 
 A Google Vertex AI provider is created by default. It uses the stored service account JSON, project and location when present. Anything left empty falls back to application default credentials, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
 
+Those server credentials, and a Google API key in `GOOGLE_API_KEY`, `GEMINI_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`, are the installation's, so only providers in the default workspace fall back to them. A provider in any other workspace must store its own key (Vertex AI: service account JSON, project and location). Without them it is not configured, and Taico never lets an AI SDK read a key from the environment for it. A workspace admin can point a provider at any URL, so a fallback would send the server's key to another company.
+
 ### Claude on Vertex AI
 
 A `google_vertex` provider also serves Anthropic's Claude models. There is no separate provider type:

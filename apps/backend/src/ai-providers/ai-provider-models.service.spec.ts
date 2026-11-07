@@ -30,6 +30,7 @@ const vertexConfig = {
   baseUrl: null,
   project: 'my-project',
   location: 'global',
+  serverCredentials: true,
 };
 
 type FakeResponse = { status: number; body: unknown };

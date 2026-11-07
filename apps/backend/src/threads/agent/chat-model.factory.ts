@@ -25,10 +25,9 @@ import {
   AiProviderNotConfiguredError,
 } from 'src/ai-providers/errors/ai-providers.errors';
 import {
-  googleApiKeyFromEnv,
+  requireApiKey,
   isVertexAnthropicModelId,
-  vertexLocationFromEnv,
-  vertexProjectFromEnv,
+  vertexSettings,
 } from 'src/ai-providers/google-environment';
 
 type ProviderOptions = Record<string, Record<string, string | number | boolean | null>>;
@@ -102,7 +101,7 @@ export class ChatModelFactory {
       case AiProviderType.OPENAI:
         return {
           model: wrapLanguageModel({
-            model: createOpenAI({ apiKey, baseURL })(modelId),
+            model: createOpenAI({ apiKey: requireApiKey(config), baseURL })(modelId),
             middleware: openaiToolNamespacesMiddleware,
           }),
           providerType: config.type,
@@ -113,14 +112,14 @@ export class ChatModelFactory {
 
       case AiProviderType.ANTHROPIC:
         return {
-          model: createAnthropic({ apiKey, baseURL })(modelId),
+          model: createAnthropic({ apiKey: requireApiKey(config), baseURL })(modelId),
           providerType: config.type,
           modelId,
         };
 
       case AiProviderType.GOOGLE:
         return {
-          model: createGoogle({ apiKey: apiKey ?? googleApiKeyFromEnv(), baseURL })(modelId),
+          model: createGoogle({ apiKey: requireApiKey(config), baseURL })(modelId),
           providerType: config.type,
           modelId,
         };
@@ -130,7 +129,7 @@ export class ChatModelFactory {
 
       case AiProviderType.XAI:
         return {
-          model: createXai({ apiKey, baseURL })(modelId),
+          model: createXai({ apiKey: requireApiKey(config), baseURL })(modelId),
           providerType: config.type,
           modelId,
         };
@@ -171,32 +170,20 @@ export class ChatModelFactory {
   }
 
   /**
-   * Stored project, location and service account win. Anything left empty
-   * falls back to the environment and application default credentials.
+   * Stored project, location and service account win. In the default
+   * workspace, anything left empty falls back to the environment and
+   * application default credentials; elsewhere all three must be stored.
    *
    * Claude models (`claude-*`) go through Vertex AI's Anthropic API; every
    * other model id goes through the Gemini API. Both use the same project,
    * location and credentials.
    */
   private buildVertex(config: AiProviderConfigResult, modelId: string): ResolvedChatModel {
-    let credentials: Record<string, unknown> | undefined;
-    if (config.apiKey) {
-      try {
-        credentials = JSON.parse(config.apiKey);
-      } catch {
-        throw new AiProviderNotConfiguredError(config.id);
-      }
-    }
-
-    const settings = {
-      project: config.project ?? vertexProjectFromEnv(),
-      location: config.location ?? vertexLocationFromEnv(),
-      googleAuthOptions: credentials ? { credentials } : undefined,
-    };
+    const { apiKey, ...settings } = vertexSettings(config);
 
     const model = isVertexAnthropicModelId(modelId)
       ? createVertexAnthropic(settings)(modelId)
-      : createVertex(settings)(modelId);
+      : createVertex({ ...settings, apiKey })(modelId);
 
     return { model, providerType: AiProviderType.GOOGLE_VERTEX, modelId };
   }

@@ -1,5 +1,7 @@
 import { jsonSchema, streamText, tool } from 'ai';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
+import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
+import { AiProviderNotConfiguredError } from 'src/ai-providers/errors/ai-providers.errors';
 import { ChatModelFactory } from './chat-model.factory';
 import { DEFAULT_WORKSPACE_ID } from '../../workspaces/workspaces.constants';
 
@@ -18,6 +20,9 @@ jest.mock('src/ai-providers/chatgpt-subscription/chatgpt-subscription.service', 
 }));
 
 const GOOGLE_ENV_KEYS = [
+  'OPENAI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'XAI_API_KEY',
   'GOOGLE_CLOUD_PROJECT',
   'GOOGLE_CLOUD_LOCATION',
   'GOOGLE_API_KEY',
@@ -28,21 +33,29 @@ const GOOGLE_ENV_KEYS = [
 describe('ChatModelFactory', () => {
   const originalEnv = { ...process.env };
 
-  const providerConfig = (type: AiProviderType) => ({
+  // The provider service fills in what the environment provides, so a config
+  // here is already resolved; Vertex AI by default runs on application default credentials.
+  const providerConfig = (type: AiProviderType, overrides: Partial<AiProviderConfigResult> = {}) => ({
     id: 'provider-1',
     type,
-    apiKey: null,
+    apiKey: type === AiProviderType.GOOGLE_VERTEX ? null : 'test-key',
     baseUrl: null,
-    project: null,
-    location: null,
+    project: type === AiProviderType.GOOGLE_VERTEX ? 'my-project' : null,
+    location: type === AiProviderType.GOOGLE_VERTEX ? 'global' : null,
+    serverCredentials: true,
+    ...overrides,
   });
 
-  const factoryFor = (type: AiProviderType, selectedModelId: string) => {
+  const factoryFor = (
+    type: AiProviderType,
+    selectedModelId: string,
+    overrides: Partial<AiProviderConfigResult> = {},
+  ) => {
     const resolveSelection = jest.fn(async () => ({
-      provider: providerConfig(type),
+      provider: providerConfig(type, overrides),
       modelId: selectedModelId,
     }));
-    const getAiProviderConfigById = jest.fn(async () => providerConfig(type));
+    const getAiProviderConfigById = jest.fn(async () => providerConfig(type, overrides));
     const modelForTurn = jest.fn(async () => ({ modelId: 'plan-model' }));
     const factory = new ChatModelFactory(
       { getAiProviderConfigById } as never,
@@ -62,10 +75,7 @@ describe('ChatModelFactory', () => {
     process.env = originalEnv;
   });
 
-  it('uses Vertex AI from the environment when nothing is stored on the provider', async () => {
-    process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
-    process.env.GOOGLE_CLOUD_LOCATION = 'global';
-
+  it('uses Vertex AI on application default credentials when no service account is stored', async () => {
     const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash');
     const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION });
 
@@ -75,10 +85,61 @@ describe('ChatModelFactory', () => {
     });
   });
 
-  it('runs a Gemini model on Vertex AI through the Gemini API', async () => {
-    process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
-    process.env.GOOGLE_CLOUD_LOCATION = 'global';
+  describe('a provider that may not use server credentials', () => {
+    const serviceAccount = JSON.stringify({ client_email: 'sa@example.com', private_key: 'key' });
 
+    it('refuses Vertex AI without its own service account, project and location', async () => {
+      for (const overrides of [
+        { apiKey: null },
+        { apiKey: serviceAccount, project: null },
+        { apiKey: serviceAccount, location: null },
+      ]) {
+        const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash', {
+          serverCredentials: false,
+          ...overrides,
+        });
+        await expect(
+          factory.resolve({ workspaceId: 'workspace-b', job: AiModelJob.CONVERSATION }),
+        ).rejects.toBeInstanceOf(AiProviderNotConfiguredError);
+      }
+    });
+
+    it('runs Vertex AI on its own service account, ignoring GOOGLE_VERTEX_API_KEY', async () => {
+      process.env.GOOGLE_VERTEX_API_KEY = 'server-key';
+      try {
+        const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash', {
+          serverCredentials: false,
+          apiKey: serviceAccount,
+        });
+        const resolved = await factory.resolve({
+          workspaceId: 'workspace-b',
+          job: AiModelJob.CONVERSATION,
+        });
+        // Express mode (the server key) would use the global endpoint without a project.
+        expect((resolved.model as { config: { baseURL: string } }).config.baseURL).toContain(
+          'projects/my-project',
+        );
+      } finally {
+        delete process.env.GOOGLE_VERTEX_API_KEY;
+      }
+    });
+
+    it.each([AiProviderType.GOOGLE, AiProviderType.OPENAI, AiProviderType.ANTHROPIC, AiProviderType.XAI])(
+      'refuses %s without a stored key, even with a key in the environment',
+      async (type) => {
+        process.env.GOOGLE_API_KEY = 'server-key';
+        process.env.OPENAI_API_KEY = 'server-key';
+        process.env.ANTHROPIC_API_KEY = 'server-key';
+        process.env.XAI_API_KEY = 'server-key';
+        const { factory } = factoryFor(type, 'some-model', { apiKey: null, serverCredentials: false });
+        await expect(
+          factory.resolve({ workspaceId: 'workspace-b', job: AiModelJob.CONVERSATION }),
+        ).rejects.toBeInstanceOf(AiProviderNotConfiguredError);
+      },
+    );
+  });
+
+  it('runs a Gemini model on Vertex AI through the Gemini API', async () => {
     const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash');
     const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
       job: AiModelJob.CONVERSATION,
@@ -94,10 +155,7 @@ describe('ChatModelFactory', () => {
   it.each(['claude-sonnet-4-5', 'claude-opus-4-1@20250805'])(
     'runs %s on Vertex AI through the Anthropic API',
     async (modelId) => {
-      process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
-      process.env.GOOGLE_CLOUD_LOCATION = 'us-east5';
-
-      const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, modelId);
+      const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, modelId, { location: 'us-east5' });
       const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION });
 
       expect(resolved).toMatchObject({ providerType: AiProviderType.GOOGLE_VERTEX, modelId });
