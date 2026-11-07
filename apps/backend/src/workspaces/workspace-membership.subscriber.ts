@@ -21,8 +21,9 @@ import { workspaceRoleForUserRole } from './workspaces.service';
  * Actors are created in several places (people, agents, seeds), so this
  * hooks the inserts rather than each caller. It runs in the same transaction
  * as the insert. A role change made with `update()` instead of `save()`
- * carries no actor id and is not seen. Once Taico can hold more than one workspace, the workspace
- * comes from whoever creates the actor and this goes away.
+ * carries no actor id and is not seen. Once Taico can hold more than one
+ * workspace, the workspace comes from whoever creates the actor and this
+ * goes away.
  */
 @Injectable()
 export class WorkspaceMembershipSubscriber
@@ -35,17 +36,12 @@ export class WorkspaceMembershipSubscriber
   async afterInsert(event: InsertEvent<unknown>): Promise<void> {
     if (event.metadata.target === ActorEntity) {
       const actor = event.entity as ActorEntity;
-      await this.upsertDefaultMembership(event.manager, actor.id, WorkspaceRole.MEMBER, false);
+      await this.addDefaultMembership(event.manager, actor.id);
       return;
     }
     if (event.metadata.target === User) {
       const user = event.entity as User;
-      await this.upsertDefaultMembership(
-        event.manager,
-        user.actorId,
-        workspaceRoleForUserRole(user.role),
-        true,
-      );
+      await this.setDefaultMembershipRole(event.manager, user);
     }
   }
 
@@ -63,30 +59,42 @@ export class WorkspaceMembershipSubscriber
     if (!user.actorId) {
       return;
     }
-    await this.upsertDefaultMembership(
-      event.manager,
-      user.actorId,
-      workspaceRoleForUserRole(user.role),
-      true,
-    );
+    await this.setDefaultMembershipRole(event.manager, user);
   }
 
-  private async upsertDefaultMembership(
+  /** Adds the actor to the default workspace as a member, if not already in it. */
+  private async addDefaultMembership(
     manager: EntityManager,
     actorId: string,
-    role: WorkspaceRole,
-    overwriteRole: boolean,
   ): Promise<void> {
-    const query = manager
+    await manager
       .createQueryBuilder()
       .insert()
       .into(WorkspaceMemberEntity)
-      .values({ workspaceId: DEFAULT_WORKSPACE_ID, actorId, role });
-    if (overwriteRole) {
-      query.orUpdate(['role'], ['workspace_id', 'actor_id']);
-    } else {
-      query.orIgnore();
-    }
-    await query.execute();
+      .values({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        actorId,
+        role: WorkspaceRole.MEMBER,
+      })
+      .orIgnore()
+      .execute();
+  }
+
+  /** Sets the person's default-workspace role from `users.role`, adding the membership if missing. */
+  private async setDefaultMembershipRole(
+    manager: EntityManager,
+    user: User,
+  ): Promise<void> {
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(WorkspaceMemberEntity)
+      .values({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        actorId: user.actorId,
+        role: workspaceRoleForUserRole(user.role),
+      })
+      .orUpdate(['role'], ['workspace_id', 'actor_id'])
+      .execute();
   }
 }

@@ -3,8 +3,12 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 const DEFAULT_WORKSPACE_ID = '00000000-0000-4000-8000-000000000001';
 
 /**
- * Adds workspaces and workspace members, creates the default workspace and
- * puts every existing actor in it. Admins become workspace admins.
+ * Adds workspaces and workspace members, and creates the default workspace.
+ *
+ * The default workspace row is created here, not only at startup, because
+ * later migrations backfill `workspace_id` columns with its id (and an FK to
+ * it) and run before the app starts. Memberships are added at startup by
+ * `WorkspacesService.onModuleInit`, which owns the role rule.
  */
 export class Workspaces1763500000000 implements MigrationInterface {
   name = 'Workspaces1763500000000';
@@ -48,17 +52,6 @@ export class Workspaces1763500000000 implements MigrationInterface {
 
     await queryRunner.query(
       `INSERT INTO "workspaces" ("id", "slug", "name", "row_version") VALUES ($1, 'default', 'Default workspace', 1)`,
-      [DEFAULT_WORKSPACE_ID],
-    );
-    await queryRunner.query(
-      `
-      INSERT INTO "workspace_members" ("workspace_id", "actor_id", "role", "row_version")
-      SELECT $1, a."id",
-        CASE WHEN u."role" = 'admin' THEN 'admin' ELSE 'member' END,
-        1
-      FROM "actors" a
-      LEFT JOIN "users" u ON u."actor_id" = a."id"
-      `,
       [DEFAULT_WORKSPACE_ID],
     );
   }
