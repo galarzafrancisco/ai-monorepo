@@ -168,7 +168,7 @@ export class ThreadsController {
     @Param('taskId') taskId: string,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto | null> {
-    const result = await this.threadsService.findThreadByTaskIdInWorkspace(
+    const result = await this.threadsService.findThreadByTaskId(
       workspaceId,
       taskId,
     );
@@ -204,7 +204,7 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
-    const result = await this.threadsService.getThreadInWorkspace(
+    const result = await this.threadsService.getThreadById(
       workspaceId,
       params.id,
     );
@@ -455,8 +455,7 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadTokenUsageResponseDto> {
-    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
-    const result = await this.threadAgentLogService.getTokenUsage(params.id);
+    const result = await this.threadAgentLogService.getTokenUsage(workspaceId, params.id);
     return ThreadTokenUsageResponseDto.fromResult(result);
   }
 
@@ -541,8 +540,7 @@ export class ThreadsController {
     @CurrentUser() user: UserContext,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
-    await this.threadReadStateService.markRead(params.id, user.actorId);
+    await this.threadReadStateService.markRead(workspaceId, params.id, user.actorId);
   }
 
   // Read scope is enough: a pin only changes the caller's own list.
@@ -558,8 +556,7 @@ export class ThreadsController {
     @CurrentUser() user: UserContext,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
-    await this.threadPinsService.pin(params.id, user.actorId);
+    await this.threadPinsService.pin(workspaceId, params.id, user.actorId);
   }
 
   @Delete(':id/pin')
@@ -574,8 +571,7 @@ export class ThreadsController {
     @CurrentUser() user: UserContext,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
-    await this.threadPinsService.unpin(params.id, user.actorId);
+    await this.threadPinsService.unpin(workspaceId, params.id, user.actorId);
   }
 
   @Get(':id/messages')

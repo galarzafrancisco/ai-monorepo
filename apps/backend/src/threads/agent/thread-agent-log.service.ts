@@ -183,7 +183,7 @@ export class ThreadAgentLogService {
     transactionManager?: EntityManager,
   ): Promise<IngestPendingResult> {
     return this.withManager(transactionManager, async (manager) => {
-      const headId = await this.lockHead(manager, input.threadId);
+      const { headId } = await this.lockHead(manager, input.threadId);
       const isBackfill = headId === null;
 
       const unlinked: PendingDisplayRow[] = await manager.query(
@@ -591,7 +591,8 @@ export class ThreadAgentLogService {
    * each model step. Steps on branches a compaction left behind still count:
    * the totals are what the thread has spent, not what the model reads now.
    */
-  async getTokenUsage(threadId: string): Promise<ThreadTokenUsageResult> {
+  /** A thread in another workspace is not found. */
+  async getTokenUsage(workspaceId: string, threadId: string): Promise<ThreadTokenUsageResult> {
     // A step with no assistant message, or a provider that reports nothing,
     // leaves no figure: the sums skip those rows.
     const rows: Array<{
@@ -602,7 +603,8 @@ export class ThreadAgentLogService {
     }> = await this.dataSource.query(
       `SELECT (SELECT l.usage->>'inputTokens'
                  FROM thread_agent_messages l
-                WHERE l.thread_id = t.id AND jsonb_typeof(l.usage) = 'object'
+                WHERE l.workspace_id = t.workspace_id AND l.thread_id = t.id
+                  AND jsonb_typeof(l.usage) = 'object'
                 ORDER BY l.created_at DESC, l.id DESC
                 LIMIT 1) AS context_tokens,
               SUM((m.usage->>'inputTokens')::numeric) AS input_tokens,
@@ -610,10 +612,11 @@ export class ThreadAgentLogService {
               COUNT(m.id) AS steps
          FROM threads t
          LEFT JOIN thread_agent_messages m
-           ON m.thread_id = t.id AND jsonb_typeof(m.usage) = 'object'
-        WHERE t.id = $1
+           ON m.workspace_id = t.workspace_id AND m.thread_id = t.id
+          AND jsonb_typeof(m.usage) = 'object'
+        WHERE t.id = $1 AND t.workspace_id = $2
         GROUP BY t.id`,
-      [threadId],
+      [threadId, workspaceId],
     );
 
     if (rows.length === 0) {
@@ -656,13 +659,14 @@ export class ThreadAgentLogService {
     return rows[0].secret;
   }
 
+  /** Locks the thread's head; returns it and the thread's workspace. */
   private async lockHead(
     manager: EntityManager,
     threadId: string,
-  ): Promise<string | null> {
-    const rows: Array<{ head_agent_message_id: string | null }> =
+  ): Promise<{ headId: string | null; workspaceId: string }> {
+    const rows: Array<{ head_agent_message_id: string | null; workspace_id: string }> =
       await manager.query(
-        `SELECT head_agent_message_id FROM threads WHERE id = $1 FOR UPDATE`,
+        `SELECT head_agent_message_id, workspace_id FROM threads WHERE id = $1 FOR UPDATE`,
         [threadId],
       );
 
@@ -670,7 +674,7 @@ export class ThreadAgentLogService {
       throw new ThreadNotFoundError(threadId);
     }
 
-    return rows[0].head_agent_message_id;
+    return { headId: rows[0].head_agent_message_id, workspaceId: rows[0].workspace_id };
   }
 
   private async appendWithManager(
@@ -678,11 +682,14 @@ export class ThreadAgentLogService {
     threadId: string,
     drafts: AgentMessageDraft[],
   ): Promise<ThreadAgentMessageEntity[]> {
-    let parentId = await this.lockHead(manager, threadId);
+    const head = await this.lockHead(manager, threadId);
+    let parentId = head.headId;
 
     const rows = drafts.map((draft) => {
       const row = manager.create(ThreadAgentMessageEntity, {
         id: randomUUID(),
+        // The agent log is in its thread's workspace.
+        workspaceId: head.workspaceId,
         threadId,
         parentId,
         role: draft.role,

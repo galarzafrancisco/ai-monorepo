@@ -130,7 +130,7 @@ export class ThreadAgentService {
             ...outcome,
           });
         }
-        this.emitActivity(threadId, self.actorId, 'turn_end', {
+        this.emitActivity(turn, self.actorId, 'turn_end', {
           turnId: turn.id,
         });
         await this.turns.finish(turn.id, ThreadTurnStatus.COMPLETED);
@@ -145,6 +145,7 @@ export class ThreadAgentService {
         try {
           await this.saveDisplayMessage({
             threadId,
+            workspaceId: turn.workspaceId,
             actorId: self.actorId,
             content: `I encountered an error while processing your message: ${reason}`,
             agentMessageId: null,
@@ -157,7 +158,7 @@ export class ThreadAgentService {
             error: this.describeError(reportError),
           });
         } finally {
-          this.emitActivity(threadId, self.actorId, 'turn_end', {
+          this.emitActivity(turn, self.actorId, 'turn_end', {
             turnId: turn.id,
           });
           requestsDuringTurn = await this.turns.finish(
@@ -222,14 +223,13 @@ export class ThreadAgentService {
       return null;
     }
 
+    // The thread's workspace bounds everything the turn can reach: its MCP
+    // token and its thread tools.
+    const { workspaceId } = turn;
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-      relations: ['stateContextBlock'],
+      where: { workspaceId, id: threadId },
     });
-    // The thread's workspace (its state block's) bounds everything the turn
-    // can reach: its MCP token and its thread tools.
-    const workspaceId = thread?.stateContextBlock?.workspaceId;
-    if (!thread || !workspaceId) {
+    if (!thread) {
       return null;
     }
     if (
@@ -364,14 +364,14 @@ export class ThreadAgentService {
       switch (part.type) {
         case 'start-step':
           streamId = randomUUID();
-          this.emitActivity(threadId, self.actorId, 'thinking', {
+          this.emitActivity(turn, self.actorId, 'thinking', {
             turnId: turn.id,
           });
           break;
         case 'reasoning-delta':
           break;
         case 'tool-call':
-          this.emitActivity(threadId, self.actorId, 'tool_calling', {
+          this.emitActivity(turn, self.actorId, 'tool_calling', {
             turnId: turn.id,
             toolCallId: part.toolCallId,
             toolName: part.toolName,
@@ -380,7 +380,7 @@ export class ThreadAgentService {
           });
           break;
         case 'tool-result':
-          this.emitActivity(threadId, self.actorId, 'tool_result', {
+          this.emitActivity(turn, self.actorId, 'tool_result', {
             turnId: turn.id,
             toolCallId: part.toolCallId,
             toolName: part.toolName,
@@ -389,7 +389,7 @@ export class ThreadAgentService {
           });
           break;
         case 'tool-error':
-          this.emitActivity(threadId, self.actorId, 'tool_result', {
+          this.emitActivity(turn, self.actorId, 'tool_result', {
             turnId: turn.id,
             toolCallId: part.toolCallId,
             toolName: part.toolName,
@@ -399,7 +399,7 @@ export class ThreadAgentService {
           });
           break;
         case 'finish-step':
-          this.emitActivity(threadId, self.actorId, 'step_end', {
+          this.emitActivity(turn, self.actorId, 'step_end', {
             turnId: turn.id,
           });
           break;
@@ -408,7 +408,7 @@ export class ThreadAgentService {
             ThreadAgentResponseDeltaEvent.INTERNAL,
             new ThreadAgentResponseDeltaEvent(
               { id: self.actorId },
-              { threadId, streamId, delta: part.text },
+              { threadId, workspaceId: turn.workspaceId, streamId, delta: part.text },
             ),
           );
           break;
@@ -433,6 +433,7 @@ export class ThreadAgentService {
       });
       await this.saveDisplayMessage({
         threadId,
+        workspaceId: turn.workspaceId,
         actorId: self.actorId,
         content: `I stopped because I called ${repeated.toolNames.map((name) => `\`${name}\``).join(', ')} ${repeated.times} times in a row with the same input. That was probably the wrong tool.`,
         agentMessageId: null,
@@ -478,6 +479,7 @@ export class ThreadAgentService {
     if (text && assistantRow) {
       await this.saveDisplayMessage({
         threadId: turn.threadId,
+        workspaceId: turn.workspaceId,
         actorId: self.actorId,
         content: text,
         agentMessageId: assistantRow.id,
@@ -487,12 +489,14 @@ export class ThreadAgentService {
 
   private async saveDisplayMessage(input: {
     threadId: string;
+    workspaceId: string;
     actorId: string;
     content: string;
     agentMessageId: string | null;
   }): Promise<void> {
     try {
       const withRelations = await this.messageWriter.write({
+        workspaceId: input.workspaceId,
         threadId: input.threadId,
         content: input.content,
         createdByActorId: input.actorId,
@@ -513,16 +517,16 @@ export class ThreadAgentService {
   }
 
   private emitActivity(
-    threadId: string,
+    turn: ClaimedTurn,
     actorId: string,
     kind: ThreadAgentActivityKind,
-    details: Omit<ThreadAgentActivityPayload, 'threadId' | 'kind'> = {},
+    details: Omit<ThreadAgentActivityPayload, 'threadId' | 'workspaceId' | 'kind'> = {},
   ): void {
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
       new ThreadAgentActivityEvent(
         { id: actorId },
-        { threadId, kind, ...details },
+        { threadId: turn.threadId, workspaceId: turn.workspaceId, kind, ...details },
       ),
     );
   }

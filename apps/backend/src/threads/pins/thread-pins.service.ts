@@ -18,31 +18,35 @@ export class ThreadPinsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  /** Pins the thread for the actor. Pinning a pinned thread changes nothing. */
-  async pin(threadId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  /**
+   * Pins the thread for the actor. Pinning a pinned thread changes nothing.
+   * A thread in another workspace is not found.
+   */
+  async pin(workspaceId: string, threadId: string, actorId: string): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
 
     await this.pinRepository
       .createQueryBuilder()
       .insert()
-      .values({ threadId, actorId })
+      .values({ workspaceId, threadId, actorId })
       .orIgnore()
       .execute();
 
-    this.emit(threadId, actorId, true);
+    this.emit(workspaceId, threadId, actorId, true);
   }
 
   /** Unpins the thread for the actor. Unpinning an unpinned thread changes nothing. */
-  async unpin(threadId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async unpin(workspaceId: string, threadId: string, actorId: string): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
 
-    await this.pinRepository.delete({ threadId, actorId });
+    await this.pinRepository.delete({ workspaceId, threadId, actorId });
 
-    this.emit(threadId, actorId, false);
+    this.emit(workspaceId, threadId, actorId, false);
   }
 
-  /** Which of these threads the actor has pinned. */
+  /** Which of these threads (in the workspace) the actor has pinned. */
   async getPinnedThreadIds(
+    workspaceId: string,
     threadIds: string[],
     actorId: string,
   ): Promise<Set<string>> {
@@ -53,27 +57,27 @@ export class ThreadPinsService {
     const rows = await this.pinRepository
       .createQueryBuilder('p')
       .select('p.thread_id', 'threadId')
-      .where('p.actor_id = :actorId', { actorId })
+      .where('p.workspace_id = :workspaceId', { workspaceId })
+      .andWhere('p.actor_id = :actorId', { actorId })
       .andWhere('p.thread_id IN (:...threadIds)', { threadIds })
       .getRawMany<{ threadId: string }>();
 
     return new Set(rows.map((row) => row.threadId));
   }
 
-  private async assertThreadExists(threadId: string): Promise<void> {
-    const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-      select: { id: true },
+  private async assertThreadInWorkspace(workspaceId: string, threadId: string): Promise<void> {
+    const exists = await this.threadRepository.exists({
+      where: { workspaceId, id: threadId },
     });
-    if (!thread) {
+    if (!exists) {
       throw new ThreadNotFoundError(threadId);
     }
   }
 
-  private emit(threadId: string, actorId: string, pinned: boolean): void {
+  private emit(workspaceId: string, threadId: string, actorId: string, pinned: boolean): void {
     this.eventEmitter.emit(
       ThreadPinnedEvent.INTERNAL,
-      new ThreadPinnedEvent({ id: actorId }, { threadId, actorId, pinned }),
+      new ThreadPinnedEvent({ id: actorId }, { threadId, workspaceId, actorId, pinned }),
     );
   }
 }

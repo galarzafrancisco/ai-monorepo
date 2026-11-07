@@ -30,6 +30,11 @@ export class ThreadAgentMessageEntity {
   @Column({ type: 'uuid', nullable: false, name: 'thread_id' })
   threadId!: string;
 
+  /** Always its thread's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @ManyToOne(() => ThreadEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'thread_id' })
   thread?: ThreadEntity;

@@ -16,6 +16,7 @@ describe('ThreadTaskAssignmentProjectorService', () => {
 
   const assignedTask = {
     id: 'task-1',
+    workspaceId: 'workspace-1',
     name: 'Assigned task',
     assigneeActorId: 'actor-2',
   } as TaskEntity;
@@ -51,8 +52,8 @@ describe('ThreadTaskAssignmentProjectorService', () => {
 
     await service.onTaskAssigned(new TaskAssignedEvent({ id: 'actor-1' }, assignedTask));
 
-    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('task-1');
-    expect(threadsService.addParticipant).toHaveBeenCalledWith('thread-1', 'actor-2');
+    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('workspace-1', 'task-1');
+    expect(threadsService.addParticipant).toHaveBeenCalledWith('workspace-1', 'thread-1', 'actor-2');
   });
 
   it('does nothing when the assigned task is not in a thread', async () => {
@@ -60,7 +61,7 @@ describe('ThreadTaskAssignmentProjectorService', () => {
 
     await service.onTaskAssigned(new TaskAssignedEvent({ id: 'actor-1' }, assignedTask));
 
-    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('task-1');
+    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('workspace-1', 'task-1');
     expect(threadsService.addParticipant).not.toHaveBeenCalled();
   });
 
@@ -83,7 +84,7 @@ describe('ThreadTaskAssignmentProjectorService', () => {
 
     await service.onTaskAssigned(new TaskAssignedEvent({ id: 'actor-1' }, assignedTask));
 
-    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('task-1');
+    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('workspace-1', 'task-1');
     expect(threadsService.addParticipant).not.toHaveBeenCalled();
   });
 });

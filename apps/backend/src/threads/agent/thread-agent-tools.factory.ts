@@ -71,7 +71,7 @@ export class ThreadAgentToolsFactory {
     const { threadId, workspaceId, agentActorId, forActorId } = input;
 
     const cancelTimer = async (id: string, noun: 'schedule' | 'reminder') => {
-      const cancelled = await this.timers.cancel({ threadId, timerId: id, actorId: agentActorId });
+      const cancelled = await this.timers.cancel(workspaceId, { threadId, timerId: id, actorId: agentActorId });
       return {
         message: cancelled
           ? `Cancelled the ${noun} ${id}.`
@@ -92,7 +92,7 @@ export class ThreadAgentToolsFactory {
             .describe('What the user wants from this task, in one sentence. You get it back with the notification.'),
         }),
         execute: async ({ taskId, waitingFor }) => {
-          const task = await this.subscriptions.subscribe({
+          const task = await this.subscriptions.subscribe(workspaceId, {
             threadId,
             taskId,
             forActorId,
@@ -107,7 +107,7 @@ export class ThreadAgentToolsFactory {
         description: 'Stop being notified about a task in this thread.',
         inputSchema: z.object({ taskId: z.string() }),
         execute: async ({ taskId }) => {
-          const removed = await this.subscriptions.unsubscribe({
+          const removed = await this.subscriptions.unsubscribe(workspaceId, {
             threadId,
             taskId,
             actorId: agentActorId,
@@ -139,7 +139,7 @@ export class ThreadAgentToolsFactory {
             return { error: 'reason must not be empty.' };
           }
 
-          const timer = await this.timers.create({
+          const timer = await this.timers.create(workspaceId, {
             threadId,
             kind: ThreadTimerKind.SCHEDULE,
             reason,
@@ -148,6 +148,9 @@ export class ThreadAgentToolsFactory {
             firstFireAt: new Date(Date.now() + periodSeconds.value * 1000),
             forActorId,
           });
+          if (!timer) {
+            return { error: 'This thread no longer exists.' };
+          }
 
           const times = timer.maxIterations === 1 ? 'once' : `up to ${timer.maxIterations} times`;
           return {
@@ -215,7 +218,7 @@ export class ThreadAgentToolsFactory {
             fireAt = instant.value;
           }
 
-          const timer = await this.timers.create({
+          const timer = await this.timers.create(workspaceId, {
             threadId,
             kind: ThreadTimerKind.REMINDER,
             reason,
@@ -224,6 +227,9 @@ export class ThreadAgentToolsFactory {
             firstFireAt: fireAt,
             forActorId,
           });
+          if (!timer) {
+            return { error: 'This thread no longer exists.' };
+          }
 
           return {
             message: `It's now ${now.toISOString()}. I'll remind you at ${timer.nextFireAt.toISOString()}, in ${describeDelay(timer.nextFireAt.getTime() - now.getTime())}. You can cancel this reminder using ID ${timer.id}.`,
@@ -244,9 +250,9 @@ export class ThreadAgentToolsFactory {
         inputSchema: z.object({}),
         execute: async () => {
           const [timers, watched, watches] = await Promise.all([
-            this.timers.listActive(threadId),
-            this.subscriptions.listForThread(threadId),
-            this.watches.listForThread(threadId),
+            this.timers.listActive(workspaceId, threadId),
+            this.subscriptions.listForThread(workspaceId, threadId),
+            this.watches.listForThread(workspaceId, threadId),
           ]);
           return {
             now: new Date().toISOString(),
@@ -351,7 +357,7 @@ export class ThreadAgentToolsFactory {
         description: `Stop a watch started with ${WATCH_PULL_REQUEST_TOOL}, by its watch ID. Stopping one that already ended is harmless.`,
         inputSchema: z.object({ watchId: z.string() }),
         execute: async ({ watchId }) => {
-          const removed = await this.pullRequestWatches.stop({ threadId, watchId, actorId: agentActorId });
+          const removed = await this.pullRequestWatches.stop(workspaceId, { threadId, watchId, actorId: agentActorId });
           return removed
             ? `Stopped watching ${removed.targetLabel}.`
             : `There is no active watch ${watchId} in this thread; it may have ended already. Nothing to do.`;
@@ -390,7 +396,7 @@ export class ThreadAgentToolsFactory {
         description:
           "Get the current date and time and the user's timezone. Call it whenever the user asks what time or date it is, or before working out a local time for a reminder.",
         inputSchema: z.object({}),
-        execute: async () => this.time.getTimeContext(threadId),
+        execute: async () => this.time.getTimeContext(workspaceId, threadId),
       }),
       [RENAME_THREAD_TOOL]: tool({
         description: 'Rename this thread.',
@@ -399,7 +405,7 @@ export class ThreadAgentToolsFactory {
           if (!title.trim()) {
             return { error: 'title must not be empty.' };
           }
-          const renamed = await this.renamer.rename(threadId, title, agentActorId);
+          const renamed = await this.renamer.rename(workspaceId, threadId, title, agentActorId);
           return `Thread renamed to "${renamed}".`;
         },
       }),

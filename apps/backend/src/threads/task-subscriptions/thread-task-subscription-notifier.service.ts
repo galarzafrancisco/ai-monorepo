@@ -40,6 +40,7 @@ export class ThreadTaskSubscriptionNotifierService {
     try {
       const threadIds = await this.subscriptions.markTriggered({
         id: task.id,
+        workspaceId: task.workspaceId,
         name: task.name,
         status: task.status,
       });
@@ -55,7 +56,7 @@ export class ThreadTaskSubscriptionNotifierService {
 
   private async handleDeleted(event: TaskDeletedEvent): Promise<void> {
     try {
-      await this.subscriptions.removeForDeletedTask(event.taskId, event.actor.id);
+      await this.subscriptions.removeForDeletedTask(event.workspaceId, event.taskId, event.actor.id);
     } catch (error) {
       this.logFailure('Failed to remove subscriptions to a deleted task', event.taskId, error);
     }

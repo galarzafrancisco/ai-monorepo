@@ -39,7 +39,7 @@ describe('ThreadsGateway agent activity', () => {
     emitter.server = createServer() as never;
     emitter.handleAgentActivity(new ThreadAgentActivityEvent(
       { id: 'agent' },
-      { threadId: 'thread-1', turnId: 'turn', kind: 'tool_result', toolCallId: 'call', toolName: 'tasks_get', detailActorId: 'actor-a', input: '{"secret":"private"}', output: '{"task":"restricted"}' },
+      { threadId: 'thread-1', workspaceId: 'ws-1', turnId: 'turn', kind: 'tool_result', toolCallId: 'call', toolName: 'tasks_get', detailActorId: 'actor-a', input: '{"secret":"private"}', output: '{"task":"restricted"}' },
     ));
 
     expect(sockets[0].emit).toHaveBeenCalledTimes(1);
@@ -52,12 +52,21 @@ describe('ThreadsGateway agent activity', () => {
     expect(metadata).not.toHaveProperty('input');
     expect(metadata).not.toHaveProperty('output');
     expect(metadata).not.toHaveProperty('detailActorId');
+    expect(metadata).not.toHaveProperty('workspaceId');
     expect(sockets[2].emit).not.toHaveBeenCalled();
+
+    // The same thread id in another workspace's event reaches nobody here.
+    emitter.handleAgentActivity(new ThreadAgentActivityEvent(
+      { id: 'agent' },
+      { threadId: 'thread-1', workspaceId: 'ws-2', turnId: 'turn', kind: 'thinking' },
+    ));
+    expect(sockets[0].emit).toHaveBeenCalledTimes(1);
+    expect(sockets[1].emit).toHaveBeenCalledTimes(1);
 
     await receiver.unsubscribe(sockets[0] as never, { threadId: 'thread-1' });
     emitter.handleAgentActivity(new ThreadAgentActivityEvent(
       { id: 'agent' },
-      { threadId: 'thread-1', turnId: 'turn', kind: 'tool_result', detailActorId: 'actor-a', output: 'private' },
+      { threadId: 'thread-1', workspaceId: 'ws-1', turnId: 'turn', kind: 'tool_result', detailActorId: 'actor-a', output: 'private' },
     ));
     expect(sockets[0].emit).toHaveBeenCalledTimes(1);
   });

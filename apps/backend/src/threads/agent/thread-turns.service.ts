@@ -9,6 +9,8 @@ const STALE_AFTER_SECONDS = 60;
 export type ClaimedTurn = {
   id: string;
   threadId: string;
+  /** The thread's workspace: everything the turn does stays in it. */
+  workspaceId: string;
 };
 
 /**
@@ -30,16 +32,21 @@ export class ThreadTurnsService {
       [threadId, ThreadTurnStatus.FAILED, ThreadTurnStatus.RUNNING, STALE_AFTER_SECONDS],
     );
 
+    // The turn is in its thread's workspace. A thread that is gone claims
+    // nothing.
     const id = randomUUID();
-    const rows: Array<{ id: string }> = await this.dataSource.query(
-      `INSERT INTO thread_turns (id, thread_id, status) VALUES ($1, $2, $3)
+    const rows: Array<{ id: string; workspace_id: string }> = await this.dataSource.query(
+      `INSERT INTO thread_turns (id, thread_id, workspace_id, status)
+       SELECT $1, t.id, t.workspace_id, $3 FROM threads t WHERE t.id = $2
        ON CONFLICT (thread_id) WHERE status = 'running'
          DO UPDATE SET request_count = thread_turns.request_count + 1
-       RETURNING id`,
+       RETURNING id, workspace_id`,
       [id, threadId, ThreadTurnStatus.RUNNING],
     );
 
-    return rows[0].id === id ? { id, threadId } : null;
+    return rows[0]?.id === id
+      ? { id, threadId, workspaceId: rows[0].workspace_id }
+      : null;
   }
 
   /** Keeps the claim alive while the turn runs. Returns a function that stops it. */

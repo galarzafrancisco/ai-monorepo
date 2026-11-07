@@ -46,6 +46,8 @@ export class ThreadDeletedEvent {
   constructor(
     public readonly actor: EventActor,
     public readonly threadId: string,
+    /** The deleted thread's workspace. */
+    public readonly workspaceId: string,
   ) {}
 }
 
@@ -61,6 +63,8 @@ export type ThreadAgentActivityKind = 'thinking' | 'tool_calling' | 'tool_result
 
 export type ThreadAgentActivityPayload = {
   threadId: string;
+  /** The thread's workspace: the event only reaches its rooms. */
+  workspaceId: string;
   kind: ThreadAgentActivityKind;
   turnId?: string;
   toolCallId?: string;
@@ -82,6 +86,8 @@ export class ThreadAgentActivityEvent extends ThreadDomainEvent<ThreadAgentActiv
 
 export type ThreadAgentResponseDeltaPayload = {
   threadId: string;
+  /** The thread's workspace: the event only reaches its rooms. */
+  workspaceId: string;
   streamId: string;
   delta: string;
 };
@@ -96,6 +102,8 @@ export class ThreadAgentResponseDeltaEvent extends ThreadDomainEvent<ThreadAgent
 
 export type ThreadTitleUpdatedPayload = {
   threadId: string;
+  /** The thread's workspace: the event only reaches its rooms. */
+  workspaceId: string;
   title: string;
 };
 
@@ -109,6 +117,8 @@ export class ThreadTitleUpdatedEvent extends ThreadDomainEvent<ThreadTitleUpdate
 
 export type ThreadReadPayload = {
   threadId: string;
+  /** The thread's workspace: the event only reaches its rooms. */
+  workspaceId: string;
   /** Whose read position moved. Only this actor's clients are told. */
   actorId: string;
 };
@@ -123,6 +133,8 @@ export class ThreadReadEvent extends ThreadDomainEvent<ThreadReadPayload> {
 
 export type ThreadPinnedPayload = {
   threadId: string;
+  /** The thread's workspace: the event only reaches its rooms. */
+  workspaceId: string;
   /** Whose list changed. Only this actor's clients are told. */
   actorId: string;
   pinned: boolean;

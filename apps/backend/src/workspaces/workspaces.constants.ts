@@ -10,8 +10,8 @@ export const DEFAULT_WORKSPACE_SLUG = 'default';
 export const DEFAULT_WORKSPACE_NAME = 'Default workspace';
 
 /**
- * The workspace used by modules that are not scoped by workspace yet (threads,
- * task blueprints, startup seeding...) when they call a service that is. Each
+ * The workspace used by modules that are not scoped by workspace yet (agents,
+ * executions, integrations...) when they call a service that is. Each
  * later phase 3 task replaces its module's uses with the workspace of the row
  * it works on, and this constant goes away. Grep for it to find them.
  */

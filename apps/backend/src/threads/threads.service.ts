@@ -117,10 +117,10 @@ export class ThreadsService {
   ) { }
 
   /**
-   * Threads get their own `workspace_id` in phase 3b. Until then a thread's
-   * workspace is the workspace of its state block, which is always created in
-   * the caller's workspace. Methods that take `workspaceId` first only see
-   * threads (and attach tasks and blocks) in that workspace.
+   * Every public method takes the workspace first and only sees threads (and
+   * attaches tasks, blocks and participants) in it. A thread in another
+   * workspace answers ThreadNotFound. The thread, its state block and
+   * everything that hangs off it are in one workspace.
    */
   async createThread(
     workspaceId: string,
@@ -220,6 +220,7 @@ export class ThreadsService {
 
     const thread = this.threadRepository.create({
       id: randomUUID(),
+      workspaceId,
       title,
       createdByActorId: input.createdByActorId,
       parentTaskId: input.parentTaskId || null,
@@ -231,7 +232,7 @@ export class ThreadsService {
       savedThread = await this.threadRepository.save(thread);
     } catch (error) {
       if (this.isParentTaskThreadUniqueViolation(error, input.parentTaskId)) {
-        await this.contextBlockRepository.delete({ id: stateBlock.id });
+        await this.contextBlockRepository.delete({ workspaceId, id: stateBlock.id });
         throw new ParentTaskThreadAlreadyExistsError(input.parentTaskId!);
       }
       throw error;
@@ -271,6 +272,7 @@ export class ThreadsService {
 
     // Reload with relations
     const threadWithRelations = await this.getThreadWithRelations(
+      workspaceId,
       savedThread.id,
     );
 
@@ -295,13 +297,13 @@ export class ThreadsService {
     });
 
     // Scoped lookup before any write: a thread in another workspace is not found.
-    await this.getThreadWithRelations(threadId, workspaceId);
+    await this.getThreadWithRelations(workspaceId, threadId);
 
     if (input.title !== undefined) {
-      await this.threadRename.rename(threadId, input.title, actorId);
+      await this.threadRename.rename(workspaceId, threadId, input.title, actorId);
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId, workspaceId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
 
     this.logger.log({
       message: 'Thread updated',
@@ -339,7 +341,7 @@ export class ThreadsService {
     const stateBlockId = thread.stateContextBlockId;
     const stateBlockDeleted = await this.threadRepository.manager.transaction(
       async (manager) => {
-        await manager.delete(ThreadEntity, { id: threadId });
+        await manager.delete(ThreadEntity, { workspaceId, id: threadId });
 
         const hasChildren = await manager.exists(ContextBlockEntity, {
           where: { parentId: stateBlockId },
@@ -354,7 +356,7 @@ export class ThreadsService {
 
     this.eventEmitter.emit(
       ThreadDeletedEvent.INTERNAL,
-      new ThreadDeletedEvent({ id: actorId }, threadId),
+      new ThreadDeletedEvent({ id: actorId }, threadId, workspaceId),
     );
     if (stateBlockDeleted) {
       this.eventEmitter.emit(
@@ -383,7 +385,7 @@ export class ThreadsService {
     actorId: string,
   ): Promise<void> {
     await this.assertThreadInWorkspace(workspaceId, threadId);
-    await this.threadTimers.cancel({ threadId, timerId, actorId });
+    await this.threadTimers.cancel(workspaceId, { threadId, timerId, actorId });
   }
 
   /** Stops the agent watching a task. Removing a watch that does not exist is harmless. */
@@ -394,7 +396,7 @@ export class ThreadsService {
     actorId: string,
   ): Promise<void> {
     await this.assertThreadInWorkspace(workspaceId, threadId);
-    await this.taskSubscriptions.unsubscribe({ threadId, taskId, actorId });
+    await this.taskSubscriptions.unsubscribe(workspaceId, { threadId, taskId, actorId });
   }
 
   /** Stops the agent watching something. Stopping a watch that does not exist is harmless. */
@@ -405,7 +407,7 @@ export class ThreadsService {
     actorId: string,
   ): Promise<void> {
     await this.assertThreadInWorkspace(workspaceId, threadId);
-    await this.pullRequestWatches.stop({ threadId, watchId, actorId });
+    await this.pullRequestWatches.stop(workspaceId, { threadId, watchId, actorId });
   }
 
   /**
@@ -446,8 +448,7 @@ export class ThreadsService {
 
   /**
    * The gate for every public entry point that names a thread: a thread in
-   * another workspace answers ThreadNotFound. Also used by the controller
-   * before calling the read-state, pins and agent-log services.
+   * another workspace answers ThreadNotFound.
    */
   async assertThreadInWorkspace(workspaceId: string, threadId: string): Promise<void> {
     const exists = await this.threadRepository.exists({
@@ -458,32 +459,12 @@ export class ThreadsService {
     }
   }
 
-  /**
-   * The workspace a thread belongs to (its state block's), or null when the
-   * thread is gone. Used by the realtime gateway to pick the list room.
-   */
-  async getThreadWorkspaceId(threadId: string): Promise<string | null> {
-    const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-      relations: ['stateContextBlock'],
-      select: { id: true, stateContextBlock: { id: true, workspaceId: true } },
-      withDeleted: true,
-    });
-    return thread?.stateContextBlock?.workspaceId ?? null;
-  }
-
-  /** Not scoped by workspace: for internal listeners until phase 3b. */
-  async getThreadById(threadId: string): Promise<ThreadResult> {
-    const thread = await this.getThreadWithRelations(threadId);
-    return await this.buildThreadResult(thread);
-  }
-
   /** A thread in another workspace answers ThreadNotFound. */
-  async getThreadInWorkspace(
+  async getThreadById(
     workspaceId: string,
     threadId: string,
   ): Promise<ThreadResult> {
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     return await this.buildThreadResult(thread);
   }
 
@@ -501,8 +482,7 @@ export class ThreadsService {
 
     const query = this.threadRepository
       .createQueryBuilder('thread')
-      .innerJoin('thread.stateContextBlock', 'stateBlock')
-      .where('stateBlock.workspaceId = :workspaceId', { workspaceId });
+      .where('thread.workspaceId = :workspaceId', { workspaceId });
     if (input.actorId) {
       // The caller's pinned threads come first. At most one pin row matches
       // each thread, so the join never repeats a thread.
@@ -529,8 +509,8 @@ export class ThreadsService {
     const threadIds = threads.map((thread) => thread.id);
     const [unreadCounts, pinnedIds] = input.actorId
       ? await Promise.all([
-          this.threadReadStateService.getUnreadCounts(threadIds, input.actorId),
-          this.threadPinsService.getPinnedThreadIds(threadIds, input.actorId),
+          this.threadReadStateService.getUnreadCounts(workspaceId, threadIds, input.actorId),
+          this.threadPinsService.getPinnedThreadIds(workspaceId, threadIds, input.actorId),
         ])
       : [new Map<string, number>(), new Set<string>()];
 
@@ -567,7 +547,7 @@ export class ThreadsService {
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     const task = await this.taskRepository.findOne({
       where: { workspaceId, id: taskId },
     });
@@ -611,7 +591,7 @@ export class ThreadsService {
       await this.addParticipant(workspaceId, threadId, task.assigneeActorId);
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
@@ -627,7 +607,7 @@ export class ThreadsService {
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     thread.tasks = thread.tasks.filter((task) => task.id !== taskId);
     await this.threadRepository.save(thread);
 
@@ -637,7 +617,7 @@ export class ThreadsService {
       taskId,
     });
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
@@ -653,7 +633,7 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     const block = await this.contextBlockRepository.findOne({
       where: { workspaceId, id: contextBlockId },
     });
@@ -673,7 +653,7 @@ export class ThreadsService {
       });
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
@@ -689,7 +669,7 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     thread.referencedContextBlocks = thread.referencedContextBlocks.filter(
       (block) => block.id !== contextBlockId,
     );
@@ -701,7 +681,7 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
@@ -718,7 +698,7 @@ export class ThreadsService {
       tagName: input.name,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     const tag = await this.metaService.findOrCreateTagEntity(workspaceId, input.name);
 
     // Add tag if not already present
@@ -736,7 +716,7 @@ export class ThreadsService {
       });
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -752,7 +732,7 @@ export class ThreadsService {
       tagId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     thread.tags = thread.tags.filter((tag) => tag.id !== tagId);
     await this.threadRepository.save(thread);
 
@@ -765,7 +745,7 @@ export class ThreadsService {
     // Check if tag is now orphaned and clean it up
     await this.metaService.cleanupOrphanedTag(workspaceId, tagId);
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -784,7 +764,7 @@ export class ThreadsService {
       actorId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const thread = await this.getThreadWithRelations(workspaceId, threadId);
     const actor = await this.actorRepository.findOne({
       where: { id: actorId },
     });
@@ -813,26 +793,14 @@ export class ThreadsService {
       });
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId, workspaceId);
+    const updatedThread = await this.getThreadWithRelations(workspaceId, threadId);
     return await this.buildThreadResult(updatedThread);
   }
 
-  /** Not scoped by workspace: for internal listeners until phase 3b. */
-  async findThreadByTaskId(taskId: string): Promise<ThreadResult | null> {
-    return this.queryThreadByTaskId(taskId);
-  }
-
   /** A task in another workspace answers null, like a task with no thread. */
-  async findThreadByTaskIdInWorkspace(
+  async findThreadByTaskId(
     workspaceId: string,
     taskId: string,
-  ): Promise<ThreadResult | null> {
-    return this.queryThreadByTaskId(taskId, workspaceId);
-  }
-
-  private async queryThreadByTaskId(
-    taskId: string,
-    workspaceId?: string,
   ): Promise<ThreadResult | null> {
     this.logger.log({
       message: 'Finding thread by task ID',
@@ -852,13 +820,9 @@ export class ThreadsService {
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
       .innerJoin('thread.tasks', 'filterTask')
-      .where('filterTask.id = :taskId', { taskId });
-    if (workspaceId) {
-      query
-        .innerJoin('thread.stateContextBlock', 'stateBlock')
-        .andWhere('filterTask.workspaceId = :workspaceId', { workspaceId })
-        .andWhere('stateBlock.workspaceId = :workspaceId', { workspaceId });
-    }
+      .where('filterTask.id = :taskId', { taskId })
+      .andWhere('filterTask.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('thread.workspaceId = :workspaceId', { workspaceId });
     const thread = await query.getOne();
 
     if (!thread) {
@@ -868,14 +832,17 @@ export class ThreadsService {
     return await this.buildThreadResult(thread);
   }
 
-  async findThreadsByParentTaskId(parentTaskId: string): Promise<ThreadResult[]> {
+  async findThreadsByParentTaskId(
+    workspaceId: string,
+    parentTaskId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by parent task ID',
       parentTaskId,
     });
 
     const threads = await this.threadRepository.find({
-      where: { parentTaskId },
+      where: { workspaceId, parentTaskId },
       relations: [
         'createdByActor',
         'tasks',
@@ -894,6 +861,7 @@ export class ThreadsService {
   }
 
   async findThreadByParentTaskId(
+    workspaceId: string,
     parentTaskId: string,
   ): Promise<ThreadResult | null> {
     this.logger.log({
@@ -902,7 +870,7 @@ export class ThreadsService {
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { parentTaskId },
+      where: { workspaceId, parentTaskId },
       relations: [
         'createdByActor',
         'tasks',
@@ -935,8 +903,8 @@ export class ThreadsService {
 
     const threads = await this.threadRepository.find({
       where: {
+        workspaceId,
         stateContextBlockId: stateBlockId,
-        stateContextBlock: { workspaceId },
       },
       relations: [
         'createdByActor',
@@ -1045,22 +1013,17 @@ export class ThreadsService {
     return updatedBlock.content;
   }
 
-  /**
-   * With a workspace, a thread whose state block is in another workspace is
-   * not found. See createThread.
-   */
+  /** A thread in another workspace is not found. */
   private threadWhere(
     threadId: string,
-    workspaceId?: string,
+    workspaceId: string,
   ): FindOptionsWhere<ThreadEntity> {
-    return workspaceId
-      ? { id: threadId, stateContextBlock: { workspaceId } }
-      : { id: threadId };
+    return { workspaceId, id: threadId };
   }
 
   private async getThreadWithRelations(
+    workspaceId: string,
     threadId: string,
-    workspaceId?: string,
   ): Promise<ThreadEntity> {
     const thread = await this.threadRepository.findOne({
       where: this.threadWhere(threadId, workspaceId),
@@ -1125,17 +1088,14 @@ export class ThreadsService {
         { id: input.actor.id },
         {
           threadId: input.thread.id,
+          workspaceId: input.workspaceId,
           title: generatedTitle,
         },
       ),
     );
 
     try {
-      const stateBlock = await this.contextBlockRepository.findOneOrFail({
-        where: { id: input.thread.stateContextBlockId },
-        select: { id: true, workspaceId: true },
-      });
-      await this.contextService.updateBlock(stateBlock.workspaceId, stateBlock.id, {
+      await this.contextService.updateBlock(input.workspaceId, input.thread.stateContextBlockId, {
         title: `Thread State: ${generatedTitle}`,
       });
     } catch (error) {
@@ -1153,9 +1113,9 @@ export class ThreadsService {
 
   private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {
     const [taskSubscriptions, timers, watches] = await Promise.all([
-      this.loadTaskSubscriptions(thread.id),
-      this.threadTimers.listActive(thread.id),
-      this.threadWatches.listForThread(thread.id),
+      this.loadTaskSubscriptions(thread.workspaceId, thread.id),
+      this.threadTimers.listActive(thread.workspaceId, thread.id),
+      this.threadWatches.listForThread(thread.workspaceId, thread.id),
     ]);
     return this.mapThreadToResult(thread, taskSubscriptions, timers, watches);
   }
@@ -1197,9 +1157,12 @@ export class ThreadsService {
    * Oldest first. Loaded on its own rather than as a thread relation, so saving
    * a thread never touches subscriptions made while it was loaded.
    */
-  private async loadTaskSubscriptions(threadId: string): Promise<TaskSubscriptionResult[]> {
+  private async loadTaskSubscriptions(
+    workspaceId: string,
+    threadId: string,
+  ): Promise<TaskSubscriptionResult[]> {
     const subscriptions = await this.taskSubscriptionRepository.find({
-      where: { threadId },
+      where: { workspaceId, threadId },
       relations: ['task'],
       order: { createdAt: 'ASC' },
     });
@@ -1362,10 +1325,11 @@ export class ThreadsService {
       throw new ActorNotFoundForThreadError(input.createdByActorId);
     }
     const existingMessageCount = await this.threadMessageRepository.count({
-      where: { threadId: input.threadId },
+      where: { workspaceId, threadId: input.threadId },
     });
 
     const messageWithRelations = await this.threadMessageWriter.write({
+      workspaceId,
       threadId: input.threadId,
       content: input.content,
       createdByActorId: input.createdByActorId,
@@ -1417,7 +1381,7 @@ export class ThreadsService {
     const skip = (input.page - 1) * input.limit;
 
     const [messages, total] = await this.threadMessageRepository.findAndCount({
-      where: { threadId: input.threadId },
+      where: { workspaceId, threadId: input.threadId },
       relations: ['createdByActor'],
       // Newest first, so page 1 is always the latest messages however long
       // the thread gets. The id breaks ties so pages never overlap or skip.

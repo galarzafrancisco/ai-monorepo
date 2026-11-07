@@ -126,6 +126,7 @@ describe('TasksService auto-prune', () => {
 
     expect(result.status).toBe(TaskStatus.DONE);
     expect(threadsService.findThreadsByParentTaskId).toHaveBeenCalledWith(
+      WORKSPACE_ID,
       task.id,
     );
     expect(taskRepository.softRemove).toHaveBeenCalledWith(completedTask);
@@ -163,6 +164,7 @@ describe('TasksService auto-prune', () => {
     );
 
     expect(threadsService.findThreadsByParentTaskId).toHaveBeenCalledWith(
+      WORKSPACE_ID,
       task.id,
     );
     expect(taskRepository.softRemove).toHaveBeenCalledWith(completedTask);
@@ -192,6 +194,7 @@ describe('TasksService auto-prune', () => {
 
     expect(result.status).toBe(TaskStatus.DONE);
     expect(threadsService.findThreadsByParentTaskId).toHaveBeenCalledWith(
+      WORKSPACE_ID,
       task.id,
     );
     expect(taskRepository.softRemove).not.toHaveBeenCalled();

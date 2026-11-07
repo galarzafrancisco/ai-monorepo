@@ -20,10 +20,16 @@ import { ThreadMessageEntity } from './thread-message.entity';
 
 // Serves the thread list: newest activity first, id as the tie-break.
 @Index('IDX_threads_last_activity', ['lastActivityAt', 'id'])
+@Index('IDX_threads_workspace_last_activity', ['workspaceId', 'lastActivityAt', 'id'])
 @Entity({ name: 'threads' })
 export class ThreadEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text' })
   title!: string;
