@@ -53,11 +53,23 @@ export class WorkspacesService implements OnModuleInit {
    * membership at all.
    */
   async findWorkspaceIdForActor(actorId: string): Promise<string | null> {
+    return (await this.findMembershipForActor(actorId))?.workspaceId ?? null;
+  }
+
+  /**
+   * The membership of the workspace an actor works in (see
+   * `findWorkspaceIdForActor`), with its role; null if none.
+   */
+  async findMembershipForActor(
+    actorId: string,
+  ): Promise<{ workspaceId: string; role: WorkspaceRole } | null> {
     const membership = await this.memberRepository.findOne({
       where: { actorId },
       order: { createdAt: 'ASC' },
     });
-    return membership?.workspaceId ?? null;
+    return membership
+      ? { workspaceId: membership.workspaceId, role: membership.role }
+      : null;
   }
 
   private async ensureDefaultWorkspace(): Promise<void> {

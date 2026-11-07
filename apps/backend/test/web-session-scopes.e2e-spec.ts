@@ -3,12 +3,11 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import cookieParser from 'cookie-parser';
-import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
-import { User } from '../src/identity-provider/user.entity';
-import { ensureTestUser, getAuthCookies, TEST_USER_EMAIL } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 const SOME_ID = '00000000-0000-4000-8000-000000000000';
 
@@ -37,14 +36,12 @@ describe('Web session scopes E2E', () => {
     app.setGlobalPrefix('api/v1');
     await app.listen(0, '127.0.0.1');
     http = app.getHttpServer();
-    const ds = app.get(DataSource);
     await ensureTestUser(app);
-    const setRole = (role: 'admin' | 'standard') =>
-      ds.getRepository(User).update({ email: TEST_USER_EMAIL }, { role });
+    const setRole = (role: UserRole) => setTestUserRole(app, role);
     // Scopes are decided at login, so log in once per role.
-    await setRole('standard');
+    await setRole(UserRole.STANDARD);
     standardCookies = await getAuthCookies(http);
-    await setRole('admin');
+    await setRole(UserRole.ADMIN);
     adminCookies = await getAuthCookies(http);
   }, 30000);
 

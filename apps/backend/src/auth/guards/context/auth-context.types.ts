@@ -6,6 +6,12 @@ export type AuthContext = {
   claims: AccessTokenClaims;
   scopes: string[];
   subject: string;
+  /**
+   * The workspace this request works in: the token's `workspace_id` claim,
+   * or the default workspace for tokens minted before workspaces existed.
+   * See docs/architecture/workspaces.md.
+   */
+  workspaceId: string;
 };
 
 // Quick and dirty type to expose via the user @CurrentUser

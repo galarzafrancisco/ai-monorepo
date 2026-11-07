@@ -7,9 +7,9 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
-import { User } from '../src/identity-provider/user.entity';
 import { AccessRequestEntity } from '../src/access-requests/access-request.entity';
-import { ensureTestUser, getAuthCookies, TEST_USER_EMAIL } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 const MISSING_ID = '00000000-0000-4000-8000-000000000000';
 
@@ -20,8 +20,7 @@ describe('Access requests E2E', () => {
   let adminCookies: string;
   let standardCookies: string;
 
-  const setRole = (role: 'admin' | 'standard') =>
-    ds.getRepository(User).update({ email: TEST_USER_EMAIL }, { role });
+  const setRole = (role: UserRole) => setTestUserRole(app, role);
   const rows = () => ds.getRepository(AccessRequestEntity).find();
   const submit = (body: object) => request(http).post('/api/v1/access-requests').send(body);
   const admin = {
@@ -40,9 +39,9 @@ describe('Access requests E2E', () => {
     ds = app.get(DataSource);
     await ensureTestUser(app);
     // The admin scope is decided at login, so log in once per role.
-    await setRole('standard');
+    await setRole(UserRole.STANDARD);
     standardCookies = await getAuthCookies(http);
-    await setRole('admin');
+    await setRole(UserRole.ADMIN);
     adminCookies = await getAuthCookies(http);
   }, 30000);
 

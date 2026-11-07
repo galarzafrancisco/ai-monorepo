@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ActorEntity } from '../../src/identity-provider/actor.entity';
 import { ActorService } from '../../src/identity-provider/actor.service';
+import { UserRole } from '../../src/identity-provider/enums';
 
 export const TEST_USER_EMAIL = 'test@example.com';
 export const TEST_USER_SLUG = 'test';
@@ -121,4 +122,21 @@ export function authenticatedRequest(httpServer: App, cookies: string[]) {
     patch: (url: string) => request(httpServer).patch(url).set('Cookie', cookies),
     delete: (url: string) => request(httpServer).delete(url).set('Cookie', cookies),
   };
+}
+
+/**
+ * Sets the test user's role the way the app does (`updateUserRole`), so their
+ * workspace membership role follows. The web session's `user:admin` scope
+ * comes from that membership role, and is decided at login.
+ */
+export async function setTestUserRole(
+  app: INestApplication,
+  role: UserRole,
+): Promise<void> {
+  const identityService = app.get(IdentityProviderService);
+  const user = await identityService.getUserByEmail(TEST_USER_EMAIL);
+  if (!user) {
+    throw new Error('Test user not found; call ensureTestUser first');
+  }
+  await identityService.updateUserRole(user.id, { role });
 }

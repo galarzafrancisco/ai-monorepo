@@ -2,7 +2,7 @@
 
 A workspace is one company or team's own space in Taico. Its people, agents, tasks, threads, context, AI models and settings are kept apart from every other workspace on the same installation.
 
-> **Status:** phase 1 of 5 is built (the workspace, its members, and the `workspace_id` token claim). Nothing is scoped by workspace yet: every installation has exactly one workspace and everyone is in it. See [Phases](#phases).
+> **Status:** phases 1 and 2 of 5 are built (the workspace, its members, the `workspace_id` token claim, and the workspace on every request). Nothing is scoped by workspace yet: every installation has exactly one workspace and everyone is in it. See [Phases](#phases).
 
 ## The model
 
@@ -35,6 +35,16 @@ Why not `taico.app/<workspace>/...`:
 - **Nothing else changes.** REST routes, the WebSocket, MCP endpoints, OAuth resource URLs (RFC 8707 audiences), webhook URLs and worker configuration all stay as they are. A workspace segment would touch every one of them, and MCP clients would need a different server URL per workspace.
 - **One place to trust.** The workspace is signed into the token by the authorization server, which checked membership when it minted it. A workspace in the URL would be client input that every handler has to check against membership anyway.
 - **Agents and workers live in one workspace**, so for them a URL segment would only be redundant.
+
+### Reading the workspace in code
+
+Every transport builds the same `AuthContext` with `createAuthContext` (`apps/backend/src/auth/guards/context/auth-context.factory.ts`), and its `workspaceId` is the token's `workspace_id` claim, or `DEFAULT_WORKSPACE_ID` when the claim is missing.
+
+- **HTTP controllers:** `@CurrentWorkspace() workspaceId: string` (`auth/guards/decorators/current-workspace.decorator.ts`). It needs `AccessTokenGuard` on the route.
+- **WebSocket gateways:** the same decorator works in `@SubscribeMessage` handlers guarded by `WsAccessTokenGuard`. Outside a handler (connection hooks, room joins), read `(client.data.auth as AuthContext).workspaceId`. The worker gateway builds its context the same way.
+- **MCP:** MCP endpoints are HTTP routes behind `AccessTokenGuard`, so the `AuthContext` handed to each MCP server (`authContext.workspaceId`) carries it.
+
+The workspace is not checked against membership on each request: the authorization server checked it when it minted the token. Removing a member (phase 4) must also revoke or let expire their tokens for that workspace.
 
 What it costs:
 
@@ -91,7 +101,8 @@ Open question: **actor slugs** are unique across the installation today, and men
 
 Today `user:admin` comes from `users.role` and is installation-wide. With workspaces there are two different things:
 
-- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. From phase 2, the web session's `user:admin` scope comes from the membership role in the token's workspace, not from `users.role`.
+- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope comes from the membership role in the token's workspace, not from `users.role` (`WebAuthService.generateWebAccessToken`). While there is one workspace, `WorkspaceMembershipSubscriber` keeps the two in step, so nothing changes for anyone whose role is changed through the app. A role changed directly in the database (or with `update()` instead of `save()`) only reaches the session if the membership row is changed too. An actor with no membership (only before the startup backfill has run) still gets the scope from `users.role`.
+- Managing people (`/auth/users`) still checks `users.role`: logins are installation-wide, so this moves to the installation operator scope in phase 4.
 - **Installation operator**: whoever runs the installation. Creates workspaces and handles access requests. Proposed as a new scope (e.g. `installation:admin`) for people with `users.role = 'admin'`, introduced in phase 4.
 
 ## Phases
@@ -99,7 +110,7 @@ Today `user:admin` comes from `users.role` and is installation-wide. With worksp
 Each phase ships on its own and leaves a working single-workspace installation. Phases 2–5 are tracked as Taico tasks named "Workspaces phase N: …"; phase 3 is split into 3a–3e by module.
 
 1. **Workspace and membership** (done). `workspaces`, `workspace_members`, the default workspace, every actor a member, `workspace_id` in every minted token.
-2. **Request context.** `@CurrentWorkspace()` from the token (default workspace when the claim is missing), WebSocket context, `user:admin` from the membership role.
+2. **Request context** (done). `@CurrentWorkspace()` from the token (default workspace when the claim is missing), WebSocket and MCP context, `user:admin` from the membership role.
 3. **Scope the data**, module by module: add `workspace_id`, backfill to the default workspace, make it `NOT NULL`, scope every query, make uniqueness per workspace, prefix realtime rooms. Suggested order: meta/context, tasks, threads, agents and agent runs, executions and workers, AI providers and secrets, integrations, MCP registry, search. Each module gets e2e tests that a second workspace cannot see or touch the first one's rows.
 4. **Many workspaces.** Create a workspace, invite and remove members, switch workspace (`POST /auth/web/switch-workspace`), installation operator scope, agents created in the caller's workspace, remove the membership subscriber.
 5. **UI.** Workspace switcher, workspace settings and members page, the "switch workspace?" prompt on links from another workspace.
