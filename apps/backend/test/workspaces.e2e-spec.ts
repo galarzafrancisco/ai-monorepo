@@ -125,7 +125,14 @@ describe('Workspaces (e2e)', () => {
       await members.delete({ actorId });
     }
 
-    await app.get(WorkspacesService).onModuleInit();
+    // Three missing actors with a batch size of two crosses a batch boundary.
+    const batchSize = WorkspacesService.BACKFILL_BATCH_SIZE;
+    WorkspacesService.BACKFILL_BATCH_SIZE = 2;
+    try {
+      await app.get(WorkspacesService).onModuleInit();
+    } finally {
+      WorkspacesService.BACKFILL_BATCH_SIZE = batchSize;
+    }
 
     expect((await members.findOneBy({ actorId: admin.actorId }))?.role).toBe(
       WorkspaceRole.ADMIN,

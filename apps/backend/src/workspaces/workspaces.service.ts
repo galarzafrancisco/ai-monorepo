@@ -18,6 +18,13 @@ export function workspaceRoleForUserRole(role: UserRole | string): WorkspaceRole
 
 @Injectable()
 export class WorkspacesService implements OnModuleInit {
+  /**
+   * Actors added per INSERT by the startup backfill. Each row binds a few
+   * parameters, so this keeps every statement far below PostgreSQL's
+   * 65,535-parameter limit. Tests lower it to cross a batch boundary.
+   */
+  static BACKFILL_BATCH_SIZE = 1000;
+
   private readonly logger = new Logger(WorkspacesService.name);
 
   constructor(
@@ -71,33 +78,44 @@ export class WorkspacesService implements OnModuleInit {
    * workspace, with the role from `workspaceRoleForUserRole` (agents have no
    * user row and become members). Existing memberships are left alone.
    *
+   * Works in batches of `BACKFILL_BATCH_SIZE` so a large installation stays
+   * under PostgreSQL's 65,535 bind-parameter limit per statement.
+   *
    * @returns how many memberships were added
    */
   private async backfillDefaultMemberships(): Promise<number> {
-    const actors: { actorId: string; userRole: string | null }[] =
-      await this.memberRepository.manager.query(`
-        SELECT a."id" AS "actorId", u."role" AS "userRole"
-        FROM "actors" a
-        LEFT JOIN "users" u ON u."actor_id" = a."id"
-        WHERE NOT EXISTS (
-          SELECT 1 FROM "workspace_members" m WHERE m."actor_id" = a."id"
+    let added = 0;
+    for (;;) {
+      const actors: { actorId: string; userRole: string | null }[] =
+        await this.memberRepository.manager.query(
+          `
+          SELECT a."id" AS "actorId", u."role" AS "userRole"
+          FROM "actors" a
+          LEFT JOIN "users" u ON u."actor_id" = a."id"
+          WHERE NOT EXISTS (
+            SELECT 1 FROM "workspace_members" m WHERE m."actor_id" = a."id"
+          )
+          ORDER BY a."id"
+          LIMIT $1
+          `,
+          [WorkspacesService.BACKFILL_BATCH_SIZE],
+        );
+      if (actors.length === 0) {
+        return added;
+      }
+      await this.memberRepository
+        .createQueryBuilder()
+        .insert()
+        .values(
+          actors.map(({ actorId, userRole }) => ({
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            actorId,
+            role: workspaceRoleForUserRole(userRole ?? ''),
+          })),
         )
-      `);
-    if (actors.length === 0) {
-      return 0;
+        .orIgnore()
+        .execute();
+      added += actors.length;
     }
-    await this.memberRepository
-      .createQueryBuilder()
-      .insert()
-      .values(
-        actors.map(({ actorId, userRole }) => ({
-          workspaceId: DEFAULT_WORKSPACE_ID,
-          actorId,
-          role: workspaceRoleForUserRole(userRole ?? ''),
-        })),
-      )
-      .orIgnore()
-      .execute();
-    return actors.length;
   }
 }
