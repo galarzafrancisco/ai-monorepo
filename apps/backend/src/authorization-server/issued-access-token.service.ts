@@ -7,6 +7,7 @@ import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { getConfig } from '../config/env.config';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 
 /**
  * Input for issuing a new access token
@@ -101,6 +102,7 @@ export class IssuedAccessTokenService {
     @InjectRepository(IssuedAccessTokenEntity)
     private readonly tokenRepository: Repository<IssuedAccessTokenEntity>,
     private readonly tokenSignerService: TokenSignerService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   /**
@@ -206,9 +208,14 @@ export class IssuedAccessTokenService {
     const expSeconds = nowSeconds + safeLifetimeSeconds;
     const expiresAt = new Date(expSeconds * 1000);
 
+    const workspaceId = await this.workspacesService.findWorkspaceIdForActor(
+      input.subjectActor.id,
+    );
+
     const claims: AccessTokenClaims = {
       iss: config.issuerUrl,
       sub: input.subjectActor.id,
+      ...(workspaceId ? { workspace_id: workspaceId } : {}),
       actor_id: input.subjectActor.id,
       actor_slug: input.subjectActor.slug,
       actor_type: input.subjectActor.type,

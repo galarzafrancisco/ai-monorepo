@@ -16,6 +16,7 @@ import { AuthJourneysModule } from '../auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from '../mcp-registry/mcp-registry.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
@@ -45,6 +46,7 @@ import {
     IdentityProviderModule,
     AuthCryptoModule,
     AuthGuardsModule,
+    WorkspacesModule,
   ],
   providers: [
     ClientRegistrationService,
