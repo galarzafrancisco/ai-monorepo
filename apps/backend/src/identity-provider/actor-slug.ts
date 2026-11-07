@@ -1,4 +1,5 @@
-import { EntityManager } from 'typeorm';
+import { EntityManager, IsNull } from 'typeorm';
+import { ActorEntity } from './actor.entity';
 import { ActorType } from './enums';
 
 /**
@@ -51,4 +52,25 @@ export async function claimActorSlug(
     [claim.slug, claim.selfActorId ?? null, agentWorkspaceId],
   );
   return !conflict;
+}
+
+/**
+ * Every change to an existing actor (rename, profile edit, delete) starts
+ * here, inside the transaction that writes it: the actor's current row,
+ * locked until the transaction ends, or null if it is gone or deleted.
+ * Callers then write only the columns they change (`manager.update`), never
+ * a copy read before the transaction: a stale copy could bring back a slug
+ * the actor has since given up, or undo a delete.
+ *
+ * Lock order: the agent or user row first, then the actor, then the slug
+ * (`claimActorSlug`).
+ */
+export async function lockLiveActor(
+  manager: EntityManager,
+  actorId: string,
+): Promise<ActorEntity | null> {
+  return manager.findOne(ActorEntity, {
+    where: { id: actorId, deletedAt: IsNull() },
+    lock: { mode: 'pessimistic_write' },
+  });
 }

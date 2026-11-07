@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
+import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS } from '@taico/shared';
+import { holdsUnscopedModuleData } from '../workspaces/unscoped-modules';
 import {
   McpServerEntity,
   McpScopeEntity,
@@ -121,6 +123,31 @@ export class McpRegistryService {
       page,
       limit,
     };
+  }
+
+  /**
+   * A server by UUID or provided ID, as seen from a workspace. Registry rows
+   * are default-workspace data until phase 3e, so other workspaces see only
+   * Taico's own baseline servers (`tasks`, `context`): every agent gets them,
+   * and a worker needs their config to run an agent of any workspace.
+   */
+  async getServerForWorkspace(
+    workspaceId: string,
+    idOrProvidedId: string,
+    isUuid: boolean,
+  ): Promise<ServerWithRelationsRecord> {
+    const server = isUuid
+      ? await this.getServerById(idOrProvidedId)
+      : await this.getServerByProvidedId(idOrProvidedId);
+    if (
+      !holdsUnscopedModuleData(workspaceId) &&
+      !(BASELINE_SYSTEM_TOOL_PROVIDED_IDS as readonly string[]).includes(
+        server.providedId,
+      )
+    ) {
+      throw new ServerNotFoundError(idOrProvidedId);
+    }
+    return server;
   }
 
   async getServerById(id: string): Promise<ServerWithRelationsRecord> {

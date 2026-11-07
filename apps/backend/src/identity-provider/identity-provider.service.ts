@@ -16,7 +16,7 @@ import {
 } from './dto/service/identity-provider.service.types';
 import { ActorService, buildDeletedActorSlug } from './actor.service';
 import { ActorEntity } from './actor.entity';
-import { claimActorSlug } from './actor-slug';
+import { claimActorSlug, lockLiveActor } from './actor-slug';
 import { ActorType, OnboardingDisplayMode, UserRole } from './enums';
 import {
   InvalidCredentialsError,
@@ -132,35 +132,46 @@ export class IdentityProviderService {
       throw new PasswordTooShortError(MIN_PASSWORD_LENGTH);
     }
 
+    const passwordHash = await this.hashPassword(input.password);
+
+    // The user and actor are re-read and locked here, and only the changed
+    // columns written, so a concurrent deactivation can't be undone and a
+    // released slug can't come back (see `lockLiveActor`).
+    const userId = await this.userRepository.manager.transaction(
+      async (manager) => {
+        const user = await manager.findOne(User, {
+          where: { email: normalizedEmail, isActive: true },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!user || !this.isPasswordSetupPending(user)) {
+          throw new InvalidCredentialsError();
+        }
+        const actor = await lockLiveActor(manager, user.actorId);
+        if (!actor) {
+          this.logger.error('User returned no actor during account setup. This should not happen!');
+          throw new InternalServerErrorException('Failed to retrieve actor');
+        }
+
+        if (actor.slug !== input.slug) {
+          await this.actorService.claimPersonSlug(manager, input.slug, actor.id);
+        }
+        await manager.update(
+          ActorEntity,
+          { id: actor.id },
+          { displayName: input.displayName, slug: input.slug },
+        );
+        await manager.update(User, { id: user.id }, { passwordHash });
+        return user.id;
+      },
+    );
+
     const user = await this.userRepository.findOne({
-      where: { email: normalizedEmail, isActive: true },
+      where: { id: userId },
       relations: { actor: true },
     });
-    if (!user || !this.isPasswordSetupPending(user)) {
-      throw new InvalidCredentialsError();
+    if (!user) {
+      throw new UserNotFoundError(userId);
     }
-    if (!user.actor) {
-      this.logger.error('User returned no actor during account setup. This should not happen!');
-      throw new InternalServerErrorException('Failed to retrieve actor');
-    }
-
-    const slugChanged = user.actor.slug !== input.slug;
-    user.actor.displayName = input.displayName;
-    user.actor.slug = input.slug;
-    user.passwordHash = await this.hashPassword(input.password);
-
-    await this.userRepository.manager.transaction(async (manager) => {
-      if (slugChanged) {
-        await this.actorService.claimPersonSlug(
-          manager,
-          input.slug,
-          user.actor!.id,
-        );
-      }
-      await manager.save(ActorEntity, user.actor!);
-      await manager.save(User, user);
-    });
-
     return user;
   }
 
@@ -178,26 +189,36 @@ export class IdentityProviderService {
   }
 
   async deactivateManagedUser(userId: string): Promise<User> {
+    // Mark the actor too, so it stops being assignable, shows as deleted on
+    // the work it touched, and gives its slug back. Rows are re-read and
+    // locked here so a concurrent setup can't restore them (`lockLiveActor`).
+    await this.userRepository.manager.transaction(async (manager) => {
+      const user = await manager.findOne(User, {
+        where: { id: userId, isActive: true },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        throw new UserNotFoundError(userId);
+      }
+      const actor = await lockLiveActor(manager, user.actorId);
+      if (actor) {
+        await manager.update(
+          ActorEntity,
+          { id: actor.id },
+          { deletedAt: new Date(), slug: buildDeletedActorSlug(actor) },
+        );
+      }
+      await manager.update(User, { id: user.id }, { isActive: false });
+    });
+
     const user = await this.userRepository.findOne({
-      where: { id: userId, isActive: true },
+      where: { id: userId },
       relations: { actor: true },
     });
     if (!user) {
       throw new UserNotFoundError(userId);
     }
-
-    user.isActive = false;
-    // Mark the actor too, so it stops being assignable, shows as deleted on
-    // the work it touched, and gives its slug back.
-    const actor = user.actor;
-    return this.userRepository.manager.transaction(async (manager) => {
-      if (actor) {
-        actor.deletedAt = new Date();
-        actor.slug = buildDeletedActorSlug(actor);
-        await manager.save(actor);
-      }
-      return manager.save(user);
-    });
+    return user;
   }
 
   async getUserById(id: string): Promise<User | null> {

@@ -140,34 +140,6 @@ export class ActorService {
     });
   }
 
-  /**
-   * Update an actor
-   */
-  async updateActor(
-    id: string,
-    updates: {
-      displayName?: string;
-      avatarUrl?: string | null;
-      introduction?: string | null;
-    },
-  ): Promise<ActorEntity | null> {
-    const actor = await this.actorRepository.findOne({ where: { id } });
-    if (!actor) {
-      return null;
-    }
-
-    if (updates.displayName !== undefined) {
-      actor.displayName = updates.displayName;
-    }
-    if (updates.avatarUrl !== undefined) {
-      actor.avatarUrl = updates.avatarUrl;
-    }
-    if (updates.introduction !== undefined) {
-      actor.introduction = updates.introduction;
-    }
-
-    return this.actorRepository.save(actor);
-  }
 
   /**
    * List all actors. Deleted actors are included by default so callers can

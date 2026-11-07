@@ -46,13 +46,17 @@ export class AgentToolPermissionsService {
   ): Promise<AgentToolPermissionRecord[]> {
     await this.assertAgentExists(workspaceId, actorId);
 
-    const permissions = await this.permissionRepository.find({
-      where: { workspaceId, agentActorId: actorId },
-      relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
-      order: {
-        server: { name: 'ASC' },
-      },
-    });
+    // Grants can only be written in the default workspace (registry rows are
+    // default-workspace data until 3e); elsewhere only baseline servers apply.
+    const permissions = holdsUnscopedModuleData(workspaceId)
+      ? await this.permissionRepository.find({
+          where: { workspaceId, agentActorId: actorId },
+          relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
+          order: {
+            server: { name: 'ASC' },
+          },
+        })
+      : [];
 
     const explicitPermissions = permissions
       .filter(

@@ -41,6 +41,9 @@ export class AgentToolPermissionsController {
   ) {}
 
   @Get()
+  // Workers read this to set up any workspace's agent. Outside the default
+  // workspace it lists only Taico's baseline servers (see the service).
+  @WorkspaceAccess('scoped')
   @ApiOperation({ summary: 'List tool permissions for an agent' })
   @ApiOkResponse({ type: [AgentToolPermissionResponseDto] })
   async listAgentToolPermissions(

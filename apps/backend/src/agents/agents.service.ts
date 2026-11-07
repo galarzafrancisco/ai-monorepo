@@ -7,7 +7,10 @@ import { WorkspaceRole } from '../workspaces/enums';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { buildDeletedActorSlug } from '../identity-provider/actor.service';
-import { claimActorSlug } from '../identity-provider/actor-slug';
+import {
+  claimActorSlug,
+  lockLiveActor,
+} from '../identity-provider/actor-slug';
 import { PROTECTED_AGENT_SLUGS } from './protected-agents';
 import { ActorType } from '../identity-provider/enums';
 import { AgentType } from './enums';
@@ -217,26 +220,28 @@ export class AgentsService {
   async deleteAgent(workspaceId: string, actorId: string): Promise<void> {
     this.logger.log(`Deleting agent with actorId: ${actorId}`);
 
-    const agent = await this.agentRepository.findOne({
-      where: { workspaceId, actorId },
-      relations: ['actor'],
-    });
-
-    if (!agent || !agent.actor) {
-      throw new AgentNotFoundError(actorId);
-    }
-    const actor = agent.actor;
-    if (PROTECTED_AGENT_SLUGS.includes(actor.slug)) {
-      throw new AgentDeletionNotAllowedError(actor.slug);
-    }
-
     // The actor row stays so tasks, comments and context it touched keep
-    // resolving. It is marked deleted and gives its slug back.
+    // resolving. It is marked deleted and gives its slug back. Both rows are
+    // re-read and locked here, so a concurrent rename or patch can't be
+    // undone or bring the slug back (see `lockLiveActor`).
     await this.agentRepository.manager.transaction(async (manager) => {
-      await manager.softRemove(agent);
-      actor.deletedAt = new Date();
-      actor.slug = buildDeletedActorSlug(actor);
-      await manager.save(actor);
+      const agent = await manager.findOne(AgentEntity, {
+        where: { workspaceId, actorId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const actor = agent ? await lockLiveActor(manager, actorId) : null;
+      if (!agent || !actor) {
+        throw new AgentNotFoundError(actorId);
+      }
+      if (PROTECTED_AGENT_SLUGS.includes(actor.slug)) {
+        throw new AgentDeletionNotAllowedError(actor.slug);
+      }
+      await manager.softDelete(AgentEntity, { id: agent.id });
+      await manager.update(
+        ActorEntity,
+        { id: actorId },
+        { deletedAt: new Date(), slug: buildDeletedActorSlug(actor) },
+      );
     });
 
     this.eventEmitter.emit(
@@ -252,97 +257,88 @@ export class AgentsService {
   ): Promise<AgentResult> {
     this.logger.log(`Patching agent with actorId: ${actorId}`);
 
-    const agent = await this.agentRepository.findOne({
-      where: { workspaceId, actorId },
-      relations: ['actor'],
-    });
-
-    if (!agent) {
-      throw new AgentNotFoundError(actorId);
-    }
-    if (!agent.actor) {
-      throw new AgentNotFoundError(actorId);
-    }
-
-    // Apply partial updates to agent
+    // Only the requested columns are written, to rows re-read and locked in
+    // the transaction (see `lockLiveActor`).
+    const agentPatch: Partial<AgentEntity> = {};
     if (input.systemPrompt !== undefined) {
-      agent.systemPrompt = input.systemPrompt;
+      agentPatch.systemPrompt = input.systemPrompt;
     }
     if (input.followUpPrompt !== undefined) {
-      agent.followUpPrompt = input.followUpPrompt;
+      agentPatch.followUpPrompt = input.followUpPrompt;
     }
     if (input.providerId !== undefined) {
-      agent.providerId = this.normalizeOptionalId(input.providerId);
+      agentPatch.providerId = this.normalizeOptionalId(input.providerId);
     }
     if (input.modelId !== undefined) {
-      agent.modelId = this.normalizeOptionalId(input.modelId);
+      agentPatch.modelId = this.normalizeOptionalId(input.modelId);
     }
     if (input.statusTriggers !== undefined) {
-      agent.statusTriggers = input.statusTriggers;
+      agentPatch.statusTriggers = input.statusTriggers;
     }
     if (input.tagTriggers !== undefined) {
-      agent.tagTriggers = input.tagTriggers;
+      agentPatch.tagTriggers = input.tagTriggers;
     }
     if (input.type !== undefined) {
-      agent.type = input.type;
+      agentPatch.type = input.type;
     }
     if (input.description !== undefined) {
-      agent.description = input.description;
+      agentPatch.description = input.description;
     }
     if (input.allowedTools !== undefined) {
-      agent.allowedTools = input.allowedTools;
+      agentPatch.allowedTools = input.allowedTools;
     }
     if (input.isActive !== undefined) {
-      agent.isActive = input.isActive;
+      agentPatch.isActive = input.isActive;
     }
     if (input.concurrencyLimit !== undefined) {
-      agent.concurrencyLimit = input.concurrencyLimit;
+      agentPatch.concurrencyLimit = input.concurrencyLimit;
     }
 
-    const slugChanged = input.slug !== undefined && input.slug !== agent.actor.slug;
-
-    // Apply updates to actor fields
+    const actorPatch: Partial<ActorEntity> = {};
     if (input.name !== undefined) {
-      agent.actor.displayName = input.name;
+      actorPatch.displayName = input.name;
     }
     if (input.slug !== undefined) {
-      agent.actor.slug = input.slug;
+      actorPatch.slug = input.slug;
     }
     if (input.introduction !== undefined) {
-      agent.actor.introduction = input.introduction;
+      actorPatch.introduction = input.introduction;
     }
     if (input.avatarUrl !== undefined) {
       this.assertManagedAgentAvatarUrl(input.avatarUrl);
-      agent.actor.avatarUrl = input.avatarUrl;
+      actorPatch.avatarUrl = input.avatarUrl;
     }
 
-    const isActorUpdateRequested =
-      input.name !== undefined ||
-      input.slug !== undefined ||
-      input.introduction !== undefined ||
-      input.avatarUrl !== undefined;
-
-    await this.agentRepository.manager.transaction(async (manager) => {
-      if (isActorUpdateRequested) {
-        if (slugChanged) {
-          await this.claimAgentSlug(
-            manager,
-            workspaceId,
-            agent.actor!.slug,
-            agent.actorId,
-          );
+    const agentId = await this.agentRepository.manager.transaction(
+      async (manager) => {
+        const agent = await manager.findOne(AgentEntity, {
+          where: { workspaceId, actorId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        const actor = agent ? await lockLiveActor(manager, actorId) : null;
+        if (!agent || !actor) {
+          throw new AgentNotFoundError(actorId);
         }
-        await manager.save(ActorEntity, agent.actor!);
-      }
-      await manager.save(agent);
-    });
+
+        if (actorPatch.slug !== undefined && actorPatch.slug !== actor.slug) {
+          await this.claimAgentSlug(manager, workspaceId, actorPatch.slug, actorId);
+        }
+        if (Object.keys(actorPatch).length > 0) {
+          await manager.update(ActorEntity, { id: actorId }, actorPatch);
+        }
+        if (Object.keys(agentPatch).length > 0) {
+          await manager.update(AgentEntity, { id: agent.id }, agentPatch);
+        }
+        return agent.id;
+      },
+    );
 
     const agentWithRelations = await this.agentRepository.findOne({
-      where: { workspaceId, id: agent.id },
+      where: { workspaceId, id: agentId },
       relations: ['actor'],
     });
     if (!agentWithRelations || !agentWithRelations.actor) {
-      throw new AgentNotFoundError(agent.id);
+      throw new AgentNotFoundError(actorId);
     }
 
     this.eventEmitter.emit(
