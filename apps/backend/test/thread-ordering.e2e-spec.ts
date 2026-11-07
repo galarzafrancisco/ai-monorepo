@@ -20,6 +20,7 @@ import {
   ThreadAgentMessageRole,
 } from '../src/threads/agent/thread-agent.enums';
 import { ThreadMessageWriterService } from '../src/threads/thread-message-writer.service';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { ThreadLastActivity1761500000000 } from '../src/migrations/1761500000000-ThreadLastActivity';
 import {
   applyThreadActivity,
@@ -381,6 +382,7 @@ describe('Thread ordering E2E', () => {
     const ahead = await lastActivityAt(threadId);
 
     await app.get(ThreadMessageWriterService).write({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       threadId,
       content: 'committed late',
       createdByActorId: otherActorId,
@@ -395,6 +397,7 @@ describe('Thread ordering E2E', () => {
 
     await expect(
       app.get(ThreadMessageWriterService).write({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         threadId,
         content: 'from nobody',
         createdByActorId: '00000000-0000-4000-8000-000000000000',
@@ -410,7 +413,7 @@ describe('Thread ordering E2E', () => {
 
     const written = await Promise.all(
       Array.from({ length: 8 }, (_, i) =>
-        writer.write({ threadId, content: `message ${i}`, createdByActorId: otherActorId }),
+        writer.write({ workspaceId: DEFAULT_WORKSPACE_ID, threadId, content: `message ${i}`, createdByActorId: otherActorId }),
       ),
     );
 
@@ -630,12 +633,14 @@ describe('Thread ordering E2E', () => {
     const withMessages = await createThread();
     const empty = await createThread();
     await app.get(ThreadMessageWriterService).write({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       threadId: withMessages,
       content: 'first',
       createdByActorId: otherActorId,
     });
     await tick();
     await app.get(ThreadMessageWriterService).write({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       threadId: withMessages,
       content: 'second',
       createdByActorId: otherActorId,

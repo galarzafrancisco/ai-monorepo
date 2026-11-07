@@ -7,6 +7,7 @@ import { DataSource } from 'typeorm';
 import { AddressInfo } from 'node:net';
 import { io, Socket } from 'socket.io-client';
 import { ThreadPinnedWireEvent, ThreadWireEvents } from '@taico/events';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ThreadPinEntity } from '../src/threads/pins/thread-pin.entity';
@@ -166,7 +167,7 @@ describe('Thread pins E2E', () => {
     const threadId = await createThread();
     await dataSource
       .getRepository(ThreadPinEntity)
-      .insert({ threadId, actorId: agentActorId });
+      .insert({ workspaceId: DEFAULT_WORKSPACE_ID, threadId, actorId: agentActorId });
 
     const item = (await listThreads()).find((t) => t.id === threadId);
     expect(item?.pinned).toBe(false);

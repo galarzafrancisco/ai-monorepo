@@ -8,6 +8,7 @@ import { AddressInfo } from 'node:net';
 import { io, Socket } from 'socket.io-client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ThreadWireEvents } from '@taico/events';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ThreadMessageEntity } from '../src/threads/thread-message.entity';
@@ -45,7 +46,7 @@ describe('Thread read state E2E', () => {
   const postMessage = async (threadId: string, actorId: string): Promise<void> => {
     const repository = dataSource.getRepository(ThreadMessageEntity);
     const saved = await repository.save(
-      repository.create({ threadId, content: 'hello', createdByActorId: actorId }),
+      repository.create({ workspaceId: DEFAULT_WORKSPACE_ID, threadId, content: 'hello', createdByActorId: actorId }),
     );
     const message = await repository.findOneOrFail({
       where: { id: saved.id },
@@ -126,6 +127,7 @@ describe('Thread read state E2E', () => {
     for (let i = 1; i <= 5; i++) {
       await repository.save(
         repository.create({
+          workspaceId: DEFAULT_WORKSPACE_ID,
           threadId,
           content: `message ${i}`,
           createdByActorId: userActorId,
