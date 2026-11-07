@@ -22,7 +22,7 @@ import {
   InputRequestAnsweredEvent,
   TaskActivityEvent,
 } from './events/tasks.events';
-import { TaskWireEvents } from "@taico/events";
+import { TaskWireEvents } from '@taico/events';
 import type {
   TaskCreatedWireEvent,
   TaskUpdatedWireEvent,
@@ -42,8 +42,16 @@ import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from './tasks.scopes';
+import { TasksService } from './tasks.service';
+import {
+  socketWorkspaceId,
+  workspaceRoom,
+} from '../workspaces/workspace-rooms';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const TASKS_ROOM = 'tasks';
+const tasksRoom = (workspaceId: string): string =>
+  workspaceRoom(workspaceId, TASKS_ROOM);
 
 type TaskActivityPayload = {
   taskId: string;
@@ -65,6 +73,7 @@ type TaskActivityPayload = {
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -72,11 +81,14 @@ type TaskActivityPayload = {
   namespace: '/tasks',
 })
 export class TasksGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
   private logger = new Logger(TasksGateway.name);
+
+  constructor(private readonly tasksService: TasksService) {}
 
   afterInit() {
     this.logger.log('Tasks WebSocket Gateway initialized');
@@ -94,13 +106,14 @@ export class TasksGateway
 
   @SubscribeMessage('tasks.subscribe')
   subscribe(@ConnectedSocket() client: Socket) {
-    client.join(TASKS_ROOM);
-    return { ok: true, room: TASKS_ROOM };
+    const room = tasksRoom(socketWorkspaceId(client));
+    client.join(room);
+    return { ok: true, room };
   }
 
   @SubscribeMessage('tasks.unsubscribe')
   unsubscribe(@ConnectedSocket() client: Socket) {
-    client.leave(TASKS_ROOM);
+    client.leave(tasksRoom(socketWorkspaceId(client)));
     return { ok: true };
   }
 
@@ -120,7 +133,9 @@ export class TasksGateway
       actor: { id: event.actor.id },
     };
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_CREATED, wireEvent);
+    this.server
+      .to(tasksRoom(event.payload.workspaceId))
+      .emit(TaskWireEvents.TASK_CREATED, wireEvent);
 
     this.logger.debug({
       message: 'Task created event emitted',
@@ -138,7 +153,9 @@ export class TasksGateway
       actor: { id: event.actor.id },
     };
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_UPDATED, wireEvent);
+    this.server
+      .to(tasksRoom(event.payload.workspaceId))
+      .emit(TaskWireEvents.TASK_UPDATED, wireEvent);
 
     this.logger.debug({
       message: 'Task updated event emitted',
@@ -154,7 +171,9 @@ export class TasksGateway
       actor: { id: event.actor.id },
     };
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_DELETED, wireEvent);
+    this.server
+      .to(tasksRoom(event.workspaceId))
+      .emit(TaskWireEvents.TASK_DELETED, wireEvent);
 
     this.logger.debug({
       message: 'Task deleted event emitted',
@@ -172,7 +191,9 @@ export class TasksGateway
       actor: { id: event.actor.id },
     };
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ASSIGNED, wireEvent);
+    this.server
+      .to(tasksRoom(event.payload.workspaceId))
+      .emit(TaskWireEvents.TASK_ASSIGNED, wireEvent);
 
     this.logger.debug({
       message: 'Task assigned event emitted',
@@ -190,7 +211,9 @@ export class TasksGateway
       actor: { id: event.actor.id },
     };
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_COMMENTED, wireEvent);
+    this.server
+      .to(tasksRoom(event.payload.workspaceId))
+      .emit(TaskWireEvents.TASK_COMMENTED, wireEvent);
 
     this.logger.debug({
       message: 'Comment added event emitted',
@@ -210,7 +233,7 @@ export class TasksGateway
     };
 
     this.server
-      .to(TASKS_ROOM)
+      .to(tasksRoom(event.payload.workspaceId))
       .emit(TaskWireEvents.TASK_ARTEFACT_ADDED, wireEvent);
 
     this.logger.debug({
@@ -231,7 +254,7 @@ export class TasksGateway
     };
 
     this.server
-      .to(TASKS_ROOM)
+      .to(tasksRoom(event.payload.workspaceId))
       .emit(TaskWireEvents.TASK_STATUS_CHANGED, wireEvent);
 
     this.logger.debug({
@@ -252,7 +275,7 @@ export class TasksGateway
     };
 
     this.server
-      .to(TASKS_ROOM)
+      .to(tasksRoom(event.payload.workspaceId))
       .emit(TaskWireEvents.INPUT_REQUEST_ANSWERED, wireEvent);
 
     this.logger.debug({
@@ -274,17 +297,24 @@ export class TasksGateway
     };
 
     this.logger.log(wireEvent);
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ACTIVITY, wireEvent);
+    this.server
+      .to(tasksRoom(event.payload.workspaceId))
+      .emit(TaskWireEvents.TASK_ACTIVITY, wireEvent);
   }
 
   // Listen to incoming messages
   @SubscribeMessage(TaskWireEvents.TASK_ACTIVITY_POST)
-  postTaskActivity(
+  async postTaskActivity(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: TaskActivityPayload,
   ) {
     // ultra-MVP "validation"
     if (!body?.taskId) return { ok: false, error: 'taskId required' };
+    try {
+      await this.tasksService.getTaskById(socketWorkspaceId(client), body.taskId);
+    } catch {
+      return { ok: false, error: 'task not found' };
+    }
 
     const wireEvent: TaskActivityWireEvent = {
       taskId: body.taskId,
@@ -297,7 +327,9 @@ export class TasksGateway
     this.logger.log(wireEvent);
 
     // broadcast to everyone (including the sender)
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ACTIVITY, wireEvent);
+    this.server
+      .to(tasksRoom(socketWorkspaceId(client)))
+      .emit(TaskWireEvents.TASK_ACTIVITY, wireEvent);
 
     return { ok: true };
   }

@@ -1,3 +1,4 @@
+import { TaskEntity } from '../tasks/task.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentRunEntity } from './agent-run.entity';
@@ -6,7 +7,7 @@ import { AgentRunsController } from './agent-runs.controller';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AgentRunEntity]), AuthGuardsModule],
+  imports: [TypeOrmModule.forFeature([AgentRunEntity, TaskEntity]), AuthGuardsModule],
   controllers: [AgentRunsController],
   providers: [AgentRunsService],
   exports: [AgentRunsService],

@@ -37,9 +37,20 @@ export class TaicoMcpToolsFactory {
     private readonly issuedAccessTokenService: IssuedAccessTokenService,
   ) {}
 
-  /** Tools are exposed as `<server>__<tool>`, e.g. `tasks__list_tasks_by_thread`. */
-  async open(input: { subject: McpActor; issuedBy: McpActor }): Promise<TaicoMcpTools> {
+  /**
+   * Tools are exposed as `<server>__<tool>`, e.g. `tasks__list_tasks_by_thread`.
+   *
+   * `workspaceId` is the workspace of the data the run works on (a thread's
+   * workspace), never the subject's: the token only reaches that workspace,
+   * and both actors must be its members or no token is issued.
+   */
+  async open(input: {
+    workspaceId: string;
+    subject: McpActor;
+    issuedBy: McpActor;
+  }): Promise<TaicoMcpTools> {
     const token = await this.issuedAccessTokenService.issueSystemToken({
+      workspaceId: input.workspaceId,
       subjectActor: input.subject,
       issuedByActor: input.issuedBy,
       scopes: [

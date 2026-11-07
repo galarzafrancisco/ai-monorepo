@@ -56,6 +56,7 @@ describe('ThreadsService - State Context Block', () => {
 
   const mockParentTask: TaskEntity = {
     id: 'parent-task-uuid',
+    workspaceId: '00000000-0000-4000-8000-000000000001',
     name: 'Parent Task',
     description: 'Parent task description',
     status: TaskStatus.NOT_STARTED,
@@ -206,7 +207,7 @@ describe('ThreadsService - State Context Block', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.createThread(input);
+        const result = await service.createThread('workspace-uuid', input);
 
         // Verify state block was created
         expect(contextService.createBlock).toHaveBeenCalledWith({
@@ -244,9 +245,9 @@ describe('ThreadsService - State Context Block', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        await service.createThread(input);
+        await service.createThread('workspace-uuid', input);
 
-        const createBlockCall = contextService.createBlock.mock.calls[0][0];
+        const createBlockCall = contextService.createBlock.mock.calls[0][1];
         expect(createBlockCall.content).toBe(
           'This thread was created to achieve task Parent Task (id parent-task-uuid).',
         );
@@ -260,7 +261,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         contextService.getBlockById.mockResolvedValue(mockStateBlock);
 
-        const result = await service.getThreadState('thread-uuid');
+        const result = await service.getThreadState('workspace-uuid', 'thread-uuid');
 
         expect(threadRepository.findOne).toHaveBeenCalledWith({
           where: { id: 'thread-uuid' },
@@ -274,7 +275,7 @@ describe('ThreadsService - State Context Block', () => {
       it('should throw ThreadNotFoundError when thread does not exist', async () => {
         threadRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.getThreadState('non-existent-uuid')).rejects.toThrow(
+        await expect(service.getThreadState('workspace-uuid', 'non-existent-uuid')).rejects.toThrow(
           ThreadNotFoundError,
         );
         expect(contextService.getBlockById).not.toHaveBeenCalled();
@@ -291,7 +292,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         contextService.updateBlock.mockResolvedValue(updatedBlock);
 
-        const result = await service.updateThreadState('thread-uuid', newContent);
+        const result = await service.updateThreadState('workspace-uuid', 'thread-uuid', newContent);
 
         expect(threadRepository.findOne).toHaveBeenCalledWith({
           where: { id: 'thread-uuid' },
@@ -308,7 +309,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(null);
 
         await expect(
-          service.updateThreadState('non-existent-uuid', 'new content'),
+          service.updateThreadState('workspace-uuid', 'non-existent-uuid', 'new content'),
         ).rejects.toThrow(ThreadNotFoundError);
         expect(contextService.updateBlock).not.toHaveBeenCalled();
       });
@@ -327,7 +328,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         contextService.appendToBlock.mockResolvedValue(updatedBlock);
 
-        const result = await service.appendThreadState('thread-uuid', appendContent);
+        const result = await service.appendThreadState('workspace-uuid', 'thread-uuid', appendContent);
 
         expect(threadRepository.findOne).toHaveBeenCalledWith({
           where: { id: 'thread-uuid' },
@@ -359,8 +360,8 @@ describe('ThreadsService - State Context Block', () => {
           .mockResolvedValueOnce(afterAppend1)
           .mockResolvedValueOnce(afterAppend2);
 
-        const result1 = await service.appendThreadState('thread-uuid', append1);
-        const result2 = await service.appendThreadState('thread-uuid', append2);
+        const result1 = await service.appendThreadState('workspace-uuid', 'thread-uuid', append1);
+        const result2 = await service.appendThreadState('workspace-uuid', 'thread-uuid', append2);
 
         expect(result1).toContain(append1);
         expect(result2).toContain(append1);
@@ -373,7 +374,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(null);
 
         await expect(
-          service.appendThreadState('non-existent-uuid', 'content'),
+          service.appendThreadState('workspace-uuid', 'non-existent-uuid', 'content'),
         ).rejects.toThrow(ThreadNotFoundError);
         expect(contextService.appendToBlock).not.toHaveBeenCalled();
       });
@@ -399,7 +400,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         const tx = mockTransaction(threadRepository);
 
-        await service.deleteThread('thread-uuid', 'actor-uuid');
+        await service.deleteThread('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(tx.delete).toHaveBeenNthCalledWith(1, ThreadEntity, { id: 'thread-uuid' });
         expect(tx.delete).toHaveBeenNthCalledWith(2, ContextBlockEntity, { id: 'state-block-uuid' });
@@ -409,7 +410,7 @@ describe('ThreadsService - State Context Block', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         const tx = mockTransaction(threadRepository, { stateBlockHasChildren: true });
 
-        await service.deleteThread('thread-uuid', 'actor-uuid');
+        await service.deleteThread('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(tx.delete).toHaveBeenCalledTimes(1);
         expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: 'thread-uuid' });
@@ -460,8 +461,8 @@ describe('ThreadsService - State Context Block', () => {
           .mockResolvedValueOnce(thread1)
           .mockResolvedValueOnce(thread2);
 
-        const result1 = await service.createThread(input1);
-        const result2 = await service.createThread(input2);
+        const result1 = await service.createThread('workspace-uuid', input1);
+        const result2 = await service.createThread('workspace-uuid', input2);
 
         expect(result1.stateContextBlockId).toBe('state-block-1');
         expect(result2.stateContextBlockId).toBe('state-block-2');
@@ -488,19 +489,19 @@ describe('ThreadsService - State Context Block', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const thread = await service.createThread(input);
+        const thread = await service.createThread('workspace-uuid', input);
         expect(thread.stateContextBlockId).toBe('state-block-uuid');
 
         // Get state
         contextService.getBlockById.mockResolvedValue(mockStateBlock);
-        const initialState = await service.getThreadState(thread.id);
+        const initialState = await service.getThreadState('workspace-uuid', thread.id);
         expect(initialState).toBe(mockStateBlock.content);
 
         // Update state
         const updatedContent = 'Completely new state.';
         const updatedBlock = { ...mockStateBlock, content: updatedContent };
         contextService.updateBlock.mockResolvedValue(updatedBlock);
-        const afterUpdate = await service.updateThreadState(thread.id, updatedContent);
+        const afterUpdate = await service.updateThreadState('workspace-uuid', thread.id, updatedContent);
         expect(afterUpdate).toBe(updatedContent);
 
         // Append to state
@@ -510,13 +511,13 @@ describe('ThreadsService - State Context Block', () => {
           content: updatedContent + appendContent,
         };
         contextService.appendToBlock.mockResolvedValue(appendedBlock);
-        const afterAppend = await service.appendThreadState(thread.id, appendContent);
+        const afterAppend = await service.appendThreadState('workspace-uuid', thread.id, appendContent);
         expect(afterAppend).toContain(updatedContent);
         expect(afterAppend).toContain(appendContent);
 
         // Delete thread
         const tx = mockTransaction(threadRepository);
-        await service.deleteThread(thread.id, 'actor-uuid');
+        await service.deleteThread('workspace-uuid', thread.id, 'actor-uuid');
         expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: thread.id });
       });
     });

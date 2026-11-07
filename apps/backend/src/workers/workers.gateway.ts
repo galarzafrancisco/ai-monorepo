@@ -18,6 +18,7 @@ import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WorkersScopes } from 'src/executions/workers.scopes';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const WORKERS_ROOM = 'workers';
 
@@ -34,6 +35,7 @@ const WORKERS_ROOM = 'workers';
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(WorkersScopes.READ.id)
+@WorkspaceAccess('default-only')
 @WebSocketGateway({
   cors: {
     origin: '*',

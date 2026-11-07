@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -173,6 +174,7 @@ describe('Tools (e2e)', () => {
       const issued = await app.get(IssuedAccessTokenService).issueSystemToken({
         subjectActor: actorInfo,
         issuedByActor: actorInfo,
+        workspaceId: DEFAULT_WORKSPACE_ID,
         scopes,
       });
       return issued.token;

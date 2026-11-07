@@ -31,6 +31,9 @@ export class TasksMcpGateway {
     executionId?: string,
     runId?: string,
   ): McpServer {
+    // Every tool works in the workspace the token was minted for.
+    const { workspaceId } = authContext;
+
     const readOnlyAnnotations = {
       readOnlyHint: true,
     };
@@ -59,7 +62,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ tag }) => {
-        const tasks = await this.tasksService.listTasks({
+        const tasks = await this.tasksService.listTasks(workspaceId, {
           tag,
           page: 1,
           limit: 20,
@@ -97,7 +100,10 @@ export class TasksMcpGateway {
         },
       },
       async ({ threadId }) => {
-        const thread = await this.threadsService.getThreadById(threadId);
+        const thread = await this.threadsService.getThreadInWorkspace(
+          workspaceId,
+          threadId,
+        );
         const tasks = thread.tasks.map((task) => {
           const result = {
             id: task.id,
@@ -134,7 +140,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ threadId, taskId }) => {
-          await this.threadsService.attachTask(threadId, taskId);
+          await this.threadsService.attachTask(workspaceId, threadId, taskId);
           return {
             content: [
               {
@@ -158,7 +164,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ threadId, taskId }) => {
-          await this.threadsService.detachTask(threadId, taskId);
+          await this.threadsService.detachTask(workspaceId, threadId, taskId);
           return {
             content: [
               {
@@ -191,7 +197,7 @@ export class TasksMcpGateway {
             ? new Date(Date.now() - updatedWithinHours * 60 * 60 * 1000)
             : undefined;
 
-        const tasks = await this.tasksService.listTasks({
+        const tasks = await this.tasksService.listTasks(workspaceId, {
           status,
           assignee,
           tag,
@@ -233,7 +239,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ taskId }) => {
-        const task = await this.tasksService.getTaskById(taskId);
+        const task = await this.tasksService.getTaskById(workspaceId, taskId);
         return {
           content: [
             {
@@ -261,7 +267,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ query, limit }) => {
-        const results = await this.tasksService.searchTasks({
+        const results = await this.tasksService.searchTasks(workspaceId, {
           query,
           limit,
         });
@@ -288,7 +294,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ query }) => {
-        const results = await this.actorService.searchActors({
+        const results = await this.actorService.searchActors(workspaceId, {
           query,
           limit: 10,
         });
@@ -326,7 +332,7 @@ export class TasksMcpGateway {
         }) => {
           let task;
           if (executionId || runId) {
-            task = await this.tasksService.createTaskInThread({
+            task = await this.tasksService.createTaskInThread(workspaceId, {
               name,
               description,
               assigneeActorId,
@@ -337,7 +343,7 @@ export class TasksMcpGateway {
               runId,
             });
           } else {
-            task = await this.tasksService.createTask({
+            task = await this.tasksService.createTask(workspaceId, {
               name,
               description,
               assigneeActorId,
@@ -371,6 +377,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, assigneeActorId }) => {
           const task = await this.tasksService.assignTask(
+            workspaceId,
             taskId,
             {
               assigneeActorId,
@@ -400,7 +407,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ taskId }) => {
-          await this.tasksService.deleteTask(taskId, user.actorId);
+          await this.tasksService.deleteTask(workspaceId, taskId, user.actorId);
           return {
             content: [
               {
@@ -424,7 +431,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ taskId, content }) => {
-          await this.tasksService.addComment(taskId, {
+          await this.tasksService.addComment(workspaceId, taskId, {
             commenterActorId: user.actorId,
             content,
           });
@@ -454,6 +461,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, name, link }) => {
           await this.tasksService.addArtefact(
+            workspaceId,
             taskId,
             {
               name,
@@ -492,6 +500,7 @@ export class TasksMcpGateway {
           // TODO: Should this be a feature of the Backend itself? You can't start a task if it's not assigned to you?
           // And if the task has no assignee and you start it, it gets assigned to you?
           await this.tasksService.assignTask(
+            workspaceId,
             taskId,
             { assigneeActorId: user.actorId },
             user.actorId,
@@ -499,6 +508,7 @@ export class TasksMcpGateway {
 
           // Change status to IN_PROGRESS
           await this.tasksService.changeStatus(
+            workspaceId,
             taskId,
             {
               status: TaskStatus.IN_PROGRESS,
@@ -507,7 +517,7 @@ export class TasksMcpGateway {
           );
 
           // Add comment
-          await this.tasksService.addComment(taskId, {
+          await this.tasksService.addComment(workspaceId, taskId, {
             commenterActorId: user.actorId,
             content: branchName?.trim()
               ? `Starting to work on this on branch \`${branchName.trim()}\`.`
@@ -540,6 +550,7 @@ export class TasksMcpGateway {
         async ({ taskId, prLink }) => {
           // Change status to FOR_REVIEW
           await this.tasksService.changeStatus(
+            workspaceId,
             taskId,
             {
               status: TaskStatus.FOR_REVIEW,
@@ -549,6 +560,7 @@ export class TasksMcpGateway {
 
           // Add artefact with PR link
           await this.tasksService.addArtefact(
+            workspaceId,
             taskId,
             {
               name: 'Pull Request',
@@ -558,7 +570,7 @@ export class TasksMcpGateway {
           );
 
           // Add comment
-          await this.tasksService.addComment(taskId, {
+          await this.tasksService.addComment(workspaceId, taskId, {
             commenterActorId: user.actorId,
             content: `Opened PR for review: ${prLink}`,
           });
@@ -588,6 +600,7 @@ export class TasksMcpGateway {
         async ({ taskId, comment }) => {
           // Change status to DONE with comment
           await this.tasksService.changeStatus(
+            workspaceId,
             taskId,
             {
               status: TaskStatus.DONE,
@@ -596,7 +609,7 @@ export class TasksMcpGateway {
           );
 
           // Add a comment
-          await this.tasksService.addComment(taskId, {
+          await this.tasksService.addComment(workspaceId, taskId, {
             commenterActorId: user.actorId,
             content: comment,
           });
@@ -626,6 +639,7 @@ export class TasksMcpGateway {
         async ({ taskId, comment }) => {
           // Change status to IN_PROGRESS with comment
           await this.tasksService.changeStatus(
+            workspaceId,
             taskId,
             {
               status: TaskStatus.IN_PROGRESS,
@@ -634,7 +648,7 @@ export class TasksMcpGateway {
           );
 
           // Add a comment
-          await this.tasksService.addComment(taskId, {
+          await this.tasksService.addComment(workspaceId, taskId, {
             commenterActorId: user.actorId,
             content: comment,
           });
@@ -669,6 +683,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, status, comment }) => {
           await this.tasksService.changeStatus(
+            workspaceId,
             taskId,
             {
               status: status as TaskStatus,
@@ -701,6 +716,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, tagName }) => {
           await this.tasksService.addTagToTask(
+            workspaceId,
             taskId,
             {
               name: tagName,
@@ -732,6 +748,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, tagId }) => {
           await this.tasksService.removeTagFromTask(
+            workspaceId,
             taskId,
             tagId,
             user.actorId,
@@ -756,7 +773,7 @@ export class TasksMcpGateway {
         annotations: readOnlyAnnotations,
       },
       async ({}) => {
-        const tags = await this.metaService.getAllTags();
+        const tags = await this.metaService.getAllTags(workspaceId);
         return {
           content: [
             {
@@ -782,7 +799,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ taskId, question, actorId }) => {
-          const inputRequest = await this.tasksService.createInputRequest({
+          const inputRequest = await this.tasksService.createInputRequest(workspaceId, {
             taskId,
             askedByActorId: user.actorId,
             assignedToActorId: actorId,
@@ -814,6 +831,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, inputRequestId, answer }) => {
           const inputRequest = await this.tasksService.answerInputRequest(
+            workspaceId,
             taskId,
             inputRequestId,
             { answer },
@@ -843,7 +861,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, dependsOnTaskId }) => {
           // Fetch current task to get existing dependencies
-          const task = await this.tasksService.getTaskById(taskId);
+          const task = await this.tasksService.getTaskById(workspaceId, taskId);
           const currentDependencyIds = task.dependsOnIds || [];
 
           // Check if dependency already exists
@@ -861,6 +879,7 @@ export class TasksMcpGateway {
           // Add new dependency
           const updatedDependencyIds = [...currentDependencyIds, dependsOnTaskId];
           await this.tasksService.updateTask(
+            workspaceId,
             taskId,
             { dependsOnIds: updatedDependencyIds },
             user.actorId,
@@ -890,7 +909,7 @@ export class TasksMcpGateway {
         },
         async ({ taskId, dependsOnTaskId }) => {
           // Fetch current task to get existing dependencies
-          const task = await this.tasksService.getTaskById(taskId);
+          const task = await this.tasksService.getTaskById(workspaceId, taskId);
           const currentDependencyIds = task.dependsOnIds || [];
 
           // Filter out the dependency to remove
@@ -900,6 +919,7 @@ export class TasksMcpGateway {
 
           // Update task with new dependency list
           await this.tasksService.updateTask(
+            workspaceId,
             taskId,
             { dependsOnIds: updatedDependencyIds },
             user.actorId,

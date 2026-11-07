@@ -220,6 +220,7 @@ function createHarness(steps: unknown[][]) {
           id: THREAD_ID,
           aiProviderId: null,
           modelId: null,
+          stateContextBlock: { workspaceId: 'workspace-1' },
         }),
     } as never,
     messageWriter as never,
@@ -620,10 +621,11 @@ describe('ThreadAgentService', () => {
 
     // The turn acts for whoever the agent subscribed for.
     expect(h.mcpOpen).toHaveBeenCalledWith(
-      expect.objectContaining({ issuedBy: USER }),
+      expect.objectContaining({ issuedBy: USER, workspaceId: 'workspace-1' }),
     );
     expect(h.threadTools.build).toHaveBeenCalledWith({
       threadId: THREAD_ID,
+      workspaceId: 'workspace-1',
       agentActorId: AGENT_ACTOR_ID,
       forActorId: USER.id,
     });

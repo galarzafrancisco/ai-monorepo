@@ -14,6 +14,11 @@ import {
 import { AgentRunNotFoundError } from './errors/agent-runs.errors';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { TaskEntity } from '../tasks/task.entity';
+import { TaskNotFoundError } from '../tasks/errors/tasks.errors';
+import {
+  TASK_IN_WORKSPACE_SQL,
+  taskIdInWorkspace,
+} from '../workspaces/task-in-workspace';
 
 /**
  * AgentRunsService - agent-run compatibility facade
@@ -40,9 +45,26 @@ export class AgentRunsService {
   constructor(
     @InjectRepository(AgentRunEntity)
     private readonly agentRunRepository: Repository<AgentRunEntity>,
+    @InjectRepository(TaskEntity)
+    private readonly taskRepository: Repository<TaskEntity>,
   ) {}
 
-  async createAgentRun(input: CreateAgentRunInput): Promise<AgentRunResult> {
+  /**
+   * Agent runs have no `workspace_id` until phase 3c: every method reaches
+   * the workspace through the run's parent task. A run (or parent task) in
+   * another workspace is not found.
+   */
+  async createAgentRun(
+    workspaceId: string,
+    input: CreateAgentRunInput,
+  ): Promise<AgentRunResult> {
+    const taskExists = await this.taskRepository.exists({
+      where: { workspaceId, id: input.parentTaskId },
+    });
+    if (!taskExists) {
+      throw new TaskNotFoundError(input.parentTaskId);
+    }
+
     // Log when creating an AgentRun without an execution id link.
     if (!input.taskExecutionId) {
       this.logger.warn({
@@ -90,6 +112,7 @@ export class AgentRunsService {
   }
 
   async updateAgentRun(
+    workspaceId: string,
     runId: string,
     input: UpdateAgentRunInput,
   ): Promise<AgentRunResult> {
@@ -99,7 +122,7 @@ export class AgentRunsService {
     });
 
     const agentRun = await this.agentRunRepository.findOne({
-      where: { id: runId },
+      where: { id: runId, parentTaskId: taskIdInWorkspace(workspaceId) },
       relations: ['actor', 'parentTask'],
     });
 
@@ -134,9 +157,12 @@ export class AgentRunsService {
     return this.mapAgentRunToResult(agentRunWithRelations);
   }
 
-  async getAgentRunById(runId: string): Promise<AgentRunResult> {
+  async getAgentRunById(
+    workspaceId: string,
+    runId: string,
+  ): Promise<AgentRunResult> {
     const agentRun = await this.agentRunRepository.findOne({
-      where: { id: runId },
+      where: { id: runId, parentTaskId: taskIdInWorkspace(workspaceId) },
       relations: ['actor', 'parentTask'],
     });
 
@@ -147,7 +173,10 @@ export class AgentRunsService {
     return this.mapAgentRunToResult(agentRun);
   }
 
-  async listAgentRuns(input: ListAgentRunsInput): Promise<ListAgentRunsResult> {
+  async listAgentRuns(
+    workspaceId: string,
+    input: ListAgentRunsInput,
+  ): Promise<ListAgentRunsResult> {
     this.logger.log({
       message: 'Listing agent runs',
       filters: {
@@ -163,7 +192,10 @@ export class AgentRunsService {
     const queryBuilder = this.agentRunRepository
       .createQueryBuilder('agentRun')
       .leftJoinAndSelect('agentRun.actor', 'actor')
-      .leftJoinAndSelect('agentRun.parentTask', 'parentTask');
+      .leftJoinAndSelect('agentRun.parentTask', 'parentTask')
+      .where(TASK_IN_WORKSPACE_SQL('agentRun.parentTaskId'), {
+        taskWorkspaceId: workspaceId,
+      });
 
     if (input.actorId) {
       queryBuilder.andWhere('agentRun.actorId = :actorId', {

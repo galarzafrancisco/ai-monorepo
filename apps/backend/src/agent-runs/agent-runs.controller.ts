@@ -45,8 +45,11 @@ import type { UserContext } from 'src/auth/guards/context/auth-context.types';
  *
  * @see ActiveExecutionContextResolverService for context resolution logic
  */
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 @ApiTags('AgentRun')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('agent-runs')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentRunsScopes.READ.id)
@@ -70,8 +73,9 @@ export class AgentRunsController {
   async createAgentRun(
     @Body() dto: CreateAgentRunDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentRunResponseDto> {
-    const result = await this.agentRunsService.createAgentRun({
+    const result = await this.agentRunsService.createAgentRun(workspaceId, {
       actorId: user.actorId,
       parentTaskId: dto.parentTaskId,
       taskExecutionId: dto.taskExecutionId,
@@ -87,8 +91,9 @@ export class AgentRunsController {
   })
   async listAgentRuns(
     @Query() query: ListAgentRunsQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentRunListResponseDto> {
-    const result = await this.agentRunsService.listAgentRuns({
+    const result = await this.agentRunsService.listAgentRuns(workspaceId, {
       actorId: query.actorId,
       parentTaskId: query.parentTaskId,
       page: query.page ?? 1,
@@ -112,8 +117,12 @@ export class AgentRunsController {
   @ApiNotFoundResponse({ description: 'Agent run not found' })
   async getAgentRunById(
     @Param() params: AgentRunParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentRunResponseDto> {
-    const result = await this.agentRunsService.getAgentRunById(params.runId);
+    const result = await this.agentRunsService.getAgentRunById(
+      workspaceId,
+      params.runId,
+    );
     return AgentRunResponseDto.fromResult(result);
   }
 
@@ -135,8 +144,9 @@ export class AgentRunsController {
   async updateAgentRun(
     @Param() params: AgentRunParamsDto,
     @Body() dto: UpdateAgentRunDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentRunResponseDto> {
-    const result = await this.agentRunsService.updateAgentRun(params.runId, {
+    const result = await this.agentRunsService.updateAgentRun(workspaceId, params.runId, {
       startedAt: dto.startedAt ? new Date(dto.startedAt) : undefined,
       endedAt: dto.endedAt ? new Date(dto.endedAt) : undefined,
       lastPing: dto.lastPing ? new Date(dto.lastPing) : undefined,

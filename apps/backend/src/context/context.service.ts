@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import JSZip from 'jszip';
 import { ContextBlockEntity } from './block.entity';
@@ -59,7 +59,10 @@ export class ContextService {
     private readonly indexSearchService: IndexSearchService,
   ) {}
 
-  async createBlock(input: CreateBlockInput): Promise<BlockResult> {
+  async createBlock(
+    workspaceId: string,
+    input: CreateBlockInput,
+  ): Promise<BlockResult> {
     this.logger.log({
       message: 'Creating context block',
       title: input.title,
@@ -69,7 +72,7 @@ export class ContextService {
     // Validate parent exists if provided
     if (input.parentId) {
       const parent = await this.blockRepository.findOne({
-        where: { id: input.parentId },
+        where: { workspaceId, id: input.parentId },
       });
       if (!parent) {
         throw new ParentBlockNotFoundError(input.parentId);
@@ -81,8 +84,8 @@ export class ContextService {
     if (input.parentId !== undefined) {
       const whereClause =
         input.parentId === null
-          ? { parentId: null as any }
-          : { parentId: input.parentId };
+          ? { workspaceId, parentId: IsNull() }
+          : { workspaceId, parentId: input.parentId };
 
       const siblings = await this.blockRepository.find({
         where: whereClause,
@@ -95,6 +98,7 @@ export class ContextService {
     }
 
     const block = this.blockRepository.create({
+      workspaceId,
       title: input.title,
       content: input.content,
       createdByActorId: input.createdByActorId,
@@ -108,18 +112,22 @@ export class ContextService {
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.metaService.findOrCreateTagEntities(
+        workspaceId,
         input.tagNames,
       );
       saved.tags = tags;
       await this.blockRepository.save(saved);
 
       // Increment usage tracking for all tags
-      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
+      await this.metaService.incrementTagsUsage(
+        workspaceId,
+        tags.map((t) => t.id),
+      );
     }
 
     // Reload with relations
     const blockWithTags = await this.blockRepository.findOne({
-      where: { id: saved.id },
+      where: { workspaceId, id: saved.id },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -137,7 +145,10 @@ export class ContextService {
     return this.mapToResult(blockWithTags!);
   }
 
-  async listBlocks(input?: ListBlocksInput): Promise<BlockSummaryResult[]> {
+  async listBlocks(
+    workspaceId: string,
+    input?: ListBlocksInput,
+  ): Promise<BlockSummaryResult[]> {
     this.logger.log({
       message: 'Listing context blocks',
       filters: {
@@ -146,7 +157,7 @@ export class ContextService {
         parentId: input?.parentId,
         updatedAfter: input?.updatedAfter,
         limit: input?.limit,
-      }
+      },
     });
 
     // Use query builder for complex filtering
@@ -154,7 +165,8 @@ export class ContextService {
       .createQueryBuilder('block')
       .leftJoinAndSelect('block.tags', 'tags')
       .leftJoinAndSelect('block.createdByActor', 'createdByActor')
-      .leftJoinAndSelect('block.assigneeActor', 'assigneeActor');
+      .leftJoinAndSelect('block.assigneeActor', 'assigneeActor')
+      .where('block.workspaceId = :workspaceId', { workspaceId });
 
     // Apply tag filter if provided
     if (input?.tag) {
@@ -165,9 +177,12 @@ export class ContextService {
 
     // Apply createdByActorId filter if provided
     if (input?.createdByActorId) {
-      queryBuilder = queryBuilder.andWhere('block.createdByActorId = :createdByActorId', {
-        createdByActorId: input.createdByActorId,
-      });
+      queryBuilder = queryBuilder.andWhere(
+        'block.createdByActorId = :createdByActorId',
+        {
+          createdByActorId: input.createdByActorId,
+        },
+      );
     }
 
     // Apply parentId filter if provided (including explicit null)
@@ -201,11 +216,14 @@ export class ContextService {
     return blocks.map((block) => this.mapToSummary(block));
   }
 
-  async getBlockById(blockId: string): Promise<BlockResult> {
+  async getBlockById(
+    workspaceId: string,
+    blockId: string,
+  ): Promise<BlockResult> {
     this.logger.log({ message: 'Fetching context block', blockId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -217,13 +235,14 @@ export class ContextService {
   }
 
   async updateBlock(
+    workspaceId: string,
     blockId: string,
     input: UpdateBlockInput,
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Updating context block', blockId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -241,14 +260,18 @@ export class ContextService {
       // Validate parent exists if not null
       if (input.parentId !== null) {
         const parent = await this.blockRepository.findOne({
-          where: { id: input.parentId },
+          where: { workspaceId, id: input.parentId },
         });
         if (!parent) {
           throw new ParentBlockNotFoundError(input.parentId);
         }
 
         // Check for circular reference
-        await this.validateNoCircularReference(blockId, input.parentId);
+        await this.validateNoCircularReference(
+          workspaceId,
+          blockId,
+          input.parentId,
+        );
       }
 
       block.parentId = input.parentId;
@@ -270,6 +293,7 @@ export class ContextService {
         block.tags = [];
       } else {
         block.tags = await this.metaService.findOrCreateTagEntities(
+          workspaceId,
           input.tagNames,
         );
       }
@@ -279,7 +303,7 @@ export class ContextService {
 
     // Reload with relations
     const blockWithTags = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -297,13 +321,14 @@ export class ContextService {
   }
 
   async appendToBlock(
+    workspaceId: string,
     blockId: string,
     input: AppendBlockInput,
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Appending context block content', blockId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -331,12 +356,16 @@ export class ContextService {
     return this.mapToResult(saved);
   }
 
-  async deleteBlock(blockId: string, actorId?: string): Promise<void> {
+  async deleteBlock(
+    workspaceId: string,
+    blockId: string,
+    actorId?: string,
+  ): Promise<void> {
     this.logger.log({ message: 'Deleting context block', blockId });
 
     // Get block first to retrieve creator actorId if none provided
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       select: ['id', 'createdByActorId'],
     });
 
@@ -346,7 +375,7 @@ export class ContextService {
 
     // Check if block has children
     const children = await this.blockRepository.find({
-      where: { parentId: blockId },
+      where: { workspaceId, parentId: blockId },
       select: ['id'],
     });
 
@@ -355,12 +384,16 @@ export class ContextService {
     }
 
     // Check if block is a state block for any threads
-    const threadsWithState = await this.threadsService.findThreadsByStateBlockId(blockId);
+    const threadsWithState =
+      await this.threadsService.findThreadsByStateBlockId(workspaceId, blockId);
     if (threadsWithState.length > 0) {
       throw new BlockIsThreadStateError(blockId, threadsWithState.length);
     }
 
-    const result = await this.blockRepository.delete(blockId);
+    const result = await this.blockRepository.delete({
+      workspaceId,
+      id: blockId,
+    });
 
     if (!result.affected) {
       throw new BlockNotFoundError(blockId);
@@ -373,11 +406,12 @@ export class ContextService {
     const eventActorId = actorId ?? block.createdByActorId;
     this.eventEmitter.emit(
       BlockDeletedEvent.INTERNAL,
-      new BlockDeletedEvent(blockId, { id: eventActorId }),
+      new BlockDeletedEvent(blockId, { id: eventActorId }, workspaceId),
     );
   }
 
   async addTagToBlock(
+    workspaceId: string,
     blockId: string,
     input: AddTagInput,
     actorId: string,
@@ -389,7 +423,7 @@ export class ContextService {
     });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -398,7 +432,10 @@ export class ContextService {
     }
 
     // Find or create the tag using MetaService
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
+    const tag = await this.metaService.findOrCreateTagEntity(
+      workspaceId,
+      input.name,
+    );
 
     // Add tag to block if not already present
     if (!block.tags.some((t) => t.id === tag.id)) {
@@ -406,7 +443,7 @@ export class ContextService {
       await this.blockRepository.save(block);
 
       // Increment tag usage tracking
-      await this.metaService.incrementTagUsage(tag.id);
+      await this.metaService.incrementTagUsage(workspaceId, tag.id);
 
       this.logger.log({
         message: 'Tag added to block',
@@ -417,7 +454,7 @@ export class ContextService {
 
     // Reload with relations
     const blockWithRelations = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -431,6 +468,7 @@ export class ContextService {
   }
 
   async removeTagFromBlock(
+    workspaceId: string,
     blockId: string,
     tagId: string,
     actorId?: string,
@@ -438,7 +476,7 @@ export class ContextService {
     this.logger.log({ message: 'Removing tag from block', blockId, tagId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -452,7 +490,7 @@ export class ContextService {
     this.logger.log({ message: 'Tag removed from block', blockId, tagId });
 
     // Check if tag is now orphaned and clean it up using MetaService
-    await this.metaService.cleanupOrphanedTag(tagId);
+    await this.metaService.cleanupOrphanedTag(workspaceId, tagId);
 
     // Emit domain event (tag changes are updates)
     // Use provided actorId or fall back to the block's creator
@@ -465,11 +503,16 @@ export class ContextService {
     return this.mapToResult(block);
   }
 
-  async getChildBlocks(parentId: string | null): Promise<BlockSummaryResult[]> {
+  async getChildBlocks(
+    workspaceId: string,
+    parentId: string | null,
+  ): Promise<BlockSummaryResult[]> {
     this.logger.log({ message: 'Fetching child pages', parentId });
 
     const whereClause =
-      parentId === null ? { parentId: null as any } : { parentId };
+      parentId === null
+        ? { workspaceId, parentId: IsNull() }
+        : { workspaceId, parentId };
 
     const children = await this.blockRepository.find({
       where: whereClause,
@@ -480,11 +523,12 @@ export class ContextService {
     return children.map((block) => this.mapToSummary(block));
   }
 
-  async getBlockTree(): Promise<BlockTreeResult[]> {
+  async getBlockTree(workspaceId: string): Promise<BlockTreeResult[]> {
     this.logger.log({ message: 'Fetching block tree' });
 
     // Get all blocks with actor relations
     const allBlocks = await this.blockRepository.find({
+      where: { workspaceId },
       relations: ['createdByActor'],
       order: { order: 'ASC' },
     });
@@ -527,11 +571,15 @@ export class ContextService {
     return rootBlocks;
   }
 
-  async reorderBlock(blockId: string, newOrder: number): Promise<BlockResult> {
+  async reorderBlock(
+    workspaceId: string,
+    blockId: string,
+    newOrder: number,
+  ): Promise<BlockResult> {
     this.logger.log({ message: 'Reordering page', blockId, newOrder });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -546,13 +594,14 @@ export class ContextService {
   }
 
   async moveBlock(
+    workspaceId: string,
     blockId: string,
     newParentId: string | null,
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Moving page', blockId, newParentId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { workspaceId, id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -568,14 +617,14 @@ export class ContextService {
     // Validate parent exists if not null
     if (newParentId !== null) {
       const parent = await this.blockRepository.findOne({
-        where: { id: newParentId },
+        where: { workspaceId, id: newParentId },
       });
       if (!parent) {
         throw new ParentBlockNotFoundError(newParentId);
       }
 
       // Check for circular reference
-      await this.validateNoCircularReference(blockId, newParentId);
+      await this.validateNoCircularReference(workspaceId, blockId, newParentId);
     }
 
     block.parentId = newParentId;
@@ -583,8 +632,8 @@ export class ContextService {
     // Calculate new order (append to end of siblings)
     const whereClause =
       newParentId === null
-        ? { parentId: null as any }
-        : { parentId: newParentId };
+        ? { workspaceId, parentId: IsNull() }
+        : { workspaceId, parentId: newParentId };
 
     const siblings = await this.blockRepository.find({
       where: whereClause,
@@ -598,28 +647,40 @@ export class ContextService {
     return this.mapToResult(block);
   }
 
-  async searchBlocks(input: SearchBlocksInput): Promise<BlockSearchResult[]> {
+  async searchBlocks(
+    workspaceId: string,
+    input: SearchBlocksInput,
+  ): Promise<BlockSearchResult[]> {
     const results = await this.indexSearchService.search({
       query: input.query,
       limit: input.limit,
       types: [SearchResultType.CONTEXT_BLOCK],
     });
+    // The search index is not scoped by workspace yet (phase 3e): drop hits
+    // from other workspaces.
+    const inWorkspace = await this.blockIdsInWorkspace(
+      workspaceId,
+      results.map((result) => result.id),
+    );
 
-    return results.map((result) => ({
-      id: result.id,
-      title: result.title,
-      score: result.score,
-      matchedBy: result.matchedBy,
-      matchedOn: result.matchedOn,
-      excerpt: result.excerpt,
-      excerptIsComplete: result.excerptIsComplete,
-    }));
+    return results
+      .filter((result) => inWorkspace.has(result.id))
+      .map((result) => ({
+        id: result.id,
+        title: result.title,
+        score: result.score,
+        matchedBy: result.matchedBy,
+        matchedOn: result.matchedOn,
+        excerpt: result.excerpt,
+        excerptIsComplete: result.excerptIsComplete,
+      }));
   }
 
-  async exportBlocksAsZip(): Promise<Buffer> {
+  async exportBlocksAsZip(workspaceId: string): Promise<Buffer> {
     this.logger.log({ message: 'Exporting context blocks to zip archive' });
 
     const allBlocks = await this.blockRepository.find({
+      where: { workspaceId },
       order: { order: 'ASC', createdAt: 'ASC' },
     });
 
@@ -656,6 +717,7 @@ export class ContextService {
   }
 
   async importBlocksFromZip(
+    workspaceId: string,
     archiveBuffer: Buffer,
     createdByActorId: string,
   ): Promise<{ importedCount: number }> {
@@ -708,7 +770,12 @@ export class ContextService {
     }
 
     const importRoot = this.resolveImportRootDirectory(root);
-    const importedCount = await this.importArchiveDirectory(importRoot, null, createdByActorId);
+    const importedCount = await this.importArchiveDirectory(
+      workspaceId,
+      importRoot,
+      null,
+      createdByActorId,
+    );
 
     this.logger.log({
       message: 'Imported context blocks from zip archive',
@@ -718,7 +785,20 @@ export class ContextService {
     return { importedCount };
   }
 
+  private async blockIdsInWorkspace(
+    workspaceId: string,
+    ids: string[],
+  ): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const rows = await this.blockRepository.find({
+      where: { workspaceId, id: In(ids) },
+      select: { id: true },
+    });
+    return new Set(rows.map((row) => row.id));
+  }
+
   private async validateNoCircularReference(
+    workspaceId: string,
     blockId: string,
     newParentId: string,
   ): Promise<void> {
@@ -740,7 +820,7 @@ export class ContextService {
 
       // Get parent of current page
       const current = await this.blockRepository.findOne({
-        where: { id: currentId },
+        where: { workspaceId, id: currentId },
         select: ['id', 'parentId'],
       });
 
@@ -804,7 +884,8 @@ export class ContextService {
     const [directoryName, directory] = [...root.directories.entries()][0];
     const normalizedName = directoryName.toLowerCase();
     const isExpectedArchiveRoot =
-      normalizedName === 'context-blocks' || normalizedName.startsWith('context-blocks-');
+      normalizedName === 'context-blocks' ||
+      normalizedName.startsWith('context-blocks-');
     if (!isExpectedArchiveRoot) {
       return root;
     }
@@ -820,6 +901,7 @@ export class ContextService {
   }
 
   private async importArchiveDirectory(
+    workspaceId: string,
     directory: ArchiveDirectory,
     parentId: string | null,
     createdByActorId: string,
@@ -832,7 +914,7 @@ export class ContextService {
 
     for (const [fileName, content] of leafFiles) {
       const title = this.extractTitleFromMarkdownFileName(fileName);
-      await this.createBlock({
+      await this.createBlock(workspaceId, {
         title,
         content,
         createdByActorId,
@@ -851,7 +933,7 @@ export class ContextService {
       );
       const content = indexEntry?.[1] ?? '.';
 
-      const block = await this.createBlock({
+      const block = await this.createBlock(workspaceId, {
         title: this.normalizeImportedTitle(directoryName),
         content,
         createdByActorId,
@@ -860,6 +942,7 @@ export class ContextService {
       importedCount += 1;
 
       importedCount += await this.importArchiveDirectory(
+        workspaceId,
         childDirectory,
         block.id,
         createdByActorId,

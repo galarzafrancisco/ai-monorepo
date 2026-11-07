@@ -1,6 +1,8 @@
 import { TasksService } from './tasks.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
 
+const WORKSPACE_ID = 'workspace-1';
+
 describe('TasksService.createTaskInThread', () => {
   it('attaches to existing thread when thread creation races', async () => {
     const executionContextResolver = {
@@ -23,7 +25,9 @@ describe('TasksService.createTaskInThread', () => {
     const threadsService = {
       createThread: jest
         .fn()
-        .mockRejectedValue(new ParentTaskThreadAlreadyExistsError('parent-task-1')),
+        .mockRejectedValue(
+          new ParentTaskThreadAlreadyExistsError('parent-task-1'),
+        ),
       findThreadByParentTaskId: jest.fn().mockResolvedValue({ id: 'thread-1' }),
       findThreadByTaskId: jest.fn(),
       attachTask: jest.fn().mockResolvedValue({ id: 'thread-1' }),
@@ -43,11 +47,14 @@ describe('TasksService.createTaskInThread', () => {
       threadsService as any,
       executionContextResolver as any,
       {} as any,
+      {} as any,
     );
 
-    jest.spyOn(service, 'createTask').mockResolvedValue({ id: 'child-task-1' } as any);
+    jest
+      .spyOn(service, 'createTask')
+      .mockResolvedValue({ id: 'child-task-1' } as any);
 
-    await service.createTaskInThread({
+    await service.createTaskInThread(WORKSPACE_ID, {
       name: 'Child task',
       description: 'Child description',
       createdByActorId: 'actor-1',

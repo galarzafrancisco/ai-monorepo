@@ -15,6 +15,11 @@ import {
   ExecutionTraceWorkerMismatchError,
   InvalidExecutionTraceError,
 } from './execution-traces.errors';
+import { findWorkerExecution, type WorkerCaller } from '../worker-execution-access';
+import {
+  ActiveTaskExecutionNotFoundError,
+  ActiveTaskExecutionWorkerMismatchError,
+} from '../errors/executions.errors';
 
 @Injectable()
 export class ExecutionTracesService {
@@ -24,14 +29,24 @@ export class ExecutionTracesService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  /** Traces may arrive after the execution stopped, so a finished one counts too. */
   async append(
+    caller: WorkerCaller,
     input: PostExecutionTracePayload,
-    workerClientId: string,
   ): Promise<void> {
     this.validate(input);
-    const execution = await this.resolveExecution(input.executionId);
-    if (!workerClientId || execution.workerClientId !== workerClientId) {
-      throw new ExecutionTraceWorkerMismatchError(input.executionId);
+    try {
+      await findWorkerExecution(this.traces, caller, input.executionId, {
+        includeFinished: true,
+      });
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new ExecutionTraceNotFoundError(input.executionId);
+      }
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ExecutionTraceWorkerMismatchError(input.executionId);
+      }
+      throw error;
     }
 
     // Pass payloads directly as json, without jsonb conversion or JSON text
@@ -65,13 +80,15 @@ export class ExecutionTracesService {
     }
   }
 
+  /** An execution of a task in another workspace is not found. */
   async list(
+    workspaceId: string,
     executionId: string,
     afterSequence: number,
     limit: number,
     options: { latest?: boolean; beforeSequence?: number } = {},
   ) {
-    await this.resolveExecution(executionId);
+    await this.resolveExecution(executionId, workspaceId);
     const backwards = options.latest || options.beforeSequence !== undefined;
     const [items, lifecycle] = await Promise.all([
       this.traces.find({
@@ -101,19 +118,26 @@ export class ExecutionTracesService {
     };
   }
 
+  /**
+   * With a workspace (user reads), only an execution of a task in that
+   * workspace is found. Worker writes pass none: workers are installation-wide
+   * until phase 3c.
+   */
   private async resolveExecution(
     executionId: string,
+    workspaceId: string,
   ): Promise<{ workerClientId: string }> {
+    const inWorkspace = `AND task_id IN (SELECT id FROM tasks WHERE workspace_id = $2)`;
     // A single snapshot avoids a race when an execution moves to history.
     const [execution] = await this.traces.query(
       `
       SELECT worker_client_id AS "workerClientId"
-      FROM active_task_executions WHERE id = $1 AND deleted_at IS NULL
+      FROM active_task_executions WHERE id = $1 AND deleted_at IS NULL ${inWorkspace}
       UNION ALL
       SELECT worker_client_id AS "workerClientId"
-      FROM task_execution_history WHERE id = $1 AND deleted_at IS NULL
+      FROM task_execution_history WHERE id = $1 AND deleted_at IS NULL ${inWorkspace}
       LIMIT 1`,
-      [executionId],
+      [executionId, workspaceId],
     );
     if (!execution) throw new ExecutionTraceNotFoundError(executionId);
     return execution;

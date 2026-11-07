@@ -32,9 +32,11 @@ import { AiProviderModelResponseDto } from './dto/http/ai-provider-model-respons
 import { AiProviderModelsService } from './ai-provider-models.service';
 import { AiProviderResult } from './dto/service/ai-providers.service.types';
 import { AiProvidersScopes } from './ai-providers.scopes';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('AI Providers')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('ai-providers')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class AiProvidersController {

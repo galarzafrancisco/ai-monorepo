@@ -61,7 +61,10 @@ export class WalkthroughService {
     }
   }
 
-  async getStatusForActor(actorId: string): Promise<WalkthroughStatusResult> {
+  async getStatusForActor(
+    workspaceId: string,
+    actorId: string,
+  ): Promise<WalkthroughStatusResult> {
     const user = await this.usersRepository.findOne({ where: { actorId } });
 
     if (!user) {
@@ -81,19 +84,24 @@ export class WalkthroughService {
     ] = await Promise.all([
       this.workersRepository.existsBy({}),
       this.agentsRepository.existsBy({}),
-      this.tasksRepository.existsBy({ createdByActorId: actorId }),
-      this.projectsRepository.existsBy({}),
+      this.tasksRepository.existsBy({ workspaceId, createdByActorId: actorId }),
+      this.projectsRepository.existsBy({ workspaceId }),
       this.projectsRepository
         .createQueryBuilder('p')
-        .where('p.repoUrl IS NOT NULL')
+        .where('p.workspaceId = :workspaceId', { workspaceId })
+        .andWhere('p.repoUrl IS NOT NULL')
         .getExists(),
-      this.contextBlocksRepository.existsBy({ createdByActorId: actorId }),
+      this.contextBlocksRepository.existsBy({
+        workspaceId,
+        createdByActorId: actorId,
+      }),
       this.threadsRepository.existsBy({ createdByActorId: actorId }),
       this.tasksRepository
         .createQueryBuilder('task')
         .innerJoin('task.tags', 'tag')
         .innerJoin(ProjectEntity, 'project', 'project.tagId = tag.id')
-        .where('task.createdByActorId = :actorId', { actorId })
+        .where('task.workspaceId = :workspaceId', { workspaceId })
+        .andWhere('task.createdByActorId = :actorId', { actorId })
         .getExists(),
       this.aiModelSelectionsService.listSelections(),
     ]);
@@ -107,7 +115,8 @@ export class WalkthroughService {
       contextBlockCreated,
       threadConfigured,
       conversationModelReady: modelSelections.some(
-        (selection) => selection.job === AiModelJob.CONVERSATION && selection.isReady,
+        (selection) =>
+          selection.job === AiModelJob.CONVERSATION && selection.isReady,
       ),
       taskWithProjectCreated,
       onboardingDisplayMode: user.onboardingDisplayMode,

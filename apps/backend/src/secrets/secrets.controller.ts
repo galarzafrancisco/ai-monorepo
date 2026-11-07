@@ -30,9 +30,11 @@ import { SecretResponseDto, SecretValueResponseDto } from './dto/http/secret-res
 import { SecretParamsDto } from './dto/http/secret-params.dto';
 import { SecretResult, SecretValueResult } from './dto/service/secrets.service.types';
 import { SecretsScopes } from './secrets.scopes';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Secrets')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('secrets')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class SecretsController {

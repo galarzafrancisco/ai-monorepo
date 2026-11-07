@@ -36,6 +36,7 @@ import {
   CompleteAiProviderAuthorizationInput,
 } from './dto/service/ai-providers.service.types';
 import { AiProviderAuthorizationFailedError } from './errors/ai-providers.errors';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 /**
  * The caller's own connection to an AI provider that runs on personal plans.
@@ -43,6 +44,7 @@ import { AiProviderAuthorizationFailedError } from './errors/ai-providers.errors
  */
 @ApiTags('AI Provider Connections')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('ai-providers/:id/connection')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class AiProviderConnectionsController {

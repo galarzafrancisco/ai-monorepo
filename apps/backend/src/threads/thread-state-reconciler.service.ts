@@ -127,6 +127,10 @@ Now run the required process. If relevant, update the state block with context__
     }
 
     const thread = await this.threadsService.getThreadById(threadId);
+    const workspaceId = await this.threadsService.getThreadWorkspaceId(threadId);
+    if (!workspaceId) {
+      return;
+    }
     const latestItem = items[items.length - 1];
 
     const actor = await this.actorRepository.findOne({
@@ -143,6 +147,7 @@ Now run the required process. If relevant, update the state block with context__
           taskId: latestItem.taskId,
         }),
         actor,
+        workspaceId,
         // On a provider that runs on a person's own plan, the thread's creator
         // pays, and only if they allowed unattended runs. Nobody typed here.
         onBehalfOf: {

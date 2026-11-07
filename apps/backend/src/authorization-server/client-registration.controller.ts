@@ -25,8 +25,10 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { UserScopes } from '../auth/core/scopes/user.scopes';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Authorization Server')
+@WorkspaceAccess('default-only')
 @Controller('auth/clients')
 export class ClientRegistrationController {
   constructor(
@@ -49,6 +51,7 @@ export class ClientRegistrationController {
     return response;
   }
 
+  @WorkspaceAccess('installation')
   @Post('register/mcp/:serverId/:version')
   @HttpCode(201)
   @ApiOperation({

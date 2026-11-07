@@ -55,6 +55,7 @@ export class TaskSchedulerService {
         try {
           // Create task from blueprint
           const task = await this.taskBlueprintsService.createTaskFromBlueprint(
+            scheduledTask.workspaceId,
             scheduledTask.taskBlueprintId,
           );
 

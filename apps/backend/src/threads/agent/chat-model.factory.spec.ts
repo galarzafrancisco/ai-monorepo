@@ -1,6 +1,7 @@
 import { jsonSchema, streamText, tool } from 'ai';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
 import { ChatModelFactory } from './chat-model.factory';
+import { DEFAULT_WORKSPACE_ID } from '../../workspaces/workspaces.constants';
 
 jest.mock('src/ai-providers/ai-providers.service', () => ({ AiProvidersService: class {} }));
 jest.mock('src/ai-providers/ai-model-selections.service', () => ({
@@ -66,7 +67,7 @@ describe('ChatModelFactory', () => {
     process.env.GOOGLE_CLOUD_LOCATION = 'global';
 
     const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash');
-    const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+    const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION });
 
     expect(resolved).toMatchObject({
       providerType: AiProviderType.GOOGLE_VERTEX,
@@ -79,7 +80,7 @@ describe('ChatModelFactory', () => {
     process.env.GOOGLE_CLOUD_LOCATION = 'global';
 
     const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash');
-    const resolved = await factory.resolve({
+    const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
       job: AiModelJob.CONVERSATION,
       aiProviderId: 'provider-1',
       modelId: 'gemini-3.6-flash',
@@ -97,7 +98,7 @@ describe('ChatModelFactory', () => {
       process.env.GOOGLE_CLOUD_LOCATION = 'us-east5';
 
       const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, modelId);
-      const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+      const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION });
 
       expect(resolved).toMatchObject({ providerType: AiProviderType.GOOGLE_VERTEX, modelId });
       expect((resolved.model as { provider: string }).provider).toBe('googleVertex.anthropic.messages');
@@ -108,7 +109,7 @@ describe('ChatModelFactory', () => {
   it('builds an xAI model for a Grok provider', async () => {
     const { factory } = factoryFor(AiProviderType.XAI, 'grok-4');
 
-    const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+    const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION });
 
     expect(resolved).toMatchObject({ providerType: AiProviderType.XAI, modelId: 'grok-4' });
     expect((resolved.model as { provider: string }).provider).toContain('xai');
@@ -122,7 +123,7 @@ describe('ChatModelFactory', () => {
       return new Response('{"error":{"message":"stop here"}}', { status: 400 });
     });
     const { factory } = factoryFor(AiProviderType.OPENAI, 'gpt-test');
-    const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+    const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION });
     const noInput = jsonSchema<Record<string, never>>({ type: 'object', properties: {} });
 
     try {
@@ -152,7 +153,7 @@ describe('ChatModelFactory', () => {
   it("asks for the job's selection when the thread has no model of its own", async () => {
     const { factory, resolveSelection } = factoryFor(AiProviderType.ANTHROPIC, 'claude-haiku-5-5');
 
-    const resolved = await factory.resolve({ job: AiModelJob.SYSTEM_SMALL_TASKS });
+    const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.SYSTEM_SMALL_TASKS });
 
     expect(resolveSelection).toHaveBeenCalledWith(AiModelJob.SYSTEM_SMALL_TASKS);
     expect(resolved.modelId).toBe('claude-haiku-5-5');
@@ -163,11 +164,11 @@ describe('ChatModelFactory', () => {
     async (job) => {
       const { factory } = factoryFor(AiProviderType.ANTHROPIC, 'claude-haiku-5-5');
 
-      await expect(factory.resolve({ job })).resolves.toMatchObject({
+      await expect(factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job })).resolves.toMatchObject({
         providerType: AiProviderType.ANTHROPIC,
       });
       await expect(
-        factory.resolve({ job, onBehalfOf: { actorId: 'actor-1', automated: false } }),
+        factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job, onBehalfOf: { actorId: 'actor-1', automated: false } }),
       ).resolves.toMatchObject({ providerType: AiProviderType.ANTHROPIC });
     },
   );
@@ -178,7 +179,7 @@ describe('ChatModelFactory', () => {
       'claude-haiku-5-5',
     );
 
-    const resolved = await factory.resolve({
+    const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
       job: AiModelJob.CONVERSATION,
       aiProviderId: 'provider-1',
       modelId: 'claude-opus-5-5',
@@ -198,7 +199,7 @@ describe('ChatModelFactory', () => {
         'gpt-plan-large',
       );
 
-      const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION, onBehalfOf });
+      const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION, onBehalfOf });
 
       expect(modelForTurn).toHaveBeenCalledWith({
         providerId: 'provider-1',
@@ -218,7 +219,7 @@ describe('ChatModelFactory', () => {
         'gpt-plan-large',
       );
 
-      await factory.resolve({
+      await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
         job: AiModelJob.CONVERSATION,
         aiProviderId: 'provider-1',
         modelId: 'gpt-plan-small',
@@ -238,7 +239,7 @@ describe('ChatModelFactory', () => {
       );
       const creator = { actorId: 'creator-1', automated: true };
 
-      const resolved = await factory.resolve({
+      const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
         job: AiModelJob.MIDDLE_MANAGER,
         onBehalfOf: creator,
       });
@@ -258,7 +259,7 @@ describe('ChatModelFactory', () => {
         'gpt-plan-small',
       );
 
-      await expect(factory.resolve({ job: AiModelJob.MIDDLE_MANAGER })).rejects.toMatchObject({
+      await expect(factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.MIDDLE_MANAGER })).rejects.toMatchObject({
         code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
       });
       expect(modelForTurn).not.toHaveBeenCalled();
@@ -270,7 +271,7 @@ describe('ChatModelFactory', () => {
         'gpt-plan-small',
       );
 
-      const resolved = await factory.resolve({
+      const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
         job: AiModelJob.USER_SMALL_TASKS,
         onBehalfOf,
       });
@@ -290,7 +291,7 @@ describe('ChatModelFactory', () => {
         'gpt-plan-small',
       );
 
-      await expect(factory.resolve({ job: AiModelJob.USER_SMALL_TASKS })).rejects.toMatchObject({
+      await expect(factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.USER_SMALL_TASKS })).rejects.toMatchObject({
         code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
       });
       expect(modelForTurn).not.toHaveBeenCalled();
@@ -303,7 +304,7 @@ describe('ChatModelFactory', () => {
       );
 
       await expect(
-        factory.resolve({
+        factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
           job: AiModelJob.USER_SMALL_TASKS,
           onBehalfOf: { actorId: 'creator-1', automated: true },
         }),
@@ -322,7 +323,7 @@ describe('ChatModelFactory', () => {
       );
 
       await expect(
-        factory.resolve({ job: AiModelJob.SYSTEM_SMALL_TASKS, onBehalfOf: forWhom }),
+        factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.SYSTEM_SMALL_TASKS, onBehalfOf: forWhom }),
       ).rejects.toMatchObject({ code: 'AI_PROVIDER_JOB_NOT_ALLOWED' });
       expect(modelForTurn).not.toHaveBeenCalled();
     });
@@ -334,7 +335,7 @@ describe('ChatModelFactory', () => {
       );
 
       await expect(
-        factory.resolve({ job: AiModelJob.EMBEDDINGS, onBehalfOf }),
+        factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.EMBEDDINGS, onBehalfOf }),
       ).rejects.toMatchObject({
         code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
       });
@@ -347,7 +348,7 @@ describe('ChatModelFactory', () => {
         'gpt-plan-large',
       );
 
-      await expect(factory.resolve({ job: AiModelJob.CONVERSATION })).rejects.toMatchObject({
+      await expect(factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION })).rejects.toMatchObject({
         code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
       });
       expect(modelForTurn).not.toHaveBeenCalled();

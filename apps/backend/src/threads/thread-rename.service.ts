@@ -28,7 +28,10 @@ export class ThreadRenameService {
     if (!trimmed) {
       throw new InvalidThreadTitleError();
     }
-    const thread = await this.threadRepository.findOne({ where: { id: threadId } });
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: { stateContextBlock: true },
+    });
     if (!thread) {
       throw new ThreadNotFoundError(threadId);
     }
@@ -39,7 +42,8 @@ export class ThreadRenameService {
       new ThreadTitleUpdatedEvent({ id: actorId }, { threadId, title: trimmed }),
     );
     try {
-      await this.contextService.updateBlock(thread.stateContextBlockId, {
+      // The state block lives in the thread's workspace.
+      await this.contextService.updateBlock(thread.stateContextBlock!.workspaceId, thread.stateContextBlockId, {
         title: `Thread State: ${trimmed}`,
       });
     } catch (error) {

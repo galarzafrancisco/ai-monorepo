@@ -31,6 +31,7 @@ export class ScheduledTasksService {
   ) {}
 
   async createScheduledTask(
+    workspaceId: string,
     input: CreateScheduledTaskInput,
   ): Promise<ScheduledTaskResult> {
     this.logger.log({
@@ -39,9 +40,9 @@ export class ScheduledTasksService {
       cronExpression: input.cronExpression,
     });
 
-    // Verify blueprint exists
+    // The blueprint must exist in the same workspace
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: input.taskBlueprintId },
+      where: { workspaceId, id: input.taskBlueprintId },
     });
 
     if (!blueprint) {
@@ -52,6 +53,7 @@ export class ScheduledTasksService {
     const nextRunAt = this.calculateNextRun(input.cronExpression);
 
     const scheduledTask = this.scheduledTaskRepository.create({
+      workspaceId,
       taskBlueprintId: input.taskBlueprintId,
       cronExpression: input.cronExpression,
       enabled: input.enabled ?? true,
@@ -69,10 +71,11 @@ export class ScheduledTasksService {
     });
 
     // Reload with relations
-    return this.getScheduledTaskById(savedScheduledTask.id);
+    return this.getScheduledTaskById(workspaceId, savedScheduledTask.id);
   }
 
   async updateScheduledTask(
+    workspaceId: string,
     scheduledTaskId: string,
     input: UpdateScheduledTaskInput,
   ): Promise<ScheduledTaskResult> {
@@ -82,7 +85,7 @@ export class ScheduledTasksService {
     });
 
     const scheduledTask = await this.scheduledTaskRepository.findOne({
-      where: { id: scheduledTaskId },
+      where: { workspaceId, id: scheduledTaskId },
     });
 
     if (!scheduledTask) {
@@ -107,17 +110,20 @@ export class ScheduledTasksService {
       scheduledTaskId,
     });
 
-    return this.getScheduledTaskById(scheduledTaskId);
+    return this.getScheduledTaskById(workspaceId, scheduledTaskId);
   }
 
-  async deleteScheduledTask(scheduledTaskId: string): Promise<void> {
+  async deleteScheduledTask(
+    workspaceId: string,
+    scheduledTaskId: string,
+  ): Promise<void> {
     this.logger.log({
       message: 'Deleting scheduled task',
       scheduledTaskId,
     });
 
     const scheduledTask = await this.scheduledTaskRepository.findOne({
-      where: { id: scheduledTaskId },
+      where: { workspaceId, id: scheduledTaskId },
     });
 
     if (!scheduledTask) {
@@ -133,11 +139,17 @@ export class ScheduledTasksService {
   }
 
   async getScheduledTaskById(
+    workspaceId: string,
     scheduledTaskId: string,
   ): Promise<ScheduledTaskResult> {
     const scheduledTask = await this.scheduledTaskRepository.findOne({
-      where: { id: scheduledTaskId },
-      relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
+      where: { workspaceId, id: scheduledTaskId },
+      relations: [
+        'taskBlueprint',
+        'taskBlueprint.tags',
+        'taskBlueprint.assigneeActor',
+        'taskBlueprint.createdByActor',
+      ],
     });
 
     if (!scheduledTask) {
@@ -148,6 +160,7 @@ export class ScheduledTasksService {
   }
 
   async listScheduledTasks(
+    workspaceId: string,
     input: ListScheduledTasksInput,
   ): Promise<ListScheduledTasksResult> {
     this.logger.log({
@@ -165,6 +178,7 @@ export class ScheduledTasksService {
       .leftJoinAndSelect('taskBlueprint.tags', 'tags')
       .leftJoinAndSelect('taskBlueprint.assigneeActor', 'assigneeActor')
       .leftJoinAndSelect('taskBlueprint.createdByActor', 'createdByActor')
+      .where('scheduledTask.workspaceId = :workspaceId', { workspaceId })
       .orderBy('scheduledTask.nextRunAt', 'ASC')
       .skip(skip)
       .take(input.limit);
@@ -195,7 +209,8 @@ export class ScheduledTasksService {
   }
 
   /**
-   * Gets all enabled scheduled tasks that are due to run
+   * Gets all enabled scheduled tasks that are due to run, in every workspace.
+   * Each result carries its workspace; the scheduler runs it there.
    */
   async getDueScheduledTasks(): Promise<ScheduledTaskResult[]> {
     const now = new Date();
@@ -205,7 +220,12 @@ export class ScheduledTasksService {
         enabled: true,
         nextRunAt: LessThanOrEqual(now),
       },
-      relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
+      relations: [
+        'taskBlueprint',
+        'taskBlueprint.tags',
+        'taskBlueprint.assigneeActor',
+        'taskBlueprint.createdByActor',
+      ],
       order: {
         nextRunAt: 'ASC',
       },
@@ -304,33 +324,36 @@ export class ScheduledTasksService {
     });
   }
 
-   /**
-    * Validates cron expression and calculates the next run time
-    * Uses Australia/Sydney timezone for all cron calculations
-    */
-   private calculateNextRun(cronExpression: string, from?: Date): Date {
-     try {
-       const interval = CronExpressionParser.parse(cronExpression, {
-         currentDate: from || new Date(),
-         tz: 'Australia/Sydney',
-       });
-       return interval.next().toDate();
-     } catch (error) {
-       throw new InvalidCronExpressionError(
-         cronExpression,
-         error instanceof Error ? error.message : undefined,
-       );
-     }
-   }
+  /**
+   * Validates cron expression and calculates the next run time
+   * Uses Australia/Sydney timezone for all cron calculations
+   */
+  private calculateNextRun(cronExpression: string, from?: Date): Date {
+    try {
+      const interval = CronExpressionParser.parse(cronExpression, {
+        currentDate: from || new Date(),
+        tz: 'Australia/Sydney',
+      });
+      return interval.next().toDate();
+    } catch (error) {
+      throw new InvalidCronExpressionError(
+        cronExpression,
+        error instanceof Error ? error.message : undefined,
+      );
+    }
+  }
 
   private mapScheduledTaskToResult(
     scheduledTask: ScheduledTaskEntity,
   ): ScheduledTaskResult {
     return {
       id: scheduledTask.id,
+      workspaceId: scheduledTask.workspaceId,
       taskBlueprintId: scheduledTask.taskBlueprintId,
       taskBlueprint: scheduledTask.taskBlueprint
-        ? this.taskBlueprintsService.mapBlueprintToResult(scheduledTask.taskBlueprint)
+        ? this.taskBlueprintsService.mapBlueprintToResult(
+            scheduledTask.taskBlueprint,
+          )
         : undefined,
       cronExpression: scheduledTask.cronExpression,
       enabled: scheduledTask.enabled,

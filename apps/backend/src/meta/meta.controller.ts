@@ -28,9 +28,12 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { MetaScopes } from './meta.scopes';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Meta')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('meta')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(MetaScopes.READ.id)
@@ -45,8 +48,11 @@ export class MetaController {
     description: 'Tag created successfully',
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createTag(@Body() dto: CreateTagDto): Promise<MetaTagResponseDto> {
-    const result = await this.metaService.createTag({
+  async createTag(
+    @Body() dto: CreateTagDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<MetaTagResponseDto> {
+    const result = await this.metaService.createTag(workspaceId, {
       name: dto.name,
     });
     return this.mapTagResultToResponse(result);
@@ -58,11 +64,14 @@ export class MetaController {
     type: [MetaTagResponseDto],
     description: 'List of all tags',
   })
-  async getAllTags(): Promise<MetaTagResponseDto[]> {
-    const result = await this.metaService.getAllTags();
+  async getAllTags(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<MetaTagResponseDto[]> {
+    const result = await this.metaService.getAllTags(workspaceId);
     return result.map((tag) => this.mapTagResultToResponse(tag));
   }
 
+  @WorkspaceAccess('installation')
   @Get('tags/colors')
   @ApiOperation({ summary: 'Get available tag colors' })
   @ApiOkResponse({
@@ -79,10 +88,14 @@ export class MetaController {
   @ApiOperation({ summary: 'Delete a tag from the system' })
   @ApiNoContentResponse({ description: 'Tag deleted successfully' })
   @ApiNotFoundResponse({ description: 'Tag not found' })
-  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
-    await this.metaService.deleteTag(tagId);
+  async deleteTag(
+    @Param('tagId') tagId: string,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<void> {
+    await this.metaService.deleteTag(workspaceId, tagId);
   }
 
+  @WorkspaceAccess('installation')
   @Get('version')
   @ApiOperation({ summary: 'Get version information' })
   @ApiOkResponse({
@@ -104,7 +117,9 @@ export class MetaController {
     };
   }
 
-  private mapVersionResultToResponse(result: VersionResult): VersionResponseDto {
+  private mapVersionResultToResponse(
+    result: VersionResult,
+  ): VersionResponseDto {
     return {
       backend: result.backend,
       ui: result.ui,

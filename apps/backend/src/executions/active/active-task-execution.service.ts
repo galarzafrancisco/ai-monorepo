@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { taskIdInWorkspace } from '../../workspaces/task-in-workspace';
 import {
   ActiveTaskExecutionEntity,
   type ActiveTaskExecutionTagSnapshot,
@@ -26,6 +27,7 @@ import { ExecutionActivityService } from '../execution-activity.service';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
 import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
 import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
+import { findWorkerExecution, type WorkerCaller } from '../worker-execution-access';
 import {
   ActiveTaskExecutionListResult,
   ActiveTaskExecutionResult,
@@ -40,7 +42,6 @@ export type ClaimTaskExecutionInput = {
 
 export type StopTaskExecutionInput = {
   executionId: string;
-  workerClientId: string;
   status: TaskExecutionHistoryStatus;
   errorCode?: TaskExecutionHistoryErrorCode | null;
   errorMessage?: string | null;
@@ -48,7 +49,6 @@ export type StopTaskExecutionInput = {
 
 export type UnclaimTaskExecutionInput = {
   executionId: string;
-  workerClientId: string;
 };
 
 export type UpdateRunnerSessionIdInput = {
@@ -85,7 +85,7 @@ export class ActiveTaskExecutionService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async listActiveExecutions(options?: {
+  async listActiveExecutions(workspaceId: string, options?: {
     page?: number;
     limit?: number;
     taskId?: string;
@@ -94,7 +94,7 @@ export class ActiveTaskExecutionService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    const where = options?.taskId ? { taskId: options.taskId } : {};
+    const where = { taskId: taskIdInWorkspace(workspaceId, options?.taskId) };
 
     const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
       where,
@@ -112,12 +112,17 @@ export class ActiveTaskExecutionService {
     };
   }
 
+  /**
+   * A worker only claims tasks in its token's workspace, like the queue it
+   * lists. A task in another workspace is not found.
+   */
   async claimTask(
+    workspaceId: string,
     input: ClaimTaskExecutionInput,
   ): Promise<ActiveTaskExecutionResult> {
     const execution = await this.dataSource.transaction(async (manager) => {
       const task = await manager.findOne(TaskEntity, {
-        where: { id: input.taskId },
+        where: { workspaceId, id: input.taskId },
         relations: ['tags'],
       });
 
@@ -207,17 +212,21 @@ export class ActiveTaskExecutionService {
     return this.mapActiveExecutionToResult(execution);
   }
 
+  /**
+   * Worker calls on one execution (stop, unclaim, session, stats, tool calls,
+   * GitHub credentials) take the calling worker. They act only on an execution
+   * that worker claimed, of a task in its token's workspace, and check this
+   * before anything is written (`findWorkerExecution`).
+   */
   async stopTask(
+    caller: WorkerCaller,
     input: StopTaskExecutionInput,
   ): Promise<TaskExecutionHistoryResult> {
     const historyEntry = await this.dataSource.transaction(async (manager) => {
-      const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
+      await findWorkerExecution(manager, caller, input.executionId, { lock: true });
+      const activeExecution = await manager.findOneOrFail(ActiveTaskExecutionEntity, {
         where: { id: input.executionId },
       });
-
-      if (!activeExecution) {
-        throw new ActiveTaskExecutionNotFoundError(input.executionId);
-      }
 
       await manager.delete(ActiveTaskExecutionEntity, {
         id: activeExecution.id,
@@ -229,7 +238,7 @@ export class ActiveTaskExecutionService {
         claimedAt: activeExecution.claimedAt,
         transitionedAt: new Date(),
         agentActorId: activeExecution.agentActorId,
-        workerClientId: input.workerClientId,
+        workerClientId: caller.workerClientId,
         runnerSessionId: activeExecution.runnerSessionId,
         toolCallCount: activeExecution.toolCallCount,
         status: input.status,
@@ -276,36 +285,17 @@ export class ActiveTaskExecutionService {
     return this.mapHistoryEntryToResult(historyEntry);
   }
 
-  /**
-   * The task of an execution, for the worker that claimed it. Throws when the
-   * execution is not active or belongs to another worker.
-   */
-  async getTaskIdForWorker(input: { executionId: string; workerClientId: string }): Promise<string> {
-    const execution = await this.dataSource.getRepository(ActiveTaskExecutionEntity).findOne({
-      where: { id: input.executionId },
-    });
-    if (!execution) {
-      throw new ActiveTaskExecutionNotFoundError(input.executionId);
-    }
-    if (execution.workerClientId !== input.workerClientId) {
-      throw new ActiveTaskExecutionWorkerMismatchError(input.executionId);
-    }
+  /** The task of an active execution, for the worker that claimed it. */
+  async getTaskIdForWorker(caller: WorkerCaller, executionId: string): Promise<string> {
+    const execution = await findWorkerExecution(this.dataSource.manager, caller, executionId);
     return execution.taskId;
   }
 
-  async unclaimTask(input: UnclaimTaskExecutionInput): Promise<void> {
+  async unclaimTask(caller: WorkerCaller, input: UnclaimTaskExecutionInput): Promise<void> {
     const execution = await this.dataSource.transaction(async (manager) => {
-      const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
-        where: { id: input.executionId },
+      const activeExecution = await findWorkerExecution(manager, caller, input.executionId, {
+        lock: true,
       });
-
-      if (!activeExecution) {
-        throw new ActiveTaskExecutionNotFoundError(input.executionId);
-      }
-
-      if (activeExecution.workerClientId !== input.workerClientId) {
-        throw new ActiveTaskExecutionWorkerMismatchError(input.executionId);
-      }
 
       await manager.delete(ExecutionStatsEntity, {
         executionId: activeExecution.id,
@@ -332,8 +322,12 @@ export class ActiveTaskExecutionService {
     this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
   }
 
-  async updateRunnerSessionId(input: UpdateRunnerSessionIdInput): Promise<void> {
-    const result = await this.activeTaskExecutionRepository
+  async updateRunnerSessionId(
+    caller: WorkerCaller,
+    input: UpdateRunnerSessionIdInput,
+  ): Promise<void> {
+    await findWorkerExecution(this.dataSource.manager, caller, input.executionId);
+    await this.activeTaskExecutionRepository
       .createQueryBuilder()
       .update(ActiveTaskExecutionEntity)
       .set({
@@ -344,22 +338,24 @@ export class ActiveTaskExecutionService {
       .where('id = :executionId', { executionId: input.executionId })
       .andWhere('runner_session_id IS NULL')
       .execute();
-
-    if ((result.affected ?? 0) > 0) {
-      return;
-    }
-
-    const existing = await this.activeTaskExecutionRepository.findOne({
-      where: { id: input.executionId },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      throw new ActiveTaskExecutionNotFoundError(input.executionId);
-    }
   }
 
-  async updateExecutionStats(input: UpdateExecutionStatsInput): Promise<void> {
+  /** Stats may arrive after the execution stopped, so a finished one counts too. */
+  async updateExecutionStats(
+    caller: WorkerCaller,
+    input: UpdateExecutionStatsInput,
+  ): Promise<void> {
+    try {
+      await findWorkerExecution(this.dataSource.manager, caller, input.executionId, {
+        includeFinished: true,
+      });
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new ExecutionStatsNotFoundError(input.executionId);
+      }
+      throw error;
+    }
+
     const valuesToSet: Record<string, string | number | (() => string) | null> = {
       rowVersion: () => 'row_version + 1',
       updatedAt: () => 'CURRENT_TIMESTAMP',
@@ -403,7 +399,11 @@ export class ActiveTaskExecutionService {
     }
   }
 
-  async incrementToolCallCount(input: IncrementToolCallCountInput): Promise<void> {
+  async incrementToolCallCount(
+    caller: WorkerCaller,
+    input: IncrementToolCallCountInput,
+  ): Promise<void> {
+    await findWorkerExecution(this.dataSource.manager, caller, input.executionId);
     const result = await this.activeTaskExecutionRepository
       .createQueryBuilder()
       .update(ActiveTaskExecutionEntity)
@@ -420,12 +420,14 @@ export class ActiveTaskExecutionService {
     }
   }
 
+  /** An execution of a task in another workspace is not found. */
   async interruptExecution(
+    workspaceId: string,
     input: InterruptExecutionInput,
     actorId: string,
   ): Promise<void> {
     const execution = await this.activeTaskExecutionRepository.findOne({
-      where: { id: input.executionId },
+      where: { id: input.executionId, taskId: taskIdInWorkspace(workspaceId) },
     });
 
     if (!execution) {

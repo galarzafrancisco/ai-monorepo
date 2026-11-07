@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -80,7 +81,7 @@ describe('AI model selection E2E', () => {
       middle_manager: { modelId: null, isReady: false, followsConversation: true },
       embeddings: { modelId: null, isReady: false, followsConversation: false },
     });
-    await expect(factory().resolve({ job: AiModelJob.CONVERSATION })).rejects.toMatchObject({
+    await expect(factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION })).rejects.toMatchObject({
       code: 'AI_MODEL_NOT_SELECTED',
     });
 
@@ -137,19 +138,19 @@ describe('AI model selection E2E', () => {
       .send({ aiProviderId: local.id, modelId: 'llama-small' })
       .expect(200);
 
-    expect(await factory().resolve({ job: AiModelJob.CONVERSATION })).toMatchObject({
+    expect(await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION })).toMatchObject({
       providerType: 'anthropic',
       modelId: 'claude-opus-5-5',
     });
-    expect(await factory().resolve({ job: AiModelJob.SYSTEM_SMALL_TASKS })).toMatchObject({
+    expect(await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.SYSTEM_SMALL_TASKS })).toMatchObject({
       providerType: 'openai_compatible',
       modelId: 'llama-small',
     });
-    expect(await factory().resolve({ job: AiModelJob.USER_SMALL_TASKS })).toMatchObject({
+    expect(await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.USER_SMALL_TASKS })).toMatchObject({
       providerType: 'anthropic',
       modelId: 'claude-opus-5-5',
     });
-    expect(await factory().resolve({ job: AiModelJob.MIDDLE_MANAGER })).toMatchObject({
+    expect(await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.MIDDLE_MANAGER })).toMatchObject({
       providerType: 'anthropic',
       modelId: 'claude-opus-5-5',
     });
@@ -158,14 +159,14 @@ describe('AI model selection E2E', () => {
     await api('put', '/ai-model-selections/conversation')
       .send({ aiProviderId: anthropic.id, modelId: 'claude-sonnet-5-5' })
       .expect(200);
-    expect((await factory().resolve({ job: AiModelJob.CONVERSATION })).modelId).toBe(
+    expect((await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION })).modelId).toBe(
       'claude-sonnet-5-5',
     );
     expect(await threadSelection(threadId)).toEqual({ ai_provider_id: null, model_id: null });
 
     // Clearing a job's own selection sends it back to the conversation model.
     await api('delete', '/ai-model-selections/system_small_tasks').expect(204);
-    expect((await factory().resolve({ job: AiModelJob.SYSTEM_SMALL_TASKS })).modelId).toBe(
+    expect((await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.SYSTEM_SMALL_TASKS })).modelId).toBe(
       'claude-sonnet-5-5',
     );
   });
@@ -254,7 +255,7 @@ describe('AI model selection E2E', () => {
       await api('put', '/ai-model-selections/user_small_tasks')
         .send({ aiProviderId: grok.id, modelId: 'grok-4' })
         .expect(200);
-      expect(await factory().resolve({ job: AiModelJob.USER_SMALL_TASKS })).toMatchObject({
+      expect(await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.USER_SMALL_TASKS })).toMatchObject({
         providerType: 'xai',
         modelId: 'grok-4',
       });
@@ -281,7 +282,7 @@ describe('AI model selection E2E', () => {
       await api('put', '/ai-model-selections/middle_manager')
         .send({ aiProviderId: vertex.id, modelId: 'gemini-3.6-flash' })
         .expect(200);
-      const resolved = await factory().resolve({ job: AiModelJob.MIDDLE_MANAGER });
+      const resolved = await factory().resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.MIDDLE_MANAGER });
       expect(resolved).toMatchObject({ providerType: 'google_vertex', modelId: 'gemini-3.6-flash' });
 
       // With nothing stored and nothing in the environment it is not usable.

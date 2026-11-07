@@ -12,6 +12,8 @@ import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
+import { DEFAULT_WORKSPACE_ID as WS } from '../src/workspaces/workspaces.constants';
+
 describe('Project automatic task tags', () => {
   let app: INestApplication;
   let actorId: string;
@@ -40,16 +42,16 @@ describe('Project automatic task tags', () => {
   });
 
   it('preserves shared and manual tags as project memberships change', async () => {
-    const shared = await meta.findOrCreateTagEntity('shared-auto-test');
-    const manual = await meta.findOrCreateTagEntity('manual-auto-test');
-    const first = await projects.createProject({ slug: 'auto-first' });
-    const second = await projects.createProject({ slug: 'auto-second' });
-    await projects.updateProject(first.id, {
+    const shared = await meta.findOrCreateTagEntity(WS, 'shared-auto-test');
+    const manual = await meta.findOrCreateTagEntity(WS, 'manual-auto-test');
+    const first = await projects.createProject(WS, { slug: 'auto-first' });
+    const second = await projects.createProject(WS, { slug: 'auto-second' });
+    await projects.updateProject(WS, first.id, {
       autoTagIds: [shared.id, manual.id],
     });
-    await projects.updateProject(second.id, { autoTagIds: [shared.id] });
+    await projects.updateProject(WS, second.id, { autoTagIds: [shared.id] });
 
-    const task = await tasks.createTask({
+    const task = await tasks.createTask(WS, {
       name: 'Automatic tag provenance',
       description: 'Provenance test',
       createdByActorId: actorId,
@@ -60,6 +62,7 @@ describe('Project automatic task tags', () => {
     );
 
     const oneProject = await tasks.removeTagFromTask(
+      WS,
       task.id,
       first.tagId,
       actorId,
@@ -69,6 +72,7 @@ describe('Project automatic task tags', () => {
     );
 
     const noProjects = await tasks.removeTagFromTask(
+      WS,
       task.id,
       second.tagId,
       actorId,
@@ -83,39 +87,40 @@ describe('Project automatic task tags', () => {
   });
 
   it('removes only project-owned tags when deleting a project', async () => {
-    const tag = await meta.findOrCreateTagEntity('deleted-project-auto-test');
-    const first = await projects.createProject({ slug: 'auto-delete-first' });
-    const second = await projects.createProject({ slug: 'auto-delete-second' });
-    await projects.updateProject(first.id, { autoTagIds: [tag.id] });
-    await projects.updateProject(second.id, { autoTagIds: [tag.id] });
-    const task = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'deleted-project-auto-test');
+    const first = await projects.createProject(WS, { slug: 'auto-delete-first' });
+    const second = await projects.createProject(WS, { slug: 'auto-delete-second' });
+    await projects.updateProject(WS, first.id, { autoTagIds: [tag.id] });
+    await projects.updateProject(WS, second.id, { autoTagIds: [tag.id] });
+    const task = await tasks.createTask(WS, {
       name: 'Project deletion provenance',
       description: 'Deletion test',
       createdByActorId: actorId,
       tagNames: [first.tagName, second.tagName],
     });
-    await projects.deleteProject(first.id);
+    await projects.deleteProject(WS, first.id);
     expect(
-      (await tasks.getTaskById(task.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, task.id)).tags.map((item) => item.name),
     ).toContain(tag.name);
-    await projects.deleteProject(second.id);
+    await projects.deleteProject(WS, second.id);
     expect(
-      (await tasks.getTaskById(task.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, task.id)).tags.map((item) => item.name),
     ).not.toContain(tag.name);
   });
 
   it('keeps an explicitly added auto tag after the project is removed', async () => {
-    const tag = await meta.findOrCreateTagEntity('explicit-auto-test');
-    const project = await projects.createProject({ slug: 'auto-explicit' });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
-    const task = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'explicit-auto-test');
+    const project = await projects.createProject(WS, { slug: 'auto-explicit' });
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
+    const task = await tasks.createTask(WS, {
       name: 'Explicit tag provenance',
       description: 'Manual addition test',
       createdByActorId: actorId,
       tagNames: [project.tagName],
     });
-    await tasks.addTagToTask(task.id, { name: tag.name }, actorId);
+    await tasks.addTagToTask(WS, task.id, { name: tag.name }, actorId);
     const updated = await tasks.removeTagFromTask(
+      WS,
       task.id,
       project.tagId,
       actorId,
@@ -124,15 +129,15 @@ describe('Project automatic task tags', () => {
   });
 
   it('retains automatic tags when creating a task with dependencies', async () => {
-    const tag = await meta.findOrCreateTagEntity('dependency-auto-test');
-    const project = await projects.createProject({ slug: 'auto-dependency' });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
-    const dependency = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'dependency-auto-test');
+    const project = await projects.createProject(WS, { slug: 'auto-dependency' });
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
+    const dependency = await tasks.createTask(WS, {
       name: 'Dependency',
       description: 'Dependency test',
       createdByActorId: actorId,
     });
-    const task = await tasks.createTask({
+    const task = await tasks.createTask(WS, {
       name: 'Dependent project task',
       description: 'Dependency test',
       createdByActorId: actorId,
@@ -141,32 +146,34 @@ describe('Project automatic task tags', () => {
     });
     expect(task.tags.map((item) => item.name)).toContain(tag.name);
     expect(
-      (await tasks.getTaskById(task.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, task.id)).tags.map((item) => item.name),
     ).toContain(tag.name);
   });
 
   it('does not apply changed configurations to existing memberships on unrelated edits', async () => {
-    const oldTag = await meta.findOrCreateTagEntity('snapshot-old-auto-test');
-    const newTag = await meta.findOrCreateTagEntity('snapshot-new-auto-test');
+    const oldTag = await meta.findOrCreateTagEntity(WS, 'snapshot-old-auto-test');
+    const newTag = await meta.findOrCreateTagEntity(WS, 'snapshot-new-auto-test');
     const otherTag = await meta.findOrCreateTagEntity(
+      WS,
       'snapshot-other-auto-test',
     );
-    const first = await projects.createProject({ slug: 'auto-snapshot-first' });
-    const second = await projects.createProject({
+    const first = await projects.createProject(WS, { slug: 'auto-snapshot-first' });
+    const second = await projects.createProject(WS, {
       slug: 'auto-snapshot-second',
     });
-    await projects.updateProject(first.id, { autoTagIds: [oldTag.id] });
-    await projects.updateProject(second.id, {
+    await projects.updateProject(WS, first.id, { autoTagIds: [oldTag.id] });
+    await projects.updateProject(WS, second.id, {
       autoTagIds: [oldTag.id, otherTag.id],
     });
-    const task = await tasks.createTask({
+    const task = await tasks.createTask(WS, {
       name: 'Snapshot task',
       description: 'Snapshot test',
       createdByActorId: actorId,
       tagNames: [first.tagName],
     });
-    await projects.updateProject(first.id, { autoTagIds: [newTag.id] });
+    await projects.updateProject(WS, first.id, { autoTagIds: [newTag.id] });
     const edited = await tasks.addTagToTask(
+      WS,
       task.id,
       { name: 'unrelated-auto-test' },
       actorId,
@@ -175,6 +182,7 @@ describe('Project automatic task tags', () => {
     expect(edited.tags.map((item) => item.name)).not.toContain(newTag.name);
 
     const replaced = await tasks.updateTask(
+      WS,
       task.id,
       {
         tagNames: [first.tagName, second.tagName, 'unrelated-auto-test'],
@@ -186,12 +194,14 @@ describe('Project automatic task tags', () => {
     );
     expect(replaced.tags.map((item) => item.name)).not.toContain(newTag.name);
     const withoutFirst = await tasks.removeTagFromTask(
+      WS,
       task.id,
       first.tagId,
       actorId,
     );
     expect(withoutFirst.tags.map((item) => item.name)).toContain(oldTag.name);
     const withoutSecond = await tasks.removeTagFromTask(
+      WS,
       task.id,
       second.tagId,
       actorId,
@@ -202,16 +212,17 @@ describe('Project automatic task tags', () => {
   });
 
   it('treats explicitly retained tags in a full replacement as manual', async () => {
-    const tag = await meta.findOrCreateTagEntity('replacement-auto-test');
-    const project = await projects.createProject({ slug: 'auto-replacement' });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
-    const task = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'replacement-auto-test');
+    const project = await projects.createProject(WS, { slug: 'auto-replacement' });
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
+    const task = await tasks.createTask(WS, {
       name: 'Replacement task',
       description: 'Replacement test',
       createdByActorId: actorId,
       tagNames: [project.tagName],
     });
     const updated = await tasks.updateTask(
+      WS,
       task.id,
       { tagNames: [tag.name] },
       actorId,
@@ -225,22 +236,24 @@ describe('Project automatic task tags', () => {
   });
 
   it('does not backfill a membership whose configuration was initially empty', async () => {
-    const tag = await meta.findOrCreateTagEntity('empty-config-auto-test');
-    const project = await projects.createProject({ slug: 'auto-empty-config' });
-    const task = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'empty-config-auto-test');
+    const project = await projects.createProject(WS, { slug: 'auto-empty-config' });
+    const task = await tasks.createTask(WS, {
       name: 'Empty config task',
       description: 'Empty configuration test',
       createdByActorId: actorId,
       tagNames: [project.tagName],
     });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
     const edited = await tasks.updateTask(
+      WS,
       task.id,
       { tagNames: [project.tagName] },
       actorId,
     );
     expect(edited.tags.map((item) => item.name)).not.toContain(tag.name);
     const added = await tasks.addTagToTask(
+      WS,
       task.id,
       { name: project.tagName },
       actorId,
@@ -249,12 +262,12 @@ describe('Project automatic task tags', () => {
   });
 
   it('emits a task update after project deletion with the final membership and tags', async () => {
-    const tag = await meta.findOrCreateTagEntity('deletion-event-auto-test');
-    const project = await projects.createProject({
+    const tag = await meta.findOrCreateTagEntity(WS, 'deletion-event-auto-test');
+    const project = await projects.createProject(WS, {
       slug: 'auto-deletion-event',
     });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
-    const task = await tasks.createTask({
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
+    const task = await tasks.createTask(WS, {
       name: 'Deletion event task',
       description: 'Deletion event test',
       createdByActorId: actorId,
@@ -278,7 +291,7 @@ describe('Project automatic task tags', () => {
     const events = app.get(EventEmitter2);
     const emitted = jest.spyOn(events, 'emit');
     try {
-      await projects.deleteProject(project.id);
+      await projects.deleteProject(WS, project.id);
       const updates = emitted.mock.calls.filter(
         ([name, event]) =>
           name === TaskUpdatedEvent.INTERNAL &&
@@ -301,22 +314,22 @@ describe('Project automatic task tags', () => {
   });
 
   it('rejects deleting a project tag through the generic tag endpoint, preserving provenance', async () => {
-    const tag = await meta.findOrCreateTagEntity('generic-delete-auto-test');
-    const first = await projects.createProject({
+    const tag = await meta.findOrCreateTagEntity(WS, 'generic-delete-auto-test');
+    const first = await projects.createProject(WS, {
       slug: 'auto-generic-delete-first',
     });
-    const second = await projects.createProject({
+    const second = await projects.createProject(WS, {
       slug: 'auto-generic-delete-second',
     });
-    await projects.updateProject(first.id, { autoTagIds: [tag.id] });
-    await projects.updateProject(second.id, { autoTagIds: [tag.id] });
-    const shared = await tasks.createTask({
+    await projects.updateProject(WS, first.id, { autoTagIds: [tag.id] });
+    await projects.updateProject(WS, second.id, { autoTagIds: [tag.id] });
+    const shared = await tasks.createTask(WS, {
       name: 'Generic delete shared',
       description: 'Shared provenance test',
       createdByActorId: actorId,
       tagNames: [first.tagName, second.tagName],
     });
-    const manual = await tasks.createTask({
+    const manual = await tasks.createTask(WS, {
       name: 'Generic delete manual',
       description: 'Manual provenance test',
       createdByActorId: actorId,
@@ -328,31 +341,31 @@ describe('Project automatic task tags', () => {
       .set('Cookie', cookies)
       .expect(400);
     expect(
-      (await tasks.getTaskById(shared.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, shared.id)).tags.map((item) => item.name),
     ).toContain(first.tagName);
     expect(
       await database.query('SELECT * FROM task_auto_tags WHERE task_id = $1', [
         shared.id,
       ]),
     ).not.toHaveLength(0);
-    await projects.deleteProject(first.id);
+    await projects.deleteProject(WS, first.id);
     expect(
-      (await tasks.getTaskById(shared.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, shared.id)).tags.map((item) => item.name),
     ).toContain(tag.name);
     expect(
-      (await tasks.getTaskById(manual.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, manual.id)).tags.map((item) => item.name),
     ).toContain(tag.name);
-    await projects.deleteProject(second.id);
+    await projects.deleteProject(WS, second.id);
     expect(
-      (await tasks.getTaskById(shared.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, shared.id)).tags.map((item) => item.name),
     ).not.toContain(tag.name);
   });
 
   it('rolls back membership when provenance synchronization fails', async () => {
-    const tag = await meta.findOrCreateTagEntity('rollback-auto-test');
-    const project = await projects.createProject({ slug: 'auto-rollback' });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
-    const task = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'rollback-auto-test');
+    const project = await projects.createProject(WS, { slug: 'auto-rollback' });
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
+    const task = await tasks.createTask(WS, {
       name: 'Rollback task',
       description: 'Rollback test',
       createdByActorId: actorId,
@@ -363,13 +376,13 @@ describe('Project automatic task tags', () => {
       .mockRejectedValueOnce(new Error('sync failed'));
     try {
       await expect(
-        tasks.addTagToTask(task.id, { name: project.tagName }, actorId),
+        tasks.addTagToTask(WS, task.id, { name: project.tagName }, actorId),
       ).rejects.toThrow('sync failed');
     } finally {
       spy.mockRestore();
     }
     expect(
-      (await tasks.getTaskById(task.id)).tags.map((item) => item.name),
+      (await tasks.getTaskById(WS, task.id)).tags.map((item) => item.name),
     ).not.toContain(project.tagName);
     expect(
       await database.query('SELECT * FROM task_auto_tags WHERE task_id = $1', [
@@ -377,6 +390,7 @@ describe('Project automatic task tags', () => {
       ]),
     ).toHaveLength(0);
     const retried = await tasks.addTagToTask(
+      WS,
       task.id,
       { name: project.tagName },
       actorId,
@@ -385,21 +399,21 @@ describe('Project automatic task tags', () => {
   });
 
   it('serializes concurrent additions of the same project', async () => {
-    const tag = await meta.findOrCreateTagEntity('concurrent-auto-test');
-    const project = await projects.createProject({ slug: 'auto-concurrent' });
-    await projects.updateProject(project.id, { autoTagIds: [tag.id] });
-    const task = await tasks.createTask({
+    const tag = await meta.findOrCreateTagEntity(WS, 'concurrent-auto-test');
+    const project = await projects.createProject(WS, { slug: 'auto-concurrent' });
+    await projects.updateProject(WS, project.id, { autoTagIds: [tag.id] });
+    const task = await tasks.createTask(WS, {
       name: 'Concurrent task',
       description: 'Concurrency test',
       createdByActorId: actorId,
     });
     await Promise.all(
       Array.from({ length: 3 }, () =>
-        tasks.addTagToTask(task.id, { name: project.tagName }, actorId),
+        tasks.addTagToTask(WS, task.id, { name: project.tagName }, actorId),
       ),
     );
     expect(
-      (await tasks.getTaskById(task.id)).tags.filter(
+      (await tasks.getTaskById(WS, task.id)).tags.filter(
         (item) => item.name === tag.name,
       ),
     ).toHaveLength(1);
@@ -412,8 +426,8 @@ describe('Project automatic task tags', () => {
   });
   it('deletes a project over HTTP, keeping its tasks and freeing the slug', async () => {
     const cookies = await getAuthCookies(app.getHttpServer());
-    const project = await projects.createProject({ slug: 'http-delete' });
-    const task = await tasks.createTask({
+    const project = await projects.createProject(WS, { slug: 'http-delete' });
+    const task = await tasks.createTask(WS, {
       name: 'Outlives its project',
       description: 'HTTP deletion test',
       createdByActorId: actorId,
@@ -429,7 +443,7 @@ describe('Project automatic task tags', () => {
       .get(`/api/v1/meta/projects/${project.id}`)
       .set('Cookie', cookies)
       .expect(404);
-    const kept = await tasks.getTaskById(task.id);
+    const kept = await tasks.getTaskById(WS, task.id);
     expect(kept.tags.map((tag) => tag.name)).not.toContain(project.tagName);
 
     // The slug can be reused once the project is gone.

@@ -39,6 +39,12 @@ export const ErrorCatalog: Record<
     type: '/errors/tasks/is-thread-parent',
     retryable: false,
   },
+  [ErrorCodes.INPUT_REQUEST_NOT_FOUND]: {
+    status: 404,
+    title: 'Input request not found',
+    type: '/errors/tasks/input-request-not-found',
+    retryable: false,
+  },
   [ErrorCodes.INPUT_REQUEST_SELF_ASSIGNMENT]: {
     status: 400,
     title: 'Input request cannot target asker',
@@ -393,6 +399,24 @@ export const ErrorCatalog: Record<
     status: 403,
     title: 'Insufficient scope',
     type: '/errors/auth/insufficient-scope',
+    retryable: false,
+  },
+  [ErrorCodes.NOT_IN_WORKSPACE]: {
+    status: 404,
+    title: 'Not found',
+    type: '/errors/workspaces/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_ACCESS_UNDECLARED]: {
+    status: 500,
+    title: 'Route has no workspace access mode',
+    type: '/errors/workspaces/access-undeclared',
+    retryable: false,
+  },
+  [ErrorCodes.TOKEN_ACTOR_NOT_IN_WORKSPACE]: {
+    status: 403,
+    title: 'Actor is not a member of the workspace',
+    type: '/errors/workspaces/token-actor-not-member',
     retryable: false,
   },
   [ErrorCodes.VALIDATION_FAILED]: {

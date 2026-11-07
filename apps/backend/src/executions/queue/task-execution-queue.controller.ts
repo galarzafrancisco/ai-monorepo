@@ -17,6 +17,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentAuth } from '../../auth/guards/decorators/current-auth.decorator';
+import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
 import { AccessTokenGuard } from '../../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
@@ -35,9 +36,11 @@ import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-qu
 import { TaskExecutionQueueListResponseDto } from './dto/http/task-execution-queue-list-response.dto';
 import { ListQueueQueryDto } from './dto/http/list-queue-query.dto';
 import { TaskExecutionQueueEntryResult } from '../dto/service/execution-results.service.types';
+import { WorkspaceAccess } from '../../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('executions/queue')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
@@ -57,8 +60,9 @@ export class TaskExecutionQueueController {
   @ApiOkResponse({ type: TaskExecutionQueueListResponseDto })
   async listQueue(
     @Query() query: ListQueueQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskExecutionQueueListResponseDto> {
-    const result = await this.taskExecutionQueueService.listQueue({
+    const result = await this.taskExecutionQueueService.listQueue(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 50,
     });
@@ -84,9 +88,10 @@ export class TaskExecutionQueueController {
   async claimTask(
     @Param('taskId') taskId: string,
     @CurrentAuth() auth: AuthContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ActiveTaskExecutionResponseDto> {
     try {
-      const execution = await this.activeTaskExecutionService.claimTask({
+      const execution = await this.activeTaskExecutionService.claimTask(workspaceId, {
         taskId,
         workerClientId: auth.claims.client_id,
       });

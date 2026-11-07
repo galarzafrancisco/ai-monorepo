@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import request from 'supertest';
@@ -596,18 +597,18 @@ describe('Sign in with ChatGPT E2E', () => {
         AiModelJob.SYSTEM_SMALL_TASKS,
         AiModelJob.MIDDLE_MANAGER,
       ]) {
-        await expect(factory.resolve({ job })).rejects.toMatchObject({
+        await expect(factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job })).rejects.toMatchObject({
           code: 'AI_MODEL_NOT_SELECTED',
         });
         // Not even when a caller claims to act for the connected person.
         await expect(
-          factory.resolve({ job, onBehalfOf }),
+          factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job, onBehalfOf }),
         ).rejects.toMatchObject({
           code: 'AI_MODEL_NOT_SELECTED',
         });
       }
       await expect(
-        factory.resolve({ job: AiModelJob.CONVERSATION }),
+        factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION }),
       ).rejects.toMatchObject({
         code: 'AI_PROVIDER_JOB_NOT_ALLOWED',
       });
@@ -618,16 +619,17 @@ describe('Sign in with ChatGPT E2E', () => {
       const chat = app.get(ChatService);
 
       await expect(
-        chat.generateText('Name this thread', {
+        chat.generateText(DEFAULT_WORKSPACE_ID, 'Name this thread', {
           job: AiModelJob.USER_SMALL_TASKS,
           onBehalfOf: { actorId: aliceActorId, automated: false },
         }),
       ).resolves.toBeNull();
       await expect(
-        chat.generateText('Name this thread', { job: AiModelJob.SYSTEM_SMALL_TASKS }),
+        chat.generateText(DEFAULT_WORKSPACE_ID, 'Name this thread', { job: AiModelJob.SYSTEM_SMALL_TASKS }),
       ).resolves.toBeNull();
       await expect(
         chat.runTask({
+          workspaceId: DEFAULT_WORKSPACE_ID,
           instructions: 'Reconcile',
           prompt: 'A task changed',
           actor: null,
@@ -826,6 +828,7 @@ describe('Sign in with ChatGPT E2E', () => {
   describe('the middle manager on the plan', () => {
     const runFor = (actorId: string | null) =>
       app.get(ChatService).runTask({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         instructions: 'Reconcile the thread state',
         prompt: 'Task 1 changed status to DONE.',
         actor: null,
@@ -909,7 +912,7 @@ describe('Sign in with ChatGPT E2E', () => {
     // By now Alice is connected and allowed unattended runs; Bob is connected
     // but has not; the agent has no plan.
     const titles = () => app.get(ThreadTitleService);
-    const task = { name: 'Ship it', description: 'Release 1.0' } as never;
+    const task = { name: 'Ship it', description: 'Release 1.0', workspaceId: DEFAULT_WORKSPACE_ID } as never;
     const human = (id: string) => ({ id, type: ActorType.HUMAN });
     const agent = (id: string) => ({ id, type: ActorType.AGENT });
 
@@ -953,7 +956,7 @@ describe('Sign in with ChatGPT E2E', () => {
 
       // Bob has not allowed unattended runs; he typed this, so none is needed.
       await expect(
-        titles().generateFromMessage('Plan the release', human(bobActorId)),
+        titles().generateFromMessage(DEFAULT_WORKSPACE_ID, 'Plan the release', human(bobActorId)),
       ).resolves.toBe('Bob’s release plan');
 
       const requests = fake.responsesRequests.slice(before);
@@ -992,7 +995,7 @@ describe('Sign in with ChatGPT E2E', () => {
 
       // No system small tasks model: the title stays default and nobody's plan is touched.
       await expect(titles().generateFromParentTask(task, agent(agentActorId))).resolves.toBeNull();
-      await expect(titles().generateFromMessage('Hi', agent(agentActorId))).resolves.toBeNull();
+      await expect(titles().generateFromMessage(DEFAULT_WORKSPACE_ID, 'Hi', agent(agentActorId))).resolves.toBeNull();
 
       expect(fake.responsesRequests).toHaveLength(before);
     });
@@ -1001,7 +1004,7 @@ describe('Sign in with ChatGPT E2E', () => {
       const before = fake.responsesRequests.length;
 
       await expect(
-        app.get(ChatModelFactory).resolve({
+        app.get(ChatModelFactory).resolve({ workspaceId: DEFAULT_WORKSPACE_ID,
           job: AiModelJob.USER_SMALL_TASKS,
           onBehalfOf: { actorId: aliceActorId, automated: true },
         }),
@@ -1015,7 +1018,7 @@ describe('Sign in with ChatGPT E2E', () => {
       fake.script.push(failedResponse('server_error', 'Something went wrong', 'Half a'));
 
       await expect(
-        titles().generateFromMessage('Plan the release', human(aliceActorId)),
+        titles().generateFromMessage(DEFAULT_WORKSPACE_ID, 'Plan the release', human(aliceActorId)),
       ).resolves.toBeNull();
 
       expect(fake.responsesRequests).toHaveLength(before + 1);
@@ -1028,7 +1031,7 @@ describe('Sign in with ChatGPT E2E', () => {
       );
 
       await expect(
-        titles().generateFromMessage('Plan the release', human(aliceActorId)),
+        titles().generateFromMessage(DEFAULT_WORKSPACE_ID, 'Plan the release', human(aliceActorId)),
       ).resolves.toBeNull();
 
       expect(fake.responsesRequests).toHaveLength(before + 1);
@@ -1118,7 +1121,7 @@ describe('Sign in with ChatGPT E2E', () => {
         fake.script.push(textResponse('Alice’s title'));
 
         await expect(
-          titles().generateFromMessage('Plan the release', human(aliceActorId)),
+          titles().generateFromMessage(DEFAULT_WORKSPACE_ID, 'Plan the release', human(aliceActorId)),
         ).resolves.toBe('Alice’s title');
 
         expect(fake.responsesRequests).toHaveLength(planBefore + 1);
@@ -1132,7 +1135,7 @@ describe('Sign in with ChatGPT E2E', () => {
         );
 
         await expect(
-          titles().generateFromMessage('Plan the release', human(aliceActorId)),
+          titles().generateFromMessage(DEFAULT_WORKSPACE_ID, 'Plan the release', human(aliceActorId)),
         ).resolves.toBeNull();
 
         expect(completions).toHaveLength(apiBefore);

@@ -30,6 +30,7 @@ import {
   vertexLocationFromEnv,
   vertexProjectFromEnv,
 } from 'src/ai-providers/google-environment';
+import { assertHoldsUnscopedModuleData } from '../../workspaces/unscoped-modules';
 
 type ProviderOptions = Record<string, Record<string, string | number | boolean | null>>;
 
@@ -47,6 +48,11 @@ export type ResolvedChatModel = {
 };
 
 export type ResolveChatModelInput = {
+  /**
+   * The workspace the call is for. AI providers and model selections have no
+   * workspace yet (phase 3d), so only the default workspace may use them.
+   */
+  workspaceId: string;
   /** The job the model is for. Decides which selection applies. */
   job: AiModelJob;
   /** A thread's own provider and model. Both must be set to override the job's selection. */
@@ -73,6 +79,7 @@ export class ChatModelFactory {
   ) {}
 
   async resolve(input: ResolveChatModelInput): Promise<ResolvedChatModel> {
+    assertHoldsUnscopedModuleData(input.workspaceId);
     if (input.aiProviderId && input.modelId) {
       const config = await this.aiProvidersService.getAiProviderConfigById(input.aiProviderId);
       return this.build(config, input.modelId, input);

@@ -11,9 +11,12 @@ import { PullRequestResponseDto } from './dto/http/pull-request-response.dto';
 import { toPullRequestResponse } from './dto/http/pull-request.mapper';
 import { PullRequestRefInvalidError } from './errors/pull-requests.errors';
 import { parsePullRequestRef, PullRequestRef } from './github/pull-request-ref';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Pull requests')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('pull-requests')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class PullRequestsController {
@@ -28,7 +31,10 @@ export class PullRequestsController {
       'Pull requests Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as a pull_request.updated socket event. Pull requests on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.',
   })
   @ApiOkResponse({ type: [PullRequestResponseDto] })
-  async lookup(@Body() dto: LookupPullRequestsDto): Promise<PullRequestResponseDto[]> {
+  async lookup(
+    @Body() dto: LookupPullRequestsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<PullRequestResponseDto[]> {
     const hosts = await this.pullRequests.listEnterpriseHosts();
     const refs: PullRequestRef[] = [];
     for (const value of dto.refs) {
@@ -37,7 +43,7 @@ export class PullRequestsController {
       // A pull request on a host Taico has no connection to is left out of the answer.
       else if (!parsePullRequestRef(value, 'any')) throw new PullRequestRefInvalidError(value);
     }
-    return (await this.pullRequests.lookup(refs)).map(toPullRequestResponse);
+    return (await this.pullRequests.lookup(workspaceId, refs)).map(toPullRequestResponse);
   }
 
   @Get(':id')

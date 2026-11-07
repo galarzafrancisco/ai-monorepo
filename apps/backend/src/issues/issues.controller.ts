@@ -11,9 +11,12 @@ import { IssueResponseDto } from './dto/http/issue-response.dto';
 import { toIssueResponse } from './dto/http/issue.mapper';
 import { IssueRefInvalidError } from './errors/issues.errors';
 import { IssueRef, parseIssueRef } from './github/issue-ref';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Issues')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('issues')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class IssuesController {
@@ -28,7 +31,10 @@ export class IssuesController {
       'Issues Taico has never read are read from GitHub before answering. Stale ones are answered from the stored copy and refreshed in the background; the new state arrives as an issue.updated socket event. Issues on a host that is neither github.com nor a GitHub Enterprise Taico has a connection to are left out.',
   })
   @ApiOkResponse({ type: [IssueResponseDto] })
-  async lookup(@Body() dto: LookupIssuesDto): Promise<IssueResponseDto[]> {
+  async lookup(
+    @Body() dto: LookupIssuesDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<IssueResponseDto[]> {
     const hosts = await this.issues.listEnterpriseHosts();
     const refs: IssueRef[] = [];
     for (const value of dto.refs) {
@@ -37,7 +43,7 @@ export class IssuesController {
       // An issue on a host Taico has no connection to is left out of the answer.
       else if (!parseIssueRef(value, 'any')) throw new IssueRefInvalidError(value);
     }
-    return (await this.issues.lookup(refs)).map(toIssueResponse);
+    return (await this.issues.lookup(workspaceId, refs)).map(toIssueResponse);
   }
 
   @Get(':id')

@@ -36,9 +36,12 @@ import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorato
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
 import { TasksScopes } from '../tasks/tasks.scopes';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Task Blueprints')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('task-blueprints')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
@@ -56,15 +59,19 @@ export class TaskBlueprintsController {
   async createTaskBlueprint(
     @Body() dto: CreateTaskBlueprintDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskBlueprintResponseDto> {
-    const result = await this.taskBlueprintsService.createTaskBlueprint({
-      name: dto.name,
-      description: dto.description,
-      assigneeActorId: dto.assigneeActorId,
-      tagNames: dto.tagNames,
-      dependsOnIds: dto.dependsOnIds,
-      createdByActorId: user.actorId,
-    });
+    const result = await this.taskBlueprintsService.createTaskBlueprint(
+      workspaceId,
+      {
+        name: dto.name,
+        description: dto.description,
+        assigneeActorId: dto.assigneeActorId,
+        tagNames: dto.tagNames,
+        dependsOnIds: dto.dependsOnIds,
+        createdByActorId: user.actorId,
+      },
+    );
     return TaskBlueprintResponseDto.fromResult(result);
   }
 
@@ -76,11 +83,15 @@ export class TaskBlueprintsController {
   })
   async listTaskBlueprints(
     @Query() query: ListTaskBlueprintsQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskBlueprintListResponseDto> {
-    const result = await this.taskBlueprintsService.listTaskBlueprints({
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
-    });
+    const result = await this.taskBlueprintsService.listTaskBlueprints(
+      workspaceId,
+      {
+        page: query.page ?? 1,
+        limit: query.limit ?? 20,
+      },
+    );
     return TaskBlueprintListResponseDto.fromResult(result);
   }
 
@@ -93,8 +104,10 @@ export class TaskBlueprintsController {
   @ApiNotFoundResponse({ description: 'Task blueprint not found' })
   async getTaskBlueprint(
     @Param() params: TaskBlueprintParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskBlueprintResponseDto> {
     const result = await this.taskBlueprintsService.getTaskBlueprintById(
+      workspaceId,
       params.id,
     );
     return TaskBlueprintResponseDto.fromResult(result);
@@ -112,8 +125,10 @@ export class TaskBlueprintsController {
   async updateTaskBlueprint(
     @Param() params: TaskBlueprintParamsDto,
     @Body() dto: UpdateTaskBlueprintDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskBlueprintResponseDto> {
     const result = await this.taskBlueprintsService.updateTaskBlueprint(
+      workspaceId,
       params.id,
       {
         name: dto.name,
@@ -135,8 +150,12 @@ export class TaskBlueprintsController {
   @ApiConflictResponse({ description: 'Task blueprint has active schedules' })
   async deleteTaskBlueprint(
     @Param() params: TaskBlueprintParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.taskBlueprintsService.deleteTaskBlueprint(params.id);
+    await this.taskBlueprintsService.deleteTaskBlueprint(
+      workspaceId,
+      params.id,
+    );
   }
 
   @Post(':id/create-task')
@@ -149,8 +168,10 @@ export class TaskBlueprintsController {
   @ApiNotFoundResponse({ description: 'Task blueprint not found' })
   async createTaskFromBlueprint(
     @Param() params: TaskBlueprintParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskResponseDto> {
     const result = await this.taskBlueprintsService.createTaskFromBlueprint(
+      workspaceId,
       params.id,
     );
     return TaskResponseDto.fromResult(result);

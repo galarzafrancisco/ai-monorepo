@@ -2,8 +2,10 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwksService } from './jwks.service';
 import { JwksResponseDto } from './dto/jwks-response.dto';
+import { WorkspaceAccess } from '../guards/decorators/workspace-access.decorator';
 
 @ApiTags('JWKS')
+@WorkspaceAccess('installation')
 @Controller('.well-known')
 export class JwksController {
   constructor(private readonly jwksService: JwksService) {}

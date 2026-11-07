@@ -32,6 +32,11 @@ import {
 import { AccessTokenClaims } from '../../core/types/access-token-claims.type';
 import { getConfig } from 'src/config/env.config';
 import { isAudienceAcceptedForRequest } from '../../core/resource-audience';
+import {
+  enforceWorkspaceAccess,
+  entryPointName,
+  workspaceAccessOf,
+} from './workspace-access';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -93,6 +98,13 @@ export class AccessTokenGuard implements CanActivate {
 
     // 4) Attach auth context
     const authContext: AuthContext = createAuthContext(token, claims);
+
+    // 5) Keep workspaces apart (fails closed when the route declares no mode)
+    enforceWorkspaceAccess(
+      workspaceAccessOf(this.reflector, context),
+      authContext,
+      entryPointName(context),
+    );
 
     res.locals.auth = authContext;
 

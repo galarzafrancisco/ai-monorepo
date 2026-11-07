@@ -9,6 +9,7 @@ export const TasksErrorCodes = {
   AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,
   TASK_IS_THREAD_PARENT: ErrorCodes.TASK_IS_THREAD_PARENT,
   INPUT_REQUEST_SELF_ASSIGNMENT: ErrorCodes.INPUT_REQUEST_SELF_ASSIGNMENT,
+  INPUT_REQUEST_NOT_FOUND: ErrorCodes.INPUT_REQUEST_NOT_FOUND,
 } as const;
 
 type TasksErrorCode = (typeof TasksErrorCodes)[keyof typeof TasksErrorCodes];
@@ -86,5 +87,14 @@ export class InputRequestSelfAssignmentError extends TasksDomainError {
       TasksErrorCodes.INPUT_REQUEST_SELF_ASSIGNMENT,
       { askedByActorId, assignedToActorId },
     );
+  }
+}
+
+export class InputRequestNotFoundError extends TasksDomainError {
+  constructor(taskId: string, inputRequestId: string) {
+    super('Input request not found.', TasksErrorCodes.INPUT_REQUEST_NOT_FOUND, {
+      taskId,
+      inputRequestId,
+    });
   }
 }

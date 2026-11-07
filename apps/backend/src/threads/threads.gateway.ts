@@ -39,8 +39,19 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { ThreadsScopes } from './threads.scopes';
 import { ThreadsService } from './threads.service';
 import type { AuthContext } from 'src/auth/guards/context/auth-context.types';
+import { socketWorkspaceId, workspaceRoom } from '../workspaces/workspace-rooms';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const THREADS_ROOM = 'threads';
+
+/**
+ * The thread list room carries every thread's activity and title, so it is
+ * per workspace. A per-thread room is keyed by the thread id alone: a socket
+ * only joins it after the thread was found in the socket's workspace, and a
+ * thread is in exactly one workspace.
+ */
+const getThreadListRoomName = (workspaceId: string): string =>
+  workspaceRoom(workspaceId, THREADS_ROOM);
 
 type ThreadSubscriptionPayload = {
   threadId?: string;
@@ -50,8 +61,12 @@ const getThreadRoomName = (threadId: string): string => `${THREADS_ROOM}-${threa
 const getThreadActorRoomName = (threadId: string, actorId: string): string =>
   `${THREADS_ROOM}-${threadId}-actor-${actorId}`;
 
-/** Every list socket of one actor: all their tabs and devices. */
-const getActorRoomName = (actorId: string): string => `${THREADS_ROOM}-actor-${actorId}`;
+/**
+ * Every list socket of one actor in one workspace: all their tabs and
+ * devices. A person can be in several workspaces, so it is per workspace.
+ */
+const getActorRoomName = (workspaceId: string, actorId: string): string =>
+  workspaceRoom(workspaceId, `${THREADS_ROOM}-actor-${actorId}`);
 
 const getActorId = (client: Socket): string | undefined =>
   (client.data?.auth as AuthContext | undefined)?.claims.actor_id;
@@ -69,6 +84,7 @@ const getActorId = (client: Socket): string | undefined =>
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(ThreadsScopes.READ.id)
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -107,16 +123,20 @@ export class ThreadsGateway
     @MessageBody() body: ThreadSubscriptionPayload,
   ) {
     if (!body?.threadId) {
-      client.join(THREADS_ROOM);
+      const listRoom = getThreadListRoomName(socketWorkspaceId(client));
+      client.join(listRoom);
       const actorId = getActorId(client);
       if (actorId) {
-        client.join(getActorRoomName(actorId));
+        client.join(getActorRoomName(socketWorkspaceId(client), actorId));
       }
-      return { ok: true, room: THREADS_ROOM };
+      return { ok: true, room: listRoom };
     }
 
     try {
-      await this.threadsService.getThreadById(body.threadId);
+      await this.threadsService.assertThreadInWorkspace(
+        socketWorkspaceId(client),
+        body.threadId,
+      );
     } catch {
       return { ok: false, error: 'thread not found' };
     }
@@ -136,10 +156,10 @@ export class ThreadsGateway
     @MessageBody() body: ThreadSubscriptionPayload,
   ) {
     if (!body?.threadId) {
-      client.leave(THREADS_ROOM);
+      client.leave(getThreadListRoomName(socketWorkspaceId(client)));
       const actorId = getActorId(client);
       if (actorId) {
-        client.leave(getActorRoomName(actorId));
+        client.leave(getActorRoomName(socketWorkspaceId(client), actorId));
       }
       return { ok: true };
     }
@@ -159,7 +179,7 @@ export class ThreadsGateway
    */
 
   @OnEvent(MessageCreatedEvent.INTERNAL)
-  handleMessageCreated(event: MessageCreatedEvent) {
+  async handleMessageCreated(event: MessageCreatedEvent) {
     const dto = ThreadMessageResponseDto.fromEntity(event.payload);
 
     const wireEvent: MessageCreatedWireEvent = {
@@ -181,9 +201,11 @@ export class ThreadsGateway
       },
       actor: { id: event.actor.id },
     };
-    this.server
-      .to(THREADS_ROOM)
-      .emit(ThreadWireEvents.THREAD_ACTIVITY, activityEvent);
+    await this.emitToThreadList(
+      event.payload.threadId,
+      ThreadWireEvents.THREAD_ACTIVITY,
+      activityEvent,
+    );
 
     this.logger.debug({
       message: 'Message created event emitted',
@@ -194,7 +216,7 @@ export class ThreadsGateway
   }
 
   @OnEvent(ThreadReadEvent.INTERNAL)
-  handleThreadRead(event: ThreadReadEvent) {
+  async handleThreadRead(event: ThreadReadEvent) {
     if (!this.server) {
       return;
     }
@@ -204,13 +226,16 @@ export class ThreadsGateway
       actor: { id: event.actor.id },
     };
 
-    this.server
-      .to(getActorRoomName(event.payload.actorId))
-      .emit(ThreadWireEvents.THREAD_READ, wireEvent);
+    await this.emitToActorList(
+      event.payload.threadId,
+      event.payload.actorId,
+      ThreadWireEvents.THREAD_READ,
+      wireEvent,
+    );
   }
 
   @OnEvent(ThreadPinnedEvent.INTERNAL)
-  handleThreadPinned(event: ThreadPinnedEvent) {
+  async handleThreadPinned(event: ThreadPinnedEvent) {
     if (!this.server) {
       return;
     }
@@ -223,9 +248,12 @@ export class ThreadsGateway
       actor: { id: event.actor.id },
     };
 
-    this.server
-      .to(getActorRoomName(event.payload.actorId))
-      .emit(ThreadWireEvents.THREAD_PINNED, wireEvent);
+    await this.emitToActorList(
+      event.payload.threadId,
+      event.payload.actorId,
+      ThreadWireEvents.THREAD_PINNED,
+      wireEvent,
+    );
   }
 
   @OnEvent(ThreadAgentActivityEvent.INTERNAL)
@@ -283,7 +311,7 @@ export class ThreadsGateway
   }
 
   @OnEvent(ThreadTitleUpdatedEvent.INTERNAL)
-  handleThreadTitleUpdated(event: ThreadTitleUpdatedEvent) {
+  async handleThreadTitleUpdated(event: ThreadTitleUpdatedEvent) {
     if (!this.server) {
       return;
     }
@@ -297,12 +325,41 @@ export class ThreadsGateway
     };
 
     this.server
-      .to(THREADS_ROOM)
-      .emit(ThreadWireEvents.THREAD_TITLE_UPDATED, wireEvent);
-
-    this.server
       .to(getThreadRoomName(event.payload.threadId))
       .emit(ThreadWireEvents.THREAD_TITLE_UPDATED, wireEvent);
+
+    await this.emitToThreadList(
+      event.payload.threadId,
+      ThreadWireEvents.THREAD_TITLE_UPDATED,
+      wireEvent,
+    );
+  }
+
+  /** Emits to the list room of the thread's own workspace. */
+  private async emitToThreadList(
+    threadId: string,
+    eventName: string,
+    wireEvent: unknown,
+  ): Promise<void> {
+    const workspaceId = await this.threadsService.getThreadWorkspaceId(threadId);
+    if (!workspaceId) {
+      return;
+    }
+    this.server.to(getThreadListRoomName(workspaceId)).emit(eventName, wireEvent);
+  }
+
+  /** Emits to one actor's list sockets in the thread's own workspace. */
+  private async emitToActorList(
+    threadId: string,
+    actorId: string,
+    eventName: string,
+    wireEvent: unknown,
+  ): Promise<void> {
+    const workspaceId = await this.threadsService.getThreadWorkspaceId(threadId);
+    if (!workspaceId) {
+      return;
+    }
+    this.server.to(getActorRoomName(workspaceId, actorId)).emit(eventName, wireEvent);
   }
 
   @OnEvent(ThreadUpdatedEvent.INTERNAL)

@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActiveTaskExecutionEntity } from './active/active-task-execution.entity';
-import { ActiveTaskExecutionNotFoundError } from './errors/executions.errors';
+import { findWorkerExecution, type WorkerCaller } from './worker-execution-access';
 import { ExecutionActivityEvent } from './events/execution-activity.events';
 
 export type PublishExecutionActivityInput = {
@@ -35,16 +35,16 @@ export class ExecutionActivityService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  /** Activity a worker posts for an execution it claimed, in its token's workspace. */
   async publishActivity(
+    caller: WorkerCaller,
     input: PublishExecutionActivityInput,
   ): Promise<void> {
-    const execution = await this.activeTaskExecutionRepository.findOne({
-      where: { id: input.executionId },
-    });
-
-    if (!execution) {
-      throw new ActiveTaskExecutionNotFoundError(input.executionId);
-    }
+    const execution = await findWorkerExecution(
+      this.activeTaskExecutionRepository.manager,
+      caller,
+      input.executionId,
+    );
 
     this.emitExecutionActivity({
       executionId: execution.id,
@@ -69,7 +69,16 @@ export class ExecutionActivityService {
     });
   }
 
-  async touchHeartbeat(input: TouchExecutionHeartbeatInput): Promise<boolean> {
+  /** A worker's heartbeat for an execution it claimed, in its token's workspace. */
+  async touchHeartbeat(
+    caller: WorkerCaller,
+    input: TouchExecutionHeartbeatInput,
+  ): Promise<boolean> {
+    await findWorkerExecution(
+      this.activeTaskExecutionRepository.manager,
+      caller,
+      input.executionId,
+    );
     return this.activeTaskExecutionRepository
       .createQueryBuilder()
       .update(ActiveTaskExecutionEntity)

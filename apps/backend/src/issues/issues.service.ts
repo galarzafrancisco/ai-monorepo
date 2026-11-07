@@ -19,6 +19,11 @@ import { fetchIssue } from './github/issue-fetcher';
 import { diffIssue } from './github/issue-changes';
 import { FETCH_LEASE_MS, nextIssueFetchDelayMs, retryDelayMs, VIEW_STALE_MS } from './issue-schedule';
 import { IssueReferenceInput } from './dto/service/issues.service.types';
+import {
+  assertHoldsUnscopedModuleData,
+  holdsUnscopedModuleData,
+  workspaceOfSource,
+} from '../workspaces/unscoped-modules';
 
 /** Issues looked at together when a page asks for ones Taico has never read. */
 const FIRST_FETCH_CONCURRENCY = 6;
@@ -47,8 +52,12 @@ export class IssuesService {
    * The stored state of each issue, in the order asked, for someone looking
    * at them. Issues Taico has never read are read now; stale ones are queued
    * for a fresh look and arrive over the socket.
+   *
+   * GitHub data has no workspace yet (phase 3e): only the default workspace
+   * reaches it, whichever module asks (see unscoped-modules.ts).
    */
-  async lookup(refs: IssueRef[]): Promise<IssueEntity[]> {
+  async lookup(workspaceId: string, refs: IssueRef[]): Promise<IssueEntity[]> {
+    assertHoldsUnscopedModuleData(workspaceId);
     const rows = await this.ensureRows(refs);
     const now = new Date();
 
@@ -102,7 +111,8 @@ export class IssuesService {
    * Issues attached as links (artefacts) to these tasks, oldest link first.
    * Mentions in descriptions and comments are left out.
    */
-  async listLinkedToTasks(taskIds: string[]): Promise<IssueEntity[]> {
+  async listLinkedToTasks(workspaceId: string, taskIds: string[]): Promise<IssueEntity[]> {
+    if (!holdsUnscopedModuleData(workspaceId)) return [];
     if (taskIds.length === 0) return [];
     const ids: Array<{ issue_id: string }> = await this.dataSource.query(
       `SELECT issue_id FROM issue_references
@@ -120,7 +130,12 @@ export class IssuesService {
    * longer mentions. New issues are read soon.
    */
   async replaceReferences(input: IssueReferenceInput): Promise<void> {
-    const rows = await this.ensureRows(input.refs);
+    // A link written outside the default workspace is not recorded, so it
+    // is never read from GitHub with the default workspace's connections and
+    // never shows up next to the task or thread.
+    const workspaceId = await workspaceOfSource(this.dataSource, input);
+    const refs = workspaceId && holdsUnscopedModuleData(workspaceId) ? input.refs : [];
+    const rows = await this.ensureRows(refs);
     await this.dataSource.transaction(async (manager) => {
       await manager.delete(IssueReferenceEntity, {
         sourceType: input.sourceType,

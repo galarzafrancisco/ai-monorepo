@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, QueryFailedError } from 'typeorm';
+import { Repository, In, QueryFailedError, FindOptionsWhere } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { ThreadEntity } from './thread.entity';
@@ -61,8 +61,10 @@ import { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import { IssuesService } from '../issues/issues.service';
 import { IssueEntity } from '../issues/issue.entity';
 import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 
 type GenerateTitleFromFirstMessageInput = {
+  workspaceId: string;
   thread: ThreadEntity;
   actor: ActorEntity;
   messageContent: string;
@@ -111,9 +113,19 @@ export class ThreadsService {
     private readonly pullRequestWatches: PullRequestWatchService,
     private readonly pullRequests: PullRequestsService,
     private readonly issues: IssuesService,
+    private readonly workspacesService: WorkspacesService,
   ) { }
 
-  async createThread(input: CreateThreadInput): Promise<ThreadResult> {
+  /**
+   * Threads get their own `workspace_id` in phase 3b. Until then a thread's
+   * workspace is the workspace of its state block, which is always created in
+   * the caller's workspace. Methods that take `workspaceId` first only see
+   * threads (and attach tasks and blocks) in that workspace.
+   */
+  async createThread(
+    workspaceId: string,
+    input: CreateThreadInput,
+  ): Promise<ThreadResult> {
     this.logger.log({
       message: 'Creating thread',
       createdByActorId: input.createdByActorId,
@@ -132,11 +144,53 @@ export class ThreadsService {
     let parentTask: TaskEntity | null = null;
     if (input.parentTaskId) {
       parentTask = await this.taskRepository.findOne({
-        where: { id: input.parentTaskId },
+        where: { workspaceId, id: input.parentTaskId },
       });
       if (!parentTask) {
         throw new TaskNotFoundForThreadError(input.parentTaskId);
       }
+    }
+
+    // Resolve every row the thread links to before the first write, so a
+    // missing one (or one in another workspace) leaves nothing behind.
+    const taskIdsToAttach = new Set(input.taskIds || []);
+    if (input.parentTaskId) {
+      taskIdsToAttach.add(input.parentTaskId);
+    }
+    const tasks =
+      taskIdsToAttach.size > 0
+        ? await this.taskRepository.findBy({
+            workspaceId,
+            id: In(Array.from(taskIdsToAttach)),
+          })
+        : [];
+    if (tasks.length !== taskIdsToAttach.size) {
+      throw new TaskNotFoundForThreadError('One or more tasks not found');
+    }
+    const blocks =
+      input.contextBlockIds && input.contextBlockIds.length > 0
+        ? await this.contextBlockRepository.findBy({
+            workspaceId,
+            id: In(input.contextBlockIds),
+          })
+        : [];
+    if (blocks.length !== (input.contextBlockIds?.length ?? 0)) {
+      throw new ContextBlockNotFoundError('One or more blocks not found');
+    }
+    const participants =
+      input.participantActorIds && input.participantActorIds.length > 0
+        ? await this.actorRepository.findBy({
+            id: In(input.participantActorIds),
+          })
+        : [];
+    const memberships = await Promise.all(
+      participants.map((actor) => this.workspacesService.isMember(workspaceId, actor.id)),
+    );
+    if (
+      participants.length !== (input.participantActorIds?.length ?? 0) ||
+      memberships.some((isMember) => !isMember)
+    ) {
+      throw new ActorNotFoundForThreadError('One or more actors not found');
     }
 
     // Generate title based on available context
@@ -156,7 +210,7 @@ export class ThreadsService {
           `Parent goal: ${parentTask.description || 'No description provided.'}`,
         ].join('\n')
       : `This thread was created by @${createdByActor.slug}.`;
-    const stateBlock = await this.contextService.createBlock({
+    const stateBlock = await this.contextService.createBlock(workspaceId, {
       title: `Thread State: ${title}`,
       content: stateBlockContent,
       createdByActorId: input.createdByActorId,
@@ -186,53 +240,26 @@ export class ThreadsService {
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.metaService.findOrCreateTagEntities(
+        workspaceId,
         input.tagNames,
       );
       savedThread.tags = tags;
       await this.threadRepository.save(savedThread);
 
       // Increment usage tracking for all tags
-      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
+      await this.metaService.incrementTagsUsage(workspaceId, tags.map((t) => t.id));
     }
 
-    // Handle tasks if provided
-    // Include parent task in the tasks relation if it exists
-    const taskIdsToAttach = new Set(input.taskIds || []);
-    if (input.parentTaskId) {
-      taskIdsToAttach.add(input.parentTaskId);
-    }
-
-    if (taskIdsToAttach.size > 0) {
-      const tasks = await this.taskRepository.findBy({
-        id: In(Array.from(taskIdsToAttach)),
-      });
-      if (tasks.length !== taskIdsToAttach.size) {
-        throw new TaskNotFoundForThreadError('One or more tasks not found');
-      }
+    // Tasks (including the parent task), context blocks and participants
+    if (tasks.length > 0) {
       savedThread.tasks = tasks;
       await this.threadRepository.save(savedThread);
     }
-
-    // Handle context blocks if provided
-    if (input.contextBlockIds && input.contextBlockIds.length > 0) {
-      const blocks = await this.contextBlockRepository.findBy({
-        id: In(input.contextBlockIds),
-      });
-      if (blocks.length !== input.contextBlockIds.length) {
-        throw new ContextBlockNotFoundError('One or more blocks not found');
-      }
+    if (blocks.length > 0) {
       savedThread.referencedContextBlocks = blocks;
       await this.threadRepository.save(savedThread);
     }
-
-    // Handle participants if provided
-    if (input.participantActorIds && input.participantActorIds.length > 0) {
-      const participants = await this.actorRepository.findBy({
-        id: In(input.participantActorIds),
-      });
-      if (participants.length !== input.participantActorIds.length) {
-        throw new ActorNotFoundForThreadError('One or more actors not found');
-      }
+    if (participants.length > 0) {
       savedThread.participants = participants;
       await this.threadRepository.save(savedThread);
     }
@@ -257,6 +284,7 @@ export class ThreadsService {
   }
 
   async updateThread(
+    workspaceId: string,
     threadId: string,
     input: UpdateThreadInput,
     actorId: string,
@@ -266,13 +294,14 @@ export class ThreadsService {
       threadId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    // Scoped lookup before any write: a thread in another workspace is not found.
+    await this.getThreadWithRelations(threadId, workspaceId);
 
     if (input.title !== undefined) {
       await this.threadRename.rename(threadId, input.title, actorId);
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(threadId, workspaceId);
 
     this.logger.log({
       message: 'Thread updated',
@@ -282,7 +311,11 @@ export class ThreadsService {
     return await this.buildThreadResult(updatedThread);
   }
 
-  async deleteThread(threadId: string, actorId: string): Promise<void> {
+  async deleteThread(
+    workspaceId: string,
+    threadId: string,
+    actorId: string,
+  ): Promise<void> {
     this.logger.log({
       message: 'Deleting thread',
       threadId,
@@ -290,7 +323,7 @@ export class ThreadsService {
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: this.threadWhere(threadId, workspaceId),
     });
 
     if (!thread) {
@@ -326,7 +359,11 @@ export class ThreadsService {
     if (stateBlockDeleted) {
       this.eventEmitter.emit(
         BlockDeletedEvent.INTERNAL,
-        new BlockDeletedEvent(stateBlockId, { id: actorId }),
+        new BlockDeletedEvent(
+          stateBlockId,
+          { id: actorId },
+          workspaceId,
+        ),
       );
     }
 
@@ -339,20 +376,35 @@ export class ThreadsService {
   }
 
   /** Cancels a reminder or schedule. Cancelling one that is already gone is harmless. */
-  async cancelTimer(threadId: string, timerId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async cancelTimer(
+    workspaceId: string,
+    threadId: string,
+    timerId: string,
+    actorId: string,
+  ): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
     await this.threadTimers.cancel({ threadId, timerId, actorId });
   }
 
   /** Stops the agent watching a task. Removing a watch that does not exist is harmless. */
-  async removeTaskSubscription(threadId: string, taskId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async removeTaskSubscription(
+    workspaceId: string,
+    threadId: string,
+    taskId: string,
+    actorId: string,
+  ): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
     await this.taskSubscriptions.unsubscribe({ threadId, taskId, actorId });
   }
 
   /** Stops the agent watching something. Stopping a watch that does not exist is harmless. */
-  async cancelWatch(threadId: string, watchId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async cancelWatch(
+    workspaceId: string,
+    threadId: string,
+    watchId: string,
+    actorId: string,
+  ): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
     await this.pullRequestWatches.stop({ threadId, watchId, actorId });
   }
 
@@ -360,39 +412,85 @@ export class ThreadsService {
    * Pull requests attached as links to the thread's tasks, oldest link first.
    * Mentions in descriptions, comments and messages are left out.
    */
-  async listPullRequests(threadId: string): Promise<PullRequestEntity[]> {
-    const thread = await this.threadRepository.findOne({ where: { id: threadId }, relations: ['tasks'] });
-    if (!thread) {
-      throw new ThreadNotFoundError(threadId);
-    }
-    return this.pullRequests.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
+  async listPullRequests(workspaceId: string, threadId: string): Promise<PullRequestEntity[]> {
+    return this.pullRequests.listLinkedToTasks(
+      workspaceId,
+      await this.threadTaskIdsInWorkspace(workspaceId, threadId),
+    );
   }
 
   /**
    * Issues attached as links to the thread's tasks, oldest link first.
    * Mentions in descriptions, comments and messages are left out.
    */
-  async listIssues(threadId: string): Promise<IssueEntity[]> {
-    const thread = await this.threadRepository.findOne({ where: { id: threadId }, relations: ['tasks'] });
+  async listIssues(workspaceId: string, threadId: string): Promise<IssueEntity[]> {
+    return this.issues.listLinkedToTasks(
+      workspaceId,
+      await this.threadTaskIdsInWorkspace(workspaceId, threadId),
+    );
+  }
+
+  private async threadTaskIdsInWorkspace(
+    workspaceId: string,
+    threadId: string,
+  ): Promise<string[]> {
+    const thread = await this.threadRepository.findOne({
+      where: this.threadWhere(threadId, workspaceId),
+      relations: ['tasks'],
+    });
     if (!thread) {
       throw new ThreadNotFoundError(threadId);
     }
-    return this.issues.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
+    return (thread.tasks ?? []).map((task) => task.id);
   }
 
-  private async assertThreadExists(threadId: string): Promise<void> {
-    const exists = await this.threadRepository.exists({ where: { id: threadId } });
+  /**
+   * The gate for every public entry point that names a thread: a thread in
+   * another workspace answers ThreadNotFound. Also used by the controller
+   * before calling the read-state, pins and agent-log services.
+   */
+  async assertThreadInWorkspace(workspaceId: string, threadId: string): Promise<void> {
+    const exists = await this.threadRepository.exists({
+      where: this.threadWhere(threadId, workspaceId),
+    });
     if (!exists) {
       throw new ThreadNotFoundError(threadId);
     }
   }
 
+  /**
+   * The workspace a thread belongs to (its state block's), or null when the
+   * thread is gone. Used by the realtime gateway to pick the list room.
+   */
+  async getThreadWorkspaceId(threadId: string): Promise<string | null> {
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: ['stateContextBlock'],
+      select: { id: true, stateContextBlock: { id: true, workspaceId: true } },
+      withDeleted: true,
+    });
+    return thread?.stateContextBlock?.workspaceId ?? null;
+  }
+
+  /** Not scoped by workspace: for internal listeners until phase 3b. */
   async getThreadById(threadId: string): Promise<ThreadResult> {
     const thread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(thread);
   }
 
-  async listThreads(input: ListThreadsInput): Promise<ListThreadsResult> {
+  /** A thread in another workspace answers ThreadNotFound. */
+  async getThreadInWorkspace(
+    workspaceId: string,
+    threadId: string,
+  ): Promise<ThreadResult> {
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    return await this.buildThreadResult(thread);
+  }
+
+  async listThreads(
+    workspaceId: string,
+    input: ListThreadsInput,
+  ): Promise<ListThreadsResult> {
     this.logger.log({
       message: 'Listing threads',
       page: input.page,
@@ -401,7 +499,10 @@ export class ThreadsService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const query = this.threadRepository.createQueryBuilder('thread');
+    const query = this.threadRepository
+      .createQueryBuilder('thread')
+      .innerJoin('thread.stateContextBlock', 'stateBlock')
+      .where('stateBlock.workspaceId = :workspaceId', { workspaceId });
     if (input.actorId) {
       // The caller's pinned threads come first. At most one pin row matches
       // each thread, so the join never repeats a thread.
@@ -455,15 +556,21 @@ export class ThreadsService {
     };
   }
 
-  async attachTask(threadId: string, taskId: string): Promise<ThreadResult> {
+  async attachTask(
+    workspaceId: string,
+    threadId: string,
+    taskId: string,
+  ): Promise<ThreadResult> {
     this.logger.log({
       message: 'Attaching task to thread',
       threadId,
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const task = await this.taskRepository.findOne({
+      where: { workspaceId, id: taskId },
+    });
 
     if (!task) {
       throw new TaskNotFoundForThreadError(taskId);
@@ -497,9 +604,11 @@ export class ThreadsService {
       task.assigneeActorId &&
       !thread.participants.some(
         (participant) => participant.id === task.assigneeActorId,
-      )
+      ) &&
+      // An assignee who has since left the workspace is not added.
+      (await this.workspacesService.isMember(workspaceId, task.assigneeActorId))
     ) {
-      await this.addParticipant(threadId, task.assigneeActorId);
+      await this.addParticipant(workspaceId, threadId, task.assigneeActorId);
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
@@ -507,14 +616,18 @@ export class ThreadsService {
     return await this.buildThreadResult(updatedThread);
   }
 
-  async detachTask(threadId: string, taskId: string): Promise<ThreadResult> {
+  async detachTask(
+    workspaceId: string,
+    threadId: string,
+    taskId: string,
+  ): Promise<ThreadResult> {
     this.logger.log({
       message: 'Detaching task from thread',
       threadId,
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
     thread.tasks = thread.tasks.filter((task) => task.id !== taskId);
     await this.threadRepository.save(thread);
 
@@ -530,6 +643,7 @@ export class ThreadsService {
   }
 
   async referenceContextBlock(
+    workspaceId: string,
     threadId: string,
     contextBlockId: string,
   ): Promise<ThreadResult> {
@@ -539,9 +653,9 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
     const block = await this.contextBlockRepository.findOne({
-      where: { id: contextBlockId },
+      where: { workspaceId, id: contextBlockId },
     });
 
     if (!block) {
@@ -565,6 +679,7 @@ export class ThreadsService {
   }
 
   async unreferenceContextBlock(
+    workspaceId: string,
     threadId: string,
     contextBlockId: string,
   ): Promise<ThreadResult> {
@@ -574,7 +689,7 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
     thread.referencedContextBlocks = thread.referencedContextBlocks.filter(
       (block) => block.id !== contextBlockId,
     );
@@ -592,6 +707,7 @@ export class ThreadsService {
   }
 
   async addTagToThread(
+    workspaceId: string,
     threadId: string,
     input: AddTagInput,
     actorId: string,
@@ -602,8 +718,8 @@ export class ThreadsService {
       tagName: input.name,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
+    const tag = await this.metaService.findOrCreateTagEntity(workspaceId, input.name);
 
     // Add tag if not already present
     if (!thread.tags.some((t) => t.id === tag.id)) {
@@ -611,7 +727,7 @@ export class ThreadsService {
       await this.threadRepository.save(thread);
 
       // Increment tag usage tracking
-      await this.metaService.incrementTagUsage(tag.id);
+      await this.metaService.incrementTagUsage(workspaceId, tag.id);
 
       this.logger.log({
         message: 'Tag added to thread',
@@ -625,6 +741,7 @@ export class ThreadsService {
   }
 
   async removeTagFromThread(
+    workspaceId: string,
     threadId: string,
     tagId: string,
     actorId: string,
@@ -635,7 +752,7 @@ export class ThreadsService {
       tagId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
     thread.tags = thread.tags.filter((tag) => tag.id !== tagId);
     await this.threadRepository.save(thread);
 
@@ -646,13 +763,18 @@ export class ThreadsService {
     });
 
     // Check if tag is now orphaned and clean it up
-    await this.metaService.cleanupOrphanedTag(tagId);
+    await this.metaService.cleanupOrphanedTag(workspaceId, tagId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(updatedThread);
   }
 
+  /**
+   * The participant must be a member of the thread's workspace, otherwise
+   * ActorNotFound.
+   */
   async addParticipant(
+    workspaceId: string,
     threadId: string,
     actorId: string,
   ): Promise<ThreadResult> {
@@ -662,12 +784,12 @@ export class ThreadsService {
       actorId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
     const actor = await this.actorRepository.findOne({
       where: { id: actorId },
     });
 
-    if (!actor) {
+    if (!actor || !(await this.workspacesService.isMember(workspaceId, actorId))) {
       throw new ActorNotFoundForThreadError(actorId);
     }
 
@@ -691,17 +813,33 @@ export class ThreadsService {
       });
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(threadId, workspaceId);
     return await this.buildThreadResult(updatedThread);
   }
 
+  /** Not scoped by workspace: for internal listeners until phase 3b. */
   async findThreadByTaskId(taskId: string): Promise<ThreadResult | null> {
+    return this.queryThreadByTaskId(taskId);
+  }
+
+  /** A task in another workspace answers null, like a task with no thread. */
+  async findThreadByTaskIdInWorkspace(
+    workspaceId: string,
+    taskId: string,
+  ): Promise<ThreadResult | null> {
+    return this.queryThreadByTaskId(taskId, workspaceId);
+  }
+
+  private async queryThreadByTaskId(
+    taskId: string,
+    workspaceId?: string,
+  ): Promise<ThreadResult | null> {
     this.logger.log({
       message: 'Finding thread by task ID',
       taskId,
     });
 
-    const thread = await this.threadRepository
+    const query = this.threadRepository
       .createQueryBuilder('thread')
       .leftJoinAndSelect('thread.createdByActor', 'createdByActor')
       .leftJoinAndSelect('thread.tasks', 'tasks')
@@ -714,8 +852,14 @@ export class ThreadsService {
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
       .innerJoin('thread.tasks', 'filterTask')
-      .where('filterTask.id = :taskId', { taskId })
-      .getOne();
+      .where('filterTask.id = :taskId', { taskId });
+    if (workspaceId) {
+      query
+        .innerJoin('thread.stateContextBlock', 'stateBlock')
+        .andWhere('filterTask.workspaceId = :workspaceId', { workspaceId })
+        .andWhere('stateBlock.workspaceId = :workspaceId', { workspaceId });
+    }
+    const thread = await query.getOne();
 
     if (!thread) {
       return null;
@@ -780,14 +924,20 @@ export class ThreadsService {
     return this.buildThreadResult(thread);
   }
 
-  async findThreadsByStateBlockId(stateBlockId: string): Promise<ThreadResult[]> {
+  async findThreadsByStateBlockId(
+    workspaceId: string,
+    stateBlockId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by state block ID',
       stateBlockId,
     });
 
     const threads = await this.threadRepository.find({
-      where: { stateContextBlockId: stateBlockId },
+      where: {
+        stateContextBlockId: stateBlockId,
+        stateContextBlock: { workspaceId },
+      },
       relations: [
         'createdByActor',
         'tasks',
@@ -805,14 +955,14 @@ export class ThreadsService {
     return Promise.all(threads.map((thread) => this.buildThreadResult(thread)));
   }
 
-  async getThreadState(threadId: string): Promise<string> {
+  async getThreadState(workspaceId: string, threadId: string): Promise<string> {
     this.logger.log({
       message: 'Getting thread state',
       threadId,
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: this.threadWhere(threadId, workspaceId),
     });
 
     if (!thread) {
@@ -820,20 +970,25 @@ export class ThreadsService {
     }
 
     const stateBlock = await this.contextService.getBlockById(
+      workspaceId,
       thread.stateContextBlockId,
     );
 
     return stateBlock.content;
   }
 
-  async updateThreadState(threadId: string, content: string): Promise<string> {
+  async updateThreadState(
+    workspaceId: string,
+    threadId: string,
+    content: string,
+  ): Promise<string> {
     this.logger.log({
       message: 'Updating thread state',
       threadId,
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: this.threadWhere(threadId, workspaceId),
     });
 
     if (!thread) {
@@ -841,6 +996,7 @@ export class ThreadsService {
     }
 
     const updatedBlock = await this.contextService.updateBlock(
+      workspaceId,
       thread.stateContextBlockId,
       {
         content,
@@ -855,14 +1011,18 @@ export class ThreadsService {
     return updatedBlock.content;
   }
 
-  async appendThreadState(threadId: string, content: string): Promise<string> {
+  async appendThreadState(
+    workspaceId: string,
+    threadId: string,
+    content: string,
+  ): Promise<string> {
     this.logger.log({
       message: 'Appending to thread state',
       threadId,
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: this.threadWhere(threadId, workspaceId),
     });
 
     if (!thread) {
@@ -870,6 +1030,7 @@ export class ThreadsService {
     }
 
     const updatedBlock = await this.contextService.appendToBlock(
+      workspaceId,
       thread.stateContextBlockId,
       {
         content,
@@ -884,9 +1045,25 @@ export class ThreadsService {
     return updatedBlock.content;
   }
 
-  private async getThreadWithRelations(threadId: string): Promise<ThreadEntity> {
+  /**
+   * With a workspace, a thread whose state block is in another workspace is
+   * not found. See createThread.
+   */
+  private threadWhere(
+    threadId: string,
+    workspaceId?: string,
+  ): FindOptionsWhere<ThreadEntity> {
+    return workspaceId
+      ? { id: threadId, stateContextBlock: { workspaceId } }
+      : { id: threadId };
+  }
+
+  private async getThreadWithRelations(
+    threadId: string,
+    workspaceId?: string,
+  ): Promise<ThreadEntity> {
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: this.threadWhere(threadId, workspaceId),
       relations: [
         'createdByActor',
         'tasks',
@@ -932,7 +1109,7 @@ export class ThreadsService {
     }
 
     // A person's message is named on user small tasks, an agent's on system small tasks.
-    const generatedTitle = await this.threadTitleService.generateFromMessage(content, {
+    const generatedTitle = await this.threadTitleService.generateFromMessage(input.workspaceId, content, {
       id: input.actor.id,
       type: input.actor.type,
     });
@@ -954,7 +1131,11 @@ export class ThreadsService {
     );
 
     try {
-      await this.contextService.updateBlock(input.thread.stateContextBlockId, {
+      const stateBlock = await this.contextBlockRepository.findOneOrFail({
+        where: { id: input.thread.stateContextBlockId },
+        select: { id: true, workspaceId: true },
+      });
+      await this.contextService.updateBlock(stateBlock.workspaceId, stateBlock.id, {
         title: `Thread State: ${generatedTitle}`,
       });
     } catch (error) {
@@ -1153,7 +1334,12 @@ export class ThreadsService {
   }
 
   // Thread message methods
+  /**
+   * A thread in another workspace is not found, and nothing is written: no
+   * message, no agent turn, no generated title.
+   */
   async createMessage(
+    workspaceId: string,
     input: CreateThreadMessageInput,
   ): Promise<ThreadMessageResult> {
     this.logger.log({
@@ -1161,9 +1347,8 @@ export class ThreadsService {
       threadId: input.threadId,
     });
 
-    // Verify thread exists
     const thread = await this.threadRepository.findOne({
-      where: { id: input.threadId },
+      where: this.threadWhere(input.threadId, workspaceId),
     });
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
@@ -1206,6 +1391,7 @@ export class ThreadsService {
     this.threadAgentService.requestTurn(thread.id);
 
     await this.maybeGenerateTitleFromFirstMessage({
+      workspaceId,
       thread,
       actor,
       messageContent: input.content,
@@ -1216,6 +1402,7 @@ export class ThreadsService {
   }
 
   async listMessages(
+    workspaceId: string,
     input: ListThreadMessagesInput,
   ): Promise<ListThreadMessagesResult> {
     this.logger.log({
@@ -1225,13 +1412,7 @@ export class ThreadsService {
       limit: input.limit,
     });
 
-    // Verify thread exists
-    const thread = await this.threadRepository.findOne({
-      where: { id: input.threadId },
-    });
-    if (!thread) {
-      throw new ThreadNotFoundError(input.threadId);
-    }
+    await this.assertThreadInWorkspace(workspaceId, input.threadId);
 
     const skip = (input.page - 1) * input.limit;
 

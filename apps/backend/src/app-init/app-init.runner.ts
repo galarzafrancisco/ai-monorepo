@@ -72,6 +72,7 @@ import {
   createDisplayAuthScopes,
   createDisplayAuthTarget,
 } from './mcp/internal-worker-auth.mcp';
+import { DEFAULT_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -513,7 +514,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
   async ensurePromptTag(): Promise<void> {
     try {
       this.logger.log('Ensuring prompt tag exists');
-      await this.metaService.createTag({ name: 'prompt' });
+      await this.metaService.createTag(DEFAULT_WORKSPACE_ID, { name: 'prompt' });
       this.logger.log('Prompt tag ensured');
     } catch (error) {
       this.logger.error(
@@ -528,7 +529,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.log('Ensuring prompt context blocks exist');
 
       // Check if developer prompt already exists
-      const existingPages = await this.contextService.listBlocks({
+      const existingPages = await this.contextService.listBlocks(DEFAULT_WORKSPACE_ID, {
         tag: 'prompt',
       });
       const devPromptExists = existingPages.some(
@@ -549,7 +550,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
       if (!devPromptExists) {
         this.logger.log('Creating developer agent prompt context block');
-        await this.contextService.createBlock({
+        await this.contextService.createBlock(DEFAULT_WORKSPACE_ID, {
           title: 'Developer Agent Prompt',
           content: DEV_PROMPT,
           createdByActorId: systemActor.id,
@@ -560,7 +561,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
       if (!assistantPromptExists) {
         this.logger.log('Creating personal assistant prompt context block');
-        await this.contextService.createBlock({
+        await this.contextService.createBlock(DEFAULT_WORKSPACE_ID, {
           title: 'Personal Assistant Prompt',
           content: ASSISTANT_PROMPT,
           createdByActorId: systemActor.id,
@@ -571,7 +572,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
       if (!reviewerPromptExists) {
         this.logger.log('Creating code reviewer prompt context block');
-        await this.contextService.createBlock({
+        await this.contextService.createBlock(DEFAULT_WORKSPACE_ID, {
           title: 'Code Reviewer Prompt',
           content: REVIEWER_PROMPT,
           createdByActorId: systemActor.id,

@@ -30,6 +30,11 @@ import {
   VIEW_STALE_MS,
 } from './pull-request-schedule';
 import { PullRequestReferenceInput } from './dto/service/pull-requests.service.types';
+import {
+  assertHoldsUnscopedModuleData,
+  holdsUnscopedModuleData,
+  workspaceOfSource,
+} from '../workspaces/unscoped-modules';
 
 /** Pull requests looked at together when a page asks for ones Taico has never read. */
 const FIRST_FETCH_CONCURRENCY = 6;
@@ -58,8 +63,12 @@ export class PullRequestsService {
    * The stored state of each pull request, in the order asked, for someone
    * looking at them. Pull requests Taico has never read are read now; stale
    * ones are queued for a fresh look and arrive over the socket.
+   *
+   * GitHub data has no workspace yet (phase 3e): only the default workspace
+   * reaches it, whichever module asks (see unscoped-modules.ts).
    */
-  async lookup(refs: PullRequestRef[]): Promise<PullRequestEntity[]> {
+  async lookup(workspaceId: string, refs: PullRequestRef[]): Promise<PullRequestEntity[]> {
+    assertHoldsUnscopedModuleData(workspaceId);
     const rows = await this.ensureRows(refs);
     const now = new Date();
 
@@ -126,7 +135,8 @@ export class PullRequestsService {
    * Pull requests attached as links (artefacts) to these tasks, oldest link
    * first. Mentions in descriptions and comments are left out.
    */
-  async listLinkedToTasks(taskIds: string[]): Promise<PullRequestEntity[]> {
+  async listLinkedToTasks(workspaceId: string, taskIds: string[]): Promise<PullRequestEntity[]> {
+    if (!holdsUnscopedModuleData(workspaceId)) return [];
     const ids: Array<{ pull_request_id: string }> = await this.dataSource.query(
       `SELECT pull_request_id FROM pull_request_references
         WHERE source_type = $1 AND task_id = ANY($2::uuid[])
@@ -143,7 +153,12 @@ export class PullRequestsService {
    * requests it no longer mentions. New pull requests are read soon.
    */
   async replaceReferences(input: PullRequestReferenceInput): Promise<void> {
-    const rows = await this.ensureRows(input.refs);
+    // A link written outside the default workspace is not recorded, so it
+    // is never read from GitHub with the default workspace's connections and
+    // never shows up next to the task or thread.
+    const workspaceId = await workspaceOfSource(this.dataSource, input);
+    const refs = workspaceId && holdsUnscopedModuleData(workspaceId) ? input.refs : [];
+    const rows = await this.ensureRows(refs);
     await this.dataSource.transaction(async (manager) => {
       await manager.delete(PullRequestReferenceEntity, {
         sourceType: input.sourceType,

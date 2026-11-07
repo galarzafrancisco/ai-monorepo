@@ -56,6 +56,7 @@ export class StaleActiveTaskExecutionPrunerService {
       task.assigneeActorId = activeExecution.taskAssigneeActorIdBeforeClaim;
       task.tags = await this.resolveSnapshotTags(
         manager,
+        task.workspaceId,
         activeExecution.taskTagsBeforeClaim,
       );
 
@@ -102,8 +103,10 @@ export class StaleActiveTaskExecutionPrunerService {
     return true;
   }
 
+  /** The tags a task had before it was claimed, looked up in its workspace. */
   private async resolveSnapshotTags(
     manager: EntityManager,
+    workspaceId: string,
     snapshotTags: ActiveTaskExecutionTagSnapshot[],
   ): Promise<TagEntity[]> {
     if (snapshotTags.length === 0) {
@@ -112,7 +115,7 @@ export class StaleActiveTaskExecutionPrunerService {
 
     const snapshotById = new Map(snapshotTags.map((tag) => [tag.id, tag]));
     const existingById = await manager.find(TagEntity, {
-      where: { id: In(Array.from(snapshotById.keys())) },
+      where: { workspaceId, id: In(Array.from(snapshotById.keys())) },
       withDeleted: true,
     });
 
@@ -131,6 +134,7 @@ export class StaleActiveTaskExecutionPrunerService {
 
       const byName = await manager.findOne(TagEntity, {
         where: {
+          workspaceId,
           name: Raw((column) => `lower(${column}) = lower(:name)`, {
             name: snapshotTag.name,
           }),
@@ -148,7 +152,10 @@ export class StaleActiveTaskExecutionPrunerService {
         continue;
       }
 
-      const created = manager.create(TagEntity, { name: snapshotTag.name });
+      const created = manager.create(TagEntity, {
+        workspaceId,
+        name: snapshotTag.name,
+      });
       const saved = await manager.save(TagEntity, created);
       resolvedTags.set(snapshotTag.id, saved);
     }

@@ -41,9 +41,13 @@ import { TaskExecutionHistoryResponseDto } from '../history/dto/http/task-execut
 import { UpdateExecutionStatsDto } from './dto/http/update-execution-stats.dto';
 import { WorkerGithubCredentialsResponseDto } from './dto/http/worker-github-credentials-response.dto';
 import { WorkerGithubCredentialsService } from '../../integrations/github/worker-github-credentials.service';
+import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
+import { workerCaller } from '../worker-execution-access';
+import { WorkspaceAccess } from '../../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('executions/active')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
@@ -62,8 +66,9 @@ export class ActiveTaskExecutionController {
   @ApiOkResponse({ type: ActiveTaskExecutionListResponseDto })
   async listActiveExecutions(
     @Query() query: ListActiveExecutionsQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ActiveTaskExecutionListResponseDto> {
-    const result = await this.activeTaskExecutionService.listActiveExecutions({
+    const result = await this.activeTaskExecutionService.listActiveExecutions(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 50,
       taskId: query.taskId,
@@ -80,6 +85,7 @@ export class ActiveTaskExecutionController {
     };
   }
 
+  @WorkspaceAccess('worker')
   @Post(':executionId/stop')
   @RequireScopes(WorkersScopes.CONNECT.id)
   @ApiOperation({
@@ -95,9 +101,8 @@ export class ActiveTaskExecutionController {
     @CurrentAuth() auth: AuthContext,
   ): Promise<TaskExecutionHistoryResponseDto> {
     try {
-      const historyEntry = await this.activeTaskExecutionService.stopTask({
+      const historyEntry = await this.activeTaskExecutionService.stopTask(workerCaller(auth), {
         executionId,
-        workerClientId: auth.claims.client_id,
         status: dto.status,
         errorCode: dto.errorCode,
         errorMessage: dto.errorMessage,
@@ -109,10 +114,15 @@ export class ActiveTaskExecutionController {
         throw new NotFoundException(error.message);
       }
 
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ForbiddenException(error.message);
+      }
+
       throw error;
     }
   }
 
+  @WorkspaceAccess('worker')
   @Post(':executionId/unclaim')
   @HttpCode(204)
   @RequireScopes(WorkersScopes.CONNECT.id)
@@ -127,10 +137,7 @@ export class ActiveTaskExecutionController {
     @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
     try {
-      await this.activeTaskExecutionService.unclaimTask({
-        executionId,
-        workerClientId: auth.claims.client_id,
-      });
+      await this.activeTaskExecutionService.unclaimTask(workerCaller(auth), { executionId });
     } catch (error) {
       if (error instanceof ActiveTaskExecutionNotFoundError) {
         throw new NotFoundException(error.message);
@@ -144,6 +151,7 @@ export class ActiveTaskExecutionController {
     }
   }
 
+  @WorkspaceAccess('worker')
   @Post(':executionId/github-credentials')
   @HttpCode(200)
   @RequireScopes(WorkersScopes.CONNECT.id)
@@ -159,9 +167,12 @@ export class ActiveTaskExecutionController {
     @CurrentAuth() auth: AuthContext,
   ): Promise<WorkerGithubCredentialsResponseDto> {
     try {
-      const workerClientId = auth.claims.client_id;
-      const taskId = await this.activeTaskExecutionService.getTaskIdForWorker({ executionId, workerClientId });
-      const credentials = await this.workerGithubCredentials.issueForTask(taskId, { executionId, workerClientId });
+      const caller = workerCaller(auth);
+      const taskId = await this.activeTaskExecutionService.getTaskIdForWorker(caller, executionId);
+      const credentials = await this.workerGithubCredentials.issueForTask(taskId, {
+        executionId,
+        workerClientId: caller.workerClientId,
+      });
       return {
         credentials: credentials.map((credential) => ({
           projectSlug: credential.projectSlug,
@@ -185,6 +196,7 @@ export class ActiveTaskExecutionController {
     }
   }
 
+  @WorkspaceAccess('worker')
   @Patch(':executionId/session')
   @HttpCode(204)
   @RequireScopes(WorkersScopes.CONNECT.id)
@@ -197,9 +209,10 @@ export class ActiveTaskExecutionController {
   async updateRunnerSessionId(
     @Param('executionId') executionId: string,
     @Body() dto: UpdateRunnerSessionIdDto,
+    @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
     try {
-      await this.activeTaskExecutionService.updateRunnerSessionId({
+      await this.activeTaskExecutionService.updateRunnerSessionId(workerCaller(auth), {
         executionId,
         runnerSessionId: dto.sessionId,
       });
@@ -208,10 +221,15 @@ export class ActiveTaskExecutionController {
         throw new NotFoundException(error.message);
       }
 
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ForbiddenException(error.message);
+      }
+
       throw error;
     }
   }
 
+  @WorkspaceAccess('worker')
   @Patch(':executionId/tool-calls/increment')
   @HttpCode(204)
   @RequireScopes(WorkersScopes.CONNECT.id)
@@ -223,9 +241,10 @@ export class ActiveTaskExecutionController {
   @ApiParam({ name: 'executionId', description: 'Execution ID to update' })
   async incrementToolCallCount(
     @Param('executionId') executionId: string,
+    @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
     try {
-      await this.activeTaskExecutionService.incrementToolCallCount({
+      await this.activeTaskExecutionService.incrementToolCallCount(workerCaller(auth), {
         executionId,
       });
     } catch (error) {
@@ -233,10 +252,15 @@ export class ActiveTaskExecutionController {
         throw new NotFoundException(error.message);
       }
 
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ForbiddenException(error.message);
+      }
+
       throw error;
     }
   }
 
+  @WorkspaceAccess('worker')
   @Patch(':executionId/stats')
   @HttpCode(204)
   @RequireScopes(WorkersScopes.CONNECT.id)
@@ -249,9 +273,10 @@ export class ActiveTaskExecutionController {
   async updateExecutionStats(
     @Param('executionId') executionId: string,
     @Body() dto: UpdateExecutionStatsDto,
+    @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
     try {
-      await this.activeTaskExecutionService.updateExecutionStats({
+      await this.activeTaskExecutionService.updateExecutionStats(workerCaller(auth), {
         executionId,
         harness: dto.harness,
         providerId: dto.providerId,
@@ -264,6 +289,10 @@ export class ActiveTaskExecutionController {
     } catch (error) {
       if (error instanceof ExecutionStatsNotFoundError) {
         throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ForbiddenException(error.message);
       }
 
       throw error;
@@ -282,9 +311,11 @@ export class ActiveTaskExecutionController {
   async interruptExecution(
     @Param('executionId') executionId: string,
     @CurrentAuth() auth: AuthContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
     try {
       await this.activeTaskExecutionService.interruptExecution(
+        workspaceId,
         { executionId },
         auth.subject,
       );

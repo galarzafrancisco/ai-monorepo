@@ -10,6 +10,7 @@ import {
   ManyToOne,
   JoinTable,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -23,6 +24,11 @@ import { ActorEntity } from '../identity-provider/actor.entity';
 export class TaskBlueprintEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column()
   name!: string;

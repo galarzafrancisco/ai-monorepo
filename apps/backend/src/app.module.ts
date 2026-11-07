@@ -70,6 +70,8 @@ import { ExecutionTraces1762500000000 } from './migrations/1762500000000-Executi
 import { ServerLifecycleService } from './server-lifecycle.service';
 import { WorkerCapabilities1763400000000 } from './migrations/1763400000000-WorkerCapabilities';
 import { Workspaces1763500000000 } from './migrations/1763500000000-Workspaces';
+import { WorkspaceScopeTasksContextMeta1763600000000 } from './migrations/1763600000000-WorkspaceScopeTasksContextMeta';
+import { WorkspaceScopeBlueprints1763600000001 } from './migrations/1763600000001-WorkspaceScopeBlueprints';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
@@ -124,6 +126,8 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
         SilentAgentFollowUpPrompts1763300000003,
         WorkerCapabilities1763400000000,
         Workspaces1763500000000,
+        WorkspaceScopeTasksContextMeta1763600000000,
+        WorkspaceScopeBlueprints1763600000001,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -156,4 +160,4 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
   controllers: [AppController],
   providers: [AppService, ServerLifecycleService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -11,6 +11,7 @@ import {
   ManyToOne,
   JoinTable,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
 import { ArtefactEntity } from './artefact.entity';
@@ -23,6 +24,11 @@ import { ActorEntity } from '../identity-provider/actor.entity';
 export class TaskEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column()
   name!: string;
@@ -68,7 +74,9 @@ export class TaskEntity {
   @OneToMany(() => CommentEntity, (comment) => comment.task, { cascade: true })
   comments!: CommentEntity[];
 
-  @OneToMany(() => ArtefactEntity, (artefact) => artefact.task, { cascade: true })
+  @OneToMany(() => ArtefactEntity, (artefact) => artefact.task, {
+    cascade: true,
+  })
   artefacts!: ArtefactEntity[];
 
   @OneToMany(() => InputRequestEntity, (inputRequest) => inputRequest.task, {

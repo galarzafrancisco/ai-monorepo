@@ -57,6 +57,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
   const mockParentTask = {
     id: 'parent-task-uuid',
+    workspaceId: '00000000-0000-4000-8000-000000000001',
     name: 'Parent Task',
     description: 'Parent task description',
     status: 'NOT_STARTED',
@@ -207,7 +208,7 @@ describe('ThreadsService - Parent Task ID', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.createThread(input);
+        const result = await service.createThread('workspace-uuid', input);
 
         expect(result.parentTaskId).toBe('parent-task-uuid');
         expect(taskRepository.findOne).toHaveBeenCalledWith({
@@ -233,7 +234,7 @@ describe('ThreadsService - Parent Task ID', () => {
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createThread(input)).rejects.toThrow(
+        await expect(service.createThread('workspace-uuid', input)).rejects.toThrow(
           TaskNotFoundForThreadError,
         );
         expect(threadRepository.create).not.toHaveBeenCalled();
@@ -257,7 +258,7 @@ describe('ThreadsService - Parent Task ID', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        await service.createThread(input);
+        await service.createThread('workspace-uuid', input);
 
         // Verify that taskRepository.findBy was called with parent task ID
         expect(taskRepository.findBy).toHaveBeenCalledWith({
@@ -298,7 +299,7 @@ describe('ThreadsService - Parent Task ID', () => {
           tasks: [mockParentTask, additionalTask],
         });
 
-        const result = await service.createThread(input);
+        const result = await service.createThread('workspace-uuid', input);
 
         // Verify that the findBy was called with the correct number of unique IDs
         const findByCall = taskRepository.findBy.mock.calls[0][0];
@@ -319,7 +320,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
         actorRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createThread(input)).rejects.toThrow(
+        await expect(service.createThread('workspace-uuid', input)).rejects.toThrow(
           ActorNotFoundForThreadError,
         );
         expect(taskRepository.findOne).not.toHaveBeenCalled();
@@ -433,7 +434,7 @@ describe('ThreadsService - Parent Task ID', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         const tx = mockTransaction(threadRepository);
 
-        await service.deleteThread('thread-uuid', 'actor-uuid');
+        await service.deleteThread('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: 'thread-uuid' });
       });
@@ -443,7 +444,7 @@ describe('ThreadsService - Parent Task ID', () => {
         const tx = mockTransaction(threadRepository);
 
         await expect(
-          service.deleteThread('non-existent-uuid', 'actor-uuid'),
+          service.deleteThread('workspace-uuid', 'non-existent-uuid', 'actor-uuid'),
         ).rejects.toThrow(ThreadNotFoundError);
         expect(tx.delete).not.toHaveBeenCalled();
       });
@@ -470,7 +471,7 @@ describe('ThreadsService - Parent Task ID', () => {
           } as any),
         );
 
-        await expect(service.createThread(input)).rejects.toThrow(
+        await expect(service.createThread('workspace-uuid', input)).rejects.toThrow(
           ParentTaskThreadAlreadyExistsError,
         );
         expect(contextBlockRepository.delete).toHaveBeenCalledWith({
@@ -506,7 +507,7 @@ describe('ThreadsService - Parent Task ID', () => {
         threadRepository.findOne.mockResolvedValueOnce(mockThread); // First call
         threadRepository.findOne.mockResolvedValueOnce(threadWithTwoTasks); // Second call after attach
 
-        const result = await service.attachTask('thread-uuid', 'new-task-uuid');
+        const result = await service.attachTask('workspace-uuid', 'thread-uuid', 'new-task-uuid');
 
         expect(relationQueryBuilder.add).toHaveBeenCalledWith('new-task-uuid');
         expect(result.parentTaskId).toBe('parent-task-uuid'); // Should remain unchanged
@@ -534,8 +535,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(mockThread);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
 
-        const result = await service.attachTask(
-          'thread-uuid',
+        const result = await service.attachTask('workspace-uuid', 'thread-uuid',
           'parent-task-uuid',
         );
 
@@ -578,8 +578,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithAssignedTask);
         taskRepository.findOne.mockResolvedValue(assignedTask);
 
-        const result = await service.attachTask(
-          'thread-uuid',
+        const result = await service.attachTask('workspace-uuid', 'thread-uuid',
           'assigned-task-uuid',
         );
 
@@ -619,7 +618,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         taskRepository.findOne.mockResolvedValue(assignedTask);
 
-        await service.attachTask('thread-uuid', 'assigned-task-uuid');
+        await service.attachTask('workspace-uuid', 'thread-uuid', 'assigned-task-uuid');
 
         expect(addParticipantSpy).not.toHaveBeenCalled();
       });
@@ -645,7 +644,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         actorRepository.findOne.mockResolvedValue(mockActor);
 
-        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+        const result = await service.addParticipant('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(relationQueryBuilder.relation).toHaveBeenCalledWith(
           ThreadEntity,
@@ -684,7 +683,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         actorRepository.findOne.mockResolvedValue(mockActor);
 
-        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+        const result = await service.addParticipant('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
         expect(result.participants).toEqual(
@@ -704,6 +703,7 @@ describe('ThreadsService - Parent Task ID', () => {
       threadRepository.save.mockResolvedValue(updatedThread);
 
       const result = await service.updateThread(
+        'workspace-uuid',
         'thread-uuid',
         { title: 'Updated Title' },
         'actor-uuid',
@@ -718,7 +718,7 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should list threads with pagination', async () => {
       threadRepository.findAndCount.mockResolvedValue([[mockThread], 1]);
 
-      const result = await service.listThreads({ page: 1, limit: 20 });
+      const result = await service.listThreads('workspace-uuid', { page: 1, limit: 20 });
 
       expect(result.items.length).toBe(1);
       expect(result.total).toBe(1);
@@ -731,12 +731,15 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should find threads by state block ID including soft-deleted', async () => {
       threadRepository.find.mockResolvedValue([mockThread]);
 
-      const result = await service.findThreadsByStateBlockId('state-block-uuid');
+      const result = await service.findThreadsByStateBlockId('workspace-uuid', 'state-block-uuid');
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe('thread-uuid');
       expect(threadRepository.find).toHaveBeenCalledWith({
-        where: { stateContextBlockId: 'state-block-uuid' },
+        where: {
+          stateContextBlockId: 'state-block-uuid',
+          stateContextBlock: { workspaceId: 'workspace-uuid' },
+        },
         relations: expect.any(Array),
         withDeleted: true, // Verify that soft-deleted threads are included
       });
@@ -745,11 +748,14 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should return empty array when no threads use the state block', async () => {
       threadRepository.find.mockResolvedValue([]);
 
-      const result = await service.findThreadsByStateBlockId('non-existent-state-block');
+      const result = await service.findThreadsByStateBlockId('workspace-uuid', 'non-existent-state-block');
 
       expect(result.length).toBe(0);
       expect(threadRepository.find).toHaveBeenCalledWith({
-        where: { stateContextBlockId: 'non-existent-state-block' },
+        where: {
+          stateContextBlockId: 'non-existent-state-block',
+          stateContextBlock: { workspaceId: 'workspace-uuid' },
+        },
         relations: expect.any(Array),
         withDeleted: true, // Verify that soft-deleted threads are included
       });

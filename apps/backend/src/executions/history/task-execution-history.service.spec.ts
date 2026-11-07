@@ -49,10 +49,10 @@ describe('TaskExecutionHistoryService', () => {
         stats: null,
       } as unknown as TaskExecutionHistoryEntity);
 
-      const result = await service.getHistoryEntry('run-1');
+      const result = await service.getHistoryEntry('workspace-1', 'run-1');
 
       expect(repository.findOne).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
+        where: { id: 'run-1', taskId: expect.anything() },
         relations: ['task', 'stats'],
       });
       expect(result).toMatchObject({ id: 'run-1', taskId: 'task-1', taskName: 'Rate limit the /export endpoint', toolCallCount: 3 });
@@ -61,7 +61,7 @@ describe('TaskExecutionHistoryService', () => {
     it('throws when the run does not exist', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.getHistoryEntry('missing')).rejects.toBeInstanceOf(
+      await expect(service.getHistoryEntry('workspace-1', 'missing')).rejects.toBeInstanceOf(
         TaskExecutionHistoryEntryNotFoundError,
       );
     });

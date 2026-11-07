@@ -16,9 +16,11 @@ import { AiModelSelectionParamsDto } from './dto/http/ai-model-selection-params.
 import { AiModelSelectionResponseDto } from './dto/http/ai-model-selection-response.dto';
 import { SetAiModelSelectionDto } from './dto/http/set-ai-model-selection.dto';
 import { AiModelSelectionResult } from './dto/service/ai-providers.service.types';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('AI Model Selections')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('ai-model-selections')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class AiModelSelectionsController {

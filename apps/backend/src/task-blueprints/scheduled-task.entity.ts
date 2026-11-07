@@ -23,6 +23,11 @@ export class ScheduledTaskEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @Column({ type: 'uuid', nullable: false, name: 'task_blueprint_id' })
   taskBlueprintId!: string;
 

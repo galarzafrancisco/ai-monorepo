@@ -10,13 +10,20 @@ import {
   JoinColumn,
   ManyToMany,
   JoinTable,
+  Index,
 } from 'typeorm';
 import { TagEntity } from './tag.entity';
 
 @Entity({ name: 'projects' })
+@Index('UQ_projects_workspace_slug', ['workspaceId', 'slug'], { unique: true })
 export class ProjectEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text', unique: true })
   tagId!: string;
@@ -26,10 +33,15 @@ export class ProjectEntity {
   tag!: TagEntity;
 
   @ManyToMany(() => TagEntity)
-  @JoinTable({ name: 'project_auto_tags', joinColumn: { name: 'project_id' }, inverseJoinColumn: { name: 'tag_id' } })
+  @JoinTable({
+    name: 'project_auto_tags',
+    joinColumn: { name: 'project_id' },
+    inverseJoinColumn: { name: 'tag_id' },
+  })
   autoTags!: TagEntity[];
 
-  @Column({ type: 'text', unique: true })
+  /** Unique per workspace. */
+  @Column({ type: 'text' })
   slug!: string;
 
   @Column({ type: 'text', nullable: true })

@@ -64,6 +64,8 @@ export class TaskDeletedEvent {
   constructor(
     public readonly actor: EventActor,
     public readonly taskId: string,
+    /** The workspace the task was in. */
+    public readonly workspaceId: string,
   ) {}
 }
 
@@ -92,6 +94,8 @@ export class InputRequestAnsweredEvent extends TaskDomainEvent<InputRequestEntit
 }
 
 export type TaskActivityPayload = {
+  /** The workspace of the task. */
+  workspaceId: string;
   taskId: string;
   kind: string;
   message?: string;

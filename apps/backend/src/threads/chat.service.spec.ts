@@ -77,14 +77,16 @@ describe('ChatService.generateText (small tasks)', () => {
 
   const author = { actorId: 'author-1', automated: false as const };
   const asUser = { job: AiModelJob.USER_SMALL_TASKS as const, onBehalfOf: author };
+  const WS = 'workspace-1';
   const asSystem = { job: AiModelJob.SYSTEM_SMALL_TASKS as const };
 
   it('asks for the user small tasks model on behalf of the person who started the call', async () => {
     const { service, resolve } = setup({});
 
-    await service.generateText('Name this', asUser);
+    await service.generateText(WS, 'Name this', asUser);
 
     expect(resolve).toHaveBeenCalledWith({
+      workspaceId: WS,
       job: AiModelJob.USER_SMALL_TASKS,
       onBehalfOf: author,
     });
@@ -93,15 +95,15 @@ describe('ChatService.generateText (small tasks)', () => {
   it('asks for the system small tasks model without naming anyone', async () => {
     const { service, resolve } = setup({});
 
-    await service.generateText('Name this', asSystem);
+    await service.generateText(WS, 'Name this', asSystem);
 
-    expect(resolve).toHaveBeenCalledWith({ job: AiModelJob.SYSTEM_SMALL_TASKS });
+    expect(resolve).toHaveBeenCalledWith({ workspaceId: WS, job: AiModelJob.SYSTEM_SMALL_TASKS });
   });
 
   it('keeps a single non-streaming call on an ordinary provider', async () => {
     const { service, doGenerate, doStream } = setup({});
 
-    await expect(service.generateText('Name this', asSystem)).resolves.toBe('Generated title');
+    await expect(service.generateText(WS, 'Name this', asSystem)).resolves.toBe('Generated title');
     expect(doGenerate).toHaveBeenCalledTimes(1);
     expect(doStream).not.toHaveBeenCalled();
   });
@@ -110,7 +112,7 @@ describe('ChatService.generateText (small tasks)', () => {
     const { service, doGenerate, doStream } = setup({ requiresStreaming: true });
 
     await expect(
-      service.generateText('Name this', asUser),
+      service.generateText(WS, 'Name this', asUser),
     ).resolves.toBe('Streamed title');
     expect(doStream).toHaveBeenCalledTimes(1);
     expect(doGenerate).not.toHaveBeenCalled();
@@ -126,7 +128,7 @@ describe('ChatService.generateText (small tasks)', () => {
     });
 
     await expect(
-      service.generateText('Name this', asUser),
+      service.generateText(WS, 'Name this', asUser),
     ).resolves.toBeNull();
     expect(doGenerate).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(
@@ -149,7 +151,7 @@ describe('ChatService.generateText (small tasks)', () => {
     const { service, doGenerate, doStream, warn } = setup({ resolveError: error });
 
     await expect(
-      service.generateText('Name this', asUser),
+      service.generateText(WS, 'Name this', asUser),
     ).resolves.toBeNull();
     expect(doGenerate).not.toHaveBeenCalled();
     expect(doStream).not.toHaveBeenCalled();
@@ -165,7 +167,7 @@ describe('ChatService.generateText (small tasks)', () => {
       resolveError: new AiModelNotSelectedError(AiModelJob.USER_SMALL_TASKS),
     });
 
-    await expect(service.generateText('Name this', asUser)).resolves.toBeNull();
+    await expect(service.generateText(WS, 'Name this', asUser)).resolves.toBeNull();
     expect(warn).not.toHaveBeenCalled();
     expect(debug).toHaveBeenCalled();
   });
@@ -175,7 +177,7 @@ describe('ChatService.generateText (small tasks)', () => {
       resolveError: new AiModelNotSelectedError(AiModelJob.SYSTEM_SMALL_TASKS),
     });
 
-    await expect(service.generateText('Name this', asSystem)).resolves.toBeNull();
+    await expect(service.generateText(WS, 'Name this', asSystem)).resolves.toBeNull();
     expect(doGenerate).not.toHaveBeenCalled();
     expect(doStream).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(

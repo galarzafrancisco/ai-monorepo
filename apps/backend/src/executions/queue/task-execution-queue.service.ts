@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskExecutionQueueEntity } from './task-execution-queue.entity';
+import { taskIdInWorkspace } from '../../workspaces/task-in-workspace';
 import {
   TaskExecutionQueueEntryResult,
   TaskExecutionQueueListResult,
@@ -14,7 +15,7 @@ export class TaskExecutionQueueService {
     private readonly taskExecutionQueueRepository: Repository<TaskExecutionQueueEntity>,
   ) {}
 
-  async listQueue(options?: {
+  async listQueue(workspaceId: string, options?: {
     page?: number;
     limit?: number;
   }): Promise<TaskExecutionQueueListResult> {
@@ -23,6 +24,7 @@ export class TaskExecutionQueueService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await this.taskExecutionQueueRepository.findAndCount({
+      where: { taskId: taskIdInWorkspace(workspaceId) },
       relations: ['task'],
       order: { createdAt: 'ASC' },
       skip,

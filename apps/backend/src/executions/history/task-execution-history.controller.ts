@@ -23,9 +23,12 @@ import { TaskExecutionHistoryService } from './task-execution-history.service';
 import { TaskExecutionHistoryResponseDto } from './dto/http/task-execution-history-response.dto';
 import { TaskExecutionHistoryListResponseDto } from './dto/http/task-execution-history-list-response.dto';
 import { ListHistoryQueryDto } from './dto/http/list-history-query.dto';
+import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('executions/history')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
@@ -43,8 +46,9 @@ export class TaskExecutionHistoryController {
   @ApiOkResponse({ type: TaskExecutionHistoryListResponseDto })
   async listHistory(
     @Query() query: ListHistoryQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskExecutionHistoryListResponseDto> {
-    const result = await this.taskExecutionHistoryService.listHistory({
+    const result = await this.taskExecutionHistoryService.listHistory(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 50,
       taskId: query.taskId,
@@ -71,10 +75,11 @@ export class TaskExecutionHistoryController {
   @ApiNotFoundResponse({ description: 'Execution not found' })
   async getHistoryEntry(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskExecutionHistoryResponseDto> {
     try {
       return TaskExecutionHistoryResponseDto.fromResult(
-        await this.taskExecutionHistoryService.getHistoryEntry(id),
+        await this.taskExecutionHistoryService.getHistoryEntry(workspaceId, id),
       );
     } catch (error) {
       if (error instanceof TaskExecutionHistoryEntryNotFoundError)

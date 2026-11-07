@@ -28,9 +28,11 @@ import {
   ResolvedGithubConnectionResponseDto,
 } from './dto/http/resolve-github-connection.dto';
 import { GithubConnectionResult, GithubWebhookSource } from './dto/service/github-connections.service.types';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Integrations - GitHub')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('integrations/github/connections')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class GithubConnectionsController {

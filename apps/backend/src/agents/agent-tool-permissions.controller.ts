@@ -25,9 +25,11 @@ import { AgentActorParamsDto } from './dto/agent-actor-params.dto';
 import { UpsertAgentToolPermissionDto } from './dto/upsert-agent-tool-permission.dto';
 import { AgentToolPermissionResponseDto } from './dto/agent-tool-permission-response.dto';
 import { AgentToolPermissionsService } from './agent-tool-permissions.service';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('agents/:actorId/tool-permissions')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.READ.id)

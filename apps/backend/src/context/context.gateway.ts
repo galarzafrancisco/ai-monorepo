@@ -23,9 +23,17 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { ContextScopes } from './context.scopes';
 import { ContextService } from './context.service';
+import {
+  socketWorkspaceId,
+  workspaceRoom,
+} from '../workspaces/workspace-rooms';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const CONTEXT_ROOM = 'context';
-const getBlockRoomName = (blockId: string): string => `${CONTEXT_ROOM}-${blockId}`;
+const contextRoom = (workspaceId: string): string =>
+  workspaceRoom(workspaceId, CONTEXT_ROOM);
+const blockRoom = (workspaceId: string, blockId: string): string =>
+  workspaceRoom(workspaceId, `${CONTEXT_ROOM}-${blockId}`);
 
 type ContextSubscriptionPayload = {
   blockId?: string;
@@ -44,6 +52,7 @@ type ContextSubscriptionPayload = {
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(ContextScopes.READ.id)
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -79,18 +88,20 @@ export class ContextGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() body: ContextSubscriptionPayload,
   ) {
+    const workspaceId = socketWorkspaceId(client);
     if (!body?.blockId) {
-      client.join(CONTEXT_ROOM);
-      return { ok: true, room: CONTEXT_ROOM };
+      const room = contextRoom(workspaceId);
+      client.join(room);
+      return { ok: true, room };
     }
 
     try {
-      await this.contextService.getBlockById(body.blockId);
+      await this.contextService.getBlockById(workspaceId, body.blockId);
     } catch {
       return { ok: false, error: 'block not found' };
     }
 
-    const room = getBlockRoomName(body.blockId);
+    const room = blockRoom(workspaceId, body.blockId);
     client.join(room);
     return { ok: true, room };
   }
@@ -100,12 +111,13 @@ export class ContextGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() body: ContextSubscriptionPayload,
   ) {
+    const workspaceId = socketWorkspaceId(client);
     if (!body?.blockId) {
-      client.leave(CONTEXT_ROOM);
+      client.leave(contextRoom(workspaceId));
       return { ok: true };
     }
 
-    client.leave(getBlockRoomName(body.blockId));
+    client.leave(blockRoom(workspaceId, body.blockId));
     return { ok: true };
   }
 
@@ -118,10 +130,12 @@ export class ContextGateway
   handleBlockCreated(event: BlockCreatedEvent) {
     const dto = BlockResponseDto.fromEntity(event.block);
 
-    this.server.to(CONTEXT_ROOM).emit(ContextWireEvents.CONTEXT_BLOCK_CREATED, {
-      payload: dto,
-      actor: event.actor,
-    });
+    this.server
+      .to(contextRoom(event.block.workspaceId))
+      .emit(ContextWireEvents.CONTEXT_BLOCK_CREATED, {
+        payload: dto,
+        actor: event.actor,
+      });
 
     this.logger.debug({
       message: 'Block created event emitted',
@@ -133,14 +147,17 @@ export class ContextGateway
   @OnEvent(BlockUpdatedEvent.INTERNAL)
   handleBlockUpdated(event: BlockUpdatedEvent) {
     const dto = BlockResponseDto.fromEntity(event.block);
-
-    this.server.to(CONTEXT_ROOM).emit(ContextWireEvents.CONTEXT_BLOCK_UPDATED, {
-      payload: dto,
-      actor: event.actor,
-    });
+    const { workspaceId } = event.block;
 
     this.server
-      .to(getBlockRoomName(event.block.id))
+      .to(contextRoom(workspaceId))
+      .emit(ContextWireEvents.CONTEXT_BLOCK_UPDATED, {
+        payload: dto,
+        actor: event.actor,
+      });
+
+    this.server
+      .to(blockRoom(workspaceId, event.block.id))
       .emit(ContextWireEvents.CONTEXT_BLOCK_UPDATED, {
         payload: dto,
         actor: event.actor,
@@ -155,13 +172,15 @@ export class ContextGateway
 
   @OnEvent(BlockDeletedEvent.INTERNAL)
   handleBlockDeleted(event: BlockDeletedEvent) {
-    this.server.to(CONTEXT_ROOM).emit(ContextWireEvents.CONTEXT_BLOCK_DELETED, {
-      payload: { blockId: event.blockId },
-      actor: event.actor,
-    });
+    this.server
+      .to(contextRoom(event.workspaceId))
+      .emit(ContextWireEvents.CONTEXT_BLOCK_DELETED, {
+        payload: { blockId: event.blockId },
+        actor: event.actor,
+      });
 
     this.server
-      .to(getBlockRoomName(event.blockId))
+      .to(blockRoom(event.workspaceId, event.blockId))
       .emit(ContextWireEvents.CONTEXT_BLOCK_DELETED, {
         payload: { blockId: event.blockId },
         actor: event.actor,

@@ -53,9 +53,11 @@ import { ThreadWatchExpiryService } from './watches/thread-watch-expiry.service'
 import { PullRequestsModule } from '../pull-requests/pull-requests.module';
 import { IssuesModule } from '../issues/issues.module';
 import { ThreadTimeService } from './time/thread-time.service';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 
 @Module({
   imports: [
+    WorkspacesModule,
     TypeOrmModule.forFeature([
       ThreadEntity,
       ThreadMessageEntity,

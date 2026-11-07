@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -170,7 +171,7 @@ describe('Issues E2E', () => {
         { key: 'acme/api#6', source_type: 'task_comment' },
       ]);
     });
-    expect((await app.get(IssuesService).listLinkedToTasks([task.id])).map((row) => row.key)).toEqual(['acme/api#5']);
+    expect((await app.get(IssuesService).listLinkedToTasks(DEFAULT_WORKSPACE_ID, [task.id])).map((row) => row.key)).toEqual(['acme/api#5']);
 
     // New links are read soon: the poller picks them up.
     await pollDue();

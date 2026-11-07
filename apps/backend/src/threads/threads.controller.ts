@@ -44,6 +44,7 @@ import { ThreadListResponseDto } from './dto/thread-list-response.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { ThreadsScopes } from './threads.scopes';
@@ -59,9 +60,11 @@ import { ThreadTokenUsageResponseDto } from './dto/thread-token-usage-response.d
 import { ThreadAgentLogService } from './agent/thread-agent-log.service';
 import { ThreadTimerParamsDto } from './dto/thread-timer-params.dto';
 import { ThreadTaskSubscriptionParamsDto } from './dto/thread-task-subscription-params.dto';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('threads')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(ThreadsScopes.READ.id)
@@ -84,8 +87,9 @@ export class ThreadsController {
   async createThread(
     @Body() dto: CreateThreadDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
-    const result = await this.threadsService.createThread({
+    const result = await this.threadsService.createThread(workspaceId, {
       title: dto.title,
       createdByActorId: user.actorId,
       parentTaskId: dto.parentTaskId,
@@ -110,8 +114,10 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @Body() dto: UpdateThreadDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.updateThread(
+      workspaceId,
       params.id,
       {
         title: dto.title,
@@ -132,8 +138,9 @@ export class ThreadsController {
   async listThreads(
     @Query() query: ListThreadsQueryDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadListResponseDto> {
-    const result = await this.threadsService.listThreads({
+    const result = await this.threadsService.listThreads(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 20,
       actorId: user.actorId,
@@ -159,8 +166,12 @@ export class ThreadsController {
   })
   async getThreadByTaskId(
     @Param('taskId') taskId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto | null> {
-    const result = await this.threadsService.findThreadByTaskId(taskId);
+    const result = await this.threadsService.findThreadByTaskIdInWorkspace(
+      workspaceId,
+      taskId,
+    );
     if (!result) {
       return null;
     }
@@ -176,8 +187,12 @@ export class ThreadsController {
   })
   async getThreadsByStateBlockId(
     @Param('stateBlockId') stateBlockId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto[]> {
-    const results = await this.threadsService.findThreadsByStateBlockId(stateBlockId);
+    const results = await this.threadsService.findThreadsByStateBlockId(
+      workspaceId,
+      stateBlockId,
+    );
     return results.map((result) => ThreadResponseDto.fromResult(result));
   }
 
@@ -185,8 +200,14 @@ export class ThreadsController {
   @ApiOperation({ summary: 'Get a thread by ID with full details' })
   @ApiOkResponse({ type: ThreadResponseDto, description: 'Thread found' })
   @ApiNotFoundResponse({ description: 'Thread not found' })
-  async getThread(@Param() params: ThreadParamsDto): Promise<ThreadResponseDto> {
-    const result = await this.threadsService.getThreadById(params.id);
+  async getThread(
+    @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<ThreadResponseDto> {
+    const result = await this.threadsService.getThreadInWorkspace(
+      workspaceId,
+      params.id,
+    );
     return ThreadResponseDto.fromResult(result);
   }
 
@@ -199,8 +220,9 @@ export class ThreadsController {
   async deleteThread(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.deleteThread(params.id, user.actorId);
+    await this.threadsService.deleteThread(workspaceId, params.id, user.actorId);
   }
 
   @Post(':id/tasks')
@@ -215,8 +237,13 @@ export class ThreadsController {
   async attachTask(
     @Param() params: ThreadParamsDto,
     @Body() dto: AttachTaskDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
-    const result = await this.threadsService.attachTask(params.id, dto.taskId);
+    const result = await this.threadsService.attachTask(
+      workspaceId,
+      params.id,
+      dto.taskId,
+    );
     return ThreadResponseDto.fromResult(result);
   }
 
@@ -232,8 +259,9 @@ export class ThreadsController {
   async cancelTimer(
     @Param() params: ThreadTimerParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.cancelTimer(params.id, params.timerId, user.actorId);
+    await this.threadsService.cancelTimer(workspaceId, params.id, params.timerId, user.actorId);
   }
 
   @Delete(':id/watches/:watchId')
@@ -248,8 +276,9 @@ export class ThreadsController {
   async cancelWatch(
     @Param() params: ThreadWatchParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.cancelWatch(params.id, params.watchId, user.actorId);
+    await this.threadsService.cancelWatch(workspaceId, params.id, params.watchId, user.actorId);
   }
 
   @Get(':id/pull-requests')
@@ -259,8 +288,13 @@ export class ThreadsController {
   })
   @ApiOkResponse({ type: [PullRequestResponseDto] })
   @ApiNotFoundResponse({ description: 'Thread not found' })
-  async listPullRequests(@Param() params: ThreadParamsDto): Promise<PullRequestResponseDto[]> {
-    return (await this.threadsService.listPullRequests(params.id)).map(toPullRequestResponse);
+  async listPullRequests(
+    @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<PullRequestResponseDto[]> {
+    return (await this.threadsService.listPullRequests(workspaceId, params.id)).map(
+      toPullRequestResponse,
+    );
   }
 
   @Get(':id/issues')
@@ -270,8 +304,11 @@ export class ThreadsController {
   })
   @ApiOkResponse({ type: [IssueResponseDto] })
   @ApiNotFoundResponse({ description: 'Thread not found' })
-  async listIssues(@Param() params: ThreadParamsDto): Promise<IssueResponseDto[]> {
-    return (await this.threadsService.listIssues(params.id)).map(toIssueResponse);
+  async listIssues(
+    @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<IssueResponseDto[]> {
+    return (await this.threadsService.listIssues(workspaceId, params.id)).map(toIssueResponse);
   }
 
   @Delete(':id/task-subscriptions/:taskId')
@@ -286,8 +323,14 @@ export class ThreadsController {
   async removeTaskSubscription(
     @Param() params: ThreadTaskSubscriptionParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.removeTaskSubscription(params.id, params.taskId, user.actorId);
+    await this.threadsService.removeTaskSubscription(
+      workspaceId,
+      params.id,
+      params.taskId,
+      user.actorId,
+    );
   }
 
   @Post(':id/context-blocks')
@@ -302,8 +345,10 @@ export class ThreadsController {
   async referenceContextBlock(
     @Param() params: ThreadParamsDto,
     @Body() dto: ReferenceContextBlockDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.referenceContextBlock(
+      workspaceId,
       params.id,
       dto.contextBlockId,
     );
@@ -323,8 +368,10 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @Body() dto: CreateTagDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.addTagToThread(
+      workspaceId,
       params.id,
       { name: dto.name },
       user.actorId,
@@ -344,8 +391,10 @@ export class ThreadsController {
     @Param('id') threadId: string,
     @Param('tagId') tagId: string,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.removeTagFromThread(
+      workspaceId,
       threadId,
       tagId,
       user.actorId,
@@ -365,8 +414,10 @@ export class ThreadsController {
   async addParticipant(
     @Param() params: ThreadParamsDto,
     @Body() dto: AddParticipantDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.addParticipant(
+      workspaceId,
       params.id,
       dto.actorId,
     );
@@ -382,8 +433,12 @@ export class ThreadsController {
   @ApiNotFoundResponse({ description: 'Thread not found' })
   async getThreadState(
     @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadStateResponseDto> {
-    const content = await this.threadsService.getThreadState(params.id);
+    const content = await this.threadsService.getThreadState(
+      workspaceId,
+      params.id,
+    );
     return { content };
   }
 
@@ -398,7 +453,9 @@ export class ThreadsController {
   @ApiNotFoundResponse({ description: 'Thread not found' })
   async getThreadTokenUsage(
     @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadTokenUsageResponseDto> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     const result = await this.threadAgentLogService.getTokenUsage(params.id);
     return ThreadTokenUsageResponseDto.fromResult(result);
   }
@@ -415,8 +472,10 @@ export class ThreadsController {
   async updateThreadState(
     @Param() params: ThreadParamsDto,
     @Body() dto: UpdateThreadStateDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadStateResponseDto> {
     const content = await this.threadsService.updateThreadState(
+      workspaceId,
       params.id,
       dto.content,
     );
@@ -435,8 +494,10 @@ export class ThreadsController {
   async appendThreadState(
     @Param() params: ThreadParamsDto,
     @Body() dto: AppendThreadStateDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadStateResponseDto> {
     const content = await this.threadsService.appendThreadState(
+      workspaceId,
       params.id,
       dto.content,
     );
@@ -456,8 +517,9 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @Body() dto: CreateThreadMessageDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadMessageResponseDto> {
-    const result = await this.threadsService.createMessage({
+    const result = await this.threadsService.createMessage(workspaceId, {
       threadId: params.id,
       content: dto.content,
       createdByActorId: user.actorId,
@@ -477,7 +539,9 @@ export class ThreadsController {
   async markThreadRead(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     await this.threadReadStateService.markRead(params.id, user.actorId);
   }
 
@@ -492,7 +556,9 @@ export class ThreadsController {
   async pinThread(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     await this.threadPinsService.pin(params.id, user.actorId);
   }
 
@@ -506,7 +572,9 @@ export class ThreadsController {
   async unpinThread(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     await this.threadPinsService.unpin(params.id, user.actorId);
   }
 
@@ -520,8 +588,9 @@ export class ThreadsController {
   async listMessages(
     @Param() params: ThreadParamsDto,
     @Query() query: ListThreadMessagesQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ListThreadMessagesResponseDto> {
-    const result = await this.threadsService.listMessages({
+    const result = await this.threadsService.listMessages(workspaceId, {
       threadId: params.id,
       page: query.page ?? 1,
       limit: query.limit ?? 20,

@@ -9,9 +9,12 @@ import { ActorService } from './actor.service';
 import { ActorResponseDto } from './dto/actor-response.dto';
 import { SearchActorsQueryDto } from './dto/search-actors-query.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Actors')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('actors')
 @UseGuards(AccessTokenGuard)
 export class ActorController {
@@ -26,8 +29,10 @@ export class ActorController {
     type: [ActorResponseDto],
     description: 'List of all actors',
   })
-  async listActors(): Promise<ActorResponseDto[]> {
-    const actors = await this.actorService.listActors();
+  async listActors(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<ActorResponseDto[]> {
+    const actors = await this.actorService.listActors(workspaceId);
     return actors.map((actor) => ActorResponseDto.fromEntity(actor));
   }
 
@@ -40,9 +45,10 @@ export class ActorController {
     description: 'Search results sorted by relevance',
   })
   async searchActors(
+    @CurrentWorkspace() workspaceId: string,
     @Query() query: SearchActorsQueryDto,
   ): Promise<ActorResponseDto[]> {
-    const results = await this.actorService.searchActors({
+    const results = await this.actorService.searchActors(workspaceId, {
       query: query.query,
       limit: query.limit,
       threshold: query.threshold,

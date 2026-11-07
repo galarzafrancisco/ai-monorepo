@@ -11,6 +11,7 @@ import { ProjectsController } from './projects.controller';
 import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { SearchModule } from '../search/search.module';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SearchModule } from '../search/search.module';
     AuthorizationServerModule,
     AuthGuardsModule,
     SearchModule,
+    WorkspacesModule,
   ],
   controllers: [MetaController, ProjectsController],
   providers: [MetaService, ProjectsService, ProjectAutoTagsService],

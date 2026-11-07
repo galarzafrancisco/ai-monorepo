@@ -25,6 +25,9 @@ export class ContextMcpGateway {
   ) { }
 
   private buildServer(user: UserContext, authContext: AuthContext): McpServer {
+    // Every tool works in the workspace the token was minted for.
+    const { workspaceId } = authContext;
+
     const readOnlyAnnotations = {
       readOnlyHint: true,
     };
@@ -57,7 +60,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ tag }) => {
-        const blocks = await this.contextService.listBlocks({ tag });
+        const blocks = await this.contextService.listBlocks(workspaceId, { tag });
         return {
           content: [
             {
@@ -91,7 +94,7 @@ export class ContextMcpGateway {
             ? new Date(Date.now() - updatedWithinHours * 60 * 60 * 1000)
             : undefined;
 
-        const blocks = await this.contextService.listBlocks({
+        const blocks = await this.contextService.listBlocks(workspaceId, {
           tag,
           createdByActorId,
           parentId,
@@ -127,7 +130,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ query, limit }) => {
-        const results = await this.contextService.searchBlocks({
+        const results = await this.contextService.searchBlocks(workspaceId, {
           query,
           limit,
         });
@@ -155,8 +158,14 @@ export class ContextMcpGateway {
         },
       },
       async ({ threadId }) => {
-        const thread = await this.threadsService.getThreadById(threadId);
-        const state = await this.threadsService.getThreadState(threadId);
+        const thread = await this.threadsService.getThreadInWorkspace(
+          workspaceId,
+          threadId,
+        );
+        const state = await this.threadsService.getThreadState(
+          workspaceId,
+          threadId,
+        );
 
         return {
           content: [
@@ -185,7 +194,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ threadId, blockId }) => {
-        await this.threadsService.referenceContextBlock(threadId, blockId);
+        await this.threadsService.referenceContextBlock(workspaceId, threadId, blockId);
         return {
           content: [
             {
@@ -209,7 +218,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ threadId, blockId }) => {
-        await this.threadsService.unreferenceContextBlock(threadId, blockId);
+        await this.threadsService.unreferenceContextBlock(workspaceId, threadId, blockId);
         return {
           content: [
             {
@@ -234,7 +243,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId }) => {
-        const block = await this.contextService.getBlockById(blockId);
+        const block = await this.contextService.getBlockById(workspaceId, blockId);
         return {
           content: [
             {
@@ -261,7 +270,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ title, content, parentId, tagNames }) => {
-        const block = await this.contextService.createBlock({
+        const block = await this.contextService.createBlock(workspaceId, {
           title,
           content,
           createdByActorId: user.actorId,
@@ -317,7 +326,7 @@ export class ContextMcpGateway {
           );
         }
 
-        const block = await this.contextService.updateBlock(blockId, {
+        const block = await this.contextService.updateBlock(workspaceId, blockId, {
           title,
           content,
           parentId: nextParentId,
@@ -349,7 +358,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId, content }) => {
-        const block = await this.contextService.appendToBlock(blockId, {
+        const block = await this.contextService.appendToBlock(workspaceId, blockId, {
           content,
           actorId: user.actorId,
         });
@@ -376,7 +385,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId }) => {
-        await this.contextService.deleteBlock(blockId, user.actorId);
+        await this.contextService.deleteBlock(workspaceId, blockId, user.actorId);
         return {
           content: [
             {
@@ -401,7 +410,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId, tagName }) => {
-        await this.contextService.addTagToBlock(blockId, {
+        await this.contextService.addTagToBlock(workspaceId, blockId, {
           name: tagName,
         },
           user.actorId,
@@ -430,7 +439,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId, tagId }) => {
-        await this.contextService.removeTagFromBlock(blockId, tagId, user.actorId);
+        await this.contextService.removeTagFromBlock(workspaceId, blockId, tagId, user.actorId);
 
         return {
           content: [
@@ -452,7 +461,7 @@ export class ContextMcpGateway {
         annotations: readOnlyAnnotations,
       },
       async ({ }) => {
-        const tags = await this.metaService.getAllTags();
+        const tags = await this.metaService.getAllTags(workspaceId);
         return {
           content: [
             {
@@ -477,7 +486,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ parentId }) => {
-        const children = await this.contextService.getChildBlocks(parentId ?? null);
+        const children = await this.contextService.getChildBlocks(workspaceId, parentId ?? null);
         return {
           content: [
             {
@@ -499,7 +508,7 @@ export class ContextMcpGateway {
         annotations: readOnlyAnnotations,
       },
       async ({ }) => {
-        const tree = await this.contextService.getBlockTree();
+        const tree = await this.contextService.getBlockTree(workspaceId);
         return {
           content: [
             {
