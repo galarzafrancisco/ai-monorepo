@@ -85,13 +85,7 @@ Open question: **actor slugs** are unique across the installation today, and men
 
 **Decision: AI providers and model selections belong to the workspace.** A workspace admin sets them up in Settings → AI models; every member's threads use them. Nobody configures their own.
 
-**Open question: the ChatGPT plan provider.** Today each person connects their own ChatGPT account and only their own turns run on it (see [Sign in with ChatGPT](../how-to-guides/sign-in-with-chatgpt.md)). That is deliberate: OpenAI's Sign in with ChatGPT terms tie a plan to the person who owns it, and require their tokens to stay on a machine they control. One admin's ChatGPT plan paying for every member's turns is account sharing, which those terms do not allow. Options:
-
-1. Make API-key providers workspace-wide now, and keep the ChatGPT plan per person (the person's own plan, used only for their own turns, as today). The rest of the "whose plan pays" rules stay.
-2. Drop the ChatGPT plan provider when multi-workspace ships, since hosted multi-company Taico is the "not allowed" deployment in that guide anyway.
-3. Replace it with a workspace-level OpenAI API key (an organisation's own key, which may be shared).
-
-This needs Fran's decision before phase 3 touches `ai_provider_connections`.
+**Decision: the ChatGPT plan provider stays per person.** Each person connects their own ChatGPT account and only their own turns run on it, as today (see [Sign in with ChatGPT](../how-to-guides/sign-in-with-chatgpt.md)). OpenAI's Sign in with ChatGPT terms tie a plan to the person who owns it and require their tokens to stay on a machine they control, so one admin's plan cannot pay for every member's turns. The ChatGPT plan is a personal-use option. Companies do not get it: a workspace admin provides an LLM through an API-key provider (an organisation's own key may be shared by its members). Phase 3 moves API-key providers and model selections to the workspace and leaves the ChatGPT plan's "whose plan pays" rules as they are.
 
 ## Admin roles
 
@@ -102,7 +96,7 @@ Today `user:admin` comes from `users.role` and is installation-wide. With worksp
 
 ## Phases
 
-Each phase ships on its own and leaves a working single-workspace installation.
+Each phase ships on its own and leaves a working single-workspace installation. Phases 2–5 are tracked as Taico tasks named "Workspaces phase N: …"; phase 3 is split into 3a–3e by module.
 
 1. **Workspace and membership** (done). `workspaces`, `workspace_members`, the default workspace, every actor a member, `workspace_id` in every minted token.
 2. **Request context.** `@CurrentWorkspace()` from the token (default workspace when the claim is missing), WebSocket context, `user:admin` from the membership role.
