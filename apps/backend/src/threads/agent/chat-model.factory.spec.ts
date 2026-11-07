@@ -116,7 +116,7 @@ describe('ChatModelFactory', () => {
           job: AiModelJob.CONVERSATION,
         });
         // Express mode (the server key) would use the global endpoint without a project.
-        expect((resolved.model as { config: { baseURL: string } }).config.baseURL).toContain(
+        expect((resolved.model as unknown as { config: { baseURL: string } }).config.baseURL).toContain(
           'projects/my-project',
         );
       } finally {
