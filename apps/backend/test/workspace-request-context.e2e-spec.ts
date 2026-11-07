@@ -40,6 +40,7 @@ import {
   TEST_USER_EMAIL,
   TEST_USER_SLUG,
 } from './helpers/auth.helper';
+import { WorkspaceAccess } from '../src/auth/guards/decorators/workspace-access.decorator';
 
 /** Not a real workspace: nothing is scoped yet, so no row is needed. */
 const OTHER_WORKSPACE_ID = '22222222-2222-4222-8222-222222222222';
@@ -47,6 +48,7 @@ const OTHER_WORKSPACE_ID = '22222222-2222-4222-8222-222222222222';
 /** Echoes the request's workspace, as a controller would read it. */
 @Controller('workspace-probe')
 @UseGuards(AccessTokenGuard)
+@WorkspaceAccess('scoped')
 class WorkspaceProbeController {
   @Get()
   get(@CurrentWorkspace() workspaceId: string) {
@@ -54,9 +56,20 @@ class WorkspaceProbeController {
   }
 }
 
+/** A route that forgot to declare how it keeps workspaces apart. */
+@Controller('workspace-probe-undeclared')
+@UseGuards(AccessTokenGuard)
+class UndeclaredProbeController {
+  @Get()
+  get() {
+    return { reached: true };
+  }
+}
+
 /** Echoes the socket's workspace, as a gateway handler would read it. */
 @WebSocketGateway({ namespace: '/workspace-probe' })
 @UseGuards(WsAccessTokenGuard)
+@WorkspaceAccess('scoped')
 class WorkspaceProbeGateway {
   @SubscribeMessage('probe')
   probe(@CurrentWorkspace() workspaceId: string) {
@@ -66,7 +79,7 @@ class WorkspaceProbeGateway {
 
 @Module({
   imports: [AuthGuardsModule],
-  controllers: [WorkspaceProbeController],
+  controllers: [WorkspaceProbeController, UndeclaredProbeController],
   providers: [WorkspaceProbeGateway],
 })
 class WorkspaceProbeModule {}
@@ -180,6 +193,14 @@ describe('Workspace request context (e2e)', () => {
     it('gives a web session the default workspace', async () => {
       const token = accessTokenFrom(await getAuthCookies(http));
       expect(await workspaceOverHttp(token)).toBe(DEFAULT_WORKSPACE_ID);
+    });
+
+    it('refuses an authenticated route with no @WorkspaceAccess mode', async () => {
+      const res = await request(http)
+        .get('/api/v1/workspace-probe-undeclared')
+        .set('Authorization', `Bearer ${await signToken()}`)
+        .expect(500);
+      expect(res.body.code).toBe('WORKSPACE_ACCESS_UNDECLARED');
     });
   });
 
