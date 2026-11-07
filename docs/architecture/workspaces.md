@@ -2,7 +2,7 @@
 
 A workspace is one company or team's own space in Taico. Its people, agents, tasks, threads, context, AI models and settings are kept apart from every other workspace on the same installation.
 
-> **Status:** phases 1 and 2 of 5 are built (the workspace, its members, the `workspace_id` token claim, and the workspace on every request). Nothing is scoped by workspace yet: every installation has exactly one workspace and everyone is in it. See [Phases](#phases).
+> **Status:** phases 1 and 2 of 5 are built (the workspace, its members, the `workspace_id` token claim, and the workspace on every request). Phase 3 is under way: tasks, context blocks, tags and projects are scoped by workspace (3a); the other modules are not yet. Every installation still has exactly one workspace and everyone is in it. See [Phases](#phases).
 
 ## The model
 
@@ -89,6 +89,23 @@ Installation-wide (no `workspace_id`):
 - `authorization_journeys`, `mcp_authorization_flows`, `connection_authorization_flows`
 - `access_requests` (people asking to join the installation)
 
+### How to scope a module (the phase 3 pattern)
+
+Phase 3a (tasks, context blocks, tags, projects) set the pattern the other phase 3 tasks follow. Migration `WorkspaceScopeTasksContextMeta1763600000000` and `test/workspace-isolation.e2e-spec.ts` are the worked example.
+
+1. **Migration.** For each table: `ADD "workspace_id" uuid NOT NULL DEFAULT '<default workspace id>'`, which backfills every existing row in one step. Then `DROP DEFAULT`, so a new row must say where it belongs. Then add an FK to `workspaces` (`ON DELETE RESTRICT`) and an index. Rebuild unique constraints as (`workspace_id`, ...). Register the migration in `app.module.ts`.
+2. **Entity.** Add `@Index() @Column({ type: 'uuid', name: 'workspace_id' }) workspaceId!: string`, and move uniqueness to `@Index([...], { unique: true })` on (`workspaceId`, ...).
+3. **Service.** Every public method takes `workspaceId: string` as its **first argument**. TypeScript then flags every caller, including other modules. Put `workspaceId` in every `where`, every `create()` and every query builder. Look rows up by (`workspaceId`, `id`), never by `id` alone. A row in another workspace throws the module's usual "not found" error. A service that resolves something it links to (tags, dependencies, a parent block, an assignee) resolves it in the same workspace. Assignees must be members (`WorkspacesService.isMember`).
+4. **Controllers** add `@CurrentWorkspace() workspaceId: string` and pass it on. **MCP gateways** read `const { workspaceId } = authContext` once in `buildServer` and pass it to every tool.
+5. **Realtime.** Rooms are named with `workspaceRoom(workspaceId, room)` (`workspaces/workspace-rooms.ts`). On subscribe, a gateway joins the room of the socket's own workspace (`socketWorkspaceId(client)`). When it emits, it uses the workspace of the row in the event: entities carry `workspaceId`, and delete events carry it explicitly. Subscribe messages and wire events don't change, so clients need no update.
+6. **Callers in modules not yet scoped** pass the workspace of the row they work on when they have one (e.g. the stale-execution pruner uses the task's workspace). Otherwise they pass `UNSCOPED_MODULE_WORKSPACE_ID` (`workspaces.constants.ts`). Each later phase greps for its module's uses and replaces them. Startup seeding of the default workspace uses `DEFAULT_WORKSPACE_ID`.
+7. **Search** is scoped in 3e. Until then, a scoped module's search drops hits whose row is in another workspace.
+8. **e2e tests** sign a token for a second workspace and check that its rows answer 404 over REST, `isError` over MCP, and are never heard over the WebSocket.
+
+**Join tables** (task_tags, task_dependencies, context_block_tags, project_auto_tags, task_auto_tags) get no `workspace_id`. They are only reached through a parent that is already scoped, and services resolve both ends in the same workspace. TypeORM's ManyToMany writes only the two ids, so a column there would need triggers or a custom join entity. Child tables with their own rows (comments, artefacts, input requests, tag usage) do get the column.
+
+**Tags and projects:** tag names are unique per workspace (`uq_tags_workspace_name_ci` on `workspace_id, lower(name)`) and so are project slugs (`UQ_projects_workspace_slug`). System tags are created in every workspace at startup (`MetaService.ensureSystemTags`; phase 4 calls it when it creates a workspace).
+
 Open question: **actor slugs** are unique across the installation today, and mentions (`@claude-dev`) use them. Two workspaces could not both have a `@claude-dev` agent. Options: keep slugs global (simple, a bit annoying), or make agent slugs unique per workspace and resolve mentions within the token's workspace. To be decided in phase 3, when agents get a workspace.
 
 ## AI models and the threads agent
@@ -111,6 +128,6 @@ Each phase ships on its own and leaves a working single-workspace installation. 
 
 1. **Workspace and membership** (done). `workspaces`, `workspace_members`, the default workspace, every actor a member, `workspace_id` in every minted token.
 2. **Request context** (done). `@CurrentWorkspace()` from the token (default workspace when the claim is missing), WebSocket and MCP context, `user:admin` from the membership role.
-3. **Scope the data**, module by module: add `workspace_id`, backfill to the default workspace, make it `NOT NULL`, scope every query, make uniqueness per workspace, prefix realtime rooms. Suggested order: meta/context, tasks, threads, agents and agent runs, executions and workers, AI providers and secrets, integrations, MCP registry, search. Each module gets e2e tests that a second workspace cannot see or touch the first one's rows.
+3. **Scope the data**, module by module (3a, tasks, context and meta: done; see [How to scope a module](#how-to-scope-a-module-the-phase-3-pattern)): add `workspace_id`, backfill to the default workspace, make it `NOT NULL`, scope every query, make uniqueness per workspace, prefix realtime rooms. Suggested order: meta/context, tasks, threads, agents and agent runs, executions and workers, AI providers and secrets, integrations, MCP registry, search. Each module gets e2e tests that a second workspace cannot see or touch the first one's rows.
 4. **Many workspaces.** Create a workspace, invite and remove members, switch workspace (`POST /auth/web/switch-workspace`), installation operator scope, agents created in the caller's workspace, remove the membership subscriber.
 5. **UI.** Workspace switcher, workspace settings and members page, the "switch workspace?" prompt on links from another workspace.
