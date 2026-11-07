@@ -208,7 +208,7 @@ describe('ThreadsService - Parent Task ID', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.createThread(input);
+        const result = await service.createThread('workspace-uuid', input);
 
         expect(result.parentTaskId).toBe('parent-task-uuid');
         expect(taskRepository.findOne).toHaveBeenCalledWith({
@@ -234,7 +234,7 @@ describe('ThreadsService - Parent Task ID', () => {
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createThread(input)).rejects.toThrow(
+        await expect(service.createThread('workspace-uuid', input)).rejects.toThrow(
           TaskNotFoundForThreadError,
         );
         expect(threadRepository.create).not.toHaveBeenCalled();
@@ -258,7 +258,7 @@ describe('ThreadsService - Parent Task ID', () => {
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        await service.createThread(input);
+        await service.createThread('workspace-uuid', input);
 
         // Verify that taskRepository.findBy was called with parent task ID
         expect(taskRepository.findBy).toHaveBeenCalledWith({
@@ -299,7 +299,7 @@ describe('ThreadsService - Parent Task ID', () => {
           tasks: [mockParentTask, additionalTask],
         });
 
-        const result = await service.createThread(input);
+        const result = await service.createThread('workspace-uuid', input);
 
         // Verify that the findBy was called with the correct number of unique IDs
         const findByCall = taskRepository.findBy.mock.calls[0][0];
@@ -320,7 +320,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
         actorRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createThread(input)).rejects.toThrow(
+        await expect(service.createThread('workspace-uuid', input)).rejects.toThrow(
           ActorNotFoundForThreadError,
         );
         expect(taskRepository.findOne).not.toHaveBeenCalled();
@@ -434,7 +434,7 @@ describe('ThreadsService - Parent Task ID', () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
         const tx = mockTransaction(threadRepository);
 
-        await service.deleteThread('thread-uuid', 'actor-uuid');
+        await service.deleteThread('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(tx.delete).toHaveBeenCalledWith(ThreadEntity, { id: 'thread-uuid' });
       });
@@ -444,7 +444,7 @@ describe('ThreadsService - Parent Task ID', () => {
         const tx = mockTransaction(threadRepository);
 
         await expect(
-          service.deleteThread('non-existent-uuid', 'actor-uuid'),
+          service.deleteThread('workspace-uuid', 'non-existent-uuid', 'actor-uuid'),
         ).rejects.toThrow(ThreadNotFoundError);
         expect(tx.delete).not.toHaveBeenCalled();
       });
@@ -471,7 +471,7 @@ describe('ThreadsService - Parent Task ID', () => {
           } as any),
         );
 
-        await expect(service.createThread(input)).rejects.toThrow(
+        await expect(service.createThread('workspace-uuid', input)).rejects.toThrow(
           ParentTaskThreadAlreadyExistsError,
         );
         expect(contextBlockRepository.delete).toHaveBeenCalledWith({
@@ -507,7 +507,7 @@ describe('ThreadsService - Parent Task ID', () => {
         threadRepository.findOne.mockResolvedValueOnce(mockThread); // First call
         threadRepository.findOne.mockResolvedValueOnce(threadWithTwoTasks); // Second call after attach
 
-        const result = await service.attachTask('thread-uuid', 'new-task-uuid');
+        const result = await service.attachTask('workspace-uuid', 'thread-uuid', 'new-task-uuid');
 
         expect(relationQueryBuilder.add).toHaveBeenCalledWith('new-task-uuid');
         expect(result.parentTaskId).toBe('parent-task-uuid'); // Should remain unchanged
@@ -535,8 +535,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(mockThread);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
 
-        const result = await service.attachTask(
-          'thread-uuid',
+        const result = await service.attachTask('workspace-uuid', 'thread-uuid',
           'parent-task-uuid',
         );
 
@@ -579,8 +578,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithAssignedTask);
         taskRepository.findOne.mockResolvedValue(assignedTask);
 
-        const result = await service.attachTask(
-          'thread-uuid',
+        const result = await service.attachTask('workspace-uuid', 'thread-uuid',
           'assigned-task-uuid',
         );
 
@@ -620,7 +618,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         taskRepository.findOne.mockResolvedValue(assignedTask);
 
-        await service.attachTask('thread-uuid', 'assigned-task-uuid');
+        await service.attachTask('workspace-uuid', 'thread-uuid', 'assigned-task-uuid');
 
         expect(addParticipantSpy).not.toHaveBeenCalled();
       });

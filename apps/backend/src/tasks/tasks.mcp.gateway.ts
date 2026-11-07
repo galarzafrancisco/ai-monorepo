@@ -100,7 +100,10 @@ export class TasksMcpGateway {
         },
       },
       async ({ threadId }) => {
-        const thread = await this.threadsService.getThreadById(threadId);
+        const thread = await this.threadsService.getThreadInWorkspace(
+          workspaceId,
+          threadId,
+        );
         const tasks = thread.tasks.map((task) => {
           const result = {
             id: task.id,
@@ -137,10 +140,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ threadId, taskId }) => {
-          // Threads are scoped in phase 3b; until then, refuse a task from
-          // another workspace (throws "not found").
-          await this.tasksService.getTaskById(workspaceId, taskId);
-          await this.threadsService.attachTask(threadId, taskId);
+          await this.threadsService.attachTask(workspaceId, threadId, taskId);
           return {
             content: [
               {
@@ -164,7 +164,7 @@ export class TasksMcpGateway {
           },
         },
         async ({ threadId, taskId }) => {
-          await this.threadsService.detachTask(threadId, taskId);
+          await this.threadsService.detachTask(workspaceId, threadId, taskId);
           return {
             content: [
               {

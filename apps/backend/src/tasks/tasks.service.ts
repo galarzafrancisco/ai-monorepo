@@ -121,6 +121,19 @@ export class TasksService {
     }
     const createdByActorId = createdByActor.id;
 
+    // Resolve dependencies before the first write, so a dependency that is
+    // missing (or in another workspace) leaves nothing behind.
+    let dependencyTasks: TaskEntity[] = [];
+    if (input.dependsOnIds && input.dependsOnIds.length > 0) {
+      dependencyTasks = await this.taskRepository.findBy({
+        workspaceId,
+        id: In(input.dependsOnIds),
+      });
+      if (dependencyTasks.length !== input.dependsOnIds.length) {
+        throw new Error('One or more dependency tasks not found');
+      }
+    }
+
     const task = this.taskRepository.create({
       workspaceId,
       name: input.name,
@@ -148,15 +161,7 @@ export class TasksService {
         tags.map((t) => t.id),
       );
     }
-    // Handle dependencies if provided
-    if (input.dependsOnIds && input.dependsOnIds.length > 0) {
-      const dependencyTasks = await this.taskRepository.findBy({
-        workspaceId,
-        id: In(input.dependsOnIds),
-      });
-      if (dependencyTasks.length !== input.dependsOnIds.length) {
-        throw new Error('One or more dependency tasks not found');
-      }
+    if (dependencyTasks.length > 0) {
       savedTask.dependsOn = dependencyTasks;
       await this.taskRepository.save(savedTask);
     }
@@ -244,7 +249,7 @@ export class TasksService {
     let thread: Awaited<ReturnType<ThreadsService['createThread']>> | null =
       null;
     try {
-      thread = await this.threadsService.createThread({
+      thread = await this.threadsService.createThread(workspaceId, {
         createdByActorId: input.createdByActorId,
         parentTaskId,
         taskIds: [task.id],
@@ -265,7 +270,7 @@ export class TasksService {
       if (!thread) {
         throw error;
       }
-      await this.threadsService.attachTask(thread.id, task.id);
+      await this.threadsService.attachTask(workspaceId, thread.id, task.id);
     }
 
     if (!thread) {
@@ -330,11 +335,10 @@ export class TasksService {
             workspaceId,
             input.assigneeActorId,
           );
-          if (assigneeActor) {
-            task.assigneeActorId = assigneeActor.id;
-          } else {
-            // TODO: Assignee doesn't exist. Should we throw?
+          if (!assigneeActor) {
+            throw new ActorNotFoundError(input.assigneeActorId);
           }
+          task.assigneeActorId = assigneeActor.id;
         }
       }
 

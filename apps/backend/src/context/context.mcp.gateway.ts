@@ -158,8 +158,14 @@ export class ContextMcpGateway {
         },
       },
       async ({ threadId }) => {
-        const thread = await this.threadsService.getThreadById(threadId);
-        const state = await this.threadsService.getThreadState(threadId);
+        const thread = await this.threadsService.getThreadInWorkspace(
+          workspaceId,
+          threadId,
+        );
+        const state = await this.threadsService.getThreadState(
+          workspaceId,
+          threadId,
+        );
 
         return {
           content: [
@@ -188,10 +194,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ threadId, blockId }) => {
-        // Threads are scoped in phase 3b; until then, refuse a block from
-        // another workspace (throws "not found").
-        await this.contextService.getBlockById(workspaceId, blockId);
-        await this.threadsService.referenceContextBlock(threadId, blockId);
+        await this.threadsService.referenceContextBlock(workspaceId, threadId, blockId);
         return {
           content: [
             {
@@ -215,7 +218,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ threadId, blockId }) => {
-        await this.threadsService.unreferenceContextBlock(threadId, blockId);
+        await this.threadsService.unreferenceContextBlock(workspaceId, threadId, blockId);
         return {
           content: [
             {

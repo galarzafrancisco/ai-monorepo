@@ -24,6 +24,7 @@ import { TasksScopes } from '../src/tasks/tasks.scopes';
 import { ContextScopes } from '../src/context/context.scopes';
 import { MetaScopes } from '../src/meta/meta.scopes';
 import { McpScopes } from '../src/auth/core/scopes/mcp.scopes';
+import { ThreadsScopes } from '../src/threads/threads.scopes';
 import {
   ensureAgentActor,
   ensureTestUser,
@@ -52,6 +53,7 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
   // Rows created in workspace A (the default workspace).
   let taskA: { id: string };
   let blockA: { id: string };
+  let threadA: { id: string; stateContextBlockId: string };
   const suffix = randomBytes(4).toString('hex');
   const tagName = `iso-${suffix}`;
   const projectSlug = `iso-${suffix}`;
@@ -79,6 +81,8 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
         ContextScopes.WRITE.id,
         MetaScopes.READ.id,
         MetaScopes.WRITE.id,
+        ThreadsScopes.READ.id,
+        ThreadsScopes.WRITE.id,
         McpScopes.USE.id,
       ],
       resource: config.issuerUrl,
@@ -219,6 +223,16 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
         })
         .expect(201)
     ).body;
+    threadA = (
+      await as(tokenA)
+        .post('/threads')
+        .send({
+          title: `Thread in A ${suffix}`,
+          taskIds: [taskA.id],
+          contextBlockIds: [blockA.id],
+        })
+        .expect(201)
+    ).body;
   }, 30000);
 
   afterAll(async () => {
@@ -272,10 +286,16 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
     });
 
     it('does not let a task in one workspace depend on a task in another', async () => {
+      const name = `B dependent ${suffix}`;
       const res = await as(tokenB)
         .post('/tasks/tasks')
-        .send({ name: 'B task', description: 'd', dependsOnIds: [taskA.id] });
+        .send({ name, description: 'd', dependsOnIds: [taskA.id] });
       expect(res.status).toBeGreaterThanOrEqual(400);
+
+      // The failed request leaves no task behind.
+      const inB = (await as(tokenB).get('/tasks/tasks?limit=100').expect(200))
+        .body;
+      expect(inB.items.map((t: any) => t.name)).not.toContain(name);
     });
 
     it('only assigns members of the workspace', async () => {
@@ -295,6 +315,17 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
         .patch(`/tasks/tasks/${taskB.id}/assign`)
         .send({ assigneeActorId: agentId })
         .expect(404);
+      // Nor through the general update, which then changes nothing.
+      await as(tokenB)
+        .patch(`/tasks/tasks/${taskB.id}`)
+        .send({ name: 'renamed', assigneeActorId: agentId })
+        .expect(404);
+      const unchanged = (
+        await as(tokenB).get(`/tasks/tasks/${taskB.id}`).expect(200)
+      ).body;
+      expect(unchanged.name).toBe('B task');
+      expect(unchanged.assigneeActor).toBeFalsy();
+
       await as(tokenA)
         .patch(`/tasks/tasks/${taskA.id}/assign`)
         .send({ assigneeActorId: agentId })
@@ -370,7 +401,163 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
     });
   });
 
+  describe('threads (scoped by their state block until phase 3b)', () => {
+    it('creates a thread and its state block in the caller workspace', async () => {
+      const threadB = (
+        await as(tokenB)
+          .post('/threads')
+          .send({ title: `Thread in B ${suffix}`, tagNames: [tagName] })
+          .expect(201)
+      ).body;
+      await as(tokenB)
+        .get(`/context/blocks/${threadB.stateContextBlockId}`)
+        .expect(200);
+      await as(tokenA)
+        .get(`/context/blocks/${threadB.stateContextBlockId}`)
+        .expect(404);
+      const blocksA = (await as(tokenA).get('/context/blocks').expect(200))
+        .body;
+      expect(blocksA.items.map((b: any) => b.id)).not.toContain(
+        threadB.stateContextBlockId,
+      );
+      await as(tokenA).get(`/threads/${threadB.id}/state`).expect(404);
+      await as(tokenB).get(`/threads/${threadB.id}/state`).expect(200);
+    });
+
+    it('does not create a thread around rows of another workspace', async () => {
+      await as(tokenB)
+        .post('/threads')
+        .send({ title: `Orphan ${suffix}`, taskIds: [taskA.id] })
+        .expect(404);
+      await as(tokenB)
+        .post('/threads')
+        .send({ title: `Orphan ${suffix}`, parentTaskId: taskA.id })
+        .expect(404);
+      await as(tokenB)
+        .post('/threads')
+        .send({ title: `Orphan ${suffix}`, contextBlockIds: [blockA.id] })
+        .expect(404);
+      // The failed requests left no state block (nor thread) behind.
+      const blocksB = (await as(tokenB).get('/context/blocks').expect(200))
+        .body;
+      expect(blocksB.items.map((b: any) => b.title)).not.toContain(
+        `Thread State: Orphan ${suffix}`,
+      );
+    });
+
+    it('answers not found for a thread or its rows in another workspace', async () => {
+      // Finding the thread of another workspace's task.
+      const byTask = await as(tokenB)
+        .get(`/threads/by-task/${taskA.id}`)
+        .expect(200);
+      expect(byTask.text).not.toContain(taskA.id);
+      const ownByTask = (
+        await as(tokenA).get(`/threads/by-task/${taskA.id}`).expect(200)
+      ).body;
+      expect(ownByTask.id).toBe(threadA.id);
+
+      await as(tokenB).get(`/threads/${threadA.id}`).expect(404);
+      await as(tokenB).get(`/threads/${threadA.id}/state`).expect(404);
+      await as(tokenB)
+        .patch(`/threads/${threadA.id}/state`)
+        .send({ content: 'overwritten' })
+        .expect(404);
+      await as(tokenB)
+        .post(`/threads/${threadA.id}/state/append`)
+        .send({ content: 'sneaky' })
+        .expect(404);
+      await as(tokenB)
+        .post(`/threads/${threadA.id}/tags`)
+        .send({ name: 'x' })
+        .expect(404);
+      await as(tokenB).delete(`/threads/${threadA.id}`).expect(404);
+
+      // Attaching across workspaces, in either direction.
+      const taskB = (
+        await as(tokenB)
+          .post('/tasks/tasks')
+          .send({ name: 'B task for threads', description: 'd' })
+          .expect(201)
+      ).body;
+      const threadB = (
+        await as(tokenB)
+          .post('/threads')
+          .send({ title: `Second thread in B ${suffix}` })
+          .expect(201)
+      ).body;
+      await as(tokenB)
+        .post(`/threads/${threadA.id}/tasks`)
+        .send({ taskId: taskB.id })
+        .expect(404);
+      await as(tokenB)
+        .post(`/threads/${threadB.id}/tasks`)
+        .send({ taskId: taskA.id })
+        .expect(404);
+      await as(tokenB)
+        .post(`/threads/${threadB.id}/context-blocks`)
+        .send({ contextBlockId: blockA.id })
+        .expect(404);
+
+      const ownThread = (
+        await as(tokenA).get(`/threads/${threadA.id}`).expect(200)
+      ).body;
+      expect(ownThread.tasks.map((t: any) => t.id)).toEqual([taskA.id]);
+      const ownState = (
+        await as(tokenA).get(`/threads/${threadA.id}/state`).expect(200)
+      ).body;
+      expect(ownState.content).not.toContain('sneaky');
+      expect(ownState.content).not.toContain('overwritten');
+    });
+  });
+
   describe('over MCP', () => {
+    it('answers not found for a thread in another workspace', async () => {
+      const listed = await callTool(
+        TASKS_MCP_PATH,
+        tokenB,
+        'list_tasks_by_thread',
+        { threadId: threadA.id },
+      );
+      expect(listed.isError).toBe(true);
+      const detachedTask = await callTool(
+        TASKS_MCP_PATH,
+        tokenB,
+        'detach_task_from_thread',
+        { threadId: threadA.id, taskId: taskA.id },
+      );
+      expect(detachedTask.isError).toBe(true);
+      const memory = await callTool(
+        CONTEXT_MCP_PATH,
+        tokenB,
+        'get_thread_state_memory',
+        { threadId: threadA.id },
+      );
+      expect(memory.isError).toBe(true);
+      const detachedBlock = await callTool(
+        CONTEXT_MCP_PATH,
+        tokenB,
+        'detach_block_from_thread',
+        { threadId: threadA.id, blockId: blockA.id },
+      );
+      expect(detachedBlock.isError).toBe(true);
+
+      // Workspace A still sees the thread with its task and block.
+      const ownList = await callTool(
+        TASKS_MCP_PATH,
+        tokenA,
+        'list_tasks_by_thread',
+        { threadId: threadA.id },
+      );
+      expect(ownList.isError).toBeFalsy();
+      expect(ownList.content[0].text).toContain(taskA.id);
+      const ownThread = (
+        await as(tokenA).get(`/threads/${threadA.id}`).expect(200)
+      ).body;
+      expect(
+        ownThread.referencedContextBlocks.map((b: any) => b.id),
+      ).toContain(blockA.id);
+    });
+
     it('answers not found for a task in another workspace', async () => {
       const fetched = await callTool(TASKS_MCP_PATH, tokenB, 'fetch', {
         taskId: taskA.id,
