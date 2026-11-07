@@ -508,6 +508,89 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
       expect(ownState.content).not.toContain('sneaky');
       expect(ownState.content).not.toContain('overwritten');
     });
+
+    it('does not find threads by a state block of another workspace', async () => {
+      const crossWorkspace = (
+        await as(tokenB)
+          .get(`/threads/by-state-block/${threadA.stateContextBlockId}`)
+          .expect(200)
+      ).body;
+      expect(crossWorkspace).toEqual([]);
+      const own = (
+        await as(tokenA)
+          .get(`/threads/by-state-block/${threadA.stateContextBlockId}`)
+          .expect(200)
+      ).body;
+      expect(own.map((t: any) => t.id)).toEqual([threadA.id]);
+    });
+
+    it('does not rename a thread of another workspace', async () => {
+      await as(tokenB)
+        .patch(`/threads/${threadA.id}`)
+        .send({ title: `Renamed by B ${suffix}` })
+        .expect(404);
+      const ownThread = (
+        await as(tokenA).get(`/threads/${threadA.id}`).expect(200)
+      ).body;
+      expect(ownThread.title).toBe(`Thread in A ${suffix}`);
+      const stateBlock = (
+        await as(tokenA)
+          .get(`/context/blocks/${threadA.stateContextBlockId}`)
+          .expect(200)
+      ).body;
+      expect(stateBlock.title).not.toContain('Renamed by B');
+    });
+  });
+
+  describe('task blueprints (blueprints themselves are scoped in a later phase)', () => {
+    it('creates the task from a blueprint in the caller workspace', async () => {
+      const blueprint = (
+        await as(tokenA)
+          .post('/task-blueprints')
+          .send({
+            name: `Blueprint task ${suffix}`,
+            description: 'From a blueprint',
+            tagNames: [tagName],
+          })
+          .expect(201)
+      ).body;
+
+      const taskB = (
+        await as(tokenB)
+          .post(`/task-blueprints/${blueprint.id}/create-task`)
+          .expect(201)
+      ).body;
+      await as(tokenB).get(`/tasks/tasks/${taskB.id}`).expect(200);
+      await as(tokenA).get(`/tasks/tasks/${taskB.id}`).expect(404);
+      // The tag was found or created in B, not taken from A.
+      const tagsB = (await as(tokenB).get('/meta/tags').expect(200)).body;
+      const tagB = tagsB.find((t: any) => t.name === tagName);
+      expect(tagB).toBeDefined();
+      expect(taskB.tags.map((t: any) => t.id)).toEqual([tagB.id]);
+    });
+
+    it('does not create a task depending on a task of another workspace', async () => {
+      const blueprint = (
+        await as(tokenA)
+          .post('/task-blueprints')
+          .send({
+            name: `Blueprint with A dependency ${suffix}`,
+            description: 'Depends on A',
+            dependsOnIds: [taskA.id],
+          })
+          .expect(201)
+      ).body;
+      const res = await as(tokenB).post(
+        `/task-blueprints/${blueprint.id}/create-task`,
+      );
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      const tasksB = (
+        await as(tokenB).get('/tasks/tasks?limit=100').expect(200)
+      ).body;
+      expect(tasksB.items.map((t: any) => t.name)).not.toContain(
+        `Blueprint with A dependency ${suffix}`,
+      );
+    });
   });
 
   describe('over MCP', () => {

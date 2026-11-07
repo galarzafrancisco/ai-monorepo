@@ -36,6 +36,7 @@ import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorato
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
 import { TasksScopes } from '../tasks/tasks.scopes';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Task Blueprints')
 @ApiCookieAuth('JWT-Cookie')
@@ -149,8 +150,10 @@ export class TaskBlueprintsController {
   @ApiNotFoundResponse({ description: 'Task blueprint not found' })
   async createTaskFromBlueprint(
     @Param() params: TaskBlueprintParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskResponseDto> {
     const result = await this.taskBlueprintsService.createTaskFromBlueprint(
+      workspaceId,
       params.id,
     );
     return TaskResponseDto.fromResult(result);

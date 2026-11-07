@@ -275,6 +275,7 @@ export class ThreadsService {
   }
 
   async updateThread(
+    workspaceId: string,
     threadId: string,
     input: UpdateThreadInput,
     actorId: string,
@@ -284,13 +285,14 @@ export class ThreadsService {
       threadId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    // Scoped lookup before any write: a thread in another workspace is not found.
+    await this.getThreadWithRelations(threadId, workspaceId);
 
     if (input.title !== undefined) {
       await this.threadRename.rename(threadId, input.title, actorId);
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(threadId, workspaceId);
 
     this.logger.log({
       message: 'Thread updated',
@@ -852,14 +854,20 @@ export class ThreadsService {
     return this.buildThreadResult(thread);
   }
 
-  async findThreadsByStateBlockId(stateBlockId: string): Promise<ThreadResult[]> {
+  async findThreadsByStateBlockId(
+    workspaceId: string,
+    stateBlockId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by state block ID',
       stateBlockId,
     });
 
     const threads = await this.threadRepository.find({
-      where: { stateContextBlockId: stateBlockId },
+      where: {
+        stateContextBlockId: stateBlockId,
+        stateContextBlock: { workspaceId },
+      },
       relations: [
         'createdByActor',
         'tasks',

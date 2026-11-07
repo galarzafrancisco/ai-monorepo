@@ -703,6 +703,7 @@ describe('ThreadsService - Parent Task ID', () => {
       threadRepository.save.mockResolvedValue(updatedThread);
 
       const result = await service.updateThread(
+        'workspace-uuid',
         'thread-uuid',
         { title: 'Updated Title' },
         'actor-uuid',
@@ -730,12 +731,15 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should find threads by state block ID including soft-deleted', async () => {
       threadRepository.find.mockResolvedValue([mockThread]);
 
-      const result = await service.findThreadsByStateBlockId('state-block-uuid');
+      const result = await service.findThreadsByStateBlockId('workspace-uuid', 'state-block-uuid');
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe('thread-uuid');
       expect(threadRepository.find).toHaveBeenCalledWith({
-        where: { stateContextBlockId: 'state-block-uuid' },
+        where: {
+          stateContextBlockId: 'state-block-uuid',
+          stateContextBlock: { workspaceId: 'workspace-uuid' },
+        },
         relations: expect.any(Array),
         withDeleted: true, // Verify that soft-deleted threads are included
       });
@@ -744,11 +748,14 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should return empty array when no threads use the state block', async () => {
       threadRepository.find.mockResolvedValue([]);
 
-      const result = await service.findThreadsByStateBlockId('non-existent-state-block');
+      const result = await service.findThreadsByStateBlockId('workspace-uuid', 'non-existent-state-block');
 
       expect(result.length).toBe(0);
       expect(threadRepository.find).toHaveBeenCalledWith({
-        where: { stateContextBlockId: 'non-existent-state-block' },
+        where: {
+          stateContextBlockId: 'non-existent-state-block',
+          stateContextBlock: { workspaceId: 'workspace-uuid' },
+        },
         relations: expect.any(Array),
         withDeleted: true, // Verify that soft-deleted threads are included
       });

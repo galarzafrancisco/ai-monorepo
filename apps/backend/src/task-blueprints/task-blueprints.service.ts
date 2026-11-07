@@ -274,9 +274,14 @@ export class TaskBlueprintsService {
   }
 
   /**
-   * Creates a regular task from a blueprint
+   * Creates a regular task from a blueprint in the given workspace. Tags are
+   * found or created by name there, and the assignee and dependencies must be
+   * in that workspace (TasksService checks both before the first write).
    */
-  async createTaskFromBlueprint(blueprintId: string): Promise<TaskResult> {
+  async createTaskFromBlueprint(
+    workspaceId: string,
+    blueprintId: string,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Creating task from blueprint',
       blueprintId,
@@ -284,7 +289,7 @@ export class TaskBlueprintsService {
 
     const blueprint = await this.getTaskBlueprintById(blueprintId);
 
-    const task = await this.tasksService.createTask(UNSCOPED_MODULE_WORKSPACE_ID, {
+    const task = await this.tasksService.createTask(workspaceId, {
       name: blueprint.name,
       description: blueprint.description,
       assigneeActorId: blueprint.assigneeActorId ?? undefined,

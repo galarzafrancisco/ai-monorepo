@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ScheduledTasksService } from './scheduled-tasks.service';
 import { TaskBlueprintsService } from './task-blueprints.service';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 /**
  * TaskSchedulerService runs scheduled tasks based on cron expressions.
@@ -55,6 +56,8 @@ export class TaskSchedulerService {
         try {
           // Create task from blueprint
           const task = await this.taskBlueprintsService.createTaskFromBlueprint(
+            // Scheduled tasks get their own workspace in a later phase.
+            UNSCOPED_MODULE_WORKSPACE_ID,
             scheduledTask.taskBlueprintId,
           );
 

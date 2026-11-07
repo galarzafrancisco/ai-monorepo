@@ -385,7 +385,7 @@ export class ContextService {
 
     // Check if block is a state block for any threads
     const threadsWithState =
-      await this.threadsService.findThreadsByStateBlockId(blockId);
+      await this.threadsService.findThreadsByStateBlockId(workspaceId, blockId);
     if (threadsWithState.length > 0) {
       throw new BlockIsThreadStateError(blockId, threadsWithState.length);
     }

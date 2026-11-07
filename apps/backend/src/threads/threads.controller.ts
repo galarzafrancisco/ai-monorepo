@@ -112,8 +112,10 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @Body() dto: UpdateThreadDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.updateThread(
+      workspaceId,
       params.id,
       {
         title: dto.title,
@@ -182,8 +184,12 @@ export class ThreadsController {
   })
   async getThreadsByStateBlockId(
     @Param('stateBlockId') stateBlockId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto[]> {
-    const results = await this.threadsService.findThreadsByStateBlockId(stateBlockId);
+    const results = await this.threadsService.findThreadsByStateBlockId(
+      workspaceId,
+      stateBlockId,
+    );
     return results.map((result) => ThreadResponseDto.fromResult(result));
   }
 
