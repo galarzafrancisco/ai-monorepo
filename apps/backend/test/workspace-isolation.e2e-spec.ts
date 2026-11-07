@@ -35,7 +35,7 @@ import { ThreadWatchesService } from '../src/threads/watches/thread-watches.serv
 import { ThreadWatchKind } from '../src/threads/watches/thread-watch.enums';
 import { ThreadTurnsService } from '../src/threads/agent/thread-turns.service';
 import { ThreadAgentLogService } from '../src/threads/agent/thread-agent-log.service';
-import { ThreadAgentMessageRole } from '../src/threads/agent/thread-agent.enums';
+import { ThreadAgentMessageRole, ThreadTurnStatus } from '../src/threads/agent/thread-agent.enums';
 import { TaskStatus } from '../src/tasks/enums';
 import { ThreadAgentToolsFactory } from '../src/threads/agent/thread-agent-tools.factory';
 import { GET_PULL_REQUEST_TOOL } from '../src/threads/agent/thread-agent.prompts';
@@ -738,6 +738,13 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       const taskB = (
         await b.post('/tasks/tasks').send({ name: 'B stamped', description: 'd' }).expect(201)
       ).body;
+      // Hold the thread's turn for the whole test. Otherwise the agent turn
+      // started by the message below can ingest the timer firing and watch
+      // delivery (deleting them, and the finished one-shot timer) before the
+      // rows are inspected.
+      const turns = app.get(ThreadTurnsService);
+      const turn = await turns.tryClaim(threadB.id);
+      expect(turn).toMatchObject({ threadId: threadB.id, workspaceId: WORKSPACE_B_ID });
       await b.post(`/threads/${threadB.id}/messages`).send({ content: 'hello from B' }).expect(201);
       await b.put(`/threads/${threadB.id}/pin`).expect(204);
       await b.post(`/threads/${threadB.id}/read`).expect(204);
@@ -786,14 +793,12 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
           source: 'user',
         },
       ]);
-      // A turn may already be running for the message above; either way a
-      // turn row exists for the thread.
-      const turn = await app.get(ThreadTurnsService).tryClaim(threadB.id);
-      if (turn) {
-        expect(turn.workspaceId).toBe(WORKSPACE_B_ID);
+      let stamped: Record<string, string[]>;
+      try {
+        stamped = await workspacesOf(threadB.id);
+      } finally {
+        await turns.finish(turn!.id, ThreadTurnStatus.COMPLETED);
       }
-
-      const stamped = await workspacesOf(threadB.id);
       for (const table of ['threads', ...THREAD_CHILD_TABLES]) {
         expect({ table, workspaces: stamped[table] }).toEqual({
           table,
