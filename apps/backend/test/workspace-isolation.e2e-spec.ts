@@ -14,7 +14,9 @@ import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { TokenSignerService } from '../src/auth/crypto/token-signer.service';
 import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.type';
 import { getConfig } from '../src/config/env.config';
-import { ActorType } from '../src/identity-provider/enums';
+import { ActorType, UserRole } from '../src/identity-provider/enums';
+import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
+import { UserSlugConflictError } from '../src/identity-provider/errors/identity-provider.errors';
 import { WorkspaceEntity } from '../src/workspaces/workspace.entity';
 import { WorkspaceMemberEntity } from '../src/workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../src/workspaces/enums';
@@ -1040,6 +1042,62 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       await createAgent(tokenB, { slug, name: 'Again' }).expect(409);
       await createAgent(tokenB, { slug: TEST_USER_SLUG, name: 'Person slug' }).expect(409);
       await as(tokenB).patch(`/agents/${agentB.actorId}`).send({ slug: TEST_USER_SLUG }).expect(409);
+    });
+
+    describe("people's slugs never collide with an agent's", () => {
+      const password = 'password-123';
+      const identity = () => app.get(IdentityProviderService);
+      const newPerson = (personSlug: string) =>
+        identity().createUser({
+          email: `${personSlug}@example.test`,
+          displayName: personSlug,
+          slug: personSlug,
+          password,
+        });
+
+      it('refuses a person the slug of an agent in any workspace', async () => {
+        // The agent with `slug` in B is not a member of the default workspace.
+        await expect(newPerson(slug)).rejects.toBeInstanceOf(UserSlugConflictError);
+
+        const email = `iso-invited-${suffix}@example.test`;
+        await identity().createManagedUser({ email, role: UserRole.STANDARD });
+        await expect(
+          identity().setupManagedUser({ email, displayName: 'Invited', slug, password }),
+        ).rejects.toBeInstanceOf(UserSlugConflictError);
+      });
+
+      it("gives an invited person a slug other than an agent's", async () => {
+        const user = await identity().createManagedUser({
+          email: `${slug}@example.test`,
+          role: UserRole.STANDARD,
+        });
+        expect(user.actor!.slug).not.toBe(slug);
+      });
+
+      it("refuses an agent a slug a person took through account setup", async () => {
+        const email = `iso-setup-${suffix}@example.test`;
+        const personSlug = `iso-setup-slug-${suffix}`;
+        await identity().createManagedUser({ email, role: UserRole.STANDARD });
+        await identity().setupManagedUser({ email, displayName: 'Setup', slug: personSlug, password });
+        await createAgent(tokenB, { slug: personSlug, name: 'After person' }).expect(409);
+      });
+
+      it('lets only one of a concurrent person and agent take a slug', async () => {
+        for (let i = 0; i < 5; i++) {
+          const raced = `iso-race-${suffix}-${i}`;
+          const [person, agent] = await Promise.allSettled([
+            newPerson(raced),
+            createAgent(tokenB, { slug: raced, name: `Race ${i}` }).then((res) => {
+              if (res.status !== 201) throw new Error(`agent create: ${res.status}`);
+              return res;
+            }),
+          ]);
+          expect([person.status, agent.status].filter((s) => s === 'fulfilled')).toHaveLength(1);
+          if (person.status === 'rejected') {
+            expect(person.reason).toBeInstanceOf(UserSlugConflictError);
+          }
+        }
+      });
     });
 
     it('makes an agent a member of its own workspace only', async () => {

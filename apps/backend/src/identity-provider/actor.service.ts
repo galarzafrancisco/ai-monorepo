@@ -1,12 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Like, Not, Raw, Repository } from 'typeorm';
+import { EntityManager, IsNull, Like, Not, Raw, Repository } from 'typeorm';
 import { ActorEntity } from './actor.entity';
 import { ActorType } from './enums';
 import { CreateActorInput } from './dto/service/actor.service.types';
 import { SearchService } from '../search/search.service';
 import { SearchResult } from '../search/search.types';
 import { isUUID } from 'class-validator';
+import { claimActorSlug } from './actor-slug';
+import { UserSlugConflictError } from './errors/identity-provider.errors';
 
 /**
  * Separates an actor's original slug from the suffix it gets when deleted.
@@ -31,47 +33,44 @@ export class ActorService {
   ) {}
 
   /**
-   * Create a new actor for a user
+   * Creates a person's actor inside `manager`'s transaction. The slug is
+   * claimed first (see `claimActorSlug`), so it can't be any other actor's.
    */
-  async createUserActor({
-    slug,
-    displayName,
-    avatarUrl,
-    introduction,
-  }: CreateActorInput): Promise<ActorEntity> {
+  async createUserActor(
+    manager: EntityManager,
+    { slug, displayName, avatarUrl, introduction }: CreateActorInput,
+  ): Promise<ActorEntity> {
     this.logger.log(`Creating user actor with slug: ${slug}`);
-
-    const actor = this.actorRepository.create({
-      type: ActorType.HUMAN,
-      slug,
-      displayName,
-      avatarUrl: avatarUrl ?? null,
-      introduction: introduction ?? null,
-    });
-
-    return this.actorRepository.save(actor);
+    await this.claimPersonSlug(manager, slug);
+    return manager.save(
+      ActorEntity,
+      manager.create(ActorEntity, {
+        type: ActorType.HUMAN,
+        slug,
+        displayName,
+        avatarUrl: avatarUrl ?? null,
+        introduction: introduction ?? null,
+      }),
+    );
   }
 
   /**
-   * Create a new actor for an agent
+   * Claims a person's slug inside `manager`'s transaction, or throws
+   * UserSlugConflictError if another actor has it.
    */
-  async createAgentActor({
-    slug,
-    displayName,
-    avatarUrl,
-    introduction,
-  }: CreateActorInput): Promise<ActorEntity> {
-    this.logger.log(`Creating agent actor with slug: ${slug}`);
-
-    const actor = this.actorRepository.create({
-      type: ActorType.AGENT,
+  async claimPersonSlug(
+    manager: EntityManager,
+    slug: string,
+    selfActorId?: string,
+  ): Promise<void> {
+    const free = await claimActorSlug(manager, {
+      type: ActorType.HUMAN,
       slug,
-      displayName,
-      avatarUrl: avatarUrl ?? null,
-      introduction: introduction ?? null,
+      selfActorId,
     });
-
-    return this.actorRepository.save(actor);
+    if (!free) {
+      throw new UserSlugConflictError(slug);
+    }
   }
 
   /**
@@ -168,15 +167,6 @@ export class ActorService {
     }
 
     return this.actorRepository.save(actor);
-  }
-
-  /**
-   * Whether any actor, in any workspace, has this slug. People's slugs are
-   * installation-wide, so a person never takes an agent's slug either.
-   */
-  async isSlugTaken(slug: string): Promise<boolean> {
-    const count = await this.actorRepository.count({ where: { slug } });
-    return count > 0;
   }
 
   /**

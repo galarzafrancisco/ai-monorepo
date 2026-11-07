@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EntityManager, In, Not, Repository, QueryFailedError } from 'typeorm';
+import { EntityManager, In, Not, Repository } from 'typeorm';
 import { WorkspaceMemberEntity } from '../workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../workspaces/enums';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { buildDeletedActorSlug } from '../identity-provider/actor.service';
+import { claimActorSlug } from '../identity-provider/actor-slug';
 import { PROTECTED_AGENT_SLUGS } from './protected-agents';
 import { ActorType } from '../identity-provider/enums';
 import { AgentType } from './enums';
@@ -48,7 +49,7 @@ export class AgentsService {
   /**
    * Creates an agent in a workspace. The agent's actor is a member of that
    * workspace only (an agent never moves), and its slug must be free in it
-   * (see `assertAgentSlugAvailable`).
+   * (see `claimActorSlug`).
    */
   async createAgent(
     workspaceId: string,
@@ -70,10 +71,10 @@ export class AgentsService {
 
     const savedAgentId = await this.agentRepository.manager.transaction(
       async (manager) => {
-        await this.assertAgentSlugAvailable(manager, workspaceId, input.slug);
+        await this.claimAgentSlug(manager, workspaceId, input.slug);
 
-        const savedActor = await this.saveActor(
-          manager,
+        const savedActor = await manager.save(
+          ActorEntity,
           manager.create(ActorEntity, {
             type: ActorType.AGENT,
             slug: input.slug,
@@ -324,14 +325,14 @@ export class AgentsService {
     await this.agentRepository.manager.transaction(async (manager) => {
       if (isActorUpdateRequested) {
         if (slugChanged) {
-          await this.assertAgentSlugAvailable(
+          await this.claimAgentSlug(
             manager,
             workspaceId,
             agent.actor!.slug,
             agent.actorId,
           );
         }
-        await this.saveActor(manager, agent.actor!);
+        await manager.save(ActorEntity, agent.actor!);
       }
       await manager.save(agent);
     });
@@ -352,54 +353,21 @@ export class AgentsService {
     return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
   }
 
-  /**
-   * An agent's slug is unique in its workspace, not across the installation,
-   * so each workspace can have its own `@claude-dev`. It may never be a
-   * person's slug: people's slugs are installation-wide, because a person can
-   * join any workspace. Writers of the same slug are serialized with a
-   * transaction-scoped advisory lock, so two workspaces' concurrent checks
-   * cannot both pass for one workspace.
-   */
-  private async assertAgentSlugAvailable(
+  /** Claims an agent's slug in its workspace (see `claimActorSlug`). */
+  private async claimAgentSlug(
     manager: EntityManager,
     workspaceId: string,
     slug: string,
     selfActorId?: string,
   ): Promise<void> {
-    await manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
-      `actor-slug:${slug}`,
-    ]);
-    const [conflict] = await manager.query(
-      `SELECT 1 FROM actors a
-        WHERE a.slug = $1
-          AND ($3::uuid IS NULL OR a.id <> $3::uuid)
-          AND (a.type <> '${ActorType.AGENT}'
-               OR EXISTS (SELECT 1 FROM workspace_members m
-                           WHERE m.actor_id = a.id AND m.workspace_id = $2))
-        LIMIT 1`,
-      [slug, workspaceId, selfActorId ?? null],
-    );
-    if (conflict) {
+    const free = await claimActorSlug(manager, {
+      type: ActorType.AGENT,
+      slug,
+      workspaceId,
+      selfActorId,
+    });
+    if (!free) {
       throw new AgentSlugConflictError(slug);
-    }
-  }
-
-  /** Saves an agent's actor, turning a slug unique violation into a conflict. */
-  private async saveActor(
-    manager: EntityManager,
-    actor: ActorEntity,
-  ): Promise<ActorEntity> {
-    try {
-      return await manager.save(ActorEntity, actor);
-    } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error as QueryFailedError & { driverError?: { code?: string } })
-          .driverError?.code === '23505'
-      ) {
-        throw new AgentSlugConflictError(actor.slug);
-      }
-      throw error;
     }
   }
 

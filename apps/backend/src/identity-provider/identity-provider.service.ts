@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
 import {
@@ -16,6 +16,7 @@ import {
 } from './dto/service/identity-provider.service.types';
 import { ActorService, buildDeletedActorSlug } from './actor.service';
 import { ActorEntity } from './actor.entity';
+import { claimActorSlug } from './actor-slug';
 import { ActorType, OnboardingDisplayMode, UserRole } from './enums';
 import {
   InvalidCredentialsError,
@@ -89,24 +90,27 @@ export class IdentityProviderService {
       throw new UserEmailConflictError(email);
     }
 
-    const slug = await this.createAvailableSlug(email);
     const displayName = email.split('@')[0] || email;
 
-    const actor = await this.actorService.createUserActor({
-      slug,
-      displayName,
+    return this.userRepository.manager.transaction(async (manager) => {
+      const slug = await this.claimAvailableSlug(manager, email);
+      const actor = await this.actorService.createUserActor(manager, {
+        slug,
+        displayName,
+      });
+      const savedUser = await manager.save(
+        User,
+        manager.create(User, {
+          email,
+          passwordHash: this.createPendingPasswordHash(),
+          actorId: actor.id,
+          role: input.role,
+          isActive: true,
+        }),
+      );
+      savedUser.actor = actor;
+      return savedUser;
     });
-
-    const user = this.userRepository.create({
-      email,
-      passwordHash: this.createPendingPasswordHash(),
-      actorId: actor.id,
-      role: input.role,
-      isActive: true,
-    });
-    const savedUser = await this.userRepository.save(user);
-    savedUser.actor = actor;
-    return savedUser;
   }
 
   async getManagedAccountSetupStatus(email: string): Promise<{ email: string; canSetup: boolean }> {
@@ -140,16 +144,19 @@ export class IdentityProviderService {
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
 
-    const slugTaken = await this.actorService.isSlugTaken(input.slug);
-    if (slugTaken && user.actor.slug !== input.slug) {
-      throw new UserSlugConflictError(input.slug);
-    }
-
+    const slugChanged = user.actor.slug !== input.slug;
     user.actor.displayName = input.displayName;
     user.actor.slug = input.slug;
     user.passwordHash = await this.hashPassword(input.password);
 
     await this.userRepository.manager.transaction(async (manager) => {
+      if (slugChanged) {
+        await this.actorService.claimPersonSlug(
+          manager,
+          input.slug,
+          user.actor!.id,
+        );
+      }
       await manager.save(ActorEntity, user.actor!);
       await manager.save(User, user);
     });
@@ -229,24 +236,19 @@ export class IdentityProviderService {
       createUserInput;
     const passwordHash = await this.hashPassword(password);
 
-    // Create actor first (use email as slug for users)
-    const actor = await this.actorService.createUserActor({
-      slug,
-      displayName,
-      introduction,
+    return this.userRepository.manager.transaction(async (manager) => {
+      const actor = await this.actorService.createUserActor(manager, {
+        slug,
+        displayName,
+        introduction,
+      });
+      const savedUser = await manager.save(
+        User,
+        manager.create(User, { email, passwordHash, actorId: actor.id }),
+      );
+      savedUser.actor = actor;
+      return savedUser;
     });
-
-    // Create user with actor reference
-    const user = this.userRepository.create({
-      email,
-      passwordHash,
-      actorId: actor.id,
-    });
-    const savedUser = await this.userRepository.save(user);
-
-    // Load actor relation for the returned user
-    savedUser.actor = actor;
-    return savedUser;
   }
 
   async changePassword(
@@ -325,17 +327,9 @@ export class IdentityProviderService {
             createUserInput;
           const passwordHash = await this.hashPassword(password);
 
-          // Create actor within the transaction (not via service to maintain atomicity)
-          const actor = transactionalEntityManager.create(ActorEntity, {
-            type: ActorType.HUMAN,
-            slug,
-            displayName,
-            avatarUrl: null,
-            introduction: introduction ?? null,
-          });
-          const savedActor = await transactionalEntityManager.save(
-            ActorEntity,
-            actor,
+          const savedActor = await this.actorService.createUserActor(
+            transactionalEntityManager,
+            { slug, displayName, introduction },
           );
 
           // Create user with admin role
@@ -393,7 +387,14 @@ export class IdentityProviderService {
     return `${this.pendingPasswordPrefix}${randomBytes(24).toString('hex')}`;
   }
 
-  private async createAvailableSlug(email: string): Promise<string> {
+  /**
+   * The first free slug derived from the email, claimed inside `manager`'s
+   * transaction (see `claimActorSlug`).
+   */
+  private async claimAvailableSlug(
+    manager: EntityManager,
+    email: string,
+  ): Promise<string> {
     const baseSlug =
       email
         .split('@')[0]
@@ -403,7 +404,9 @@ export class IdentityProviderService {
 
     let slug = baseSlug;
     let suffix = 2;
-    while (await this.actorService.isSlugTaken(slug)) {
+    while (
+      !(await claimActorSlug(manager, { type: ActorType.HUMAN, slug }))
+    ) {
       slug = `${baseSlug}-${suffix}`;
       suffix += 1;
       if (suffix > 1000) {

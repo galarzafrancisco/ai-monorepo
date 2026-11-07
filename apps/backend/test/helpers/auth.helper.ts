@@ -7,8 +7,7 @@ import { User } from '../../src/identity-provider/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ActorEntity } from '../../src/identity-provider/actor.entity';
-import { ActorService } from '../../src/identity-provider/actor.service';
-import { UserRole } from '../../src/identity-provider/enums';
+import { ActorType, UserRole } from '../../src/identity-provider/enums';
 
 export const TEST_USER_EMAIL = 'test@example.com';
 export const TEST_USER_SLUG = 'test';
@@ -66,7 +65,6 @@ export async function ensureAgentActor(
   displayName: string,
 ): Promise<string> {
   const actorRepository = app.get<Repository<ActorEntity>>(getRepositoryToken(ActorEntity));
-  const actorService = app.get(ActorService);
 
   const existingActor = await actorRepository.findOne({ where: { slug } });
   if (existingActor) {
@@ -77,10 +75,11 @@ export async function ensureAgentActor(
     return existingActor.id;
   }
 
-  const actor = await actorService.createAgentActor({
-    slug,
-    displayName,
-  });
+  // A bare agent actor (no agent row) in the default workspace, for tests
+  // that only need someone to assign work to.
+  const actor = await actorRepository.save(
+    actorRepository.create({ type: ActorType.AGENT, slug, displayName }),
+  );
 
   return actor.id;
 }
