@@ -14,6 +14,7 @@ import { WorkspaceEntity } from '../src/workspaces/workspace.entity';
 import { WorkspaceMemberEntity } from '../src/workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../src/workspaces/enums';
 import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
+import { WorkspacesService } from '../src/workspaces/workspaces.service';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 
 describe('Workspaces (e2e)', () => {
@@ -100,5 +101,54 @@ describe('Workspaces (e2e)', () => {
     expect((await members.findOneBy({ actorId: user.actorId }))?.role).toBe(
       WorkspaceRole.MEMBER,
     );
+  });
+
+  it('adds pre-existing actors with no membership at startup, as schema sync needs', async () => {
+    // Schema sync skips the migration's backfill, so actors that existed
+    // before workspaces have no membership. Recreate that state.
+    const identity = app.get(IdentityProviderService);
+    const admin = await identity.createManagedUser({
+      email: `ws-sync-${Math.random().toString(36).slice(2, 10)}@example.com`,
+      role: UserRole.ADMIN,
+    });
+    const agent = await request(httpServer)
+      .post('/api/v1/agents')
+      .set('Cookie', authCookies)
+      .send({
+        slug: `ws-sync-agent-${Math.random().toString(36).slice(2, 10)}`,
+        name: 'Pre-workspace agent',
+        systemPrompt: 'Existed before workspaces.',
+      })
+      .expect(201);
+    const actorIds = [admin.actorId, agent.body.actorId, testUserActorId];
+    for (const actorId of actorIds) {
+      await members.delete({ actorId });
+    }
+
+    await app.get(WorkspacesService).onModuleInit();
+
+    expect((await members.findOneBy({ actorId: admin.actorId }))?.role).toBe(
+      WorkspaceRole.ADMIN,
+    );
+    expect(
+      (await members.findOneBy({ actorId: agent.body.actorId }))?.role,
+    ).toBe(WorkspaceRole.MEMBER);
+    for (const actorId of actorIds) {
+      expect(await members.countBy({ actorId })).toBe(1);
+    }
+
+    // A token minted afterwards carries the workspace again.
+    const cookies = await getAuthCookies(httpServer);
+    const accessToken = cookies
+      .split('; ')
+      .find((c) => c.startsWith('access_token='))
+      ?.slice('access_token='.length);
+    expect(decodeJwt(accessToken!).workspace_id).toBe(DEFAULT_WORKSPACE_ID);
+
+    // Running it again adds nothing.
+    await app.get(WorkspacesService).onModuleInit();
+    for (const actorId of actorIds) {
+      expect(await members.countBy({ actorId })).toBe(1);
+    }
   });
 });

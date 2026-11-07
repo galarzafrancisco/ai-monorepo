@@ -28,11 +28,17 @@ export class WorkspacesService implements OnModuleInit {
   ) {}
 
   /**
-   * The migration creates the default workspace. Databases built by schema
-   * sync (tests, local dev) skip migrations, so make sure it exists here too.
+   * The migration creates the default workspace and puts every existing
+   * actor in it. Databases run with schema sync (`TYPEORM_SCHEMA_MODE=sync`)
+   * skip migrations, so do the same here. Both steps are idempotent.
    */
   async onModuleInit(): Promise<void> {
-    await ensureDefaultWorkspace(this.workspaceRepository.manager);
+    const manager = this.workspaceRepository.manager;
+    await ensureDefaultWorkspace(manager);
+    const added = await backfillDefaultMemberships(manager);
+    if (added > 0) {
+      this.logger.log(`Added ${added} actor(s) to the default workspace`);
+    }
   }
 
   /**
@@ -78,4 +84,34 @@ export async function ensureDefaultWorkspace(
     })
     .orIgnore()
     .execute();
+}
+
+/**
+ * Puts every actor that has no workspace membership in the default
+ * workspace. People who are installation admins become workspace admins,
+ * everyone else (and every agent) a member. Matches the Workspaces
+ * migration. Existing memberships are left alone.
+ *
+ * @returns how many memberships were added
+ */
+export async function backfillDefaultMemberships(
+  manager: EntityManager,
+): Promise<number> {
+  const rows: unknown[] = await manager.query(
+    `
+    INSERT INTO "workspace_members" ("workspace_id", "actor_id", "role", "row_version")
+    SELECT $1, a."id",
+      CASE WHEN u."role" = $2 THEN $3::text ELSE $4::text END,
+      1
+    FROM "actors" a
+    LEFT JOIN "users" u ON u."actor_id" = a."id"
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "workspace_members" m WHERE m."actor_id" = a."id"
+    )
+    ON CONFLICT ("workspace_id", "actor_id") DO NOTHING
+    RETURNING "id"
+    `,
+    [DEFAULT_WORKSPACE_ID, UserRole.ADMIN, WorkspaceRole.ADMIN, WorkspaceRole.MEMBER],
+  );
+  return rows.length;
 }
