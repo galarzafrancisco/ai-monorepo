@@ -25,6 +25,11 @@ export class ThreadTimerFiringEntity {
   @Column({ type: 'uuid', name: 'thread_id' })
   threadId!: string;
 
+  /** Always its thread's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   /** Which firing this is, 1-based. */
   @Column({ type: 'integer' })
   iteration!: number;

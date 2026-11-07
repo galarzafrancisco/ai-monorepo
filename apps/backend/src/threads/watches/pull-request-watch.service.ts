@@ -55,7 +55,7 @@ export class PullRequestWatchService {
     }
 
     const expiresAt = new Date(Date.now() + input.hours * 60 * 60 * 1000);
-    const watch = await this.watches.watch({
+    const watch = await this.watches.watch(input.workspaceId, {
       threadId: input.threadId,
       kind: ThreadWatchKind.PULL_REQUEST,
       targetId: pullRequest.id,
@@ -67,6 +67,9 @@ export class PullRequestWatchService {
       forActorId: input.forActorId,
       expiresAt,
     });
+    if (!watch) {
+      return { watching: false, reason: 'The thread was not found.', pullRequest };
+    }
     await this.pullRequests.setWatchedUntil(
       pullRequest.id,
       await this.watches.latestExpiry(ThreadWatchKind.PULL_REQUEST, pullRequest.id),
@@ -83,8 +86,11 @@ export class PullRequestWatchService {
   }
 
   /** Stops a watch; the pull request goes back to being polled for the watches left, if any. */
-  async stop(input: { threadId: string; watchId: string; actorId: string }): Promise<ThreadWatchResult | null> {
-    const removed = await this.watches.cancel(input);
+  async stop(
+    workspaceId: string,
+    input: { threadId: string; watchId: string; actorId: string },
+  ): Promise<ThreadWatchResult | null> {
+    const removed = await this.watches.cancel(workspaceId, input);
     if (removed?.kind === ThreadWatchKind.PULL_REQUEST) {
       await this.pullRequests.setWatchedUntil(
         removed.targetId,

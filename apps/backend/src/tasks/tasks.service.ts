@@ -220,6 +220,7 @@ export class TasksService {
     });
 
     const context = await this.executionContextResolver.resolveContext(
+      workspaceId,
       input.executionId,
       input.runId,
     );
@@ -275,7 +276,7 @@ export class TasksService {
         newTaskId: task.id,
       });
 
-      thread = await this.threadsService.findThreadByParentTaskId(parentTaskId);
+      thread = await this.threadsService.findThreadByParentTaskId(workspaceId, parentTaskId);
       if (!thread) {
         throw error;
       }
@@ -548,7 +549,7 @@ export class TasksService {
 
     // Check if task is a parent of any threads
     const threadsWithParent =
-      await this.threadsService.findThreadsByParentTaskId(taskId);
+      await this.threadsService.findThreadsByParentTaskId(workspaceId, taskId);
     if (threadsWithParent.length > 0) {
       throw new TaskIsThreadParentError(taskId, threadsWithParent.length);
     }
@@ -970,7 +971,7 @@ export class TasksService {
     actorId: string,
   ): Promise<void> {
     const threadsWithParent =
-      await this.threadsService.findThreadsByParentTaskId(taskId);
+      await this.threadsService.findThreadsByParentTaskId(workspaceId, taskId);
     if (threadsWithParent.length > 0) {
       this.logger.log({
         message: 'Auto-prune skipped because task is a thread parent',

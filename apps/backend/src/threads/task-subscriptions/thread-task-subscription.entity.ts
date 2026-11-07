@@ -25,6 +25,11 @@ export class ThreadTaskSubscriptionEntity {
   @PrimaryColumn({ type: 'uuid', name: 'thread_id' })
   threadId!: string;
 
+  /** Always its thread's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @Index('IDX_thread_task_subscriptions_task')
   @PrimaryColumn({ type: 'uuid', name: 'task_id' })
   taskId!: string;

@@ -22,8 +22,8 @@ export function assertHoldsUnscopedModuleData(workspaceId: string): void {
 }
 
 /**
- * The workspace of the task or thread a link was written in (a thread's is
- * its state block's), or null when it is gone. Soft-deleted rows still count.
+ * The workspace of the task or thread a link was written in, or null when it
+ * is gone. Soft-deleted rows still count.
  */
 export async function workspaceOfSource(
   db: DataSource | EntityManager,
@@ -38,9 +38,7 @@ export async function workspaceOfSource(
   }
   if (source.threadId) {
     const rows: Array<{ workspace_id: string }> = await db.query(
-      `SELECT b.workspace_id FROM threads t
-         JOIN context_blocks b ON b.id = t.state_context_block_id
-        WHERE t.id = $1`,
+      `SELECT workspace_id FROM threads WHERE id = $1`,
       [source.threadId],
     );
     return rows[0]?.workspace_id ?? null;

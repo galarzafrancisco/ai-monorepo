@@ -72,6 +72,7 @@ import { WorkerCapabilities1763400000000 } from './migrations/1763400000000-Work
 import { Workspaces1763500000000 } from './migrations/1763500000000-Workspaces';
 import { WorkspaceScopeTasksContextMeta1763600000000 } from './migrations/1763600000000-WorkspaceScopeTasksContextMeta';
 import { WorkspaceScopeBlueprints1763600000001 } from './migrations/1763600000001-WorkspaceScopeBlueprints';
+import { WorkspaceScopeThreads1763700000000 } from './migrations/1763700000000-WorkspaceScopeThreads';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
@@ -128,6 +129,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
         Workspaces1763500000000,
         WorkspaceScopeTasksContextMeta1763600000000,
         WorkspaceScopeBlueprints1763600000001,
+        WorkspaceScopeThreads1763700000000,
       ],
     }),
     EventEmitterModule.forRoot(),

@@ -81,6 +81,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
   const mockThread: ThreadEntity = {
     id: 'thread-uuid',
+    workspaceId: 'workspace-uuid',
     title: 'Test Thread',
     headAgentMessageId: null,
     aiProviderId: null,
@@ -333,7 +334,7 @@ describe('ThreadsService - Parent Task ID', () => {
       it('should return thread with correct parentTaskId', async () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.getThreadById('thread-uuid');
+        const result = await service.getThreadById('workspace-uuid', 'thread-uuid');
 
         expect(result.parentTaskId).toBe('parent-task-uuid');
         expect(result.parentTaskId).not.toBeNull();
@@ -344,7 +345,7 @@ describe('ThreadsService - Parent Task ID', () => {
       it('should throw ThreadNotFoundError when thread does not exist', async () => {
         threadRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.getThreadById('non-existent-uuid')).rejects.toThrow(
+        await expect(service.getThreadById('workspace-uuid', 'non-existent-uuid')).rejects.toThrow(
           ThreadNotFoundError,
         );
       });
@@ -356,6 +357,7 @@ describe('ThreadsService - Parent Task ID', () => {
           leftJoinAndSelect: jest.fn().mockReturnThis(),
           innerJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
           getOne: jest.fn().mockResolvedValue(mockThread),
         };
 
@@ -363,7 +365,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .fn()
           .mockReturnValue(mockQueryBuilder);
 
-        const result = await service.findThreadByTaskId('parent-task-uuid');
+        const result = await service.findThreadByTaskId('workspace-uuid', 'parent-task-uuid');
 
         expect(result).toBeDefined();
         expect(result?.parentTaskId).toBe('parent-task-uuid');
@@ -378,6 +380,7 @@ describe('ThreadsService - Parent Task ID', () => {
           leftJoinAndSelect: jest.fn().mockReturnThis(),
           innerJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
           getOne: jest.fn().mockResolvedValue(null),
         };
 
@@ -385,7 +388,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .fn()
           .mockReturnValue(mockQueryBuilder);
 
-        const result = await service.findThreadByTaskId('non-existent-task-uuid');
+        const result = await service.findThreadByTaskId('workspace-uuid', 'non-existent-task-uuid');
 
         expect(result).toBeNull();
       });
@@ -395,12 +398,12 @@ describe('ThreadsService - Parent Task ID', () => {
       it('should find a thread directly by parent task ID', async () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.findThreadByParentTaskId('parent-task-uuid');
+        const result = await service.findThreadByParentTaskId('workspace-uuid', 'parent-task-uuid');
 
         expect(result).toBeDefined();
         expect(result?.parentTaskId).toBe('parent-task-uuid');
         expect(threadRepository.findOne).toHaveBeenCalledWith({
-          where: { parentTaskId: 'parent-task-uuid' },
+          where: { workspaceId: 'workspace-uuid', parentTaskId: 'parent-task-uuid' },
           relations: [
             'createdByActor',
             'tasks',
@@ -420,6 +423,7 @@ describe('ThreadsService - Parent Task ID', () => {
         threadRepository.findOne.mockResolvedValue(null);
 
         const result = await service.findThreadByParentTaskId(
+          'workspace-uuid',
           'non-existent-parent-task-uuid',
         );
 

@@ -25,7 +25,13 @@ export class ActiveExecutionContextResolverService {
     private readonly threadsService: ThreadsService,
   ) {}
 
+  /**
+   * `workspaceId` is the caller's. Executions and agent runs get their own
+   * workspace in phase 3c; until then a task outside the caller's workspace
+   * has no thread here, and the caller's scoped task lookups refuse it.
+   */
   async resolveContext(
+    workspaceId: string,
     executionId: string | undefined,
     runId: string | undefined,
   ): Promise<ExecutionContextResult> {
@@ -41,6 +47,7 @@ export class ActiveExecutionContextResolverService {
       }
 
       const thread = await this.threadsService.findThreadByTaskId(
+        workspaceId,
         activeExecution.taskId,
       );
 
@@ -64,6 +71,7 @@ export class ActiveExecutionContextResolverService {
       }
 
       const thread = await this.threadsService.findThreadByTaskId(
+        workspaceId,
         agentRun.parentTaskId,
       );
 

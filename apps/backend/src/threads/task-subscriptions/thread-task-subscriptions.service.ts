@@ -13,6 +13,8 @@ export const NOTIFIED_TASK_STATUSES: readonly TaskStatus[] = [
 
 export type SubscribedTask = {
   id: string;
+  /** The task's workspace. Only threads of that workspace hear about it. */
+  workspaceId: string;
   name: string;
   status: TaskStatus;
 };
@@ -41,36 +43,36 @@ export class ThreadTaskSubscriptionsService {
 
   /**
    * Subscribing again is harmless. Returns the task as it is now, or null when
-   * there is no such task.
+   * there is no such task in the workspace (or no such thread).
    */
-  async subscribe(input: {
+  async subscribe(workspaceId: string, input: {
     threadId: string;
     taskId: string;
     forActorId: string;
     /** What the user wants from the task. */
     waitingFor: string;
   }): Promise<SubscribedTask | null> {
-    const task = await this.findTask(input.threadId, input.taskId);
+    const task = await this.findTask(workspaceId, input.threadId, input.taskId);
     if (!task) {
       return null;
     }
 
     await this.dataSource.query(
-      `INSERT INTO thread_task_subscriptions (thread_id, task_id, subscribed_for_actor_id, waiting_for)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO thread_task_subscriptions (thread_id, workspace_id, task_id, subscribed_for_actor_id, waiting_for)
+       SELECT t.id, t.workspace_id, $2, $3, $4 FROM threads t WHERE t.id = $1 AND t.workspace_id = $5
        ON CONFLICT (thread_id, task_id)
        DO UPDATE SET subscribed_for_actor_id = EXCLUDED.subscribed_for_actor_id,
                      waiting_for = EXCLUDED.waiting_for`,
-      [input.threadId, task.id, input.forActorId, input.waitingFor.trim() || null],
+      [input.threadId, task.id, input.forActorId, input.waitingFor.trim() || null, workspaceId],
     );
     await this.emitThreadUpdated(input.threadId, input.forActorId);
 
     // Read again: the task may have moved on while the subscription was being saved.
-    return (await this.findTask(input.threadId, task.id)) ?? task;
+    return (await this.findTask(workspaceId, input.threadId, task.id)) ?? task;
   }
 
   /** The tasks the thread waits for, oldest subscription first. Deleted tasks are left out. */
-  async listForThread(threadId: string): Promise<WatchedTask[]> {
+  async listForThread(workspaceId: string, threadId: string): Promise<WatchedTask[]> {
     const rows: Array<{
       task_id: string;
       name: string;
@@ -80,10 +82,10 @@ export class ThreadTaskSubscriptionsService {
     }> = await this.dataSource.query(
       `SELECT s.task_id, t.name, t.status, s.waiting_for, s.created_at
          FROM thread_task_subscriptions s
-         JOIN tasks t ON t.id = s.task_id AND t.deleted_at IS NULL
-        WHERE s.thread_id = $1
+         JOIN tasks t ON t.id = s.task_id AND t.deleted_at IS NULL AND t.workspace_id = s.workspace_id
+        WHERE s.workspace_id = $2 AND s.thread_id = $1
         ORDER BY s.created_at ASC, s.task_id ASC`,
-      [threadId],
+      [threadId, workspaceId],
     );
     return rows.map((row) => ({
       taskId: row.task_id,
@@ -95,7 +97,7 @@ export class ThreadTaskSubscriptionsService {
   }
 
   /** Returns false when the thread was not subscribed to the task. */
-  async unsubscribe(input: {
+  async unsubscribe(workspaceId: string, input: {
     threadId: string;
     taskId: string;
     actorId: string;
@@ -107,11 +109,11 @@ export class ThreadTaskSubscriptionsService {
     const removed: unknown[] = await this.dataSource.query(
       `WITH removed AS (
          DELETE FROM thread_task_subscriptions
-          WHERE thread_id = $1 AND task_id = $2
+          WHERE workspace_id = $3 AND thread_id = $1 AND task_id = $2
           RETURNING thread_id
        )
        SELECT thread_id FROM removed`,
-      [input.threadId, input.taskId],
+      [input.threadId, input.taskId, workspaceId],
     );
     if (removed.length === 0) {
       return false;
@@ -138,11 +140,11 @@ export class ThreadTaskSubscriptionsService {
          UPDATE thread_task_subscriptions s
             SET triggered_status = $2, triggered_task_name = $3, triggered_at = now()
            FROM threads t
-          WHERE s.task_id = $1 AND t.id = s.thread_id
+          WHERE s.task_id = $1 AND t.id = s.thread_id AND s.workspace_id = $4
           RETURNING s.thread_id
        )
        SELECT thread_id FROM triggered`,
-      [task.id, task.status, task.name],
+      [task.id, task.status, task.name, task.workspaceId],
     );
 
     return rows.map((row) => row.thread_id);
@@ -152,15 +154,15 @@ export class ThreadTaskSubscriptionsService {
    * A deleted task will never finish, so nobody waits for it any more. A
    * notification already waiting is kept: it is still true.
    */
-  async removeForDeletedTask(taskId: string, actorId: string): Promise<void> {
+  async removeForDeletedTask(workspaceId: string, taskId: string, actorId: string): Promise<void> {
     const rows: Array<{ thread_id: string }> = await this.dataSource.query(
       `WITH removed AS (
          DELETE FROM thread_task_subscriptions
-          WHERE task_id = $1 AND triggered_at IS NULL
+          WHERE workspace_id = $2 AND task_id = $1 AND triggered_at IS NULL
           RETURNING thread_id
        )
        SELECT thread_id FROM removed`,
-      [taskId],
+      [taskId, workspaceId],
     );
 
     for (const row of rows) {
@@ -184,21 +186,24 @@ export class ThreadTaskSubscriptionsService {
   }
 
   /**
-   * Only a task in the thread's own workspace (its state block's, until
-   * phase 3b) is found: a thread cannot watch another workspace's task.
+   * Only a task in the thread's workspace is found, and only when the thread
+   * is in the given workspace: a thread cannot watch another workspace's task.
    */
-  private async findTask(threadId: string, taskId: string): Promise<SubscribedTask | null> {
+  private async findTask(
+    workspaceId: string,
+    threadId: string,
+    taskId: string,
+  ): Promise<SubscribedTask | null> {
     if (!isUuid(taskId)) {
       return null;
     }
 
     const rows: SubscribedTask[] = await this.dataSource.query(
-      `SELECT t.id, t.name, t.status
+      `SELECT t.id, t.workspace_id AS "workspaceId", t.name, t.status
          FROM tasks t
-         JOIN threads th ON th.id = $2
-         JOIN context_blocks b ON b.id = th.state_context_block_id
-        WHERE t.id = $1 AND t.deleted_at IS NULL AND t.workspace_id = b.workspace_id`,
-      [taskId, threadId],
+         JOIN threads th ON th.id = $2 AND th.workspace_id = $3
+        WHERE t.id = $1 AND t.deleted_at IS NULL AND t.workspace_id = th.workspace_id`,
+      [taskId, threadId, workspaceId],
     );
     return rows[0] ?? null;
   }

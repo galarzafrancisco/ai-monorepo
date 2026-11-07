@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Index, Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { ActorEntity } from '../../identity-provider/actor.entity';
 import { ThreadEntity } from '../thread.entity';
 
@@ -13,6 +13,11 @@ import { ThreadEntity } from '../thread.entity';
 export class ThreadReadStateEntity {
   @PrimaryColumn({ type: 'uuid', name: 'thread_id' })
   threadId!: string;
+
+  /** Always its thread's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @PrimaryColumn({ type: 'uuid', name: 'actor_id' })
   actorId!: string;
