@@ -14,6 +14,7 @@ import {
 } from 'src/config/env.config';
 import { User } from 'src/identity-provider/user.entity';
 import { SecretsEncryptionService } from 'src/secrets/secrets-encryption.service';
+import { WorkspacesService } from 'src/workspaces/workspaces.service';
 import { AiProviderAuthorizationAttemptEntity } from '../ai-provider-authorization-attempt.entity';
 import { AiProviderConnectionEntity } from '../ai-provider-connection.entity';
 import { AiProviderEntity } from '../ai-provider.entity';
@@ -126,6 +127,7 @@ export class ChatgptConnectionsService {
     private readonly dataSource: DataSource,
     private readonly encryption: SecretsEncryptionService,
     private readonly oauth: ChatgptOAuthClient,
+    private readonly workspaces: WorkspacesService,
   ) {}
 
   /** Throws when this server may not use Sign in with ChatGPT. */
@@ -140,10 +142,11 @@ export class ChatgptConnectionsService {
   }
 
   async getConnection(
+    workspaceId: string,
     providerId: string,
     actorId: string,
   ): Promise<AiProviderConnectionResult> {
-    await this.getProvider(providerId);
+    await this.getProvider(workspaceId, providerId);
     const user = await this.findUser(actorId);
     if (!user) {
       return this.toResult(providerId, null, false);
@@ -152,11 +155,12 @@ export class ChatgptConnectionsService {
   }
 
   async startAuthorization(
+    workspaceId: string,
     providerId: string,
     actorId: string,
   ): Promise<StartAiProviderAuthorizationResult> {
     this.assertAvailable();
-    const provider = await this.getProvider(providerId);
+    const provider = await this.getProvider(workspaceId, providerId);
     const user = await this.requireUser(providerId, actorId);
     const connection = await this.loadWithCredentials(
       this.connections.manager,
@@ -181,6 +185,7 @@ export class ChatgptConnectionsService {
     await this.attempts.delete({ aiProviderId: providerId, userId: user.id });
     await this.attempts.delete({ expiresAt: LessThan(new Date()) });
     await this.attempts.insert({
+      workspaceId,
       aiProviderId: providerId,
       userId: user.id,
       stateHash: hashState(state),
@@ -218,12 +223,13 @@ export class ChatgptConnectionsService {
    * user who started it can finish it, and only once.
    */
   async completeAuthorization(
+    workspaceId: string,
     providerId: string,
     actorId: string,
     callback: CompleteAiProviderAuthorizationInput,
   ): Promise<AiProviderConnectionResult> {
     this.assertAvailable();
-    await this.getProvider(providerId);
+    await this.getProvider(workspaceId, providerId);
     const user = await this.requireUser(providerId, actorId);
 
     // Deleting is the claim: of two requests with the same state, one gets the row.
@@ -352,7 +358,11 @@ export class ChatgptConnectionsService {
     const canUsePlan = grantsPlanUsage(tokens.scope);
     const connection =
       existing ??
-      this.connections.create({ aiProviderId: providerId, userId: user.id });
+      this.connections.create({
+        workspaceId,
+        aiProviderId: providerId,
+        userId: user.id,
+      });
     connection.status = canUsePlan
       ? AiProviderConnectionStatus.CONNECTED
       : AiProviderConnectionStatus.PLAN_ACCESS_NOT_GRANTED;
@@ -386,11 +396,12 @@ export class ChatgptConnectionsService {
   }
 
   async setAutomatedTurnsAllowed(
+    workspaceId: string,
     providerId: string,
     actorId: string,
     allowed: boolean,
   ): Promise<AiProviderConnectionResult> {
-    await this.getProvider(providerId);
+    await this.getProvider(workspaceId, providerId);
     const user = await this.requireUser(providerId, actorId);
     const connection = await this.connections.findOne({
       where: { aiProviderId: providerId, userId: user.id },
@@ -411,10 +422,11 @@ export class ChatgptConnectionsService {
 
   /** Revokes the grant at OpenAI and removes everything stored about the account. */
   async disconnect(
+    workspaceId: string,
     providerId: string,
     actorId: string,
   ): Promise<DisconnectAiProviderResult> {
-    await this.getProvider(providerId);
+    await this.getProvider(workspaceId, providerId);
     const user = await this.requireUser(providerId, actorId);
     await this.attempts.delete({ aiProviderId: providerId, userId: user.id });
 
@@ -440,9 +452,9 @@ export class ChatgptConnectionsService {
   }
 
   /** Disconnects everyone. Called before the provider itself is deleted. */
-  async disconnectAll(providerId: string): Promise<void> {
+  async disconnectAll(workspaceId: string, providerId: string): Promise<void> {
     const rows = await this.connections.find({
-      where: { aiProviderId: providerId },
+      where: { workspaceId, aiProviderId: providerId },
     });
     for (const row of rows) {
       const connection = await this.loadWithCredentials(
@@ -453,7 +465,7 @@ export class ChatgptConnectionsService {
         await this.clear(connection);
       }
     }
-    await this.attempts.delete({ aiProviderId: providerId });
+    await this.attempts.delete({ workspaceId, aiProviderId: providerId });
   }
 
   /**
@@ -461,12 +473,17 @@ export class ChatgptConnectionsService {
    * connection to use. Only that person's own connection is considered. When
    * it cannot be used the turn fails; it is never answered by someone else's
    * plan or by another provider.
+   *
+   * The provider must be in the workspace the turn runs in, and the person a
+   * member of it: a connection only pays for turns in its own workspace.
    */
   async authorizeTurn(
+    workspaceId: string,
     providerId: string,
     onBehalfOf: OnBehalfOf,
   ): Promise<{ connectionId: string }> {
     this.assertAvailable();
+    await this.getProvider(workspaceId, providerId);
     const whose =
       onBehalfOf.description ??
       (onBehalfOf.automated
@@ -474,11 +491,12 @@ export class ChatgptConnectionsService {
         : 'the person who wrote the message');
 
     const user = await this.findUser(onBehalfOf.actorId);
-    const connection = user
-      ? await this.connections.findOne({
-          where: { aiProviderId: providerId, userId: user.id },
-        })
-      : null;
+    const connection =
+      user && (await this.workspaces.isMember(workspaceId, onBehalfOf.actorId))
+        ? await this.connections.findOne({
+            where: { workspaceId, aiProviderId: providerId, userId: user.id },
+          })
+        : null;
 
     const status =
       connection?.status ?? AiProviderConnectionStatus.DISCONNECTED;
@@ -513,10 +531,11 @@ export class ChatgptConnectionsService {
 
   /** The connection a person can use right now, for calls they make themselves. */
   async requireOwnConnection(
+    workspaceId: string,
     providerId: string,
     actorId: string,
   ): Promise<{ connectionId: string }> {
-    return this.authorizeTurn(providerId, { actorId, automated: false });
+    return this.authorizeTurn(workspaceId, providerId, { actorId, automated: false });
   }
 
   /** A valid access token for the connection, refreshed first when it is about to expire. */
@@ -825,9 +844,13 @@ export class ChatgptConnectionsService {
     };
   }
 
-  private async getProvider(providerId: string): Promise<AiProviderEntity> {
+  /** The workspace's ChatGPT plan provider. One in another workspace is not found. */
+  private async getProvider(
+    workspaceId: string,
+    providerId: string,
+  ): Promise<AiProviderEntity> {
     const provider = await this.providers.findOne({
-      where: { id: providerId },
+      where: { workspaceId, id: providerId },
     });
     if (!provider) {
       throw new AiProviderNotFoundError(providerId);

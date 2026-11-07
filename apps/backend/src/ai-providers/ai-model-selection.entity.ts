@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
@@ -11,9 +12,17 @@ import {
 import { AiProviderEntity } from './ai-provider.entity';
 import { AiModelJob } from './enums';
 
-/** Which provider and model a job uses. One row per job; a missing row means "not selected". */
+/**
+ * Which provider and model a job uses in a workspace. One row per (workspace,
+ * job); a missing row means "not selected".
+ */
 @Entity({ name: 'ai_model_selections' })
 export class AiModelSelectionEntity {
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @PrimaryColumn({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryColumn({ type: 'text', enum: AiModelJob })
   job!: AiModelJob;
 

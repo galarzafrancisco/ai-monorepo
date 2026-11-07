@@ -69,13 +69,17 @@ export class AiProviderModelsService {
    * `actorId` is who is asking. Providers that run on a person's own plan list
    * that person's models; the others ignore it.
    */
-  async listModels(providerId: string, actorId: string): Promise<AiProviderModelResult[]> {
-    const config = await this.aiProvidersService.getAiProviderConfigById(providerId);
+  async listModels(
+    workspaceId: string,
+    providerId: string,
+    actorId: string,
+  ): Promise<AiProviderModelResult[]> {
+    const config = await this.aiProvidersService.getAiProviderConfigById(workspaceId, providerId);
 
     if (config.type === AiProviderType.CHATGPT_SUBSCRIPTION) {
       try {
         // Kept in the order OpenAI returns them.
-        return await this.chatgptSubscription.listModels(providerId, actorId);
+        return await this.chatgptSubscription.listModels(workspaceId, providerId, actorId);
       } catch (error) {
         if (error instanceof AiProvidersDomainError) {
           throw error;

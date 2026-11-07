@@ -19,6 +19,7 @@ import {
 } from './chatgpt-subscription/chatgpt-subscription.constants';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { SecretsModule } from '../secrets/secrets.module';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 import { User } from '../identity-provider/user.entity';
 
 @Module({
@@ -32,6 +33,7 @@ import { User } from '../identity-provider/user.entity';
     ]),
     AuthGuardsModule,
     SecretsModule,
+    WorkspacesModule,
   ],
   controllers: [
     AiProvidersController,

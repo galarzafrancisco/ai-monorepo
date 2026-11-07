@@ -35,8 +35,10 @@ function mayRunJob(provider: AiProviderEntity, job: AiModelJob, inherited: boole
 }
 
 /**
- * Which provider and model each job uses. Read from the database on every
- * call, so a change applies to all backend processes at once.
+ * Which provider and model each job uses in a workspace. Read from the
+ * database on every call, so a change applies to all backend processes at
+ * once. Every method takes the workspace first: a job only ever runs on a
+ * provider of its own workspace.
  */
 @Injectable()
 export class AiModelSelectionsService {
@@ -52,10 +54,10 @@ export class AiModelSelectionsService {
   ) {}
 
   /** Every job, selected or not, with what it effectively runs on. */
-  async listSelections(): Promise<AiModelSelectionResult[]> {
+  async listSelections(workspaceId: string): Promise<AiModelSelectionResult[]> {
     const [selections, providers] = await Promise.all([
-      this.selectionRepository.find(),
-      this.aiProviderRepository.find(),
+      this.selectionRepository.find({ where: { workspaceId } }),
+      this.aiProviderRepository.find({ where: { workspaceId } }),
     ]);
     const byJob = new Map(selections.map((selection) => [selection.job, selection]));
     const providersById = new Map(providers.map((provider) => [provider.id, provider]));
@@ -83,9 +85,13 @@ export class AiModelSelectionsService {
     });
   }
 
-  async setSelection(input: SetAiModelSelectionInput): Promise<AiModelSelectionResult> {
+  async setSelection(
+    workspaceId: string,
+    input: SetAiModelSelectionInput,
+  ): Promise<AiModelSelectionResult> {
     this.logger.log({
       message: 'Setting AI model selection',
+      workspaceId,
       job: input.job,
       aiProviderId: input.aiProviderId,
       modelId: input.modelId,
@@ -94,7 +100,7 @@ export class AiModelSelectionsService {
     await this.dataSource.transaction(async (manager) => {
       // Holds the provider until the selection is stored, so it cannot be deleted in between.
       const provider = await manager.getRepository(AiProviderEntity).findOne({
-        where: { id: input.aiProviderId },
+        where: { workspaceId, id: input.aiProviderId },
         lock: { mode: 'pessimistic_read' },
       });
       if (!provider) {
@@ -108,25 +114,30 @@ export class AiModelSelectionsService {
       await manager
         .getRepository(AiModelSelectionEntity)
         .upsert(
-          { job: input.job, aiProviderId: input.aiProviderId, modelId: input.modelId.trim() },
-          ['job'],
+          {
+            workspaceId,
+            job: input.job,
+            aiProviderId: input.aiProviderId,
+            modelId: input.modelId.trim(),
+          },
+          ['workspaceId', 'job'],
         );
     });
 
-    return this.getSelection(input.job);
+    return this.getSelection(workspaceId, input.job);
   }
 
-  async clearSelection(job: AiModelJob): Promise<void> {
-    this.logger.log({ message: 'Clearing AI model selection', job });
-    await this.selectionRepository.delete({ job });
+  async clearSelection(workspaceId: string, job: AiModelJob): Promise<void> {
+    this.logger.log({ message: 'Clearing AI model selection', workspaceId, job });
+    await this.selectionRepository.delete({ workspaceId, job });
   }
 
   /** The provider settings and model id a job should call. Throws when the job cannot run. */
-  async resolve(job: AiModelJob): Promise<ResolvedAiModelSelection> {
-    let selection = await this.selectionRepository.findOne({ where: { job } });
+  async resolve(workspaceId: string, job: AiModelJob): Promise<ResolvedAiModelSelection> {
+    let selection = await this.selectionRepository.findOne({ where: { workspaceId, job } });
     if (!selection && JOBS_FOLLOWING_CONVERSATION.includes(job)) {
       selection = await this.selectionRepository.findOne({
-        where: { job: AiModelJob.CONVERSATION },
+        where: { workspaceId, job: AiModelJob.CONVERSATION },
       });
     }
     if (!selection) {
@@ -134,7 +145,7 @@ export class AiModelSelectionsService {
     }
 
     const entity = await this.aiProviderRepository.findOne({
-      where: { id: selection.aiProviderId },
+      where: { workspaceId, id: selection.aiProviderId },
     });
     const inherited = selection.job !== job;
     if (entity && !mayRunJob(entity, job, inherited)) {
@@ -144,12 +155,18 @@ export class AiModelSelectionsService {
         : new AiModelNotSelectedError(job);
     }
 
-    const provider = await this.aiProvidersService.getAiProviderConfigById(selection.aiProviderId);
+    const provider = await this.aiProvidersService.getAiProviderConfigById(
+      workspaceId,
+      selection.aiProviderId,
+    );
     return { provider, modelId: selection.modelId };
   }
 
-  private async getSelection(job: AiModelJob): Promise<AiModelSelectionResult> {
-    const selections = await this.listSelections();
+  private async getSelection(
+    workspaceId: string,
+    job: AiModelJob,
+  ): Promise<AiModelSelectionResult> {
+    const selections = await this.listSelections(workspaceId);
     return selections.find((selection) => selection.job === job)!;
   }
 }

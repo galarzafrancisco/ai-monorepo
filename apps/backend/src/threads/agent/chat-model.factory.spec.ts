@@ -155,7 +155,7 @@ describe('ChatModelFactory', () => {
 
     const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.SYSTEM_SMALL_TASKS });
 
-    expect(resolveSelection).toHaveBeenCalledWith(AiModelJob.SYSTEM_SMALL_TASKS);
+    expect(resolveSelection).toHaveBeenCalledWith(DEFAULT_WORKSPACE_ID, AiModelJob.SYSTEM_SMALL_TASKS);
     expect(resolved.modelId).toBe('claude-haiku-5-5');
   });
 
@@ -185,7 +185,7 @@ describe('ChatModelFactory', () => {
       modelId: 'claude-opus-5-5',
     });
 
-    expect(getAiProviderConfigById).toHaveBeenCalledWith('provider-1');
+    expect(getAiProviderConfigById).toHaveBeenCalledWith(DEFAULT_WORKSPACE_ID, 'provider-1');
     expect(resolveSelection).not.toHaveBeenCalled();
     expect(resolved.modelId).toBe('claude-opus-5-5');
   });
@@ -202,6 +202,7 @@ describe('ChatModelFactory', () => {
       const resolved = await factory.resolve({ workspaceId: DEFAULT_WORKSPACE_ID, job: AiModelJob.CONVERSATION, onBehalfOf });
 
       expect(modelForTurn).toHaveBeenCalledWith({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         providerId: 'provider-1',
         modelId: 'gpt-plan-large',
         onBehalfOf,
@@ -244,8 +245,9 @@ describe('ChatModelFactory', () => {
         onBehalfOf: creator,
       });
 
-      expect(resolveSelection).toHaveBeenCalledWith(AiModelJob.MIDDLE_MANAGER);
+      expect(resolveSelection).toHaveBeenCalledWith(DEFAULT_WORKSPACE_ID, AiModelJob.MIDDLE_MANAGER);
       expect(modelForTurn).toHaveBeenCalledWith({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         providerId: 'provider-1',
         modelId: 'gpt-plan-small',
         onBehalfOf: creator,
@@ -276,8 +278,9 @@ describe('ChatModelFactory', () => {
         onBehalfOf,
       });
 
-      expect(resolveSelection).toHaveBeenCalledWith(AiModelJob.USER_SMALL_TASKS);
+      expect(resolveSelection).toHaveBeenCalledWith(DEFAULT_WORKSPACE_ID, AiModelJob.USER_SMALL_TASKS);
       expect(modelForTurn).toHaveBeenCalledWith({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         providerId: 'provider-1',
         modelId: 'gpt-plan-small',
         onBehalfOf,

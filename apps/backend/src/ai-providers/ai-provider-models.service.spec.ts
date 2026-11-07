@@ -82,7 +82,7 @@ describe('AiProviderModelsService — Vertex AI', () => {
       },
     };
 
-    const models = await service().listModels('provider-1', 'actor-1');
+    const models = await service().listModels('workspace-1', 'provider-1', 'actor-1');
 
     expect(models).toEqual([
       { id: 'claude-sonnet-4-5', displayName: null, kind: AiModelKind.LANGUAGE },
@@ -102,7 +102,7 @@ describe('AiProviderModelsService — Vertex AI', () => {
       anthropic: { status: 403, body: { error: 'denied' } },
     };
 
-    const models = await service().listModels('provider-1', 'actor-1');
+    const models = await service().listModels('workspace-1', 'provider-1', 'actor-1');
 
     expect(models.map((model) => model.id)).toEqual(['gemini-3.6-flash']);
   });
@@ -116,7 +116,7 @@ describe('AiProviderModelsService — Vertex AI', () => {
       },
     };
 
-    await expect(service().listModels('provider-1', 'actor-1')).rejects.toMatchObject({
+    await expect(service().listModels('workspace-1', 'provider-1', 'actor-1')).rejects.toMatchObject({
       message: expect.stringContaining('403'),
     });
   });

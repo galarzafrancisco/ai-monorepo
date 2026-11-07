@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -14,9 +15,19 @@ import { SecretEntity } from '../secrets/secret.entity';
 
 /** Credentials and endpoint for one LLM vendor. Which model to use lives in ai_model_selections. */
 @Entity({ name: 'ai_providers' })
+/** A workspace has at most one ChatGPT plan provider: it holds no account of its own. */
+@Index('UQ_ai_providers_workspace_chatgpt_subscription', ['workspaceId', 'type'], {
+  unique: true,
+  where: `"type" = 'chatgpt_subscription' AND "deleted_at" IS NULL`,
+})
 export class AiProviderEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text' })
   name!: string;

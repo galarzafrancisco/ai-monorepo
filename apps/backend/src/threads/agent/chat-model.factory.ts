@@ -30,7 +30,6 @@ import {
   vertexLocationFromEnv,
   vertexProjectFromEnv,
 } from 'src/ai-providers/google-environment';
-import { assertHoldsUnscopedModuleData } from '../../workspaces/unscoped-modules';
 
 type ProviderOptions = Record<string, Record<string, string | number | boolean | null>>;
 
@@ -49,8 +48,8 @@ export type ResolvedChatModel = {
 
 export type ResolveChatModelInput = {
   /**
-   * The workspace the call is for. AI providers and model selections have no
-   * workspace yet (phase 3d), so only the default workspace may use them.
+   * The workspace the call is for. Only its own providers and model
+   * selections are used, and a thread's own provider must be one of them.
    */
   workspaceId: string;
   /** The job the model is for. Decides which selection applies. */
@@ -79,13 +78,15 @@ export class ChatModelFactory {
   ) {}
 
   async resolve(input: ResolveChatModelInput): Promise<ResolvedChatModel> {
-    assertHoldsUnscopedModuleData(input.workspaceId);
     if (input.aiProviderId && input.modelId) {
-      const config = await this.aiProvidersService.getAiProviderConfigById(input.aiProviderId);
+      const config = await this.aiProvidersService.getAiProviderConfigById(
+        input.workspaceId,
+        input.aiProviderId,
+      );
       return this.build(config, input.modelId, input);
     }
 
-    const selection = await this.aiModelSelectionsService.resolve(input.job);
+    const selection = await this.aiModelSelectionsService.resolve(input.workspaceId, input.job);
     return this.build(selection.provider, selection.modelId, input);
   }
 
@@ -157,6 +158,7 @@ export class ChatModelFactory {
         }
         return {
           model: await this.chatgptSubscription.modelForTurn({
+            workspaceId: input.workspaceId,
             providerId: config.id,
             modelId,
             onBehalfOf: input.onBehalfOf,

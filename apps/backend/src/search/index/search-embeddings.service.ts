@@ -9,6 +9,7 @@ import { createXai } from '@ai-sdk/xai';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
 import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from 'src/workspaces/workspaces.constants';
 import {
   googleApiKeyFromEnv,
   vertexLocationFromEnv,
@@ -36,7 +37,12 @@ export class SearchEmbeddingsService {
   /** The selected embedding model, or null when none is selected or its provider is not usable. */
   async resolveModel(): Promise<ResolvedEmbeddingModel | null> {
     try {
-      const selection = await this.aiModelSelectionsService.resolve(AiModelJob.EMBEDDINGS);
+      // The search index is installation-wide until phase 3e, so it embeds with
+      // the default workspace's embeddings model.
+      const selection = await this.aiModelSelectionsService.resolve(
+        UNSCOPED_MODULE_WORKSPACE_ID,
+        AiModelJob.EMBEDDINGS,
+      );
       const model = buildEmbeddingModel(selection.provider, selection.modelId);
       if (!model) {
         return null;

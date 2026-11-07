@@ -28,6 +28,11 @@ export class AiProviderConnectionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  /** The workspace of its provider. A person has one connection per workspace. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @Column({ type: 'uuid', name: 'ai_provider_id' })
   aiProviderId!: string;
 

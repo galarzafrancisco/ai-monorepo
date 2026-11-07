@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -12,9 +13,19 @@ import {
 import { ActorEntity } from '../identity-provider/actor.entity';
 
 @Entity({ name: 'secrets' })
+/** Names are unique within a workspace. */
+@Index('UQ_secrets_workspace_name', ['workspaceId', 'name'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class SecretEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text' })
   name!: string;

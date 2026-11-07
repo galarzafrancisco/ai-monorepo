@@ -103,7 +103,7 @@ export class WalkthroughService {
         .where('task.workspaceId = :workspaceId', { workspaceId })
         .andWhere('task.createdByActorId = :actorId', { actorId })
         .getExists(),
-      this.aiModelSelectionsService.listSelections(),
+      this.aiModelSelectionsService.listSelections(workspaceId),
     ]);
 
     return {

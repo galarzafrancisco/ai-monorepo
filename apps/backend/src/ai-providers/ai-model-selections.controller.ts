@@ -17,10 +17,16 @@ import { AiModelSelectionResponseDto } from './dto/http/ai-model-selection-respo
 import { SetAiModelSelectionDto } from './dto/http/set-ai-model-selection.dto';
 import { AiModelSelectionResult } from './dto/service/ai-providers.service.types';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { UserScopes } from '../auth/core/scopes/user.scopes';
 
 @ApiTags('AI Model Selections')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+/**
+ * Which model each job uses in the workspace. Every member may read it; only a
+ * workspace admin may change it.
+ */
+@WorkspaceAccess('scoped')
 @Controller('ai-model-selections')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class AiModelSelectionsController {
@@ -33,21 +39,24 @@ export class AiModelSelectionsController {
     type: [AiModelSelectionResponseDto],
     description: 'One entry per job, selected or not',
   })
-  async listAiModelSelections(): Promise<AiModelSelectionResponseDto[]> {
-    const results = await this.aiModelSelectionsService.listSelections();
+  async listAiModelSelections(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<AiModelSelectionResponseDto[]> {
+    const results = await this.aiModelSelectionsService.listSelections(workspaceId);
     return results.map((result) => this.mapToResponse(result));
   }
 
   @Put(':job')
-  @RequireScopes(AiProvidersScopes.CONFIGURE.id)
+  @RequireScopes(AiProvidersScopes.CONFIGURE.id, UserScopes.ADMIN.id)
   @ApiOperation({ summary: 'Select the provider and model a job uses' })
   @ApiOkResponse({ type: AiModelSelectionResponseDto, description: 'Selection saved' })
   @ApiNotFoundResponse({ description: 'AI provider not found' })
   async setAiModelSelection(
     @Param() params: AiModelSelectionParamsDto,
     @Body() dto: SetAiModelSelectionDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AiModelSelectionResponseDto> {
-    const result = await this.aiModelSelectionsService.setSelection({
+    const result = await this.aiModelSelectionsService.setSelection(workspaceId, {
       job: params.job,
       aiProviderId: dto.aiProviderId,
       modelId: dto.modelId,
@@ -57,11 +66,14 @@ export class AiModelSelectionsController {
 
   @Delete(':job')
   @HttpCode(204)
-  @RequireScopes(AiProvidersScopes.CONFIGURE.id)
+  @RequireScopes(AiProvidersScopes.CONFIGURE.id, UserScopes.ADMIN.id)
   @ApiOperation({ summary: "Clear a job's selection" })
   @ApiNoContentResponse({ description: 'Selection cleared' })
-  async clearAiModelSelection(@Param() params: AiModelSelectionParamsDto): Promise<void> {
-    await this.aiModelSelectionsService.clearSelection(params.job);
+  async clearAiModelSelection(
+    @Param() params: AiModelSelectionParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<void> {
+    await this.aiModelSelectionsService.clearSelection(workspaceId, params.job);
   }
 
   private mapToResponse(result: AiModelSelectionResult): AiModelSelectionResponseDto {
