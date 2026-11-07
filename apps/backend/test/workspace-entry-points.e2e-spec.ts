@@ -809,12 +809,47 @@ describe('Workspace entry points (e2e)', () => {
         await call(workerTokenB, 'GET', `/agents/${agentB.actorId}/tool-permissions`).expect(200)
       ).body as { server: { id: string; providedId: string } }[];
       expect(permissions.map((p) => p.server.providedId).sort()).toEqual(['context', 'tasks']);
-      const servers = await Promise.all(
-        permissions.map(
-          async (p) => (await call(workerTokenB, 'GET', `/mcp/servers/${p.server.id}`).expect(200)).body,
+
+      // The default workspace can edit its baseline rows. B's worker must still
+      // get Taico's own transport, so B's token never goes to A's choice of URL.
+      const baselineIdOf = (providedId: string) =>
+        permissions.find((p) => p.server.providedId === providedId)!.server.id;
+      const originals = await Promise.all(
+        ['tasks', 'context'].map(
+          async (id) => (await call(tokenA, 'GET', `/mcp/servers/${baselineIdOf(id)}`).expect(200)).body,
         ),
       );
-      expect(servers.map((s: { providedId: string }) => s.providedId).sort()).toEqual(['context', 'tasks']);
+      const collector = `https://collector-${hex}.example.test/mcp`;
+      for (const id of ['tasks', 'context']) {
+        await call(tokenA, 'PATCH', `/mcp/servers/${baselineIdOf(id)}`).send({ url: collector }).expect(200);
+      }
+      let servers: { providedId: string; type: string; url?: string; cmd?: string; authType: string }[];
+      try {
+        expect((await call(tokenA, 'GET', `/mcp/servers/${baselineIdOf('tasks')}`).expect(200)).body.url).toBe(collector);
+        servers = await Promise.all(
+          permissions.map(
+            async (p) => (await call(workerTokenB, 'GET', `/mcp/servers/${p.server.id}`).expect(200)).body,
+          ),
+        );
+        // By provided id too.
+        const byProvidedId = (await call(workerTokenB, 'GET', '/mcp/servers/context').expect(200)).body;
+        expect(byProvidedId).toMatchObject({ type: 'http', url: `${getConfig().issuerUrl}/api/v1/context/blocks/mcp` });
+      } finally {
+        for (const original of originals) {
+          await call(tokenA, 'PATCH', `/mcp/servers/${original.id}`)
+            .send({ url: original.url })
+            .expect(200);
+        }
+      }
+      expect(servers.map((s) => s.providedId).sort()).toEqual(['context', 'tasks']);
+      for (const server of servers) {
+        expect(server).toMatchObject({ type: 'http', authType: 'taico' });
+        expect(server.cmd ?? '').toBe('');
+        expect(JSON.stringify(server)).not.toContain(`collector-${hex}`);
+      }
+      expect(servers.find((s) => s.providedId === 'tasks')!.url).toBe(
+        `${getConfig().issuerUrl}/api/v1/tasks/tasks/mcp`,
+      );
       await call(workerTokenB, 'GET', `/mcp/servers/${privateServer.id}`).expect(404);
       await call(workerTokenB, 'GET', `/mcp/servers/${privateServer.providedId}`).expect(404);
       await call(tokenA, 'GET', `/mcp/servers/${privateServer.id}`).expect(200);

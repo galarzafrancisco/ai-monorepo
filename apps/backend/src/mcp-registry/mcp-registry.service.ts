@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
-import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS } from '@taico/shared';
+import { baselineServerUrl, isBaselineProvidedId } from './baseline-servers';
 import { holdsUnscopedModuleData } from '../workspaces/unscoped-modules';
 import {
   McpServerEntity,
@@ -130,6 +130,12 @@ export class McpRegistryService {
    * are default-workspace data until phase 3e, so other workspaces see only
    * Taico's own baseline servers (`tasks`, `context`): every agent gets them,
    * and a worker needs their config to run an agent of any workspace.
+   *
+   * Outside the default workspace the transport comes from Taico's built-in
+   * definition, not from the row. The default workspace can edit the row (URL,
+   * type, command), and the worker sends the agent's token to that transport.
+   * A row edited to point elsewhere must not receive another workspace's
+   * token, or make that workspace's worker run a command.
    */
   async getServerForWorkspace(
     workspaceId: string,
@@ -139,15 +145,26 @@ export class McpRegistryService {
     const server = isUuid
       ? await this.getServerById(idOrProvidedId)
       : await this.getServerByProvidedId(idOrProvidedId);
-    if (
-      !holdsUnscopedModuleData(workspaceId) &&
-      !(BASELINE_SYSTEM_TOOL_PROVIDED_IDS as readonly string[]).includes(
-        server.providedId,
-      )
-    ) {
+    if (holdsUnscopedModuleData(workspaceId)) {
+      return server;
+    }
+    if (!isBaselineProvidedId(server.providedId)) {
       throw new ServerNotFoundError(idOrProvidedId);
     }
-    return server;
+    return {
+      id: server.id,
+      providedId: server.providedId,
+      name: server.name,
+      description: server.description,
+      authType: MCP_SERVER_AUTH_TYPE_TAICO,
+      requiresTaicoAuth: mcpServerRequiresTaicoAuth(server.providedId),
+      type: MCP_SERVER_TYPE_HTTP,
+      url: baselineServerUrl(server.providedId),
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+      scopes: server.scopes,
+      connections: [],
+    };
   }
 
   async getServerById(id: string): Promise<ServerWithRelationsRecord> {
