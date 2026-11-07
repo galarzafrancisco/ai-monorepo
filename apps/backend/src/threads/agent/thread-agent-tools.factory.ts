@@ -62,11 +62,13 @@ export class ThreadAgentToolsFactory {
 
   build(input: {
     threadId: string;
+    /** The thread's workspace: tools reach nothing outside it. */
+    workspaceId: string;
     agentActorId: string;
     /** Who the turn is answering. */
     forActorId: string;
   }): ToolSet {
-    const { threadId, agentActorId, forActorId } = input;
+    const { threadId, workspaceId, agentActorId, forActorId } = input;
 
     const cancelTimer = async (id: string, noun: 'schedule' | 'reminder') => {
       const cancelled = await this.timers.cancel({ threadId, timerId: id, actorId: agentActorId });
@@ -327,6 +329,7 @@ export class ThreadAgentToolsFactory {
           const watchHours = Math.min(Math.max(1, hours ?? DEFAULT_WATCH_HOURS), MAX_WATCH_HOURS);
           const outcome = await this.pullRequestWatches.watch({
             threadId,
+            workspaceId,
             forActorId,
             ref,
             conditions,
@@ -369,7 +372,7 @@ export class ThreadAgentToolsFactory {
           if (!ref) {
             return { error: `"${pullRequest}" is not a pull request link on GitHub (or a GitHub Enterprise Taico is connected to), or owner/repo#number.` };
           }
-          const [found] = await this.pullRequests.lookup([ref]);
+          const [found] = await this.pullRequests.lookup(workspaceId, [ref]);
           return {
             pullRequest: pullRequestLabel(found),
             url: pullRequestUrl(found),

@@ -76,6 +76,7 @@ export class AgentExecutionTokensController {
     const issuedToken = await this.issuedAccessTokenService.issueSystemToken({
       subjectActor,
       issuedByActor,
+      workspaceId: auth.workspaceId,
       scopes,
       expirationSeconds: dto.expirationSeconds,
     });

@@ -41,6 +41,8 @@ export class ThreadTitleService {
   }
 
   private async generateTitle(input: {
+    /** The thread's workspace. */
+    workspaceId: string;
     source: 'parent_task' | 'first_message';
     content: string;
     trigger: TitleTrigger;
@@ -60,6 +62,7 @@ Content:
 ${input.content}`;
 
     const generated = await this.chatService.generateText(
+      input.workspaceId,
       prompt,
       ThreadTitleService.runFor(input.trigger, input.description),
     );
@@ -88,6 +91,7 @@ ${input.content}`;
     createdBy: TitleTrigger,
   ): Promise<string | null> {
     return await this.generateTitle({
+      workspaceId: task.workspaceId,
       source: 'parent_task',
       content: `Task name: ${task.name}\nTask description: ${task.description}`,
       trigger: createdBy,
@@ -97,10 +101,12 @@ ${input.content}`;
 
   /** Title from a thread's first message. */
   async generateFromMessage(
+    workspaceId: string,
     message: string,
     author: TitleTrigger,
   ): Promise<string | null> {
     return await this.generateTitle({
+      workspaceId,
       source: 'first_message',
       content: message.slice(0, 4_000),
       trigger: author,

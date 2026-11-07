@@ -48,12 +48,16 @@ export class ChatService {
    * plan cannot use that person's plan; it never falls back to another
    * provider or job.
    */
-  public async generateText(prompt: string, runFor: SmallTaskRunFor): Promise<string | null> {
+  public async generateText(
+    workspaceId: string,
+    prompt: string,
+    runFor: SmallTaskRunFor,
+  ): Promise<string | null> {
     try {
       const resolved = await this.chatModelFactory.resolve(
         runFor.job === AiModelJob.USER_SMALL_TASKS
-          ? { job: runFor.job, onBehalfOf: runFor.onBehalfOf }
-          : { job: runFor.job },
+          ? { workspaceId, job: runFor.job, onBehalfOf: runFor.onBehalfOf }
+          : { workspaceId, job: runFor.job },
       );
       const request = {
         model: resolved.model,
@@ -93,6 +97,8 @@ export class ChatService {
     instructions: string;
     prompt: string;
     actor: ActorEntity | null;
+    /** The workspace the run works in; its MCP token reaches only this workspace. */
+    workspaceId: string;
     /**
      * Whose plan pays when the middle manager runs on a person's own plan.
      * Without it such a provider refuses the run.
@@ -101,6 +107,7 @@ export class ChatService {
   }): Promise<void> {
     const self = await this.getSelf();
     const resolved = await this.chatModelFactory.resolve({
+      workspaceId: args.workspaceId,
       job: AiModelJob.MIDDLE_MANAGER,
       onBehalfOf: args.onBehalfOf,
     });
@@ -120,7 +127,11 @@ export class ChatService {
         }
       : selfActor;
 
-    const mcp = await this.mcpToolsFactory.open({ subject: selfActor, issuedBy });
+    const mcp = await this.mcpToolsFactory.open({
+      workspaceId: args.workspaceId,
+      subject: selfActor,
+      issuedBy,
+    });
     const request = {
       model: resolved.model,
       instructions: args.instructions,

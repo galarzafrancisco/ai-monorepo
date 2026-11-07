@@ -224,9 +224,15 @@ export class ThreadAgentService {
 
     const thread = await this.threadRepository.findOne({
       where: { id: threadId },
+      relations: ['stateContextBlock'],
     });
+    // The thread's workspace (its state block's) bounds everything the turn
+    // can reach: its MCP token and its thread tools.
+    const workspaceId = thread?.stateContextBlock?.workspaceId;
+    if (!thread || !workspaceId) {
+      return null;
+    }
     if (
-      thread &&
       (notifications.notifiedTaskIds.length > 0 ||
         firings.firedTimerIds.length > 0)
     ) {
@@ -238,9 +244,10 @@ export class ThreadAgentService {
       );
     }
     const resolved = await this.chatModelFactory.resolve({
+      workspaceId,
       job: AiModelJob.CONVERSATION,
-      aiProviderId: thread?.aiProviderId,
-      modelId: thread?.modelId,
+      aiProviderId: thread.aiProviderId,
+      modelId: thread.modelId,
       // Whose plan a personal-plan provider may use: the author of the newest
       // message, or for a task update or timer, whoever the agent did it for.
       onBehalfOf: { actorId: triggerActor.id, automated: !author },
@@ -271,6 +278,7 @@ export class ThreadAgentService {
     );
 
     const mcp = await this.mcpToolsFactory.open({
+      workspaceId,
       subject: {
         id: self.actorId,
         slug: self.slug,
@@ -291,6 +299,7 @@ export class ThreadAgentService {
           ...mcp.tools,
           ...this.threadToolsFactory.build({
             threadId,
+            workspaceId,
             agentActorId: self.actorId,
             forActorId: triggerActor.id,
           }),

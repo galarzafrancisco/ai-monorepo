@@ -1,21 +1,15 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ErrorCodes } from '@taico/errors';
-import { DEFAULT_WORKSPACE_ID } from '../../../workspaces/workspaces.constants';
+import { holdsUnscopedModuleData } from '../../../workspaces/unscoped-modules';
+import { NotInWorkspaceError } from '../../../workspaces/workspace.errors';
 import type { AuthContext } from '../context/auth-context.types';
 import {
   WORKSPACE_ACCESS_KEY,
   WorkspaceAccessMode,
 } from '../decorators/workspace-access.decorator';
 
-/** The entry point is in a workspace the token is not for. Answers 404, like any row of another workspace. */
-export class NotInWorkspaceError extends Error {
-  readonly code = ErrorCodes.NOT_IN_WORKSPACE;
-  constructor() {
-    super('Not found');
-    this.name = NotInWorkspaceError.name;
-  }
-}
+export { NotInWorkspaceError };
 
 /** A programming error: an authenticated entry point with no `@WorkspaceAccess()`. */
 export class WorkspaceAccessUndeclaredError extends Error {
@@ -50,7 +44,7 @@ export function enforceWorkspaceAccess(
   if (!mode) {
     throw new WorkspaceAccessUndeclaredError(entryPoint);
   }
-  if (mode === 'default-only' && auth.workspaceId !== DEFAULT_WORKSPACE_ID) {
+  if (mode === 'default-only' && !holdsUnscopedModuleData(auth.workspaceId)) {
     throw new NotInWorkspaceError();
   }
 }

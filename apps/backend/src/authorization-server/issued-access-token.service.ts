@@ -8,6 +8,7 @@ import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { getConfig } from '../config/env.config';
 import { WorkspacesService } from '../workspaces/workspaces.service';
+import { TokenActorNotInWorkspaceError } from './errors/token.errors';
 
 /**
  * Input for issuing a new access token
@@ -19,6 +20,12 @@ export interface IssueTokenInput {
   issuedByActor: ActorInfo;
   /** Human-readable name for this token */
   name: string;
+  /**
+   * The workspace the token works in (its `workspace_id` claim). Always the
+   * workspace of the data the token is for, never derived from the subject:
+   * an actor may be in several workspaces. Both actors must be members.
+   */
+  workspaceId: string;
   /** Scopes to grant */
   scopes: string[];
   /** Days until expiration (default: 30) */
@@ -45,6 +52,12 @@ export interface IssueTokenFromPersistedActorsInput {
   issuedByActor: ActorEntity;
   /** Human-readable name for this token */
   name: string;
+  /**
+   * The workspace the token works in (its `workspace_id` claim). Always the
+   * workspace of the data the token is for, never derived from the subject:
+   * an actor may be in several workspaces. Both actors must be members.
+   */
+  workspaceId: string;
   /** Scopes to grant */
   scopes: string[];
   /** Days until expiration (default: 30) */
@@ -81,6 +94,12 @@ export interface IssueSystemTokenInput {
   subjectActor: ActorInfo;
   /** The actor issuing this token */
   issuedByActor: ActorInfo;
+  /**
+   * The workspace the token works in (its `workspace_id` claim). Always the
+   * workspace of the data the token is for, never derived from the subject:
+   * an actor may be in several workspaces. Both actors must be members.
+   */
+  workspaceId: string;
   /** Scopes to grant */
   scopes: string[];
   /** Token lifetime in seconds (defaults to MCP access token duration) */
@@ -117,6 +136,7 @@ export class IssuedAccessTokenService {
     const issuedToken = await this.signIssuedToken({
       subjectActor: input.subjectActor,
       issuedByActor: input.issuedByActor,
+      workspaceId: input.workspaceId,
       scopes: input.scopes,
       expirationSeconds: expirationDays * 24 * 60 * 60,
     });
@@ -155,6 +175,7 @@ export class IssuedAccessTokenService {
     const issuedToken = await this.signIssuedToken({
       subjectActor: input.subjectActor,
       issuedByActor: input.issuedByActor,
+      workspaceId: input.workspaceId,
       scopes: input.scopes,
       expirationSeconds: input.expirationSeconds,
     });
@@ -178,6 +199,7 @@ export class IssuedAccessTokenService {
       subjectActor: this.toActorInfo(input.subjectActor),
       issuedByActor: this.toActorInfo(input.issuedByActor),
       name: input.name,
+      workspaceId: input.workspaceId,
       scopes: input.scopes,
       expirationDays: input.expirationDays,
     });
@@ -195,6 +217,7 @@ export class IssuedAccessTokenService {
   private async signIssuedToken(input: {
     subjectActor: ActorInfo;
     issuedByActor: ActorInfo;
+    workspaceId: string;
     scopes: string[];
     expirationSeconds?: number;
   }): Promise<IssueSystemTokenResult> {
@@ -208,14 +231,19 @@ export class IssuedAccessTokenService {
     const expSeconds = nowSeconds + safeLifetimeSeconds;
     const expiresAt = new Date(expSeconds * 1000);
 
-    const workspaceId = await this.workspacesService.findWorkspaceIdForActor(
-      input.subjectActor.id,
-    );
+    // Every token Taico mints for itself is bound to one workspace, and only
+    // members act in it: an agent of workspace A never holds a token for B,
+    // and nobody outside a workspace can hand one out.
+    for (const actor of [input.subjectActor, input.issuedByActor]) {
+      if (!(await this.workspacesService.isMember(input.workspaceId, actor.id))) {
+        throw new TokenActorNotInWorkspaceError(actor.id, input.workspaceId);
+      }
+    }
 
     const claims: AccessTokenClaims = {
       iss: config.issuerUrl,
       sub: input.subjectActor.id,
-      ...(workspaceId ? { workspace_id: workspaceId } : {}),
+      workspace_id: input.workspaceId,
       actor_id: input.subjectActor.id,
       actor_slug: input.subjectActor.slug,
       actor_type: input.subjectActor.type,

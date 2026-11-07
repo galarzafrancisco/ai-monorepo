@@ -28,6 +28,8 @@ export class PullRequestWatchService {
 
   async watch(input: {
     threadId: string;
+    /** The thread's workspace. */
+    workspaceId: string;
     forActorId: string;
     ref: PullRequestRef;
     conditions: string[];
@@ -36,7 +38,7 @@ export class PullRequestWatchService {
     hours: number;
   }): Promise<WatchPullRequestOutcome> {
     // Read now, so the agent answers from the current state and the watch starts from it.
-    const [pullRequest] = await this.pullRequests.lookup([input.ref]);
+    const [pullRequest] = await this.pullRequests.lookup(input.workspaceId, [input.ref]);
     if (pullRequest.state === PullRequestState.MERGED || pullRequest.state === PullRequestState.CLOSED) {
       return {
         watching: false,

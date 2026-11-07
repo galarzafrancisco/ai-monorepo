@@ -20,7 +20,10 @@ describe('ThreadStateReconcilerService', () => {
   const setup = () => {
     const runTask = jest.fn(async () => undefined);
     const service = new ThreadStateReconcilerService(
-      { getThreadById: jest.fn(async () => thread) } as never,
+      {
+        getThreadById: jest.fn(async () => thread),
+        getThreadWorkspaceId: jest.fn(async () => 'workspace-1'),
+      } as never,
       { runTask } as never,
       { findOne: jest.fn(async () => ({ id: 'agent-actor' })) } as never,
     );
@@ -44,6 +47,7 @@ describe('ThreadStateReconcilerService', () => {
     expect(runTask).toHaveBeenCalledWith(
       expect.objectContaining({
         actor: { id: 'agent-actor' },
+        workspaceId: 'workspace-1',
         onBehalfOf: expect.objectContaining({ actorId: 'creator-1', automated: true }),
       }),
     );

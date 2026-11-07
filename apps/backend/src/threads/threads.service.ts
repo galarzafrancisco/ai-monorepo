@@ -64,6 +64,7 @@ import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task
 import { WorkspacesService } from '../workspaces/workspaces.service';
 
 type GenerateTitleFromFirstMessageInput = {
+  workspaceId: string;
   thread: ThreadEntity;
   actor: ActorEntity;
   messageContent: string;
@@ -413,6 +414,7 @@ export class ThreadsService {
    */
   async listPullRequests(workspaceId: string, threadId: string): Promise<PullRequestEntity[]> {
     return this.pullRequests.listLinkedToTasks(
+      workspaceId,
       await this.threadTaskIdsInWorkspace(workspaceId, threadId),
     );
   }
@@ -423,6 +425,7 @@ export class ThreadsService {
    */
   async listIssues(workspaceId: string, threadId: string): Promise<IssueEntity[]> {
     return this.issues.listLinkedToTasks(
+      workspaceId,
       await this.threadTaskIdsInWorkspace(workspaceId, threadId),
     );
   }
@@ -1106,7 +1109,7 @@ export class ThreadsService {
     }
 
     // A person's message is named on user small tasks, an agent's on system small tasks.
-    const generatedTitle = await this.threadTitleService.generateFromMessage(content, {
+    const generatedTitle = await this.threadTitleService.generateFromMessage(input.workspaceId, content, {
       id: input.actor.id,
       type: input.actor.type,
     });
@@ -1388,6 +1391,7 @@ export class ThreadsService {
     this.threadAgentService.requestTurn(thread.id);
 
     await this.maybeGenerateTitleFromFirstMessage({
+      workspaceId,
       thread,
       actor,
       messageContent: input.content,

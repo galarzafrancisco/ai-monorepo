@@ -162,3 +162,18 @@ export class InvalidClientAssertionError extends TokenDomainError {
     );
   }
 }
+
+/**
+ * Taico was asked to mint a token in a workspace the subject or the issuer is
+ * not a member of. Not a TokenDomainError: it is not an OAuth grant failure.
+ */
+export class TokenActorNotInWorkspaceError extends Error {
+  readonly code = ErrorCodes.TOKEN_ACTOR_NOT_IN_WORKSPACE;
+  constructor(
+    readonly actorId: string,
+    readonly workspaceId: string,
+  ) {
+    super(`Actor ${actorId} is not a member of workspace ${workspaceId}`);
+    this.name = TokenActorNotInWorkspaceError.name;
+  }
+}

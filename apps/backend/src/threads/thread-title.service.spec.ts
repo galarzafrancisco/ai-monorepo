@@ -18,10 +18,10 @@ describe('ThreadTitleService', () => {
     const { service, generateText } = setup();
 
     await expect(
-      service.generateFromMessage('Plan the release', human('author-1')),
+      service.generateFromMessage('workspace-1', 'Plan the release', human('author-1')),
     ).resolves.toBe('Release plan');
 
-    expect(generateText).toHaveBeenCalledWith(expect.stringContaining('Plan the release'), {
+    expect(generateText).toHaveBeenCalledWith('workspace-1', expect.stringContaining('Plan the release'), {
       job: AiModelJob.USER_SMALL_TASKS,
       onBehalfOf: {
         actorId: 'author-1',
@@ -35,11 +35,11 @@ describe('ThreadTitleService', () => {
     const { service, generateText } = setup();
 
     await service.generateFromParentTask(
-      { name: 'Ship it', description: 'Release 1.0' } as never,
+      { name: 'Ship it', description: 'Release 1.0', workspaceId: 'workspace-1' } as never,
       human('creator-1'),
     );
 
-    expect(generateText).toHaveBeenCalledWith(expect.stringContaining('Ship it'), {
+    expect(generateText).toHaveBeenCalledWith('workspace-1', expect.stringContaining('Ship it'), {
       job: AiModelJob.USER_SMALL_TASKS,
       onBehalfOf: {
         actorId: 'creator-1',
@@ -54,12 +54,12 @@ describe('ThreadTitleService', () => {
 
     await expect(
       service.generateFromParentTask(
-        { name: 'Ship it', description: 'Release 1.0' } as never,
+        { name: 'Ship it', description: 'Release 1.0', workspaceId: 'workspace-1' } as never,
         agent('agent-1'),
       ),
     ).resolves.toBe('Release plan');
 
-    expect(generateText).toHaveBeenCalledWith(expect.stringContaining('Ship it'), {
+    expect(generateText).toHaveBeenCalledWith('workspace-1', expect.stringContaining('Ship it'), {
       job: AiModelJob.SYSTEM_SMALL_TASKS,
     });
   });
@@ -67,9 +67,9 @@ describe('ThreadTitleService', () => {
   it('names a thread from an agent’s first message on system small tasks', async () => {
     const { service, generateText } = setup();
 
-    await service.generateFromMessage('Status update', agent('agent-1'));
+    await service.generateFromMessage('workspace-1', 'Status update', agent('agent-1'));
 
-    expect(generateText).toHaveBeenCalledWith(expect.stringContaining('Status update'), {
+    expect(generateText).toHaveBeenCalledWith('workspace-1', expect.stringContaining('Status update'), {
       job: AiModelJob.SYSTEM_SMALL_TASKS,
     });
   });
@@ -77,6 +77,6 @@ describe('ThreadTitleService', () => {
   it('leaves the title alone when the model gives nothing', async () => {
     const { service } = setup(null);
 
-    await expect(service.generateFromMessage('Hi', human('author-1'))).resolves.toBeNull();
+    await expect(service.generateFromMessage('workspace-1', 'Hi', human('author-1'))).resolves.toBeNull();
   });
 });

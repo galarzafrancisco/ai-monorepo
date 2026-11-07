@@ -413,6 +413,12 @@ export const ErrorCatalog: Record<
     type: '/errors/workspaces/access-undeclared',
     retryable: false,
   },
+  [ErrorCodes.TOKEN_ACTOR_NOT_IN_WORKSPACE]: {
+    status: 403,
+    title: 'Actor is not a member of the workspace',
+    type: '/errors/workspaces/token-actor-not-member',
+    retryable: false,
+  },
   [ErrorCodes.VALIDATION_FAILED]: {
     status: 400,
     title: 'Validation failed',

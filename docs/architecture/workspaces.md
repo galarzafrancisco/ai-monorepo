@@ -143,6 +143,25 @@ When a phase migrates a module, its routes move from `default-only` to `scoped`.
 
 `test/workspace-isolation.e2e-spec.ts` keeps the behaviour tests (what B sees, what B can link, uniqueness per workspace).
 
+### Paths that cross modules: the third rule
+
+Guarding the door of a module does not protect calls into it from another module. A `scoped` thread route can still reach GitHub data, AI providers or the MCP endpoints through the threads service. So a third rule holds:
+
+3. **A workspace travels with every call into another module, and the receiving module enforces it.** No module works out a workspace by itself from an actor or a URL.
+
+Three shared pieces apply this:
+
+- **Tokens Taico mints for itself name their workspace.** `IssuedAccessTokenService` takes a required `workspaceId`. It refuses (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403) unless both the subject and the issuer are members. The token's `workspace_id` claim is always that workspace, never the subject's oldest membership. The threads agent and the middle manager pass the thread's workspace (`TaicoMcpToolsFactory.open({ workspaceId })`). Agent tokens and execution tokens pass the caller's.
+- **Modules without `workspace_id` hold only default-workspace data.** `workspaces/unscoped-modules.ts` has one predicate, `holdsUnscopedModuleData(workspaceId)`, and its assertion, which answers `NOT_IN_WORKSPACE`. `default-only` uses it at the door. Services that other modules call use it inside:
+  - Pull requests and issues: `lookup`, `listLinkedToTasks` and `replaceReferences` take the workspace. A link written in a task or thread outside the default workspace is not recorded. So it is never read from GitHub with the default workspace's connections, and it never shows up next to the thread. The thread agent's pull request tools pass the thread's workspace.
+  - AI models: `ChatModelFactory.resolve({ workspaceId })`. Threads agent turns, titles and the middle manager outside the default workspace find no model until phase 3d.
+  - Global search: every result type has an explicit rule in a total `Record<SearchResultType, …>`. Agents and tools are default-workspace rows, so a new type does not compile until it says who sees it. A hit is kept only when its rule finds it visible.
+- **The tests probe composed paths, not just entry points:** an own B parent plus a foreign link or resource, outgoing tokens, and search queries that match seeded protected content. Each is checked in both directions:
+  - `thread-agent-mcp.e2e-spec.ts`: the agent's token for B fetches and updates B's task but not A's, and A's token cannot reach B's. No token is issued in a workspace the agent is not a member of. No turn in another workspace mints a token outside it.
+  - `workspace-isolation.e2e-spec.ts`: a B task links A's cached pull request and issue, and B's thread shows neither, with no reference recorded, while the same links in A do show. The thread agent's pull request tools refuse from B. A search matching A's agent's canary finds it in A and returns nothing about it to B.
+
+When a phase migrates one of these modules, replace its `holdsUnscopedModuleData` checks with a `workspace_id` filter. The `workspaceId` parameters are already in place.
+
 **Not entry points.** Internal listeners and background work start from a row, not a request, and use that row's workspace. These are:
 - the thread reconciler and assignment projector
 - the execution context resolver and task activity projection

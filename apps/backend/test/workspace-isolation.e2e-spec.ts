@@ -29,6 +29,13 @@ import { AgentRunsScopes } from '../src/agent-runs/agent-runs.scopes';
 import { PullRequestsScopes } from '../src/pull-requests/pull-requests.scopes';
 import { IssuesScopes } from '../src/issues/issues.scopes';
 import { ThreadTaskSubscriptionsService } from '../src/threads/task-subscriptions/thread-task-subscriptions.service';
+import { ThreadAgentToolsFactory } from '../src/threads/agent/thread-agent-tools.factory';
+import { GET_PULL_REQUEST_TOOL } from '../src/threads/agent/thread-agent.prompts';
+import { WATCH_PULL_REQUEST_TOOL } from '../src/threads/watches/pull-request-watch.format';
+import { PullRequestEntity } from '../src/pull-requests/pull-request.entity';
+import { IssueEntity } from '../src/issues/issue.entity';
+import { AgentsService } from '../src/agents/agents.service';
+import { DataSource } from 'typeorm';
 import {
   ensureAgentActor,
   ensureTestUser,
@@ -699,6 +706,29 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
       expect(hitsB.map((hit: any) => hit.id)).not.toContain(threadA.id);
     });
 
+    it('leaves agents out of global search for another workspace, even when the query matches', async () => {
+      const canary = `agentcanary${suffix}`;
+      const agent = await app.get(AgentsService).createAgent({
+        slug: `iso-search-agent-${suffix}`,
+        name: `Agent ${canary}`,
+        description: `Searchable ${canary}`,
+        systemPrompt: `Prompt ${canary}`,
+        statusTriggers: [],
+        allowedTools: [],
+      });
+      const query = encodeURIComponent(canary);
+      let foundByA = false;
+      for (let attempt = 0; attempt < 20 && !foundByA; attempt++) {
+        const hits = (await as(tokenA).get(`/search/query?query=${query}`).expect(200)).body;
+        foundByA = hits.some((hit: any) => hit.type === 'agent' && hit.title?.includes(canary));
+        if (!foundByA) await settle();
+      }
+      expect(foundByA).toBe(true);
+      const hitsB = (await as(tokenB).get(`/search/query?query=${query}`).expect(200)).body;
+      expect(JSON.stringify(hitsB)).not.toContain(canary);
+      expect(hitsB.filter((hit: any) => hit.type === 'agent' || hit.type === 'tool')).toEqual([]);
+    });
+
     it('leaves executions of another workspace out of the execution lists', async () => {
       for (const path of [
         '/executions/queue',
@@ -729,6 +759,110 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
       const listB = (await as(tokenB).get('/agent-runs?limit=100').expect(200)).body;
       expect(listB.items.map((run: any) => run.id)).not.toContain(runA.id);
       await as(tokenA).get(`/agent-runs/${runA.id}`).expect(200);
+    });
+  });
+
+  describe('GitHub data reached through a thread', () => {
+    // A private pull request and issue already in the cache, as workspace A
+    // would have them. Their titles are the canary.
+    const owner = `acme-${suffix}`;
+    const canary = `Private A title ${suffix}`;
+    const prUrl = `https://github.com/${owner}/private/pull/7`;
+    const issueUrl = `https://github.com/${owner}/private/issues/8`;
+
+    beforeAll(async () => {
+      const now = new Date();
+      await app.get<Repository<PullRequestEntity>>(getRepositoryToken(PullRequestEntity)).insert({
+        key: `${owner}/private#7`,
+        owner,
+        repo: 'private',
+        number: 7,
+        title: canary,
+        lastFetchedAt: now,
+      });
+      await app.get<Repository<IssueEntity>>(getRepositoryToken(IssueEntity)).insert({
+        key: `${owner}/private#8`,
+        owner,
+        repo: 'private',
+        number: 8,
+        title: canary,
+        lastFetchedAt: now,
+      });
+    });
+
+    /** A task in the workspace linking both, and a thread around it. */
+    async function threadLinking(token: string): Promise<{ threadId: string; taskId: string }> {
+      const task = (
+        await as(token)
+          .post('/tasks/tasks')
+          .send({ name: `Links ${suffix}`, description: 'd' })
+          .expect(201)
+      ).body;
+      for (const link of [prUrl, issueUrl]) {
+        await as(token)
+          .post(`/tasks/tasks/${task.id}/artefacts`)
+          .send({ name: 'link', link })
+          .expect(201);
+      }
+      const thread = (
+        await as(token).post('/threads').send({ title: 'links', taskIds: [task.id] }).expect(201)
+      ).body;
+      return { threadId: thread.id, taskId: task.id };
+    }
+
+    async function linked(token: string, threadId: string) {
+      const prs = (await as(token).get(`/threads/${threadId}/pull-requests`).expect(200)).body;
+      const issues = (await as(token).get(`/threads/${threadId}/issues`).expect(200)).body;
+      return JSON.stringify({ prs, issues });
+    }
+
+    it("shows the cached rows to the default workspace (control)", async () => {
+      const { threadId } = await threadLinking(tokenA);
+      // Links are recorded in the background.
+      let body = '';
+      for (let attempt = 0; attempt < 20 && body.split(canary).length < 3; attempt++) {
+        await settle();
+        body = await linked(tokenA, threadId);
+      }
+      expect(body.split(canary).length).toBe(3);
+    });
+
+    it("does not show them through a thread of another workspace linking the same URLs", async () => {
+      const { threadId, taskId } = await threadLinking(tokenB);
+      await settle();
+      expect(await linked(tokenB, threadId)).not.toContain(canary);
+      // The links are not recorded at all, so B never has them read from
+      // GitHub with the default workspace's connections.
+      const rows = await app
+        .get(DataSource)
+        .query(
+          `SELECT 1 FROM pull_request_references WHERE task_id = $1
+           UNION ALL SELECT 1 FROM issue_references WHERE task_id = $1`,
+          [taskId],
+        );
+      expect(rows).toHaveLength(0);
+    });
+
+    it("does not let a thread's agent read or watch them from another workspace", async () => {
+      const threadB = (
+        await as(tokenB).post('/threads').send({ title: 'B agent' }).expect(201)
+      ).body;
+      const tools = app.get(ThreadAgentToolsFactory).build({
+        threadId: threadB.id,
+        workspaceId: WORKSPACE_B_ID,
+        agentActorId: actorId,
+        forActorId: actorId,
+      });
+      const options = { toolCallId: 'call', messages: [] } as never;
+      await expect(
+        tools[GET_PULL_REQUEST_TOOL].execute!({ pullRequest: prUrl }, options),
+      ).rejects.toMatchObject({ code: 'NOT_IN_WORKSPACE' });
+      await expect(
+        tools[WATCH_PULL_REQUEST_TOOL].execute!(
+          { pullRequest: prUrl, for: ['merged'], waitingFor: 'x' },
+          options,
+        ),
+      ).rejects.toMatchObject({ code: 'NOT_IN_WORKSPACE' });
     });
   });
 

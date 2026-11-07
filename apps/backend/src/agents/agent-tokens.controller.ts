@@ -33,6 +33,7 @@ import { IssueAccessTokenRequestDto } from '../authorization-server/dto/issue-ac
 import { IssueAccessTokenResponseDto } from '../authorization-server/dto/issue-access-token-response.dto';
 import { IssuedAccessTokenResponseDto } from '../authorization-server/dto/issued-access-token-response.dto';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 /**
  * Controller for managing agent access tokens.
@@ -63,6 +64,7 @@ export class AgentTokensController {
     @Param('slug') slug: string,
     @Body() dto: IssueAccessTokenRequestDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<IssueAccessTokenResponseDto> {
     // TODO: This is a controller. There's a bunch of logic here that belongs in a service.
     // TODO: Fine for now, but we need tighter controls of who can issue what tokens
@@ -92,6 +94,7 @@ export class AgentTokensController {
       subjectActor,
       issuedByActor,
       name: dto.name,
+      workspaceId,
       scopes: dto.scopes,
       expirationDays: dto.expirationDays,
     });
