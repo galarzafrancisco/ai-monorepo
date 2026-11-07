@@ -3,7 +3,7 @@ import { UNSCOPED_MODULE_WORKSPACE_ID } from './workspaces.constants';
 import { NotInWorkspaceError } from './workspace.errors';
 
 /**
- * Modules without `workspace_id` yet (agents, MCP registry, GitHub data...)
+ * Modules without `workspace_id` yet (MCP registry, AI providers, GitHub data...)
  * hold rows of the default workspace only. This is the one rule for every
  * path into them, direct or through another module: only the default
  * workspace reaches them. `@WorkspaceAccess('default-only')` applies it at

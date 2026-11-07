@@ -131,6 +131,7 @@ describe('Worker GitHub credentials E2E', () => {
       await ds.query(`INSERT INTO task_tags (task_id, tag_id) VALUES ($1, $2)`, [task.id, project.tagId]);
     }
     const execution = await ds.getRepository(ActiveTaskExecutionEntity).save({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       taskId: task.id,
       agentActorId,
       workerClientId: 'gh-owner',

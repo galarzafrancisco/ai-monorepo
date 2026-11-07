@@ -148,6 +148,7 @@ describe('Raw execution traces E2E', () => {
       .expect(201);
     taskId = task.body.id;
     const execution = await db.getRepository(ActiveTaskExecutionEntity).save({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       taskId,
       agentActorId,
       workerClientId: 'trace-owner',
@@ -305,6 +306,7 @@ describe('Raw execution traces E2E', () => {
       );
       await manager.delete(ActiveTaskExecutionEntity, { id: executionId });
       await manager.save(TaskExecutionHistoryEntity, {
+        workspaceId: DEFAULT_WORKSPACE_ID,
         id: executionId,
         taskId,
         agentActorId,
