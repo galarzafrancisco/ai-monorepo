@@ -19,6 +19,7 @@ import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WorkersScopes } from 'src/executions/workers.scopes';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { socketWorkspaceId, workspaceRoom } from '../workspaces/workspace-rooms';
 
 const WORKERS_ROOM = 'workers';
 
@@ -35,7 +36,7 @@ const WORKERS_ROOM = 'workers';
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(WorkersScopes.READ.id)
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -64,13 +65,13 @@ export class WorkersGateway
 
   @SubscribeMessage('workers.subscribe')
   subscribe(@ConnectedSocket() client: Socket) {
-    client.join(WORKERS_ROOM);
+    client.join(workspaceRoom(socketWorkspaceId(client), WORKERS_ROOM));
     return { ok: true, room: WORKERS_ROOM };
   }
 
   @SubscribeMessage('workers.unsubscribe')
   unsubscribe(@ConnectedSocket() client: Socket) {
-    client.leave(WORKERS_ROOM);
+    client.leave(workspaceRoom(socketWorkspaceId(client), WORKERS_ROOM));
     return { ok: true };
   }
 
@@ -91,7 +92,9 @@ export class WorkersGateway
       occurredAt: event.occurredAt.toISOString(),
     };
 
-    this.server.to(WORKERS_ROOM).emit(WorkerWireEvents.WORKER_SEEN, wireEvent);
+    this.server
+      .to(workspaceRoom(event.payload.workspaceId, WORKERS_ROOM))
+      .emit(WorkerWireEvents.WORKER_SEEN, wireEvent);
     this.logger.debug(
       `Emitted ${WorkerWireEvents.WORKER_SEEN} for worker ${dto.id}`,
     );

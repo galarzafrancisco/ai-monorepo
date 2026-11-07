@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
+import { baselineServerUrl, isBaselineProvidedId } from './baseline-servers';
+import { holdsUnscopedModuleData } from '../workspaces/unscoped-modules';
 import {
   McpServerEntity,
   McpScopeEntity,
@@ -120,6 +122,48 @@ export class McpRegistryService {
       total,
       page,
       limit,
+    };
+  }
+
+  /**
+   * A server by UUID or provided ID, as seen from a workspace. Registry rows
+   * are default-workspace data until phase 3e, so other workspaces see only
+   * Taico's own baseline servers (`tasks`, `context`): every agent gets them,
+   * and a worker needs their config to run an agent of any workspace.
+   *
+   * Outside the default workspace the transport comes from Taico's built-in
+   * definition, not from the row. The default workspace can edit the row (URL,
+   * type, command), and the worker sends the agent's token to that transport.
+   * A row edited to point elsewhere must not receive another workspace's
+   * token, or make that workspace's worker run a command.
+   */
+  async getServerForWorkspace(
+    workspaceId: string,
+    idOrProvidedId: string,
+    isUuid: boolean,
+  ): Promise<ServerWithRelationsRecord> {
+    const server = isUuid
+      ? await this.getServerById(idOrProvidedId)
+      : await this.getServerByProvidedId(idOrProvidedId);
+    if (holdsUnscopedModuleData(workspaceId)) {
+      return server;
+    }
+    if (!isBaselineProvidedId(server.providedId)) {
+      throw new ServerNotFoundError(idOrProvidedId);
+    }
+    return {
+      id: server.id,
+      providedId: server.providedId,
+      name: server.name,
+      description: server.description,
+      authType: MCP_SERVER_AUTH_TYPE_TAICO,
+      requiresTaicoAuth: mcpServerRequiresTaicoAuth(server.providedId),
+      type: MCP_SERVER_TYPE_HTTP,
+      url: baselineServerUrl(server.providedId),
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+      scopes: server.scopes,
+      connections: [],
     };
   }
 

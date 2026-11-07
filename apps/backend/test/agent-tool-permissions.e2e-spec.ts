@@ -1,4 +1,5 @@
 import { INestApplication, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
@@ -55,7 +56,7 @@ describe('Agent Tool Permissions (e2e)', () => {
 
   const createAgent = async () => {
     const slug = `agent-tool-perms-${Math.random().toString(36).slice(2, 10)}`;
-    return agentsService.createAgent({
+    return agentsService.createAgent(DEFAULT_WORKSPACE_ID, {
       slug,
       name: `Agent ${slug}`,
       systemPrompt: 'You are a test agent for tool permission e2e coverage.',

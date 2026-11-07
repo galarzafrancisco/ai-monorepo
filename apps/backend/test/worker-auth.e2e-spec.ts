@@ -1,4 +1,5 @@
 import { INestApplication, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
@@ -56,9 +57,9 @@ describe('Worker Auth (e2e)', () => {
     await ensureTestUser(app);
     const agentsService = app.get(AgentsService);
     try {
-      await agentsService.getAgentBySlug({ slug: agent.slug });
+      await agentsService.getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: agent.slug });
     } catch {
-      await agentsService.createAgent({
+      await agentsService.createAgent(DEFAULT_WORKSPACE_ID, {
         slug: agent.slug,
         name: agent.displayName,
         systemPrompt: 'You are a test agent for worker auth e2e coverage.',

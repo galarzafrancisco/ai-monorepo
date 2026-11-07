@@ -82,8 +82,8 @@ export class WalkthroughService {
       taskWithProjectCreated,
       modelSelections,
     ] = await Promise.all([
-      this.workersRepository.existsBy({}),
-      this.agentsRepository.existsBy({}),
+      this.workersRepository.existsBy({ workspaceId }),
+      this.agentsRepository.existsBy({ workspaceId }),
       this.tasksRepository.existsBy({ workspaceId, createdByActorId: actorId }),
       this.projectsRepository.existsBy({ workspaceId }),
       this.projectsRepository

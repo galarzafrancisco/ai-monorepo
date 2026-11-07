@@ -26,9 +26,11 @@ import { UpsertAgentToolPermissionDto } from './dto/upsert-agent-tool-permission
 import { AgentToolPermissionResponseDto } from './dto/agent-tool-permission-response.dto';
 import { AgentToolPermissionsService } from './agent-tool-permissions.service';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
+// Grants point at MCP registry servers, which are default-only until phase 3e.
 @WorkspaceAccess('default-only')
 @Controller('agents/:actorId/tool-permissions')
 @UseGuards(AccessTokenGuard, ScopesGuard)
@@ -39,13 +41,18 @@ export class AgentToolPermissionsController {
   ) {}
 
   @Get()
+  // Workers read this to set up any workspace's agent. Outside the default
+  // workspace it lists only Taico's baseline servers (see the service).
+  @WorkspaceAccess('scoped')
   @ApiOperation({ summary: 'List tool permissions for an agent' })
   @ApiOkResponse({ type: [AgentToolPermissionResponseDto] })
   async listAgentToolPermissions(
     @Param() params: AgentActorParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentToolPermissionResponseDto[]> {
     const permissions =
       await this.agentToolPermissionsService.listAgentToolPermissions(
+        workspaceId,
         params.actorId,
       );
     return permissions.map((permission) =>
@@ -61,9 +68,11 @@ export class AgentToolPermissionsController {
     @Param('actorId', ParseUUIDPipe) actorId: string,
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: UpsertAgentToolPermissionDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentToolPermissionResponseDto> {
     const permission =
       await this.agentToolPermissionsService.upsertAgentToolPermission(
+        workspaceId,
         actorId,
         serverId,
         {
@@ -81,8 +90,10 @@ export class AgentToolPermissionsController {
   async deleteAgentToolPermission(
     @Param('actorId', ParseUUIDPipe) actorId: string,
     @Param('serverId', ParseUUIDPipe) serverId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
     await this.agentToolPermissionsService.deleteAgentToolPermission(
+      workspaceId,
       actorId,
       serverId,
     );

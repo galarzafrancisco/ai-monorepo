@@ -28,6 +28,7 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
 
   it('emits an interrupt request after pruning a stale execution', async () => {
     const execution = {
+      workspaceId: 'workspace-1',
       id: 'execution-1',
       taskId: 'task-1',
       claimedAt: new Date('2026-04-30T10:00:00.000Z'),
@@ -83,6 +84,7 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
       expect.objectContaining({
         actor: { id: 'system' },
         payload: {
+          workspaceId: execution.workspaceId,
           executionId: execution.id,
           workerClientId: execution.workerClientId,
         },

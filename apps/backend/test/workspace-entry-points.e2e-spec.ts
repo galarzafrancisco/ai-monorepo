@@ -39,6 +39,8 @@ import { TaskExecutionHistoryEntity } from '../src/executions/history/task-execu
 import { TaskExecutionHistoryStatus } from '../src/executions/history/task-execution-history-status.enum';
 import { TaskStatus } from '../src/tasks/enums';
 import { AgentsService } from '../src/agents/agents.service';
+import { RegisteredClientEntity } from '../src/authorization-server/entities/registered-client.entity';
+import { TokenEndpointAuthMethod } from '../src/authorization-server/enums';
 import { ensureTestUser, TEST_USER_SLUG } from './helpers/auth.helper';
 
 const WORKSPACE_B_ID = '44444444-4444-4444-8444-444444444444';
@@ -90,6 +92,7 @@ describe('Workspace entry points (e2e)', () => {
   let allScopes: string[];
   let actorId: string;
   let otherActorA: string;
+  const agentSlugA = `entry-points-${randomBytes(4).toString('hex')}`;
   let tokenA: string;
   let tokenB: string;
 
@@ -206,6 +209,9 @@ describe('Workspace entry points (e2e)', () => {
       if (segment.endsWith('/executions/history')) return ids.history;
       return ids.task;
     }
+    if (n === 'slug' && path.startsWith('/agents')) return agentSlugA;
+    // Free text that only looks like an id (an agent's model choice).
+    if (n === 'providerid' || n === 'modelid') return `probe-${hex}`;
     if (n.includes('execution')) return ids.execution;
     if (n.includes('statecontextblock') || n.includes('stateblock')) return ids.stateBlock;
     if (n.includes('block') || n === 'parentid' || n === 'targetparentid') return ids.block;
@@ -355,8 +361,8 @@ describe('Workspace entry points (e2e)', () => {
 
     actorId = await ensureTestUser(app);
     otherActorA = (
-      await app.get(AgentsService).createAgent({
-        slug: `entry-points-${hex}`,
+      await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
+        slug: agentSlugA,
         name: `Agent ${CANARY}`,
         systemPrompt: `Prompt ${CANARY}`,
         statusTriggers: [],
@@ -417,6 +423,7 @@ describe('Workspace entry points (e2e)', () => {
     ).id;
     ids.run = (await created('POST', '/agent-runs', { parentTaskId: task.id })).id;
     const execution = await db.getRepository(ActiveTaskExecutionEntity).save({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       taskId: task.id,
       agentActorId: otherActorA,
       workerClientId: WORKER_A,
@@ -430,6 +437,7 @@ describe('Workspace entry points (e2e)', () => {
     ids.execution = execution.id;
     ids.history = (
       await db.getRepository(TaskExecutionHistoryEntity).save({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         taskId: task.id,
         agentActorId: otherActorA,
         workerClientId: WORKER_A,
@@ -524,20 +532,6 @@ describe('Workspace entry points (e2e)', () => {
       expect(failures).toEqual([]);
     }, 120000);
 
-    it('refuse a worker socket of another workspace', async () => {
-      const token = await sign(WORKSPACE_B_ID, { clientId: WORKER_A });
-      const socket = io(`http://127.0.0.1:${port}/executions/worker`, {
-        auth: { token },
-        transports: ['websocket'],
-        forceNew: true,
-      });
-      const connected = await new Promise<boolean>((resolve) => {
-        socket.once('connect', () => resolve(true));
-        socket.once('connect_error', () => resolve(false));
-      });
-      socket.close();
-      expect(connected).toBe(false);
-    });
   });
 
   describe('scoped and worker entry points, called from another workspace with A ids', () => {
@@ -716,5 +710,200 @@ describe('Workspace entry points (e2e)', () => {
       socket.close();
       expect(acks.map((ack: any) => ack.ok)).toEqual([false, false, false]);
     });
+  });
+
+  describe('workers of another workspace', () => {
+    const connectWorker = async (token: string) => {
+      const socket = io(`http://127.0.0.1:${port}/executions/worker`, {
+        auth: { token },
+        transports: ['websocket'],
+        forceNew: true,
+      });
+      await new Promise<void>((resolve, reject) => {
+        socket.once('connect', () => resolve());
+        socket.once('connect_error', reject);
+      });
+      return socket;
+    };
+
+    it("never hear, list or claim A's queued work, even with the same OAuth client", async () => {
+      const workerA = await connectWorker(await sign(DEFAULT_WORKSPACE_ID, { clientId: WORKER_A }));
+      const workerB = await connectWorker(await sign(WORKSPACE_B_ID, { clientId: WORKER_A }));
+      const heardA: string[] = [];
+      const heardB: string[] = [];
+      workerA.on(ExecutionWireEvents.TASK_EXECUTION_QUEUED, (e: { taskId: string }) => heardA.push(e.taskId));
+      workerB.onAny((event, payload) => heardB.push(`${event} ${JSON.stringify(payload)}`));
+
+      const runner = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
+        slug: `entry-points-runner-${hex}`,
+        name: `Runner ${CANARY}`,
+        systemPrompt: 'run',
+        statusTriggers: [TaskStatus.NOT_STARTED],
+        allowedTools: [],
+      });
+      const task = (
+        await call(tokenA, 'POST', '/tasks/tasks')
+          .send({ name: `Queued ${CANARY}`, description: 'queued', assigneeActorId: runner.actorId })
+          .expect(201)
+      ).body;
+
+      for (let i = 0; i < 40 && !heardA.includes(task.id); i++) {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      expect(heardA).toContain(task.id);
+
+      const workerTokenB = await sign(WORKSPACE_B_ID, { clientId: WORKER_A });
+      const queueB = await call(workerTokenB, 'GET', '/executions/queue').expect(200);
+      expect(queueB.text).not.toContain(task.id);
+      await call(workerTokenB, 'POST', `/executions/queue/${task.id}/claim`).expect(404);
+      const queueA = await call(await sign(DEFAULT_WORKSPACE_ID, { clientId: WORKER_A }), 'GET', '/executions/queue').expect(200);
+      expect(queueA.text).toContain(task.id);
+
+      workerA.close();
+      workerB.close();
+      expect(heardB.filter((line) => line.includes(task.id))).toEqual([]);
+    }, 30000);
+
+    it("set up and run their own workspace's agent with Taico's baseline tools only", async () => {
+      const workerTokenB = await sign(WORKSPACE_B_ID, { clientId: WORKER_A });
+      // A registry server of the default workspace, which B must not see.
+      const privateServer = (
+        await call(tokenA, 'POST', '/mcp/servers')
+          .send({
+            providedId: `entry-points-private-${hex}`,
+            name: `Private ${CANARY}`,
+            description: `Private ${CANARY}`,
+            type: 'http',
+            url: `https://private-${hex}.example.test/mcp`,
+          })
+          .expect(201)
+      ).body;
+
+      const agentB = await app.get(AgentsService).createAgent(WORKSPACE_B_ID, {
+        slug: `entry-points-b-runner-${hex}`,
+        name: 'B runner',
+        systemPrompt: 'run',
+        statusTriggers: [TaskStatus.NOT_STARTED],
+        allowedTools: [],
+      });
+      const taskB = (
+        await call(tokenB, 'POST', '/tasks/tasks')
+          .send({ name: 'B work', description: 'b', assigneeActorId: agentB.actorId })
+          .expect(201)
+      ).body;
+
+      // Claim it, as the worker does when it hears the task was queued.
+      let queued = false;
+      for (let i = 0; i < 40 && !queued; i++) {
+        const queue = await call(workerTokenB, 'GET', '/executions/queue').expect(200);
+        queued = queue.text.includes(taskB.id);
+        if (!queued) await new Promise((r) => setTimeout(r, 250));
+      }
+      expect(queued).toBe(true);
+      const execution = (
+        await call(workerTokenB, 'POST', `/executions/queue/${taskB.id}/claim`).expect(201)
+      ).body;
+
+      // The worker's setup calls (apps/worker/src/task-runner.ts), in order.
+      const permissions = (
+        await call(workerTokenB, 'GET', `/agents/${agentB.actorId}/tool-permissions`).expect(200)
+      ).body as { server: { id: string; providedId: string } }[];
+      expect(permissions.map((p) => p.server.providedId).sort()).toEqual(['context', 'tasks']);
+
+      // The default workspace can edit its baseline rows. B's worker must still
+      // get Taico's own transport, so B's token never goes to A's choice of URL.
+      const baselineIdOf = (providedId: string) =>
+        permissions.find((p) => p.server.providedId === providedId)!.server.id;
+      const originals = await Promise.all(
+        ['tasks', 'context'].map(
+          async (id) => (await call(tokenA, 'GET', `/mcp/servers/${baselineIdOf(id)}`).expect(200)).body,
+        ),
+      );
+      const collector = `https://collector-${hex}.example.test/mcp`;
+      for (const id of ['tasks', 'context']) {
+        await call(tokenA, 'PATCH', `/mcp/servers/${baselineIdOf(id)}`).send({ url: collector }).expect(200);
+      }
+      let servers: { providedId: string; type: string; url?: string; cmd?: string; authType: string }[];
+      try {
+        expect((await call(tokenA, 'GET', `/mcp/servers/${baselineIdOf('tasks')}`).expect(200)).body.url).toBe(collector);
+        servers = await Promise.all(
+          permissions.map(
+            async (p) => (await call(workerTokenB, 'GET', `/mcp/servers/${p.server.id}`).expect(200)).body,
+          ),
+        );
+        // By provided id too.
+        const byProvidedId = (await call(workerTokenB, 'GET', '/mcp/servers/context').expect(200)).body;
+        expect(byProvidedId).toMatchObject({ type: 'http', url: `${getConfig().issuerUrl}/api/v1/context/blocks/mcp` });
+      } finally {
+        for (const original of originals) {
+          await call(tokenA, 'PATCH', `/mcp/servers/${original.id}`)
+            .send({ url: original.url })
+            .expect(200);
+        }
+      }
+      expect(servers.map((s) => s.providedId).sort()).toEqual(['context', 'tasks']);
+      for (const server of servers) {
+        expect(server).toMatchObject({ type: 'http', authType: 'taico' });
+        expect(server.cmd ?? '').toBe('');
+        expect(JSON.stringify(server)).not.toContain(`collector-${hex}`);
+      }
+      expect(servers.find((s) => s.providedId === 'tasks')!.url).toBe(
+        `${getConfig().issuerUrl}/api/v1/tasks/tasks/mcp`,
+      );
+      await call(workerTokenB, 'GET', `/mcp/servers/${privateServer.id}`).expect(404);
+      await call(workerTokenB, 'GET', `/mcp/servers/${privateServer.providedId}`).expect(404);
+      await call(tokenA, 'GET', `/mcp/servers/${privateServer.id}`).expect(200);
+
+      const agentToken = (
+        await call(workerTokenB, 'POST', `/agents/${agentB.slug}/execution-token`)
+          .send({ expirationSeconds: 600 })
+          .expect(201)
+      ).body.token as string;
+
+      // The harness's first tool calls, on the tasks server the worker was given.
+      const tasksServer = servers.find((s: { providedId: string }) => s.providedId === 'tasks');
+      const mcpPath = new URL(tasksServer.url).pathname;
+      const callTool = async (name: string, args: Record<string, unknown>) => {
+        const res = await request(http)
+          .post(mcpPath)
+          .set('Authorization', `Bearer ${agentToken}`)
+          .set('x-taico-execution-id', execution.id)
+          .set('Accept', 'application/json, text/event-stream')
+          .send({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } })
+          .expect(200);
+        return res.body.error ? { isError: true, text: res.body.error.message } : {
+          isError: Boolean(res.body.result.isError),
+          text: res.body.result.content.map((c: { text: string }) => c.text).join('\n'),
+        };
+      };
+      const own = await callTool('add_comment', { taskId: taskB.id, content: `Done ${hex}` });
+      expect(own.isError).toBe(false);
+      const commented = (await call(tokenB, 'GET', `/tasks/tasks/${taskB.id}`).expect(200)).body;
+      expect(
+        commented.comments.find((c: { content: string }) => c.content === `Done ${hex}`)?.commenterActor.id,
+      ).toBe(agentB.actorId);
+
+      const foreign = await callTool('fetch', { taskId: ids.task });
+      expect(foreign.isError).toBe(true);
+      expect(foreign.text).not.toContain(CANARY);
+    }, 30000);
+
+    it('are registered in their own workspace and listed only there', async () => {
+      await db.getRepository(RegisteredClientEntity).save({
+        clientId: `${WORKER_A}-b-only`,
+        clientName: 'Workspace B worker',
+        redirectUris: ['http://127.0.0.1/callback'],
+        grantTypes: [],
+        scopes: [],
+        tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
+      });
+      const workerB = await connectWorker(await sign(WORKSPACE_B_ID, { clientId: `${WORKER_A}-b-only` }));
+      await new Promise((r) => setTimeout(r, 500));
+      workerB.close();
+      const listB = await call(tokenB, 'GET', '/workers').expect(200);
+      const listA = await call(tokenA, 'GET', '/workers').expect(200);
+      expect(listB.body.map((w: { oauthClientId: string }) => w.oauthClientId)).toContain(`${WORKER_A}-b-only`);
+      expect(listA.body.map((w: { oauthClientId: string }) => w.oauthClientId)).not.toContain(`${WORKER_A}-b-only`);
+    }, 30000);
   });
 });

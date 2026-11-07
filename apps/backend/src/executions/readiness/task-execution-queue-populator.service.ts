@@ -12,6 +12,11 @@ import { TaskExecutionHistoryService } from '../history/task-execution-history.s
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 import { TaskExecutionHistoryErrorCode } from '../history/task-execution-history-error-code.enum';
 
+/**
+ * Keeps the queue in step with what is ready to run. Runs across every
+ * workspace (it starts from tasks, not a request); a task is only matched to
+ * an agent of its own workspace, and its queue entry is in that workspace.
+ */
 @Injectable()
 export class TaskExecutionQueuePopulatorService {
   private readonly logger = new Logger(TaskExecutionQueuePopulatorService.name);
@@ -67,10 +72,10 @@ export class TaskExecutionQueuePopulatorService {
 
     if (shouldBeQueued) {
       this.logger.debug(`Queueing task ${task.id} (${task.name})`);
-      await this.upsertQueueEntry(task.id);
+      await this.upsertQueueEntry(task.workspaceId, task.id);
       this.eventEmitter.emit(
         TaskExecutionQueuedEvent.INTERNAL,
-        new TaskExecutionQueuedEvent(task.id),
+        new TaskExecutionQueuedEvent(task.workspaceId, task.id),
       );
       return;
     }
@@ -83,13 +88,13 @@ export class TaskExecutionQueuePopulatorService {
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
   ): Promise<boolean> {
-    const agent =
-      agentsByActorId?.get(task.assigneeActorId!) ??
-      (
-        await this.agentsService.getActiveAgentsByActorIds({
-          actorIds: [task.assigneeActorId!],
-        })
-      )[0];
+    const agent = agentsByActorId
+      ? agentsByActorId.get(agentKey(task.workspaceId, task.assigneeActorId!))
+      : (
+          await this.agentsService.getActiveAgentsByActorIds(task.workspaceId, {
+            actorIds: [task.assigneeActorId!],
+          })
+        )[0];
 
     if (!agent) {
       this.logger.debug(
@@ -114,6 +119,7 @@ export class TaskExecutionQueuePopulatorService {
 
     const agentActiveExecutionCount =
       await this.readinessCandidateRepository.countActiveExecutionsForAgent(
+        task.workspaceId,
         agent.actorId,
       );
 
@@ -128,16 +134,22 @@ export class TaskExecutionQueuePopulatorService {
     }
 
     // Check if task should be delayed due to recent errors or cancellation
-    if (await this.shouldDelayTask(task.id)) {
+    if (await this.shouldDelayTask(task.workspaceId, task.id)) {
       return false;
     }
 
     return true;
   }
 
-  private async shouldDelayTask(taskId: string): Promise<boolean> {
+  private async shouldDelayTask(
+    workspaceId: string,
+    taskId: string,
+  ): Promise<boolean> {
     const latestHistory =
-      await this.taskExecutionHistoryService.getLatestHistoryForTask(taskId);
+      await this.taskExecutionHistoryService.getLatestHistoryForTask(
+        workspaceId,
+        taskId,
+      );
 
     if (!latestHistory) {
       return false; // No history, no delay needed
@@ -167,6 +179,7 @@ export class TaskExecutionQueuePopulatorService {
     ) {
       const quotaErrorCount =
         await this.taskExecutionHistoryService.countConsecutiveQuotaErrors(
+          workspaceId,
           taskId,
         );
 
@@ -196,36 +209,36 @@ export class TaskExecutionQueuePopulatorService {
     return agent.tagTriggers.every((tagTrigger) => taskTagNames.has(tagTrigger));
   }
 
+  /** Active agents assigned to the tasks, keyed by `agentKey` (each looked up in its task's workspace). */
   private async loadAgentsByActorId(
     tasks: TaskEntity[],
   ): Promise<Map<string, AgentResult>> {
-    const assigneeActorIds = [
-      ...new Set(
-        tasks
-          .map((task) => task.assigneeActorId)
-          .filter((assigneeActorId): assigneeActorId is string =>
-            assigneeActorId !== null,
-          ),
-      ),
-    ];
-
-    if (assigneeActorIds.length === 0) {
-      return new Map();
+    const actorIdsByWorkspace = new Map<string, Set<string>>();
+    for (const task of tasks) {
+      if (task.assigneeActorId === null) continue;
+      const actorIds = actorIdsByWorkspace.get(task.workspaceId) ?? new Set<string>();
+      actorIds.add(task.assigneeActorId);
+      actorIdsByWorkspace.set(task.workspaceId, actorIds);
     }
 
-    const agents = await this.agentsService.getActiveAgentsByActorIds({
-      actorIds: assigneeActorIds,
-    });
-
-    return new Map(agents.map((agent) => [agent.actorId, agent]));
+    const agentsByKey = new Map<string, AgentResult>();
+    for (const [workspaceId, actorIds] of actorIdsByWorkspace) {
+      const agents = await this.agentsService.getActiveAgentsByActorIds(workspaceId, {
+        actorIds: [...actorIds],
+      });
+      for (const agent of agents) {
+        agentsByKey.set(agentKey(workspaceId, agent.actorId), agent);
+      }
+    }
+    return agentsByKey;
   }
 
-  private async upsertQueueEntry(taskId: string): Promise<void> {
+  private async upsertQueueEntry(workspaceId: string, taskId: string): Promise<void> {
     await this.taskExecutionQueueRepository
       .createQueryBuilder()
       .insert()
       .into(TaskExecutionQueueEntity)
-      .values({ taskId })
+      .values({ workspaceId, taskId })
       .orIgnore()
       .execute();
   }
@@ -233,4 +246,8 @@ export class TaskExecutionQueuePopulatorService {
   private async deleteQueueEntry(taskId: string): Promise<void> {
     await this.taskExecutionQueueRepository.delete({ taskId });
   }
+}
+
+function agentKey(workspaceId: string, actorId: string): string {
+  return `${workspaceId}:${actorId}`;
 }

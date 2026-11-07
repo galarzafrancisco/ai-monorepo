@@ -1,8 +1,19 @@
 import type { ExecutionTraceSource } from '@taico/events';
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  Index,
+} from 'typeorm';
 
 @Entity({ name: 'execution_traces' })
 export class ExecutionTraceEntity {
+  /** Always its execution's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   // Executions move from active to history, so there is deliberately no FK to
   // either of those tables. Their stable execution ID owns the trace.
   @PrimaryColumn({ type: 'uuid', name: 'execution_id' })

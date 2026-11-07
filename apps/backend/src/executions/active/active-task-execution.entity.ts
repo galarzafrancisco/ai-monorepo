@@ -9,6 +9,7 @@ import {
   DeleteDateColumn,
   VersionColumn,
   OneToOne,
+  Index,
 } from 'typeorm';
 import { AgentEntity } from '../../agents/agent.entity';
 import { TaskEntity } from '../../tasks/task.entity';
@@ -22,6 +23,11 @@ export type ActiveTaskExecutionTagSnapshot = {
 
 @Entity({ name: 'active_task_executions' })
 export class ActiveTaskExecutionEntity {
+  /** Always its task's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

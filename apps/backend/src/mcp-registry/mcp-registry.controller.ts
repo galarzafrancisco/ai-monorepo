@@ -48,6 +48,7 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { McpRegistryScopes } from './mcp-registry.scopes';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Tools')
 @ApiCookieAuth('JWT-Cookie')
@@ -117,13 +118,18 @@ export class McpRegistryController {
     type: ServerResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Server not found' })
+  // Workers of any workspace read Taico's baseline servers here; the service
+  // hides every other server outside the default workspace.
+  @WorkspaceAccess('scoped')
   async getServer(
     @Param('serverId') serverId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ServerResponseDto> {
-    // Try UUID first, then providedId
-    const server = this.isUuid(serverId)
-      ? await this.mcpRegistryService.getServerById(serverId)
-      : await this.mcpRegistryService.getServerByProvidedId(serverId);
+    const server = await this.mcpRegistryService.getServerForWorkspace(
+      workspaceId,
+      serverId,
+      this.isUuid(serverId),
+    );
     return this.mapServerToResponse(server);
   }
 

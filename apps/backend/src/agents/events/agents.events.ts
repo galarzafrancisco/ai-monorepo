@@ -9,5 +9,8 @@ export class AgentUpdatedEvent {
 }
 
 export class AgentDeletedEvent {
-  constructor(public readonly agentId: string) {}
+  constructor(
+    public readonly workspaceId: string,
+    public readonly agentId: string,
+  ) {}
 }

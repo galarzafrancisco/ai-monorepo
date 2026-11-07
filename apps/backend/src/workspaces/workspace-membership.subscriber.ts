@@ -18,6 +18,9 @@ import { workspaceRoleForUserRole } from './workspaces.service';
  * Puts every new actor in the default workspace, and keeps a person's
  * workspace role in step with their installation-wide role (`users.role`).
  *
+ * An agent's membership is then set to its own workspace by
+ * `AgentsService.createAgent`, in the same transaction.
+ *
  * Actors are created in several places (people, agents, seeds), so this
  * hooks the inserts rather than each caller. It runs in the same transaction
  * as the insert. A role change made with `update()` instead of `save()`

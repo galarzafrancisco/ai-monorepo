@@ -7,11 +7,18 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
   VersionColumn,
+  Index,
+  Column,
 } from 'typeorm';
 import { TaskEntity } from '../../tasks/task.entity';
 
 @Entity({ name: 'task_execution_queue' })
 export class TaskExecutionQueueEntity {
+  /** Always its task's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryColumn({ type: 'uuid', name: 'task_id' })
   taskId!: string;
 

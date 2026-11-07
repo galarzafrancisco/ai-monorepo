@@ -13,6 +13,11 @@ import { TaskEntity } from '../tasks/task.entity';
 @Entity({ name: 'agent_runs' })
 @Index('idx_agent_runs_task_execution_id', ['taskExecutionId'])
 export class AgentRunEntity {
+  /** Always its parent task's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
@@ -101,7 +102,7 @@ describe('Raw execution traces E2E', () => {
     db = app.get(DataSource);
     await ensureTestUser(app);
     cookies = await getAuthCookies(app.getHttpServer());
-    const agent = await app.get(AgentsService).createAgent({
+    const agent = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
       slug: `trace-${randomUUID()}`,
       name: 'Trace Agent',
       systemPrompt: 'test',
@@ -147,6 +148,7 @@ describe('Raw execution traces E2E', () => {
       .expect(201);
     taskId = task.body.id;
     const execution = await db.getRepository(ActiveTaskExecutionEntity).save({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       taskId,
       agentActorId,
       workerClientId: 'trace-owner',
@@ -304,6 +306,7 @@ describe('Raw execution traces E2E', () => {
       );
       await manager.delete(ActiveTaskExecutionEntity, { id: executionId });
       await manager.save(TaskExecutionHistoryEntity, {
+        workspaceId: DEFAULT_WORKSPACE_ID,
         id: executionId,
         taskId,
         agentActorId,

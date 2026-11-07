@@ -21,15 +21,15 @@ export type GlobalSearchResult = IndexSearchResult & {
  * yet (phase 3e), so every hit is checked against its row. The record is
  * total: a new result type does not compile until it says who sees it.
  * - SQL: kept only when the row is in the caller's workspace.
- * - `unscoped`: agents and tools have no workspace yet (phases 3c and 3e),
- *   so they are default-workspace rows: other workspaces never see them.
+ * - `unscoped`: tools have no workspace yet (phase 3e), so they are
+ *   default-workspace rows: other workspaces never see them.
  */
 const VISIBILITY: Record<SearchResultType, string | 'unscoped'> = {
   [SearchResultType.TASK]: `SELECT id FROM tasks WHERE workspace_id = $1 AND id = ANY($2::uuid[])`,
   [SearchResultType.CONTEXT_BLOCK]: `SELECT id FROM context_blocks WHERE workspace_id = $1 AND id = ANY($2::uuid[])`,
   [SearchResultType.PROJECT]: `SELECT id FROM projects WHERE workspace_id = $1 AND id = ANY($2::uuid[])`,
   [SearchResultType.THREAD]: `SELECT id FROM threads WHERE workspace_id = $1 AND id = ANY($2::uuid[])`,
-  [SearchResultType.AGENT]: 'unscoped',
+  [SearchResultType.AGENT]: `SELECT id FROM agents WHERE workspace_id = $1 AND id = ANY($2::uuid[])`,
   [SearchResultType.TOOL]: 'unscoped',
 };
 

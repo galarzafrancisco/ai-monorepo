@@ -115,6 +115,7 @@ export class TasksService {
 
     // createdBy is required - look up the actor first by id then slug
     const createdByActor = await this.actorService.getActorByIdOrSlug(
+      workspaceId,
       input.createdByActorId,
     );
     if (!createdByActor) {
@@ -1179,7 +1180,10 @@ export class TasksService {
     workspaceId: string,
     idOrSlug: string,
   ): Promise<ActorEntity | null> {
-    const actor = await this.actorService.getActiveActorByIdOrSlug(idOrSlug);
+    const actor = await this.actorService.getActiveActorByIdOrSlug(
+      workspaceId,
+      idOrSlug,
+    );
     if (!actor) return null;
     return (await this.workspacesService.isMember(workspaceId, actor.id))
       ? actor

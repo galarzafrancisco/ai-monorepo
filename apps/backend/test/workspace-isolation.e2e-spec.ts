@@ -14,7 +14,13 @@ import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { TokenSignerService } from '../src/auth/crypto/token-signer.service';
 import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.type';
 import { getConfig } from '../src/config/env.config';
-import { ActorType } from '../src/identity-provider/enums';
+import { ActorType, UserRole } from '../src/identity-provider/enums';
+import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
+import {
+  InvalidCredentialsError,
+  UserSlugConflictError,
+} from '../src/identity-provider/errors/identity-provider.errors';
+import { ActorService } from '../src/identity-provider/actor.service';
 import { WorkspaceEntity } from '../src/workspaces/workspace.entity';
 import { WorkspaceMemberEntity } from '../src/workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../src/workspaces/enums';
@@ -28,6 +34,7 @@ import { ThreadsScopes } from '../src/threads/threads.scopes';
 import { AgentRunsScopes } from '../src/agent-runs/agent-runs.scopes';
 import { PullRequestsScopes } from '../src/pull-requests/pull-requests.scopes';
 import { IssuesScopes } from '../src/issues/issues.scopes';
+import { AgentsScopes } from '../src/agents/agents.scopes';
 import { ThreadTaskSubscriptionsService } from '../src/threads/task-subscriptions/thread-task-subscriptions.service';
 import { ThreadTimersService } from '../src/threads/timers/thread-timers.service';
 import { ThreadTimerKind } from '../src/threads/timers/thread-timer.enums';
@@ -108,6 +115,9 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
         PullRequestsScopes.READ.id,
         IssuesScopes.READ.id,
         McpScopes.USE.id,
+        AgentsScopes.READ.id,
+        AgentsScopes.WRITE.id,
+        AgentsScopes.ACT_AS.id,
       ],
       resource: config.issuerUrl,
       version: '0.0.0',
@@ -956,7 +966,7 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
 
     it('leaves agents out of global search for another workspace, even when the query matches', async () => {
       const canary = `agentcanary${suffix}`;
-      const agent = await app.get(AgentsService).createAgent({
+      const agent = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
         slug: `iso-search-agent-${suffix}`,
         name: `Agent ${canary}`,
         description: `Searchable ${canary}`,
@@ -1007,6 +1017,277 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       const listB = (await as(tokenB).get('/agent-runs?limit=100').expect(200)).body;
       expect(listB.items.map((run: any) => run.id)).not.toContain(runA.id);
       await as(tokenA).get(`/agent-runs/${runA.id}`).expect(200);
+    });
+  });
+
+  describe('agents and slugs', () => {
+    const slug = `iso-same-slug-${suffix}`;
+    let agentA: { actorId: string; slug: string };
+    let agentB: { actorId: string; slug: string };
+
+    const createAgent = (token: string, body: Record<string, unknown>) =>
+      as(token)
+        .post('/agents')
+        .send({ systemPrompt: 'prompt', statusTriggers: [], allowedTools: [], ...body });
+
+    beforeAll(async () => {
+      agentA = (await createAgent(tokenA, { slug, name: `A agent ${suffix}` }).expect(201)).body;
+      // Each workspace can have its own agent with the same slug.
+      agentB = (await createAgent(tokenB, { slug, name: `B agent ${suffix}` }).expect(201)).body;
+    });
+
+    it('lets each workspace have its own agent with the same slug', async () => {
+      expect(agentB.actorId).not.toBe(agentA.actorId);
+      expect((await as(tokenA).get(`/agents/${slug}`).expect(200)).body.actorId).toBe(agentA.actorId);
+      expect((await as(tokenB).get(`/agents/${slug}`).expect(200)).body.actorId).toBe(agentB.actorId);
+    });
+
+    it('refuses a slug taken in the same workspace or by a person', async () => {
+      await createAgent(tokenB, { slug, name: 'Again' }).expect(409);
+      await createAgent(tokenB, { slug: TEST_USER_SLUG, name: 'Person slug' }).expect(409);
+      await as(tokenB).patch(`/agents/${agentB.actorId}`).send({ slug: TEST_USER_SLUG }).expect(409);
+    });
+
+    describe("people's slugs never collide with an agent's", () => {
+      const password = 'password-123';
+      const identity = () => app.get(IdentityProviderService);
+      const newPerson = (personSlug: string) =>
+        identity().createUser({
+          email: `${personSlug}@example.test`,
+          displayName: personSlug,
+          slug: personSlug,
+          password,
+        });
+
+      it('refuses a person the slug of an agent in any workspace', async () => {
+        // The agent with `slug` in B is not a member of the default workspace.
+        await expect(newPerson(slug)).rejects.toBeInstanceOf(UserSlugConflictError);
+
+        const email = `iso-invited-${suffix}@example.test`;
+        await identity().createManagedUser({ email, role: UserRole.STANDARD });
+        await expect(
+          identity().setupManagedUser({ email, displayName: 'Invited', slug, password }),
+        ).rejects.toBeInstanceOf(UserSlugConflictError);
+      });
+
+      it("gives an invited person a slug other than an agent's", async () => {
+        const user = await identity().createManagedUser({
+          email: `${slug}@example.test`,
+          role: UserRole.STANDARD,
+        });
+        expect(user.actor!.slug).not.toBe(slug);
+      });
+
+      it("refuses an agent a slug a person took through account setup", async () => {
+        const email = `iso-setup-${suffix}@example.test`;
+        const personSlug = `iso-setup-slug-${suffix}`;
+        await identity().createManagedUser({ email, role: UserRole.STANDARD });
+        await identity().setupManagedUser({ email, displayName: 'Setup', slug: personSlug, password });
+        await createAgent(tokenB, { slug: personSlug, name: 'After person' }).expect(409);
+      });
+
+      it('lets only one of a concurrent person and agent take a slug', async () => {
+        for (let i = 0; i < 5; i++) {
+          const raced = `iso-race-${suffix}-${i}`;
+          const [person, agent] = await Promise.allSettled([
+            newPerson(raced),
+            createAgent(tokenB, { slug: raced, name: `Race ${i}` }).then((res) => {
+              if (res.status !== 201) throw new Error(`agent create: ${res.status}`);
+              return res;
+            }),
+          ]);
+          expect([person.status, agent.status].filter((s) => s === 'fulfilled')).toHaveLength(1);
+          if (person.status === 'rejected') {
+            expect(person.reason).toBeInstanceOf(UserSlugConflictError);
+          }
+        }
+      });
+    });
+
+    describe('writes that wait on a concurrent rename or delete', () => {
+      // A concurrent writer is a transaction holding the rows' locks. The
+      // write under test starts, waits on those locks, and the writer then
+      // renames or deletes the actor, hands its slug to someone else and
+      // commits. The waiting write must work from the committed rows.
+      const ds = () => app.get(DataSource);
+
+      async function holdRows(lockSql: string[], id: string) {
+        const writer = ds().createQueryRunner();
+        await writer.connect();
+        await writer.startTransaction();
+        for (const sql of lockSql) await writer.query(sql, [id]);
+        return writer;
+      }
+      const AGENT_ROWS = [
+        `SELECT 1 FROM agents WHERE actor_id = $1 FOR UPDATE`,
+        `SELECT 1 FROM actors WHERE id = $1 FOR UPDATE`,
+      ];
+
+      async function untilWaitingOnLock() {
+        for (let i = 0; i < 200; i++) {
+          const [{ n }] = await ds().query(
+            `SELECT count(*)::int AS n FROM pg_stat_activity
+              WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+          );
+          if (n > 0) return;
+          await new Promise((r) => setTimeout(r, 25));
+        }
+        throw new Error('the write never waited on the locked rows');
+      }
+
+      const actorRow = async (id: string) =>
+        (await ds().query(`SELECT slug, deleted_at FROM actors WHERE id = $1`, [id]))[0];
+
+      it('does not bring back a slug that was renamed away and reused', async () => {
+        const x = (await createAgent(tokenB, { slug: `iso-stale-x-${suffix}`, name: 'X' }).expect(201)).body;
+        const y = (await createAgent(tokenB, { slug: `iso-stale-y-${suffix}`, name: 'Y' }).expect(201)).body;
+        const writer = await holdRows(AGENT_ROWS, x.actorId);
+        const patch = as(tokenB).patch(`/agents/${x.actorId}`).send({ name: 'X renamed' }).then((r) => r);
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [x.actorId, `${x.slug}-new`]);
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [y.actorId, x.slug]);
+        await writer.commitTransaction();
+        await writer.release();
+
+        const res = await patch;
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ name: 'X renamed', slug: `${x.slug}-new` });
+        expect((await actorRow(x.actorId)).slug).toBe(`${x.slug}-new`);
+        expect((await actorRow(y.actorId)).slug).toBe(x.slug);
+      });
+
+      it("does not revive a deleted agent whose slug a person took", async () => {
+        const x = (await createAgent(tokenB, { slug: `iso-stale-del-${suffix}`, name: 'X' }).expect(201)).body;
+        const writer = await holdRows(AGENT_ROWS, x.actorId);
+        const patch = as(tokenB).patch(`/agents/${x.actorId}`).send({ introduction: 'late' }).then((r) => r);
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE agents SET deleted_at = now() WHERE actor_id = $1`, [x.actorId]);
+        await writer.query(
+          `UPDATE actors SET slug = slug || '~deleted-x', deleted_at = now() WHERE id = $1`,
+          [x.actorId],
+        );
+        const person = await app
+          .get(ActorService)
+          .createUserActor(writer.manager, { slug: x.slug, displayName: 'Took it' });
+        await writer.commitTransaction();
+        await writer.release();
+
+        expect((await patch).status).toBe(404);
+        const after = await actorRow(x.actorId);
+        expect(after.slug).toBe(`${x.slug}~deleted-x`);
+        expect(after.deleted_at).not.toBeNull();
+        expect((await actorRow(person.id)).slug).toBe(x.slug);
+      });
+
+      it('does not delete an agent under a slug it no longer has', async () => {
+        const x = (await createAgent(tokenB, { slug: `iso-stale-rm-${suffix}`, name: 'X' }).expect(201)).body;
+        const y = (await createAgent(tokenB, { slug: `iso-stale-rm-y-${suffix}`, name: 'Y' }).expect(201)).body;
+        const writer = await holdRows(AGENT_ROWS, x.actorId);
+        const removal = as(tokenB).delete(`/agents/${x.actorId}`).then((r) => r);
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [x.actorId, `${x.slug}-new`]);
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [y.actorId, x.slug]);
+        await writer.commitTransaction();
+        await writer.release();
+
+        expect((await removal).status).toBeLessThan(300);
+        const after = await actorRow(x.actorId);
+        expect(after.slug.startsWith(`${x.slug}-new~deleted-`)).toBe(true);
+        expect((await actorRow(y.actorId)).slug).toBe(x.slug);
+      });
+
+      it("does not let account setup undo a person's deactivation", async () => {
+        const email = `iso-stale-setup-${suffix}@example.test`;
+        const identity = app.get(IdentityProviderService);
+        const invited = await identity.createManagedUser({ email, role: UserRole.STANDARD });
+        const writer = await holdRows(
+          [`SELECT 1 FROM users WHERE id = $1 FOR UPDATE`],
+          invited.id,
+        );
+        await writer.query(`SELECT 1 FROM actors WHERE id = $1 FOR UPDATE`, [invited.actorId]);
+        const setup = identity
+          .setupManagedUser({ email, displayName: 'Late', slug: `iso-stale-p-${suffix}`, password: 'password-123' })
+          .then(
+            () => 'set up',
+            (error: unknown) => error,
+          );
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE users SET "isActive" = false WHERE id = $1`, [invited.id]);
+        await writer.query(
+          `UPDATE actors SET slug = slug || '~deleted-x', deleted_at = now() WHERE id = $1`,
+          [invited.actorId],
+        );
+        await writer.commitTransaction();
+        await writer.release();
+
+        expect(await setup).toBeInstanceOf(InvalidCredentialsError);
+        const after = await actorRow(invited.actorId);
+        expect(after.deleted_at).not.toBeNull();
+        expect(after.slug.endsWith('~deleted-x')).toBe(true);
+      });
+    });
+
+    it('makes an agent a member of its own workspace only', async () => {
+      const members: Repository<WorkspaceMemberEntity> = app.get(
+        getRepositoryToken(WorkspaceMemberEntity),
+      );
+      const workspacesOf = async (id: string) =>
+        (await members.find({ where: { actorId: id } })).map((m) => m.workspaceId);
+      expect(await workspacesOf(agentB.actorId)).toEqual([WORKSPACE_B_ID]);
+      expect(await workspacesOf(agentA.actorId)).toEqual([DEFAULT_WORKSPACE_ID]);
+    });
+
+    it("never lists, changes or deletes another workspace's agent", async () => {
+      const listB = (await as(tokenB).get('/agents?limit=100').expect(200)).body;
+      expect(listB.items.map((a: any) => a.actorId)).toContain(agentB.actorId);
+      expect(listB.items.map((a: any) => a.actorId)).not.toContain(agentA.actorId);
+      const listA = (await as(tokenA).get('/agents?limit=100').expect(200)).body;
+      expect(listA.items.map((a: any) => a.actorId)).not.toContain(agentB.actorId);
+
+      await as(tokenB).patch(`/agents/${agentA.actorId}`).send({ name: 'Hijacked' }).expect(404);
+      await as(tokenB).delete(`/agents/${agentA.actorId}`).expect(404);
+      expect((await as(tokenA).get(`/agents/${slug}`).expect(200)).body.name).toBe(`A agent ${suffix}`);
+
+      const exported = (await as(tokenB).get('/agent-definitions/export').expect(200)).body;
+      expect(exported.agents.map((a: any) => a.name)).not.toContain(`A agent ${suffix}`);
+    });
+
+    it("resolves a mention by slug to the caller's workspace agent", async () => {
+      const taskB = (
+        await as(tokenB)
+          .post('/tasks/tasks')
+          .send({ name: `Mention ${suffix}`, description: 'mention', assigneeActorId: slug })
+          .expect(201)
+      ).body;
+      expect(taskB.assigneeActor.id).toBe(agentB.actorId);
+      const taskInA = (
+        await as(tokenA)
+          .post('/tasks/tasks')
+          .send({ name: `Mention ${suffix}`, description: 'mention', assigneeActorId: slug })
+          .expect(201)
+      ).body;
+      expect(taskInA.assigneeActor.id).toBe(agentA.actorId);
+      // A's agent by id is not a member of B, so it cannot be given B's work.
+      await as(tokenB)
+        .post('/tasks/tasks')
+        .send({ name: `Foreign ${suffix}`, description: 'foreign', assigneeActorId: agentA.actorId })
+        .expect(404);
+    });
+
+    it("issues an execution token for the workspace's own agent, which works there only", async () => {
+      const res = await as(tokenB)
+        .post(`/agents/${slug}/execution-token`)
+        .send({ scopes: [TasksScopes.READ.id] })
+        .expect(201);
+      const claims = JSON.parse(Buffer.from(res.body.token.split('.')[1], 'base64url').toString());
+      expect(claims.workspace_id).toBe(WORKSPACE_B_ID);
+      expect(claims.sub).toBe(agentB.actorId);
+
+      const taskB = (
+        await as(tokenB).post('/tasks/tasks').send({ name: `Run ${suffix}`, description: 'run' }).expect(201)
+      ).body;
+      await as(res.body.token).get(`/tasks/tasks/${taskB.id}`).expect(200);
+      await as(res.body.token).get(`/tasks/tasks/${taskA.id}`).expect(404);
     });
   });
 

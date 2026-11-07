@@ -10,6 +10,7 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { AgentType } from './enums';
@@ -17,6 +18,11 @@ import { AgentToolPermissionEntity } from './agent-tool-permission.entity';
 
 @Entity({ name: 'agents' })
 export class AgentEntity {
+  /** The workspace the agent belongs to (it never moves). See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

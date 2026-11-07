@@ -43,7 +43,7 @@ export class StaleActiveTaskExecutionPrunerService {
       }
 
       const task = await manager.findOne(TaskEntity, {
-        where: { id: activeExecution.taskId },
+        where: { workspaceId: activeExecution.workspaceId, id: activeExecution.taskId },
         relations: ['tags'],
       });
 
@@ -65,6 +65,7 @@ export class StaleActiveTaskExecutionPrunerService {
       await manager.save(
         TaskExecutionHistoryEntity,
         manager.create(TaskExecutionHistoryEntity, {
+          workspaceId: activeExecution.workspaceId,
           id: activeExecution.id,
           runnerSessionId: activeExecution.runnerSessionId,
           toolCallCount: activeExecution.toolCallCount,
@@ -90,6 +91,7 @@ export class StaleActiveTaskExecutionPrunerService {
       new ExecutionInterruptEvent(
         { id: STALE_EXECUTION_INTERRUPT_ACTOR_ID },
         {
+          workspaceId: prunedExecution.workspaceId,
           executionId: prunedExecution.id,
           workerClientId: prunedExecution.workerClientId,
         },
@@ -97,7 +99,7 @@ export class StaleActiveTaskExecutionPrunerService {
     );
     this.eventEmitter.emit(
       ActiveExecutionsChangedEvent.INTERNAL,
-      new ActiveExecutionsChangedEvent(),
+      new ActiveExecutionsChangedEvent(prunedExecution.workspaceId),
     );
 
     return true;

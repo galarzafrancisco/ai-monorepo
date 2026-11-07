@@ -10,14 +10,24 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   VersionColumn,
+  Index,
 } from 'typeorm';
 
+/** A worker is registered once per workspace it works in. */
 @Entity({ name: 'workers' })
+@Index('UQ_workers_workspace_oauth_client', ['workspaceId', 'oauthClientId'], {
+  unique: true,
+})
 export class WorkerEntity {
+  /** The workspace of the token the worker connected with. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'text', name: 'oauth_client_id', unique: true })
+  @Column({ type: 'text', name: 'oauth_client_id' })
   oauthClientId!: string;
 
   @ManyToOne(() => RegisteredClientEntity, { onDelete: 'CASCADE' })

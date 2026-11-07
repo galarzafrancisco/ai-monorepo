@@ -8,10 +8,11 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { WorkersScopes } from 'src/executions/workers.scopes';
 import { WorkerResult } from './dto/service/workers.service.types';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('workers')
 @UseGuards(AccessTokenGuard, ScopesGuard)
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('workers')
 export class WorkersController {
   constructor(private readonly workersService: WorkersService) {}
@@ -24,8 +25,10 @@ export class WorkersController {
     description: 'List of all registered workers',
     type: [WorkerResponseDto],
   })
-  async listWorkers(): Promise<WorkerResponseDto[]> {
-    const workers = await this.workersService.findAll();
+  async listWorkers(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<WorkerResponseDto[]> {
+    const workers = await this.workersService.findAll(workspaceId);
     return workers.map((worker) => this.mapWorkerToResponse(worker));
   }
 

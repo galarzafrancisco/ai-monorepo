@@ -32,10 +32,11 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { AgentsScopes } from './agents.scopes';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('agents')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.READ.id)
@@ -46,8 +47,11 @@ export class AgentsController {
   @RequireScopes(AgentsScopes.WRITE.id)
   @ApiOperation({ summary: 'Create a new agent' })
   @ApiCreatedResponse({ type: AgentResponseDto })
-  async createAgent(@Body() dto: CreateAgentDto): Promise<AgentResponseDto> {
-    const result = await this.agentsService.createAgent({
+  async createAgent(
+    @Body() dto: CreateAgentDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<AgentResponseDto> {
+    const result = await this.agentsService.createAgent(workspaceId, {
       slug: dto.slug,
       name: dto.name,
       type: dto.type,
@@ -74,8 +78,9 @@ export class AgentsController {
   @ApiOkResponse({ type: AgentListResponseDto })
   async listAgents(
     @Query() query: ListAgentsQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentListResponseDto> {
-    const result = await this.agentsService.listAgents({
+    const result = await this.agentsService.listAgents(workspaceId, {
       isActive: query.isActive,
       page: query.page ?? 1,
       limit: query.limit ?? 20,
@@ -102,9 +107,9 @@ export class AgentsController {
   @ApiOkResponse({ type: AgentResponseDto })
   async getAgentBySlug(
     @Param() params: AgentParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentResponseDto> {
-    console.log(params);
-    const result = await this.agentsService.getAgentBySlug({
+    const result = await this.agentsService.getAgentBySlug(workspaceId, {
       slug: params.slug,
     });
     return AgentResponseDto.fromResult(result);
@@ -119,8 +124,9 @@ export class AgentsController {
   async patchAgent(
     @Param() params: AgentActorParamsDto,
     @Body() dto: PatchAgentDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentResponseDto> {
-    const result = await this.agentsService.patchAgent(params.actorId, {
+    const result = await this.agentsService.patchAgent(workspaceId, params.actorId, {
       slug: dto.slug,
       name: dto.name,
       systemPrompt: dto.systemPrompt,
@@ -166,7 +172,10 @@ export class AgentsController {
   @RequireScopes(AgentsScopes.WRITE.id)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an agent' })
-  async deleteAgent(@Param() params: AgentActorParamsDto): Promise<void> {
-    await this.agentsService.deleteAgent(params.actorId);
+  async deleteAgent(
+    @Param() params: AgentActorParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<void> {
+    await this.agentsService.deleteAgent(workspaceId, params.actorId);
   }
 }

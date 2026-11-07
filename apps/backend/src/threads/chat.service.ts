@@ -38,8 +38,11 @@ export class ChatService {
     private readonly mcpToolsFactory: TaicoMcpToolsFactory,
   ) {}
 
-  private async getSelf(): Promise<AgentResult> {
-    return this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
+  /** The workspace's own threads agent (each workspace has its own). */
+  private async getSelf(workspaceId: string): Promise<AgentResult> {
+    return this.agentsService.getAgentBySlug(workspaceId, {
+      slug: THREAD_AGENT_SLUG,
+    });
   }
 
   /**
@@ -105,7 +108,7 @@ export class ChatService {
      */
     onBehalfOf?: OnBehalfOf;
   }): Promise<void> {
-    const self = await this.getSelf();
+    const self = await this.getSelf(args.workspaceId);
     const resolved = await this.chatModelFactory.resolve({
       workspaceId: args.workspaceId,
       job: AiModelJob.MIDDLE_MANAGER,

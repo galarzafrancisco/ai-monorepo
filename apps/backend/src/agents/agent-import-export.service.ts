@@ -24,15 +24,19 @@ export class AgentImportExportService {
     private readonly agentToolPermissionsService: AgentToolPermissionsService,
   ) {}
 
-  async exportAgents(slug?: string): Promise<AgentDefinitionsDocument> {
+  async exportAgents(
+    workspaceId: string,
+    slug?: string,
+  ): Promise<AgentDefinitionsDocument> {
     const agents = slug
-      ? [await this.agentsService.getAgentBySlug({ slug })]
-      : await this.agentsService.listAllAgents();
+      ? [await this.agentsService.getAgentBySlug(workspaceId, { slug })]
+      : await this.agentsService.listAllAgents(workspaceId);
 
     const definitions: AgentDefinition[] = [];
     for (const agent of agents) {
       const permissions =
         await this.agentToolPermissionsService.listStoredAgentToolPermissions(
+          workspaceId,
           agent.actorId,
         );
       definitions.push(toAgentDefinition(agent, permissions));
@@ -45,6 +49,7 @@ export class AgentImportExportService {
   }
 
   async importAgents(
+    workspaceId: string,
     document: AgentDefinitionsDocument,
   ): Promise<ImportAgentsResult> {
     const result: ImportAgentsResult = {
@@ -68,7 +73,7 @@ export class AgentImportExportService {
       try {
         // Resolved before the agent is touched, so a rejected definition
         // changes nothing and can't leave older, broader grants in place.
-        const toolGrants = await this.resolveToolGrants(definition);
+        const toolGrants = await this.resolveToolGrants(workspaceId, definition);
         if (toolGrants && toolGrants.invalidScopes.length > 0) {
           result.failed.push({
             slug: definition.slug,
@@ -77,12 +82,13 @@ export class AgentImportExportService {
           continue;
         }
 
-        const { outcome, actorId } = await this.upsertAgent(definition);
+        const { outcome, actorId } = await this.upsertAgent(workspaceId, definition);
         result[outcome].push(definition.slug);
 
         if (toolGrants) {
           result.warnings.push(
             ...(await this.applyToolGrants(
+              workspaceId,
               definition.slug,
               actorId,
               toolGrants,
@@ -104,24 +110,28 @@ export class AgentImportExportService {
   }
 
   private async resolveToolGrants(
+    workspaceId: string,
     definition: AgentDefinition,
   ): Promise<ResolvedAgentToolGrants | undefined> {
     if (definition.toolPermissions === undefined) {
       return undefined;
     }
     return this.agentToolPermissionsService.resolveToolGrants(
+      workspaceId,
       definition.toolPermissions,
     );
   }
 
   private async upsertAgent(
+    workspaceId: string,
     definition: AgentDefinition,
   ): Promise<{ outcome: 'created' | 'updated'; actorId: string }> {
     try {
-      const existing = await this.agentsService.getAgentBySlug({
+      const existing = await this.agentsService.getAgentBySlug(workspaceId, {
         slug: definition.slug,
       });
       await this.agentsService.patchAgent(
+        workspaceId,
         existing.actorId,
         toPatchInput(definition),
       );
@@ -133,12 +143,14 @@ export class AgentImportExportService {
     }
 
     const created = await this.agentsService.createAgent(
+      workspaceId,
       toCreateInput(definition),
     );
     return { outcome: 'created', actorId: created.actorId };
   }
 
   private async applyToolGrants(
+    workspaceId: string,
     slug: string,
     actorId: string,
     toolGrants: ResolvedAgentToolGrants,
@@ -150,6 +162,7 @@ export class AgentImportExportService {
 
     try {
       await this.agentToolPermissionsService.replaceAgentToolPermissions(
+        workspaceId,
         actorId,
         toolGrants.grants,
       );

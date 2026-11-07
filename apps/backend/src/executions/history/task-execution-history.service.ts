@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskExecutionHistoryEntity } from './task-execution-history.entity';
-import { taskIdInWorkspace } from '../../workspaces/task-in-workspace';
 import {
   ExecutionStatsResult,
   TaskExecutionHistoryListResult,
@@ -27,7 +26,10 @@ export class TaskExecutionHistoryService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    const where = { taskId: taskIdInWorkspace(workspaceId, options?.taskId) };
+    const where = {
+      workspaceId,
+      ...(options?.taskId ? { taskId: options.taskId } : {}),
+    };
 
     const [items, total] = await this.taskExecutionHistoryRepository.findAndCount({
       where,
@@ -51,7 +53,7 @@ export class TaskExecutionHistoryService {
     id: string,
   ): Promise<TaskExecutionHistoryResult> {
     const entry = await this.taskExecutionHistoryRepository.findOne({
-      where: { id, taskId: taskIdInWorkspace(workspaceId) },
+      where: { workspaceId, id },
       relations: ['task', 'stats'],
     });
     if (!entry) {
@@ -61,19 +63,23 @@ export class TaskExecutionHistoryService {
   }
 
   async getLatestHistoryForTask(
+    workspaceId: string,
     taskId: string,
   ): Promise<TaskExecutionHistoryEntity | null> {
     return this.taskExecutionHistoryRepository.findOne({
-      where: { taskId },
+      where: { workspaceId, taskId },
       relations: ['stats'],
       order: { transitionedAt: 'DESC' },
     });
   }
 
-  async countConsecutiveQuotaErrors(taskId: string): Promise<number> {
+  async countConsecutiveQuotaErrors(
+    workspaceId: string,
+    taskId: string,
+  ): Promise<number> {
     // Get all history entries for this task, ordered by time
     const histories = await this.taskExecutionHistoryRepository.find({
-      where: { taskId },
+      where: { workspaceId, taskId },
       order: { transitionedAt: 'DESC' },
     });
 

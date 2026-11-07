@@ -24,7 +24,7 @@ import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.deco
 
 @ApiTags('Agent Execution Tokens')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('agents/:slug/execution-token')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.ACT_AS.id)
@@ -47,7 +47,7 @@ export class AgentExecutionTokensController {
     @Body() dto: RequestAgentExecutionTokenDto,
     @CurrentAuth() auth: AuthContext,
   ): Promise<AgentExecutionTokenResponseDto> {
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug(auth.workspaceId, { slug });
     const subjectActor = await this.actorService.getActorById(agent.actorId);
     const issuedByActor = await this.actorService.getActorById(
       auth.claims.actor_id,
@@ -68,6 +68,7 @@ export class AgentExecutionTokensController {
         : deriveExecutionScopesFromToolPermissions(
             (
               await this.agentToolPermissionsService.listAgentToolPermissions(
+                auth.workspaceId,
                 agent.actorId,
               )
             ).map((permission) => this.toRuntimePermission(permission)),

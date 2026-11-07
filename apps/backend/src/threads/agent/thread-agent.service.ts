@@ -103,13 +103,27 @@ export class ThreadAgentService {
    * holds the thread, that turn's owner picks up the new messages when it is done.
    */
   async drain(threadId: string): Promise<void> {
-    const self = await this.agentsService.getAgentBySlug({
-      slug: THREAD_AGENT_SLUG,
-    });
-
     for (;;) {
       const turn = await this.turns.tryClaim(threadId);
       if (!turn) {
+        return;
+      }
+
+      // Each workspace has its own threads agent: the one of the thread's.
+      let self: AgentResult;
+      try {
+        self = await this.agentsService.getAgentBySlug(turn.workspaceId, {
+          slug: THREAD_AGENT_SLUG,
+        });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        this.logger.error({
+          message: 'Thread agent not found in the thread workspace',
+          threadId,
+          turnId: turn.id,
+          error: this.describeError(error),
+        });
+        await this.turns.finish(turn.id, ThreadTurnStatus.FAILED, reason);
         return;
       }
 
