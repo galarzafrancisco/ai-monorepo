@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Repository } from 'typeorm';
-import { TaskWireEvents } from '@taico/events';
+import { TaskWireEvents, ThreadWireEvents } from '@taico/events';
 import { AppModule } from '../src/app.module';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
@@ -25,6 +25,10 @@ import { ContextScopes } from '../src/context/context.scopes';
 import { MetaScopes } from '../src/meta/meta.scopes';
 import { McpScopes } from '../src/auth/core/scopes/mcp.scopes';
 import { ThreadsScopes } from '../src/threads/threads.scopes';
+import { AgentRunsScopes } from '../src/agent-runs/agent-runs.scopes';
+import { PullRequestsScopes } from '../src/pull-requests/pull-requests.scopes';
+import { IssuesScopes } from '../src/issues/issues.scopes';
+import { ThreadTaskSubscriptionsService } from '../src/threads/task-subscriptions/thread-task-subscriptions.service';
 import {
   ensureAgentActor,
   ensureTestUser,
@@ -83,6 +87,10 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
         MetaScopes.WRITE.id,
         ThreadsScopes.READ.id,
         ThreadsScopes.WRITE.id,
+        AgentRunsScopes.READ.id,
+        AgentRunsScopes.WRITE.id,
+        PullRequestsScopes.READ.id,
+        IssuesScopes.READ.id,
         McpScopes.USE.id,
       ],
       resource: config.issuerUrl,
@@ -103,6 +111,10 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
     patch: (path: string) =>
       request(http)
         .patch(`/api/v1${path}`)
+        .set('Authorization', `Bearer ${token}`),
+    put: (path: string) =>
+      request(http)
+        .put(`/api/v1${path}`)
         .set('Authorization', `Bearer ${token}`),
     delete: (path: string) =>
       request(http)
@@ -542,6 +554,184 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
     });
   });
 
+  /**
+   * Every other public thread route names a thread, so each one is checked
+   * against the caller's workspace first (docs/architecture/workspaces.md,
+   * "Entry points").
+   */
+  describe('every other thread route', () => {
+    const missingId = '00000000-0000-4000-8000-0000000000ff';
+
+    it('leaves threads of another workspace out of the thread list', async () => {
+      const listB = (await as(tokenB).get('/threads?limit=100').expect(200)).body;
+      expect(listB.items.map((t: any) => t.id)).not.toContain(threadA.id);
+      const listA = (await as(tokenA).get('/threads?limit=100').expect(200)).body;
+      expect(listA.items.map((t: any) => t.id)).toContain(threadA.id);
+    });
+
+    it('answers not found on every per-thread route of another workspace', async () => {
+      const b = as(tokenB);
+      await b.get(`/threads/${threadA.id}/messages`).expect(404);
+      await b.get(`/threads/${threadA.id}/token-usage`).expect(404);
+      await b.get(`/threads/${threadA.id}/pull-requests`).expect(404);
+      await b.get(`/threads/${threadA.id}/issues`).expect(404);
+      await b.post(`/threads/${threadA.id}/read`).expect(404);
+      await b.put(`/threads/${threadA.id}/pin`).expect(404);
+      await b.delete(`/threads/${threadA.id}/pin`).expect(404);
+      await b.delete(`/threads/${threadA.id}/timers/${missingId}`).expect(404);
+      await b.delete(`/threads/${threadA.id}/watches/${missingId}`).expect(404);
+      await b
+        .delete(`/threads/${threadA.id}/task-subscriptions/${taskA.id}`)
+        .expect(404);
+      // The same routes still work in the thread's own workspace.
+      const a = as(tokenA);
+      await a.get(`/threads/${threadA.id}/messages`).expect(200);
+      await a.get(`/threads/${threadA.id}/pull-requests`).expect(200);
+      await a.delete(`/threads/${threadA.id}/timers/${missingId}`).expect(204);
+    });
+
+    it('does not add a participant to a thread of another workspace', async () => {
+      const before = (await as(tokenA).get(`/threads/${threadA.id}`).expect(200))
+        .body;
+      const res = await as(tokenB)
+        .post(`/threads/${threadA.id}/participants`)
+        .send({ actorId })
+        .expect(404);
+      // The response carries nothing of the thread.
+      expect(JSON.stringify(res.body)).not.toContain(`Task in A ${suffix}`);
+      const after = (await as(tokenA).get(`/threads/${threadA.id}`).expect(200))
+        .body;
+      expect(after.participants.map((p: any) => p.id).sort()).toEqual(
+        before.participants.map((p: any) => p.id).sort(),
+      );
+    });
+
+    it('only adds members of the workspace as participants', async () => {
+      // A new agent is only a member of the default workspace.
+      const agentId = await ensureAgentActor(
+        app,
+        `iso-participant-${suffix}`,
+        'Isolation participant',
+      );
+      await as(tokenB)
+        .post('/threads')
+        .send({ participantActorIds: [agentId] })
+        .expect(404);
+      const threadB = (
+        await as(tokenB).post('/threads').send({ title: 'B participants' }).expect(201)
+      ).body;
+      await as(tokenB)
+        .post(`/threads/${threadB.id}/participants`)
+        .send({ actorId: agentId })
+        .expect(404);
+      await as(tokenB)
+        .post(`/threads/${threadB.id}/participants`)
+        .send({ actorId })
+        .expect(201);
+    });
+
+    it('does not post a message to a thread of another workspace', async () => {
+      // A thread with the placeholder title, so a first message would name it.
+      const fresh = (await as(tokenA).post('/threads').send({}).expect(201)).body;
+      await as(tokenB)
+        .post(`/threads/${fresh.id}/messages`)
+        .send({ content: 'Name this thread Hijacked' })
+        .expect(404);
+      const messages = (
+        await as(tokenA).get(`/threads/${fresh.id}/messages`).expect(200)
+      ).body;
+      expect(messages.total).toBe(0);
+      const after = (await as(tokenA).get(`/threads/${fresh.id}`).expect(200)).body;
+      expect(after.title).toBe(fresh.title);
+      const stateBlock = (
+        await as(tokenA)
+          .get(`/context/blocks/${fresh.stateContextBlockId}`)
+          .expect(200)
+      ).body;
+      expect(stateBlock.title).toBe(`Thread State: ${fresh.title}`);
+    });
+
+    it("does not let a thread's agent watch a task of another workspace", async () => {
+      const subscriptions = app.get(ThreadTaskSubscriptionsService);
+      const threadB = (
+        await as(tokenB).post('/threads').send({ title: 'B watcher' }).expect(201)
+      ).body;
+      const taskB = (
+        await as(tokenB)
+          .post('/tasks/tasks')
+          .send({ name: 'B watched', description: 'd' })
+          .expect(201)
+      ).body;
+      expect(
+        await subscriptions.subscribe({
+          threadId: threadB.id,
+          taskId: taskA.id,
+          forActorId: actorId,
+          waitingFor: '',
+        }),
+      ).toBeNull();
+      expect(
+        await subscriptions.subscribe({
+          threadId: threadB.id,
+          taskId: taskB.id,
+          forActorId: actorId,
+          waitingFor: '',
+        }),
+      ).toMatchObject({ id: taskB.id });
+    });
+  });
+
+  describe('search, executions and agent runs', () => {
+    it('leaves rows of another workspace out of global search', async () => {
+      const query = encodeURIComponent(`Task in A ${suffix}`);
+      // The index is updated in the background: wait until A finds its task.
+      let foundByA = false;
+      for (let attempt = 0; attempt < 20 && !foundByA; attempt++) {
+        const hits = (await as(tokenA).get(`/search/query?query=${query}`).expect(200))
+          .body;
+        foundByA = hits.some((hit: any) => hit.id === taskA.id);
+        if (!foundByA) await settle();
+      }
+      expect(foundByA).toBe(true);
+      const hitsB = (await as(tokenB).get(`/search/query?query=${query}`).expect(200))
+        .body;
+      expect(hitsB.map((hit: any) => hit.id)).not.toContain(taskA.id);
+      expect(hitsB.map((hit: any) => hit.id)).not.toContain(threadA.id);
+    });
+
+    it('leaves executions of another workspace out of the execution lists', async () => {
+      for (const path of [
+        '/executions/queue',
+        '/executions/active',
+        `/executions/history?taskId=${taskA.id}`,
+      ]) {
+        const body = (await as(tokenB).get(path).expect(200)).body;
+        expect(body.items.map((item: any) => item.taskId)).not.toContain(taskA.id);
+      }
+    });
+
+    it('answers not found for an agent run of another workspace', async () => {
+      const runA = (
+        await as(tokenA)
+          .post('/agent-runs')
+          .send({ parentTaskId: taskA.id })
+          .expect(201)
+      ).body;
+      await as(tokenB).get(`/agent-runs/${runA.id}`).expect(404);
+      await as(tokenB)
+        .patch(`/agent-runs/${runA.id}`)
+        .send({ startedAt: new Date().toISOString() })
+        .expect(404);
+      await as(tokenB)
+        .post('/agent-runs')
+        .send({ parentTaskId: taskA.id })
+        .expect(404);
+      const listB = (await as(tokenB).get('/agent-runs?limit=100').expect(200)).body;
+      expect(listB.items.map((run: any) => run.id)).not.toContain(runA.id);
+      await as(tokenA).get(`/agent-runs/${runA.id}`).expect(200);
+    });
+  });
+
   describe('task blueprints and schedules', () => {
     let blueprintA: any;
 
@@ -824,6 +1014,69 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
 
         expect(heardA).toContain(blockA.id);
         expect(heardB).not.toContain(blockA.id);
+      } finally {
+        socketA.disconnect();
+        socketB.disconnect();
+      }
+    });
+    it('only lets a socket follow threads of its own workspace', async () => {
+      const socketA = await connect('/threads', tokenA);
+      const socketB = await connect('/threads', tokenB);
+      try {
+        // B cannot follow a thread of another workspace.
+        const ack = await socketB
+          .timeout(5000)
+          .emitWithAck('threads.subscribe', { threadId: threadA.id });
+        expect(ack.ok).toBe(false);
+        const ackA = await socketA
+          .timeout(5000)
+          .emitWithAck('threads.subscribe', { threadId: threadA.id });
+        expect(ackA.ok).toBe(true);
+
+        // The thread list room is per workspace.
+        await socketA.timeout(5000).emitWithAck('threads.subscribe', {});
+        await socketB.timeout(5000).emitWithAck('threads.subscribe', {});
+        const titlesA = collect(
+          socketA,
+          ThreadWireEvents.THREAD_TITLE_UPDATED,
+          (e) => e.payload.threadId,
+        );
+        const titlesB = collect(
+          socketB,
+          ThreadWireEvents.THREAD_TITLE_UPDATED,
+          (e) => e.payload.threadId,
+        );
+        const updatesA = collect(
+          socketA,
+          ThreadWireEvents.THREAD_UPDATED,
+          (e) => e.payload.id,
+        );
+        const updatesB = collect(
+          socketB,
+          ThreadWireEvents.THREAD_UPDATED,
+          (e) => e.payload.id,
+        );
+
+        await as(tokenA)
+          .patch(`/threads/${threadA.id}`)
+          .send({ title: `Thread in A ${suffix} (renamed)` })
+          .expect(200);
+        const blockA2 = (
+          await as(tokenA)
+            .post('/context/blocks')
+            .send({ title: `Second block in A ${suffix}`, content: 'x' })
+            .expect(201)
+        ).body;
+        await as(tokenA)
+          .post(`/threads/${threadA.id}/context-blocks`)
+          .send({ contextBlockId: blockA2.id })
+          .expect(201);
+        await settle();
+
+        expect(titlesA).toContain(threadA.id);
+        expect(titlesB).not.toContain(threadA.id);
+        expect(updatesA).toContain(threadA.id);
+        expect(updatesB).not.toContain(threadA.id);
       } finally {
         socketA.disconnect();
         socketB.disconnect();

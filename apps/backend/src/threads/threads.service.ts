@@ -61,6 +61,7 @@ import { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import { IssuesService } from '../issues/issues.service';
 import { IssueEntity } from '../issues/issue.entity';
 import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -111,6 +112,7 @@ export class ThreadsService {
     private readonly pullRequestWatches: PullRequestWatchService,
     private readonly pullRequests: PullRequestsService,
     private readonly issues: IssuesService,
+    private readonly workspacesService: WorkspacesService,
   ) { }
 
   /**
@@ -180,7 +182,13 @@ export class ThreadsService {
             id: In(input.participantActorIds),
           })
         : [];
-    if (participants.length !== (input.participantActorIds?.length ?? 0)) {
+    const memberships = await Promise.all(
+      participants.map((actor) => this.workspacesService.isMember(workspaceId, actor.id)),
+    );
+    if (
+      participants.length !== (input.participantActorIds?.length ?? 0) ||
+      memberships.some((isMember) => !isMember)
+    ) {
       throw new ActorNotFoundForThreadError('One or more actors not found');
     }
 
@@ -367,20 +375,35 @@ export class ThreadsService {
   }
 
   /** Cancels a reminder or schedule. Cancelling one that is already gone is harmless. */
-  async cancelTimer(threadId: string, timerId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async cancelTimer(
+    workspaceId: string,
+    threadId: string,
+    timerId: string,
+    actorId: string,
+  ): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
     await this.threadTimers.cancel({ threadId, timerId, actorId });
   }
 
   /** Stops the agent watching a task. Removing a watch that does not exist is harmless. */
-  async removeTaskSubscription(threadId: string, taskId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async removeTaskSubscription(
+    workspaceId: string,
+    threadId: string,
+    taskId: string,
+    actorId: string,
+  ): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
     await this.taskSubscriptions.unsubscribe({ threadId, taskId, actorId });
   }
 
   /** Stops the agent watching something. Stopping a watch that does not exist is harmless. */
-  async cancelWatch(threadId: string, watchId: string, actorId: string): Promise<void> {
-    await this.assertThreadExists(threadId);
+  async cancelWatch(
+    workspaceId: string,
+    threadId: string,
+    watchId: string,
+    actorId: string,
+  ): Promise<void> {
+    await this.assertThreadInWorkspace(workspaceId, threadId);
     await this.pullRequestWatches.stop({ threadId, watchId, actorId });
   }
 
@@ -388,31 +411,62 @@ export class ThreadsService {
    * Pull requests attached as links to the thread's tasks, oldest link first.
    * Mentions in descriptions, comments and messages are left out.
    */
-  async listPullRequests(threadId: string): Promise<PullRequestEntity[]> {
-    const thread = await this.threadRepository.findOne({ where: { id: threadId }, relations: ['tasks'] });
-    if (!thread) {
-      throw new ThreadNotFoundError(threadId);
-    }
-    return this.pullRequests.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
+  async listPullRequests(workspaceId: string, threadId: string): Promise<PullRequestEntity[]> {
+    return this.pullRequests.listLinkedToTasks(
+      await this.threadTaskIdsInWorkspace(workspaceId, threadId),
+    );
   }
 
   /**
    * Issues attached as links to the thread's tasks, oldest link first.
    * Mentions in descriptions, comments and messages are left out.
    */
-  async listIssues(threadId: string): Promise<IssueEntity[]> {
-    const thread = await this.threadRepository.findOne({ where: { id: threadId }, relations: ['tasks'] });
+  async listIssues(workspaceId: string, threadId: string): Promise<IssueEntity[]> {
+    return this.issues.listLinkedToTasks(
+      await this.threadTaskIdsInWorkspace(workspaceId, threadId),
+    );
+  }
+
+  private async threadTaskIdsInWorkspace(
+    workspaceId: string,
+    threadId: string,
+  ): Promise<string[]> {
+    const thread = await this.threadRepository.findOne({
+      where: this.threadWhere(threadId, workspaceId),
+      relations: ['tasks'],
+    });
     if (!thread) {
       throw new ThreadNotFoundError(threadId);
     }
-    return this.issues.listLinkedToTasks((thread.tasks ?? []).map((task) => task.id));
+    return (thread.tasks ?? []).map((task) => task.id);
   }
 
-  private async assertThreadExists(threadId: string): Promise<void> {
-    const exists = await this.threadRepository.exists({ where: { id: threadId } });
+  /**
+   * The gate for every public entry point that names a thread: a thread in
+   * another workspace answers ThreadNotFound. Also used by the controller
+   * before calling the read-state, pins and agent-log services.
+   */
+  async assertThreadInWorkspace(workspaceId: string, threadId: string): Promise<void> {
+    const exists = await this.threadRepository.exists({
+      where: this.threadWhere(threadId, workspaceId),
+    });
     if (!exists) {
       throw new ThreadNotFoundError(threadId);
     }
+  }
+
+  /**
+   * The workspace a thread belongs to (its state block's), or null when the
+   * thread is gone. Used by the realtime gateway to pick the list room.
+   */
+  async getThreadWorkspaceId(threadId: string): Promise<string | null> {
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: ['stateContextBlock'],
+      select: { id: true, stateContextBlock: { id: true, workspaceId: true } },
+      withDeleted: true,
+    });
+    return thread?.stateContextBlock?.workspaceId ?? null;
   }
 
   /** Not scoped by workspace: for internal listeners until phase 3b. */
@@ -430,7 +484,10 @@ export class ThreadsService {
     return await this.buildThreadResult(thread);
   }
 
-  async listThreads(input: ListThreadsInput): Promise<ListThreadsResult> {
+  async listThreads(
+    workspaceId: string,
+    input: ListThreadsInput,
+  ): Promise<ListThreadsResult> {
     this.logger.log({
       message: 'Listing threads',
       page: input.page,
@@ -439,7 +496,10 @@ export class ThreadsService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const query = this.threadRepository.createQueryBuilder('thread');
+    const query = this.threadRepository
+      .createQueryBuilder('thread')
+      .innerJoin('thread.stateContextBlock', 'stateBlock')
+      .where('stateBlock.workspaceId = :workspaceId', { workspaceId });
     if (input.actorId) {
       // The caller's pinned threads come first. At most one pin row matches
       // each thread, so the join never repeats a thread.
@@ -541,9 +601,11 @@ export class ThreadsService {
       task.assigneeActorId &&
       !thread.participants.some(
         (participant) => participant.id === task.assigneeActorId,
-      )
+      ) &&
+      // An assignee who has since left the workspace is not added.
+      (await this.workspacesService.isMember(workspaceId, task.assigneeActorId))
     ) {
-      await this.addParticipant(threadId, task.assigneeActorId);
+      await this.addParticipant(workspaceId, threadId, task.assigneeActorId);
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
@@ -704,7 +766,12 @@ export class ThreadsService {
     return await this.buildThreadResult(updatedThread);
   }
 
+  /**
+   * The participant must be a member of the thread's workspace, otherwise
+   * ActorNotFound.
+   */
   async addParticipant(
+    workspaceId: string,
     threadId: string,
     actorId: string,
   ): Promise<ThreadResult> {
@@ -714,12 +781,12 @@ export class ThreadsService {
       actorId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId, workspaceId);
     const actor = await this.actorRepository.findOne({
       where: { id: actorId },
     });
 
-    if (!actor) {
+    if (!actor || !(await this.workspacesService.isMember(workspaceId, actorId))) {
       throw new ActorNotFoundForThreadError(actorId);
     }
 
@@ -743,7 +810,7 @@ export class ThreadsService {
       });
     }
 
-    const updatedThread = await this.getThreadWithRelations(threadId);
+    const updatedThread = await this.getThreadWithRelations(threadId, workspaceId);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -1264,7 +1331,12 @@ export class ThreadsService {
   }
 
   // Thread message methods
+  /**
+   * A thread in another workspace is not found, and nothing is written: no
+   * message, no agent turn, no generated title.
+   */
   async createMessage(
+    workspaceId: string,
     input: CreateThreadMessageInput,
   ): Promise<ThreadMessageResult> {
     this.logger.log({
@@ -1272,9 +1344,8 @@ export class ThreadsService {
       threadId: input.threadId,
     });
 
-    // Verify thread exists
     const thread = await this.threadRepository.findOne({
-      where: { id: input.threadId },
+      where: this.threadWhere(input.threadId, workspaceId),
     });
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
@@ -1327,6 +1398,7 @@ export class ThreadsService {
   }
 
   async listMessages(
+    workspaceId: string,
     input: ListThreadMessagesInput,
   ): Promise<ListThreadMessagesResult> {
     this.logger.log({
@@ -1336,13 +1408,7 @@ export class ThreadsService {
       limit: input.limit,
     });
 
-    // Verify thread exists
-    const thread = await this.threadRepository.findOne({
-      where: { id: input.threadId },
-    });
-    if (!thread) {
-      throw new ThreadNotFoundError(input.threadId);
-    }
+    await this.assertThreadInWorkspace(workspaceId, input.threadId);
 
     const skip = (input.page - 1) * input.limit;
 

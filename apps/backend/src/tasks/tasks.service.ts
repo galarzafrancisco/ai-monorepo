@@ -232,6 +232,14 @@ export class TasksService {
 
     // Get the parent task from the execution context
     const parentTaskId = context.parentTaskId;
+    // Check before the first write: an execution of a task in another
+    // workspace is not found, and leaves no task behind.
+    const parentInWorkspace = await this.taskRepository.exists({
+      where: { workspaceId, id: parentTaskId },
+    });
+    if (!parentInWorkspace) {
+      throw new TaskNotFoundError(parentTaskId);
+    }
 
     // Create the task using the existing method
     const task = await this.createTask(workspaceId, {

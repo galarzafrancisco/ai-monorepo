@@ -14,7 +14,7 @@ describe('ThreadsGateway agent activity', () => {
       { id: 'remote-unsubscribed', actorId: 'actor-a' },
     ].map(({ id, actorId }) => {
       const rooms = new Set<string>();
-      return { id, rooms, data: { auth: { claims: { actor_id: actorId } } }, emit: jest.fn<void, [string, { payload: Record<string, unknown> }]>(),
+      return { id, rooms, data: { auth: { workspaceId: 'ws-1', claims: { actor_id: actorId } } }, emit: jest.fn<void, [string, { payload: Record<string, unknown> }]>(),
         join: (room: string) => rooms.add(room), leave: (room: string) => rooms.delete(room) };
     });
     // Both gateway instances share the adapter's room routing. None of the
@@ -28,7 +28,7 @@ describe('ThreadsGateway agent activity', () => {
             .forEach((socket) => socket.emit(name, event)) }),
       }),
     });
-    const service = { getThreadById: jest.fn().mockResolvedValue({ id: 'thread-1' }) };
+    const service = { assertThreadInWorkspace: jest.fn().mockResolvedValue(undefined) };
     const receiver = new ThreadsGateway(service as never);
     receiver.server = createServer() as never;
     await receiver.subscribe(sockets[0] as never, { threadId: 'thread-1' });

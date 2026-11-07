@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { taskIdInWorkspace } from '../../workspaces/task-in-workspace';
 import {
   ActiveTaskExecutionEntity,
   type ActiveTaskExecutionTagSnapshot,
@@ -85,7 +86,7 @@ export class ActiveTaskExecutionService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async listActiveExecutions(options?: {
+  async listActiveExecutions(workspaceId: string, options?: {
     page?: number;
     limit?: number;
     taskId?: string;
@@ -94,7 +95,7 @@ export class ActiveTaskExecutionService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    const where = options?.taskId ? { taskId: options.taskId } : {};
+    const where = { taskId: taskIdInWorkspace(workspaceId, options?.taskId) };
 
     const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
       where,
@@ -420,12 +421,14 @@ export class ActiveTaskExecutionService {
     }
   }
 
+  /** An execution of a task in another workspace is not found. */
   async interruptExecution(
+    workspaceId: string,
     input: InterruptExecutionInput,
     actorId: string,
   ): Promise<void> {
     const execution = await this.activeTaskExecutionRepository.findOne({
-      where: { id: input.executionId },
+      where: { id: input.executionId, taskId: taskIdInWorkspace(workspaceId) },
     });
 
     if (!execution) {

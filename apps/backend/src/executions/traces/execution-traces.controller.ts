@@ -24,6 +24,7 @@ import {
   ExecutionTraceResponseDto,
   ExecutionTracesResponseDto,
 } from './dto/http/execution-traces-response.dto';
+import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -41,9 +42,11 @@ export class ExecutionTracesController {
   async list(
     @Param('executionId', ParseUUIDPipe) executionId: string,
     @Query() query: ListExecutionTracesQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ExecutionTracesResponseDto> {
     try {
       const result = await this.traces.list(
+        workspaceId,
         executionId,
         query.afterSequence,
         query.limit,

@@ -5,6 +5,7 @@ import {
   ApiOkResponse,
   ApiCookieAuth,
 } from '@nestjs/swagger';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 import { GlobalSearchService } from './global-search.service';
 import { GlobalSearchQueryDto } from './dto/global-search-query.dto';
 import { GlobalSearchResultDto } from './dto/global-search-result.dto';
@@ -30,8 +31,9 @@ export class GlobalSearchController {
   })
   async search(
     @Query() query: GlobalSearchQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<GlobalSearchResultDto[]> {
-    const results = await this.globalSearchService.search({
+    const results = await this.globalSearchService.search(workspaceId, {
       query: query.query,
       limit: query.limit,
       types: query.types,

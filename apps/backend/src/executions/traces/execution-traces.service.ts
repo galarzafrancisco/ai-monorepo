@@ -65,13 +65,15 @@ export class ExecutionTracesService {
     }
   }
 
+  /** An execution of a task in another workspace is not found. */
   async list(
+    workspaceId: string,
     executionId: string,
     afterSequence: number,
     limit: number,
     options: { latest?: boolean; beforeSequence?: number } = {},
   ) {
-    await this.resolveExecution(executionId);
+    await this.resolveExecution(executionId, workspaceId);
     const backwards = options.latest || options.beforeSequence !== undefined;
     const [items, lifecycle] = await Promise.all([
       this.traces.find({
@@ -101,19 +103,28 @@ export class ExecutionTracesService {
     };
   }
 
+  /**
+   * With a workspace (user reads), only an execution of a task in that
+   * workspace is found. Worker writes pass none: workers are installation-wide
+   * until phase 3c.
+   */
   private async resolveExecution(
     executionId: string,
+    workspaceId?: string,
   ): Promise<{ workerClientId: string }> {
+    const inWorkspace = workspaceId
+      ? `AND task_id IN (SELECT id FROM tasks WHERE workspace_id = $2)`
+      : '';
     // A single snapshot avoids a race when an execution moves to history.
     const [execution] = await this.traces.query(
       `
       SELECT worker_client_id AS "workerClientId"
-      FROM active_task_executions WHERE id = $1 AND deleted_at IS NULL
+      FROM active_task_executions WHERE id = $1 AND deleted_at IS NULL ${inWorkspace}
       UNION ALL
       SELECT worker_client_id AS "workerClientId"
-      FROM task_execution_history WHERE id = $1 AND deleted_at IS NULL
+      FROM task_execution_history WHERE id = $1 AND deleted_at IS NULL ${inWorkspace}
       LIMIT 1`,
-      [executionId],
+      workspaceId ? [executionId, workspaceId] : [executionId],
     );
     if (!execution) throw new ExecutionTraceNotFoundError(executionId);
     return execution;

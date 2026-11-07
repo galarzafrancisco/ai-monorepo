@@ -50,7 +50,7 @@ export class ThreadTaskSubscriptionsService {
     /** What the user wants from the task. */
     waitingFor: string;
   }): Promise<SubscribedTask | null> {
-    const task = await this.findTask(input.taskId);
+    const task = await this.findTask(input.threadId, input.taskId);
     if (!task) {
       return null;
     }
@@ -66,7 +66,7 @@ export class ThreadTaskSubscriptionsService {
     await this.emitThreadUpdated(input.threadId, input.forActorId);
 
     // Read again: the task may have moved on while the subscription was being saved.
-    return (await this.findTask(task.id)) ?? task;
+    return (await this.findTask(input.threadId, task.id)) ?? task;
   }
 
   /** The tasks the thread waits for, oldest subscription first. Deleted tasks are left out. */
@@ -183,14 +183,22 @@ export class ThreadTaskSubscriptionsService {
     );
   }
 
-  private async findTask(taskId: string): Promise<SubscribedTask | null> {
+  /**
+   * Only a task in the thread's own workspace (its state block's, until
+   * phase 3b) is found: a thread cannot watch another workspace's task.
+   */
+  private async findTask(threadId: string, taskId: string): Promise<SubscribedTask | null> {
     if (!isUuid(taskId)) {
       return null;
     }
 
     const rows: SubscribedTask[] = await this.dataSource.query(
-      `SELECT id, name, status FROM tasks WHERE id = $1 AND deleted_at IS NULL`,
-      [taskId],
+      `SELECT t.id, t.name, t.status
+         FROM tasks t
+         JOIN threads th ON th.id = $2
+         JOIN context_blocks b ON b.id = th.state_context_block_id
+        WHERE t.id = $1 AND t.deleted_at IS NULL AND t.workspace_id = b.workspace_id`,
+      [taskId, threadId],
     );
     return rows[0] ?? null;
   }

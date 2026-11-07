@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskExecutionHistoryEntity } from './task-execution-history.entity';
+import { taskIdInWorkspace } from '../../workspaces/task-in-workspace';
 import {
   ExecutionStatsResult,
   TaskExecutionHistoryListResult,
@@ -17,7 +18,7 @@ export class TaskExecutionHistoryService {
     private readonly taskExecutionHistoryRepository: Repository<TaskExecutionHistoryEntity>,
   ) {}
 
-  async listHistory(options?: {
+  async listHistory(workspaceId: string, options?: {
     page?: number;
     limit?: number;
     taskId?: string;
@@ -26,7 +27,7 @@ export class TaskExecutionHistoryService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    const where = options?.taskId ? { taskId: options.taskId } : {};
+    const where = { taskId: taskIdInWorkspace(workspaceId, options?.taskId) };
 
     const [items, total] = await this.taskExecutionHistoryRepository.findAndCount({
       where,
@@ -45,9 +46,12 @@ export class TaskExecutionHistoryService {
   }
 
   /** One finished run, for pages that link to it directly (e.g. its trace). */
-  async getHistoryEntry(id: string): Promise<TaskExecutionHistoryResult> {
+  async getHistoryEntry(
+    workspaceId: string,
+    id: string,
+  ): Promise<TaskExecutionHistoryResult> {
     const entry = await this.taskExecutionHistoryRepository.findOne({
-      where: { id },
+      where: { id, taskId: taskIdInWorkspace(workspaceId) },
       relations: ['task', 'stats'],
     });
     if (!entry) {

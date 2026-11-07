@@ -41,6 +41,7 @@ import { TaskExecutionHistoryResponseDto } from '../history/dto/http/task-execut
 import { UpdateExecutionStatsDto } from './dto/http/update-execution-stats.dto';
 import { WorkerGithubCredentialsResponseDto } from './dto/http/worker-github-credentials-response.dto';
 import { WorkerGithubCredentialsService } from '../../integrations/github/worker-github-credentials.service';
+import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -62,8 +63,9 @@ export class ActiveTaskExecutionController {
   @ApiOkResponse({ type: ActiveTaskExecutionListResponseDto })
   async listActiveExecutions(
     @Query() query: ListActiveExecutionsQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ActiveTaskExecutionListResponseDto> {
-    const result = await this.activeTaskExecutionService.listActiveExecutions({
+    const result = await this.activeTaskExecutionService.listActiveExecutions(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 50,
       taskId: query.taskId,
@@ -282,9 +284,11 @@ export class ActiveTaskExecutionController {
   async interruptExecution(
     @Param('executionId') executionId: string,
     @CurrentAuth() auth: AuthContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
     try {
       await this.activeTaskExecutionService.interruptExecution(
+        workspaceId,
         { executionId },
         auth.subject,
       );

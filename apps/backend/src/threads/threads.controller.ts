@@ -136,8 +136,9 @@ export class ThreadsController {
   async listThreads(
     @Query() query: ListThreadsQueryDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadListResponseDto> {
-    const result = await this.threadsService.listThreads({
+    const result = await this.threadsService.listThreads(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 20,
       actorId: user.actorId,
@@ -256,8 +257,9 @@ export class ThreadsController {
   async cancelTimer(
     @Param() params: ThreadTimerParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.cancelTimer(params.id, params.timerId, user.actorId);
+    await this.threadsService.cancelTimer(workspaceId, params.id, params.timerId, user.actorId);
   }
 
   @Delete(':id/watches/:watchId')
@@ -272,8 +274,9 @@ export class ThreadsController {
   async cancelWatch(
     @Param() params: ThreadWatchParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.cancelWatch(params.id, params.watchId, user.actorId);
+    await this.threadsService.cancelWatch(workspaceId, params.id, params.watchId, user.actorId);
   }
 
   @Get(':id/pull-requests')
@@ -283,8 +286,13 @@ export class ThreadsController {
   })
   @ApiOkResponse({ type: [PullRequestResponseDto] })
   @ApiNotFoundResponse({ description: 'Thread not found' })
-  async listPullRequests(@Param() params: ThreadParamsDto): Promise<PullRequestResponseDto[]> {
-    return (await this.threadsService.listPullRequests(params.id)).map(toPullRequestResponse);
+  async listPullRequests(
+    @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<PullRequestResponseDto[]> {
+    return (await this.threadsService.listPullRequests(workspaceId, params.id)).map(
+      toPullRequestResponse,
+    );
   }
 
   @Get(':id/issues')
@@ -294,8 +302,11 @@ export class ThreadsController {
   })
   @ApiOkResponse({ type: [IssueResponseDto] })
   @ApiNotFoundResponse({ description: 'Thread not found' })
-  async listIssues(@Param() params: ThreadParamsDto): Promise<IssueResponseDto[]> {
-    return (await this.threadsService.listIssues(params.id)).map(toIssueResponse);
+  async listIssues(
+    @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<IssueResponseDto[]> {
+    return (await this.threadsService.listIssues(workspaceId, params.id)).map(toIssueResponse);
   }
 
   @Delete(':id/task-subscriptions/:taskId')
@@ -310,8 +321,14 @@ export class ThreadsController {
   async removeTaskSubscription(
     @Param() params: ThreadTaskSubscriptionParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    await this.threadsService.removeTaskSubscription(params.id, params.taskId, user.actorId);
+    await this.threadsService.removeTaskSubscription(
+      workspaceId,
+      params.id,
+      params.taskId,
+      user.actorId,
+    );
   }
 
   @Post(':id/context-blocks')
@@ -395,8 +412,10 @@ export class ThreadsController {
   async addParticipant(
     @Param() params: ThreadParamsDto,
     @Body() dto: AddParticipantDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.addParticipant(
+      workspaceId,
       params.id,
       dto.actorId,
     );
@@ -432,7 +451,9 @@ export class ThreadsController {
   @ApiNotFoundResponse({ description: 'Thread not found' })
   async getThreadTokenUsage(
     @Param() params: ThreadParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadTokenUsageResponseDto> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     const result = await this.threadAgentLogService.getTokenUsage(params.id);
     return ThreadTokenUsageResponseDto.fromResult(result);
   }
@@ -494,8 +515,9 @@ export class ThreadsController {
     @Param() params: ThreadParamsDto,
     @Body() dto: CreateThreadMessageDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ThreadMessageResponseDto> {
-    const result = await this.threadsService.createMessage({
+    const result = await this.threadsService.createMessage(workspaceId, {
       threadId: params.id,
       content: dto.content,
       createdByActorId: user.actorId,
@@ -515,7 +537,9 @@ export class ThreadsController {
   async markThreadRead(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     await this.threadReadStateService.markRead(params.id, user.actorId);
   }
 
@@ -530,7 +554,9 @@ export class ThreadsController {
   async pinThread(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     await this.threadPinsService.pin(params.id, user.actorId);
   }
 
@@ -544,7 +570,9 @@ export class ThreadsController {
   async unpinThread(
     @Param() params: ThreadParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
+    await this.threadsService.assertThreadInWorkspace(workspaceId, params.id);
     await this.threadPinsService.unpin(params.id, user.actorId);
   }
 
@@ -558,8 +586,9 @@ export class ThreadsController {
   async listMessages(
     @Param() params: ThreadParamsDto,
     @Query() query: ListThreadMessagesQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ListThreadMessagesResponseDto> {
-    const result = await this.threadsService.listMessages({
+    const result = await this.threadsService.listMessages(workspaceId, {
       threadId: params.id,
       page: query.page ?? 1,
       limit: query.limit ?? 20,

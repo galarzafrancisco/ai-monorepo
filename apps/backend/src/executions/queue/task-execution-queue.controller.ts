@@ -17,6 +17,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentAuth } from '../../auth/guards/decorators/current-auth.decorator';
+import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
 import { AccessTokenGuard } from '../../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
@@ -57,8 +58,9 @@ export class TaskExecutionQueueController {
   @ApiOkResponse({ type: TaskExecutionQueueListResponseDto })
   async listQueue(
     @Query() query: ListQueueQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskExecutionQueueListResponseDto> {
-    const result = await this.taskExecutionQueueService.listQueue({
+    const result = await this.taskExecutionQueueService.listQueue(workspaceId, {
       page: query.page ?? 1,
       limit: query.limit ?? 50,
     });

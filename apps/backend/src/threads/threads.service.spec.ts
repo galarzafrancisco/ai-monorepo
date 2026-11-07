@@ -644,7 +644,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         actorRepository.findOne.mockResolvedValue(mockActor);
 
-        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+        const result = await service.addParticipant('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(relationQueryBuilder.relation).toHaveBeenCalledWith(
           ThreadEntity,
@@ -683,7 +683,7 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         actorRepository.findOne.mockResolvedValue(mockActor);
 
-        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+        const result = await service.addParticipant('workspace-uuid', 'thread-uuid', 'actor-uuid');
 
         expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
         expect(result.participants).toEqual(
@@ -718,7 +718,7 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should list threads with pagination', async () => {
       threadRepository.findAndCount.mockResolvedValue([[mockThread], 1]);
 
-      const result = await service.listThreads({ page: 1, limit: 20 });
+      const result = await service.listThreads('workspace-uuid', { page: 1, limit: 20 });
 
       expect(result.items.length).toBe(1);
       expect(result.total).toBe(1);

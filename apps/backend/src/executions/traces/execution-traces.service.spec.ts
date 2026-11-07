@@ -134,7 +134,7 @@ describe('ExecutionTracesService', () => {
   });
 
   it('returns a stable cursor on an empty page and orders events by sequence', async () => {
-    expect(await service.list(executionId, 5, 10)).toEqual({
+    expect(await service.list('workspace-1', executionId, 5, 10)).toEqual({
       items: [],
       lifecycle: [],
       nextAfterSequence: 5,
@@ -144,7 +144,7 @@ describe('ExecutionTracesService', () => {
       expect.objectContaining({ order: { sequence: 'ASC' }, take: 11 }),
     );
     find.mockResolvedValue([{ sequence: 9 }]);
-    expect((await service.list(executionId, 5, 10)).nextAfterSequence).toBe(9);
+    expect((await service.list('workspace-1', executionId, 5, 10)).nextAfterSequence).toBe(9);
   });
 
   it('notifies viewers only after a successful durable insert', async () => {
@@ -173,7 +173,7 @@ describe('ExecutionTracesService', () => {
 
   it('opens at the latest events and returns them chronologically with earlier-page metadata', async () => {
     find.mockResolvedValue([{ sequence: 5 }, { sequence: 4 }, { sequence: 3 }]);
-    expect(await service.list(executionId, 0, 2, { latest: true })).toEqual({
+    expect(await service.list('workspace-1', executionId, 0, 2, { latest: true })).toEqual({
       items: [{ sequence: 4 }, { sequence: 5 }],
       lifecycle: [],
       nextAfterSequence: 5,
@@ -186,7 +186,7 @@ describe('ExecutionTracesService', () => {
 
   it('does not infer earlier events from gaps in the sequence', async () => {
     find.mockResolvedValue([{ sequence: 4 }, { sequence: 3 }]);
-    const page = await service.list(executionId, 0, 2, { beforeSequence: 5 });
+    const page = await service.list('workspace-1', executionId, 0, 2, { beforeSequence: 5 });
     expect(page.items.map((item) => item.sequence)).toEqual([3, 4]);
     expect(page.hasMoreBefore).toBe(false);
   });

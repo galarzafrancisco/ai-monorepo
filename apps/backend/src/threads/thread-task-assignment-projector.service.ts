@@ -14,7 +14,13 @@ export class ThreadTaskAssignmentProjectorService {
       return;
     }
 
-    const thread = await this.threadsService.findThreadByTaskId(event.payload.id);
+    // The task's workspace is the thread's: TasksService checked the assignee
+    // is a member of it.
+    const workspaceId = event.payload.workspaceId;
+    const thread = await this.threadsService.findThreadByTaskIdInWorkspace(
+      workspaceId,
+      event.payload.id,
+    );
     if (!thread) {
       return;
     }
@@ -23,6 +29,6 @@ export class ThreadTaskAssignmentProjectorService {
       return;
     }
 
-    await this.threadsService.addParticipant(thread.id, assigneeActorId);
+    await this.threadsService.addParticipant(workspaceId, thread.id, assigneeActorId);
   }
 }
