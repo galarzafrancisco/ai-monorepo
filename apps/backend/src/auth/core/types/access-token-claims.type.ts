@@ -34,6 +34,13 @@ export interface AccessTokenClaims {
   actor_id: string;
 
   /**
+   * Workspace the actor is working in. Every request made with this token is
+   * scoped to it. Absent on tokens minted before workspaces existed.
+   * See docs/architecture/workspaces.md.
+   */
+  workspace_id?: string;
+
+  /**
    * Audience - the resource server(s) that should accept this token
    */
   aud: string | string[];

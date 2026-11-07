@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { getConfig } from '../config/env.config';
 import { JwksService } from '../auth/crypto/jwks.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { UserScopes } from 'src/auth/core/scopes/user.scopes';
@@ -29,6 +30,7 @@ export class WebAuthService {
     private readonly identityProviderService: IdentityProviderService,
     private readonly actorService: ActorService,
     private readonly jwksService: JwksService,
+    private readonly workspacesService: WorkspacesService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
@@ -106,9 +108,14 @@ export class WebAuthService {
       user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
     ];
 
+    const workspaceId = await this.workspacesService.findWorkspaceIdForActor(
+      actor.id,
+    );
+
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
       sub: actor.id,
+      ...(workspaceId ? { workspace_id: workspaceId } : {}),
       actor_id: actor.id,
       actor_slug: actor.slug,
       actor_type: actor.type,

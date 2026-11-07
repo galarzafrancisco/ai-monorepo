@@ -39,6 +39,7 @@ import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.e
 import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
 import { MCP_SERVER_AUTH_TYPE_EXTERNAL } from '../mcp-registry/mcp-server.types';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 import { ServerUsesExternalAuthError } from '../mcp-registry/errors/mcp-registry.errors';
 import {
   MCP_AUTH_SERVER_VERSION,
@@ -58,6 +59,7 @@ export class TokenService {
     @InjectRepository(McpRefreshTokenEntity)
     private readonly mcpRefreshTokenRepository: Repository<McpRefreshTokenEntity>,
     private readonly mcpRegistryService: McpRegistryService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   /**
@@ -427,9 +429,13 @@ export class TokenService {
     // The audience is the server's canonical resource URI (RFC 8707), derived
     // from the server the grant is bound to, never from client input.
     const serverResource = getMcpServerResourceUrl(mcpAuthFlow.server);
+    const workspaceId = await this.workspacesService.findWorkspaceIdForActor(
+      mcpAuthFlow.authJourney.actor.id,
+    );
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
       sub: mcpAuthFlow.authJourney.actorId,
+      ...(workspaceId ? { workspace_id: workspaceId } : {}),
       actor_id: mcpAuthFlow.authJourney.actor.id,
       actor_slug: mcpAuthFlow.authJourney.actor.slug,
       actor_type: mcpAuthFlow.authJourney.actor.type,

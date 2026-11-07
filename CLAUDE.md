@@ -130,6 +130,7 @@ Follow the guides in `/docs/architecture/` and `/docs/review-guides/`. Key docum
 
 Extensive documentation in `/docs/`:
 - `architecture/` - Core architectural decisions and patterns
+- `architecture/workspaces.md` - Workspaces (multi-company separation): membership, the `workspace_id` token claim (no workspace in URLs), which tables get `workspace_id`, and the rollout phases
 - `review-guides/` - Checklists for entities, DTOs, controllers, MCPs, errors
 - `how-to-guides/` - Implementation guides
 - `how-to-guides/realtime-events.md` - Real-time domain events, gateway wiring, room topology, and UI sync principles

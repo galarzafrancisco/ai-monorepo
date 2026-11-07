@@ -69,6 +69,8 @@ import { ExecutionTraceJson1762500000001 } from './migrations/1762500000001-Exec
 import { ExecutionTraces1762500000000 } from './migrations/1762500000000-ExecutionTraces';
 import { ServerLifecycleService } from './server-lifecycle.service';
 import { WorkerCapabilities1763400000000 } from './migrations/1763400000000-WorkerCapabilities';
+import { Workspaces1763500000000 } from './migrations/1763500000000-Workspaces';
+import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
   imports: [
@@ -121,6 +123,7 @@ import { WorkerCapabilities1763400000000 } from './migrations/1763400000000-Work
         ProjectAutoTags1763300000002,
         SilentAgentFollowUpPrompts1763300000003,
         WorkerCapabilities1763400000000,
+        Workspaces1763500000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -137,6 +140,7 @@ import { WorkerCapabilities1763400000000 } from './migrations/1763400000000-Work
     AgentRunsModule,
     ThreadsModule,
     IdentityProviderModule,
+    WorkspacesModule,
     AppInitModule,
     SecretsModule,
     AiProvidersModule,
