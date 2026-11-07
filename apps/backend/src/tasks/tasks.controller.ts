@@ -61,9 +61,11 @@ import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 import { CurrentRunId } from 'src/auth/guards/decorators/current-run-id.decorator';
 import { CurrentExecutionId } from 'src/auth/guards/decorators/current-execution-id.decorator';
 import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('tasks/tasks')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)

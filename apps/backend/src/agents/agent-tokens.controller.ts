@@ -32,6 +32,7 @@ import { AgentsScopes } from './agents.scopes';
 import { IssueAccessTokenRequestDto } from '../authorization-server/dto/issue-access-token-request.dto';
 import { IssueAccessTokenResponseDto } from '../authorization-server/dto/issue-access-token-response.dto';
 import { IssuedAccessTokenResponseDto } from '../authorization-server/dto/issued-access-token-response.dto';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 /**
  * Controller for managing agent access tokens.
@@ -39,6 +40,7 @@ import { IssuedAccessTokenResponseDto } from '../authorization-server/dto/issued
  */
 @ApiTags('Agent Tokens')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('agents/:slug/tokens')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.WRITE.id)

@@ -60,9 +60,11 @@ import { ThreadTokenUsageResponseDto } from './dto/thread-token-usage-response.d
 import { ThreadAgentLogService } from './agent/thread-agent-log.service';
 import { ThreadTimerParamsDto } from './dto/thread-timer-params.dto';
 import { ThreadTaskSubscriptionParamsDto } from './dto/thread-task-subscription-params.dto';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('threads')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(ThreadsScopes.READ.id)

@@ -18,9 +18,11 @@ import type { UserContext } from '../auth/guards/context/auth-context.types';
 import { UserWalkthroughStatusResponseDto } from './dto/walkthrough-status-response.dto';
 import { WalkthroughService } from './walkthrough.service';
 import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Walkthrough')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('walkthrough')
 @UseGuards(AccessTokenGuard)
 export class WalkthroughController {

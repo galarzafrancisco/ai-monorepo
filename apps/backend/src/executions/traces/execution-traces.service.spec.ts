@@ -11,6 +11,7 @@ import {
 } from './execution-traces.errors';
 
 const executionId = 'd73507cc-1469-4a97-8530-5fb3b6447e32';
+const worker = (workerClientId: string) => ({ workspaceId: 'ws', workerClientId });
 const batch = (): PostExecutionTracePayload => ({
   executionId,
   harness: 'claude',
@@ -45,7 +46,7 @@ describe('ExecutionTracesService', () => {
 
   it('stores the entire JSON payload in one idempotent batch insert after resolving ownership', async () => {
     const input = batch();
-    await service.append(input, 'owner');
+    await service.append(worker('owner'), input);
     expect(query).toHaveBeenCalledTimes(2);
     expect(query.mock.calls[0][0]).toContain('UNION ALL');
     expect(query.mock.calls[1][0]).toContain(
@@ -68,7 +69,7 @@ describe('ExecutionTracesService', () => {
       source: 'worker',
       harness: null,
     };
-    await service.append(input, 'owner');
+    await service.append(worker('owner'), input);
     expect(query.mock.calls[1][1].slice(0, 3)).toEqual([
       executionId,
       null,
@@ -77,7 +78,7 @@ describe('ExecutionTracesService', () => {
   });
 
   it('rejects another worker without inserting', async () => {
-    await expect(service.append(batch(), 'other')).rejects.toBeInstanceOf(
+    await expect(service.append(worker('other'), batch())).rejects.toBeInstanceOf(
       ExecutionTraceWorkerMismatchError,
     );
     expect(query).toHaveBeenCalledTimes(1);
@@ -85,7 +86,7 @@ describe('ExecutionTracesService', () => {
 
   it('rejects a missing execution without inserting', async () => {
     query.mockResolvedValue([]);
-    await expect(service.append(batch(), 'owner')).rejects.toBeInstanceOf(
+    await expect(service.append(worker('owner'), batch())).rejects.toBeInstanceOf(
       ExecutionTraceNotFoundError,
     );
     expect(query).toHaveBeenCalledTimes(1);
@@ -120,7 +121,7 @@ describe('ExecutionTracesService', () => {
     'rejects invalid trace batches before accessing the database (%#)',
     async (input) => {
       await expect(
-        service.append(input as PostExecutionTracePayload, 'owner'),
+        service.append(worker('owner'), input as PostExecutionTracePayload),
       ).rejects.toBeInstanceOf(InvalidExecutionTraceError);
       expect(query).not.toHaveBeenCalled();
     },
@@ -129,7 +130,7 @@ describe('ExecutionTracesService', () => {
   it('accepts raw JSON null without turning it into a missing payload', async () => {
     const input = batch();
     input.events[0].payload = null;
-    await service.append(input, 'owner');
+    await service.append(worker('owner'), input);
     expect(JSON.parse(query.mock.calls[1][1][6])).toBeNull();
   });
 
@@ -148,7 +149,7 @@ describe('ExecutionTracesService', () => {
   });
 
   it('notifies viewers only after a successful durable insert', async () => {
-    await service.append(batch(), 'owner');
+    await service.append(worker('owner'), batch());
     expect(emit).toHaveBeenCalledWith(
       ExecutionTracesChangedEvent.INTERNAL,
       expect.objectContaining({ executionId }),
@@ -157,7 +158,7 @@ describe('ExecutionTracesService', () => {
     query
       .mockResolvedValueOnce([{ workerClientId: 'owner' }])
       .mockRejectedValueOnce(new Error('write failed'));
-    await expect(service.append(batch(), 'owner')).rejects.toThrow(
+    await expect(service.append(worker('owner'), batch())).rejects.toThrow(
       'write failed',
     );
     expect(emit).not.toHaveBeenCalled();
@@ -167,7 +168,7 @@ describe('ExecutionTracesService', () => {
     query
       .mockResolvedValueOnce([{ workerClientId: 'owner' }])
       .mockResolvedValueOnce([]);
-    await service.append(batch(), 'owner');
+    await service.append(worker('owner'), batch());
     expect(emit).not.toHaveBeenCalled();
   });
 

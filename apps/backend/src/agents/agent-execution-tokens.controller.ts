@@ -20,9 +20,11 @@ import { RequestAgentExecutionTokenDto } from './dto/request-agent-execution-tok
 import { AgentToolPermissionsService } from './agent-tool-permissions.service';
 import { deriveExecutionScopesFromToolPermissions } from '@taico/shared';
 import { AgentToolPermissionRecord } from './dto/service/agent-tool-permissions.service.types';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Agent Execution Tokens')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('agents/:slug/execution-token')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.ACT_AS.id)

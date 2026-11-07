@@ -29,9 +29,11 @@ import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { MetaScopes } from './meta.scopes';
 import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Meta')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('meta')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(MetaScopes.READ.id)
@@ -69,6 +71,7 @@ export class MetaController {
     return result.map((tag) => this.mapTagResultToResponse(tag));
   }
 
+  @WorkspaceAccess('installation')
   @Get('tags/colors')
   @ApiOperation({ summary: 'Get available tag colors' })
   @ApiOkResponse({
@@ -92,6 +95,7 @@ export class MetaController {
     await this.metaService.deleteTag(workspaceId, tagId);
   }
 
+  @WorkspaceAccess('installation')
   @Get('version')
   @ApiOperation({ summary: 'Get version information' })
   @ApiOkResponse({

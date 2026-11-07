@@ -36,9 +36,11 @@ import {
   ListAccessRequestsQueryDto,
   UpdateAccessRequestDto,
 } from './dto/http/access-request-admin.dto';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 /** Public and write-only: no read, lookup or existence check is exposed. */
 @ApiTags('Access Requests')
+@WorkspaceAccess('installation')
 @Controller('access-requests')
 export class AccessRequestsController {
   constructor(private readonly service: AccessRequestsService) {}
@@ -64,6 +66,7 @@ export class AccessRequestsController {
 /** Admin-only review. Authorization is enforced server side via the admin scope. */
 @ApiTags('Access Requests Admin')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('admin/access-requests')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(UserScopes.ADMIN.id)

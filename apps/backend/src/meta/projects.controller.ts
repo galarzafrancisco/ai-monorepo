@@ -33,9 +33,11 @@ import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { MetaScopes } from './meta.scopes';
 import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Meta - Projects')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('meta/projects')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(MetaScopes.READ.id)

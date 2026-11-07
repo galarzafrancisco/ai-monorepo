@@ -46,8 +46,10 @@ import type { UserContext } from 'src/auth/guards/context/auth-context.types';
  * @see ActiveExecutionContextResolverService for context resolution logic
  */
 import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 @ApiTags('AgentRun')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('agent-runs')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentRunsScopes.READ.id)

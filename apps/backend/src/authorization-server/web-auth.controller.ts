@@ -14,6 +14,7 @@ import {
   BadRequestException,
   Logger,
   InternalServerErrorException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -37,8 +38,11 @@ import { AccountSetupStatusRequestDto } from './dto/account-setup-status-request
 import { AccountSetupStatusResponseDto } from './dto/account-setup-status-response.dto';
 import { SetupManagedUserRequestDto } from './dto/setup-managed-user-request.dto';
 import { User } from 'src/identity-provider/user.entity';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 
 @ApiTags('Web Authentication')
+@WorkspaceAccess('installation')
 @Controller('auth')
 export class WebAuthController {
   private logger = new Logger(WebAuthController.name);
@@ -89,6 +93,9 @@ export class WebAuthController {
     };
   }
 
+  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  @UseGuards(AccessTokenGuard)
+  @WorkspaceAccess('default-only')
   @Get('users')
   @ApiOperation({ summary: 'List human users for admin user management' })
   @ApiResponse({ status: 200, type: [ManagedUserResponseDto] })
@@ -98,6 +105,9 @@ export class WebAuthController {
     return users.map((user) => this.toManagedUserResponse(user));
   }
 
+  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  @UseGuards(AccessTokenGuard)
+  @WorkspaceAccess('default-only')
   @Post('users')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create an invited human user' })
@@ -112,6 +122,9 @@ export class WebAuthController {
     return this.toManagedUserResponse(user);
   }
 
+  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  @UseGuards(AccessTokenGuard)
+  @WorkspaceAccess('default-only')
   @Post('users/:userId/reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset a managed user password so they can set a new one' })
@@ -125,6 +138,9 @@ export class WebAuthController {
     return this.toManagedUserResponse(user);
   }
 
+  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  @UseGuards(AccessTokenGuard)
+  @WorkspaceAccess('default-only')
   @Delete('users/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate a managed user' })

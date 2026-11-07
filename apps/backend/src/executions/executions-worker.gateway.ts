@@ -26,10 +26,15 @@ import {
 } from '@taico/events';
 import { WsAccessTokenGuard } from '../auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from '../auth/guards/guards/ws-scopes.guard';
+import { enforceWorkspaceAccess } from '../auth/guards/guards/workspace-access';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { WorkersScopes } from './workers.scopes';
 import { ExecutionActivityService } from './execution-activity.service';
-import { ActiveTaskExecutionNotFoundError } from './errors/executions.errors';
+import {
+  ActiveTaskExecutionNotFoundError,
+  ActiveTaskExecutionWorkerMismatchError,
+} from './errors/executions.errors';
+import { workerCaller, type WorkerCaller } from './worker-execution-access';
 import { AuthContext } from '../auth/guards/context/auth-context.types';
 import { createAuthContext } from '../auth/guards/context/auth-context.factory';
 import { WorkersService } from '../workers/workers.service';
@@ -41,11 +46,13 @@ import { ExecutionInterruptEvent } from './events/execution-interrupt.event';
 
 import { ExecutionTracesService } from './traces/execution-traces.service';
 import { ExecutionTraceNotFoundError, ExecutionTraceWorkerMismatchError, InvalidExecutionTraceError } from './traces/execution-traces.errors';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
 
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(WorkersScopes.CONNECT.id)
+@WorkspaceAccess('default-only')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -129,13 +136,14 @@ export class ExecutionsWorkerGateway
     }
   }
 
+  @WorkspaceAccess('worker')
   @SubscribeMessage(ExecutionWireEvents.EXECUTION_TRACE_POST)
   async postExecutionTrace(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: PostExecutionTracePayload,
   ) {
     try {
-      await this.executionTracesService.append(body, this.getOauthClientId(client) ?? '');
+      await this.executionTracesService.append(this.caller(client), body);
       return { ok: true };
     } catch (error) {
       if (error instanceof InvalidExecutionTraceError || error instanceof ExecutionTraceNotFoundError || error instanceof ExecutionTraceWorkerMismatchError) {
@@ -147,6 +155,7 @@ export class ExecutionsWorkerGateway
     }
   }
 
+  @WorkspaceAccess('worker')
   @SubscribeMessage(ExecutionWireEvents.EXECUTION_ACTIVITY_POST)
   async postExecutionActivity(
     @ConnectedSocket() client: Socket,
@@ -157,7 +166,7 @@ export class ExecutionsWorkerGateway
     }
 
     try {
-      await this.executionActivityService.publishActivity({
+      await this.executionActivityService.publishActivity(this.caller(client), {
         executionId: body.executionId,
         kind: body.kind,
         message: body.message,
@@ -166,7 +175,10 @@ export class ExecutionsWorkerGateway
       });
       return { ok: true };
     } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
+      if (
+        error instanceof ActiveTaskExecutionNotFoundError ||
+        error instanceof ActiveTaskExecutionWorkerMismatchError
+      ) {
         return { ok: false, error: error.message };
       }
 
@@ -180,6 +192,7 @@ export class ExecutionsWorkerGateway
     }
   }
 
+  @WorkspaceAccess('worker')
   @SubscribeMessage(ExecutionWireEvents.EXECUTION_HEARTBEAT_POST)
   async postExecutionHeartbeat(
     @ConnectedSocket() client: Socket,
@@ -190,12 +203,18 @@ export class ExecutionsWorkerGateway
     }
 
     try {
-      await this.executionActivityService.touchHeartbeat({
+      await this.executionActivityService.touchHeartbeat(this.caller(client), {
         executionId: body.executionId,
       });
       await this.recordAuthenticatedWorkerSeen(client);
       return { ok: true };
     } catch (error) {
+      if (
+        error instanceof ActiveTaskExecutionNotFoundError ||
+        error instanceof ActiveTaskExecutionWorkerMismatchError
+      ) {
+        return { ok: false, error: error.message };
+      }
       this.logger.error({
         message: 'Failed to process execution heartbeat',
         socketId: client.id,
@@ -308,6 +327,11 @@ export class ExecutionsWorkerGateway
     this.requestWorkerHarnessesReport(client);
   }
 
+  /** The worker making a per-execution call: checked by `findWorkerExecution`. */
+  private caller(client: Socket): WorkerCaller {
+    return workerCaller(client.data.auth as AuthContext);
+  }
+
   private getOauthClientId(client: Socket): string | null {
     const auth = client.data.auth as AuthContext | undefined;
     const oauthClientId = auth?.claims?.client_id;
@@ -351,6 +375,9 @@ export class ExecutionsWorkerGateway
     }
 
     const authContext: AuthContext = createAuthContext(token, claims);
+    // Connecting records the worker (`workers` has no workspace_id until
+    // phase 3c), so the socket itself is default-only, like its class.
+    enforceWorkspaceAccess('default-only', authContext, 'ExecutionsWorkerGateway.connect');
     client.data.auth = authContext;
   }
 

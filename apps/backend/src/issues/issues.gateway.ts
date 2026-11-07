@@ -14,6 +14,7 @@ import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard
 import { IssuesScopes } from './issues.scopes';
 import { IssueUpdatedEvent } from './events/issues.events';
 import { toIssueResponse } from './dto/http/issue.mapper';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const ISSUES_ROOM = 'issues';
 
@@ -24,6 +25,7 @@ const ISSUES_ROOM = 'issues';
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(IssuesScopes.READ.id)
+@WorkspaceAccess('default-only')
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/issues',

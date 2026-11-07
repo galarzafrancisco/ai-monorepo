@@ -10,9 +10,11 @@ import { SearchScopes } from '../search/search.scopes';
 import { SearchIndexStatusDto } from './dto/search-index-status.dto';
 import { SearchSettingsDto } from './dto/search-settings.dto';
 import { UpdateSearchSettingsDto } from './dto/update-search-settings.dto';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Search')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('search')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class SearchAdminController {

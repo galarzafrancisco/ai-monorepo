@@ -69,9 +69,11 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Context')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('context/blocks')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(ContextScopes.READ.id)

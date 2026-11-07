@@ -47,9 +47,11 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { McpRegistryScopes } from './mcp-registry.scopes';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Tools')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('mcp')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(McpRegistryScopes.READ.id)

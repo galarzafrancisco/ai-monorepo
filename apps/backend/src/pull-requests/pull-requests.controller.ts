@@ -11,9 +11,11 @@ import { PullRequestResponseDto } from './dto/http/pull-request-response.dto';
 import { toPullRequestResponse } from './dto/http/pull-request.mapper';
 import { PullRequestRefInvalidError } from './errors/pull-requests.errors';
 import { parsePullRequestRef, PullRequestRef } from './github/pull-request-ref';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Pull requests')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('pull-requests')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class PullRequestsController {

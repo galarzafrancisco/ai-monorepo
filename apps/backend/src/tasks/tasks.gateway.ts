@@ -42,10 +42,12 @@ import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from './tasks.scopes';
+import { TasksService } from './tasks.service';
 import {
   socketWorkspaceId,
   workspaceRoom,
 } from '../workspaces/workspace-rooms';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const TASKS_ROOM = 'tasks';
 const tasksRoom = (workspaceId: string): string =>
@@ -71,6 +73,7 @@ type TaskActivityPayload = {
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -84,6 +87,8 @@ export class TasksGateway
   server!: Server;
 
   private logger = new Logger(TasksGateway.name);
+
+  constructor(private readonly tasksService: TasksService) {}
 
   afterInit() {
     this.logger.log('Tasks WebSocket Gateway initialized');
@@ -299,12 +304,17 @@ export class TasksGateway
 
   // Listen to incoming messages
   @SubscribeMessage(TaskWireEvents.TASK_ACTIVITY_POST)
-  postTaskActivity(
+  async postTaskActivity(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: TaskActivityPayload,
   ) {
     // ultra-MVP "validation"
     if (!body?.taskId) return { ok: false, error: 'taskId required' };
+    try {
+      await this.tasksService.getTaskById(socketWorkspaceId(client), body.taskId);
+    } catch {
+      return { ok: false, error: 'task not found' };
+    }
 
     const wireEvent: TaskActivityWireEvent = {
       taskId: body.taskId,

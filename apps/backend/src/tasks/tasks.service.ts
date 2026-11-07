@@ -36,6 +36,7 @@ import {
   CommentRequiredError,
   ActorNotFoundError,
   TaskIsThreadParentError,
+  InputRequestNotFoundError,
   InputRequestSelfAssignmentError,
 } from './errors/tasks.errors';
 import {
@@ -1401,9 +1402,7 @@ export class TasksService {
     });
 
     if (!inputRequest) {
-      throw new Error(
-        `Input request ${inputRequestId} not found for task ${taskId}`,
-      );
+      throw new InputRequestNotFoundError(taskId, inputRequestId);
     }
 
     inputRequest.answer = input.answer;

@@ -11,9 +11,11 @@ import { GlobalSearchQueryDto } from './dto/global-search-query.dto';
 import { GlobalSearchResultDto } from './dto/global-search-result.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Search')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('search')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class GlobalSearchController {

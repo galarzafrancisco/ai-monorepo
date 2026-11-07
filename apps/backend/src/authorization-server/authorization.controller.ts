@@ -47,8 +47,10 @@ import {
   ResourceMismatchError,
 } from './errors/authorization.errors';
 import { McpRegistryDomainError } from '../mcp-registry/errors/mcp-registry.errors';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Authorization Server')
+@WorkspaceAccess('installation')
 @Controller('auth')
 export class AuthorizationController {
   private logger = new Logger(AuthorizationController.name);

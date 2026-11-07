@@ -15,6 +15,11 @@ import {
   ExecutionTraceWorkerMismatchError,
   InvalidExecutionTraceError,
 } from './execution-traces.errors';
+import { findWorkerExecution, type WorkerCaller } from '../worker-execution-access';
+import {
+  ActiveTaskExecutionNotFoundError,
+  ActiveTaskExecutionWorkerMismatchError,
+} from '../errors/executions.errors';
 
 @Injectable()
 export class ExecutionTracesService {
@@ -24,14 +29,24 @@ export class ExecutionTracesService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  /** Traces may arrive after the execution stopped, so a finished one counts too. */
   async append(
+    caller: WorkerCaller,
     input: PostExecutionTracePayload,
-    workerClientId: string,
   ): Promise<void> {
     this.validate(input);
-    const execution = await this.resolveExecution(input.executionId);
-    if (!workerClientId || execution.workerClientId !== workerClientId) {
-      throw new ExecutionTraceWorkerMismatchError(input.executionId);
+    try {
+      await findWorkerExecution(this.traces, caller, input.executionId, {
+        includeFinished: true,
+      });
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new ExecutionTraceNotFoundError(input.executionId);
+      }
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ExecutionTraceWorkerMismatchError(input.executionId);
+      }
+      throw error;
     }
 
     // Pass payloads directly as json, without jsonb conversion or JSON text
@@ -110,11 +125,9 @@ export class ExecutionTracesService {
    */
   private async resolveExecution(
     executionId: string,
-    workspaceId?: string,
+    workspaceId: string,
   ): Promise<{ workerClientId: string }> {
-    const inWorkspace = workspaceId
-      ? `AND task_id IN (SELECT id FROM tasks WHERE workspace_id = $2)`
-      : '';
+    const inWorkspace = `AND task_id IN (SELECT id FROM tasks WHERE workspace_id = $2)`;
     // A single snapshot avoids a race when an execution moves to history.
     const [execution] = await this.traces.query(
       `
@@ -124,7 +137,7 @@ export class ExecutionTracesService {
       SELECT worker_client_id AS "workerClientId"
       FROM task_execution_history WHERE id = $1 AND deleted_at IS NULL ${inWorkspace}
       LIMIT 1`,
-      workspaceId ? [executionId, workspaceId] : [executionId],
+      [executionId, workspaceId],
     );
     if (!execution) throw new ExecutionTraceNotFoundError(executionId);
     return execution;

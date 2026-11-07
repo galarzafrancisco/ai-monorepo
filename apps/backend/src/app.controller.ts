@@ -6,7 +6,9 @@ import {
 } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { ServerLifecycleService } from './server-lifecycle.service';
+import { WorkspaceAccess } from './auth/guards/decorators/workspace-access.decorator';
 
+@WorkspaceAccess('installation')
 @Controller()
 export class AppController {
   constructor(

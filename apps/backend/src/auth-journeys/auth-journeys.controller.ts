@@ -26,9 +26,11 @@ import {
   ConnectionAuthorizationFlowResult,
   McpAuthorizationFlowResult,
 } from './dto/service/auth-journeys.service.types';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Authorization Journeys')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('auth-journeys')
 @UseGuards(AccessTokenGuard)
 export class AuthJourneysController {

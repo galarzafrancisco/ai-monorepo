@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Like, Not, Repository } from 'typeorm';
+import { IsNull, Like, Not, Raw, Repository } from 'typeorm';
 import { ActorEntity } from './actor.entity';
 import { ActorType } from './enums';
 import { CreateActorInput } from './dto/service/actor.service.types';
@@ -164,11 +164,18 @@ export class ActorService {
    * List all actors. Deleted actors are included by default so callers can
    * still attribute past work to them.
    */
-  async listActors({
-    includeDeleted = true,
-  }: { includeDeleted?: boolean } = {}): Promise<ActorEntity[]> {
+  /** The actors who are members of a workspace (people and agents). */
+  async listActors(
+    workspaceId: string,
+    { includeDeleted = true }: { includeDeleted?: boolean } = {},
+  ): Promise<ActorEntity[]> {
+    const id = Raw(
+      (alias) =>
+        `${alias} IN (SELECT actor_id FROM workspace_members WHERE workspace_id = :actorWorkspaceId)`,
+      { actorWorkspaceId: workspaceId },
+    );
     return this.actorRepository.find({
-      where: includeDeleted ? {} : { deletedAt: IsNull() },
+      where: includeDeleted ? { id } : { id, deletedAt: IsNull() },
       order: { displayName: 'ASC' },
     });
   }
@@ -176,7 +183,7 @@ export class ActorService {
   /**
    * Search actors by display name or slug using fuzzy search
    */
-  async searchActors({
+  async searchActors(workspaceId: string, {
     query,
     limit,
     threshold,
@@ -188,7 +195,7 @@ export class ActorService {
     this.logger.log(`Searching actors with query: ${query}`);
 
     // Deleted actors cannot be picked for new work, so they are not searchable
-    const actors = await this.listActors({ includeDeleted: false });
+    const actors = await this.listActors(workspaceId, { includeDeleted: false });
 
     // Use search service for fuzzy search
     const results = this.searchService.search({

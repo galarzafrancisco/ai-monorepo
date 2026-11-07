@@ -7,9 +7,11 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WorkersScopes } from 'src/executions/workers.scopes';
 import { WorkerResult } from './dto/service/workers.service.types';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('workers')
 @UseGuards(AccessTokenGuard, ScopesGuard)
+@WorkspaceAccess('default-only')
 @Controller('workers')
 export class WorkersController {
   constructor(private readonly workersService: WorkersService) {}

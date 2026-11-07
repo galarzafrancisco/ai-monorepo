@@ -27,6 +27,7 @@ import {
   socketWorkspaceId,
   workspaceRoom,
 } from '../workspaces/workspace-rooms';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const CONTEXT_ROOM = 'context';
 const contextRoom = (workspaceId: string): string =>
@@ -51,6 +52,7 @@ type ContextSubscriptionPayload = {
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(ContextScopes.READ.id)
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',

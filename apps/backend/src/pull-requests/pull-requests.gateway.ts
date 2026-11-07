@@ -14,6 +14,7 @@ import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard
 import { PullRequestsScopes } from './pull-requests.scopes';
 import { PullRequestUpdatedEvent } from './events/pull-requests.events';
 import { toPullRequestResponse } from './dto/http/pull-request.mapper';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const PULL_REQUESTS_ROOM = 'pull-requests';
 
@@ -24,6 +25,7 @@ const PULL_REQUESTS_ROOM = 'pull-requests';
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(PullRequestsScopes.READ.id)
+@WorkspaceAccess('default-only')
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/pull-requests',

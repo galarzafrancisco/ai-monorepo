@@ -294,7 +294,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ query }) => {
-        const results = await this.actorService.searchActors({
+        const results = await this.actorService.searchActors(workspaceId, {
           query,
           limit: 10,
         });

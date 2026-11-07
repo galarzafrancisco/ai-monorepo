@@ -31,9 +31,11 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { AgentsScopes } from './agents.scopes';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('agents')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.READ.id)

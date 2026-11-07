@@ -36,9 +36,11 @@ import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-qu
 import { TaskExecutionQueueListResponseDto } from './dto/http/task-execution-queue-list-response.dto';
 import { ListQueueQueryDto } from './dto/http/list-queue-query.dto';
 import { TaskExecutionQueueEntryResult } from '../dto/service/execution-results.service.types';
+import { WorkspaceAccess } from '../../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('executions/queue')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)

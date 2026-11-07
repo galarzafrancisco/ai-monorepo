@@ -25,9 +25,11 @@ import {
   ExecutionTracesResponseDto,
 } from './dto/http/execution-traces-response.dto';
 import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('executions/:executionId/traces')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)

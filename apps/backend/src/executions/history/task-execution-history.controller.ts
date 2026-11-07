@@ -24,9 +24,11 @@ import { TaskExecutionHistoryResponseDto } from './dto/http/task-execution-histo
 import { TaskExecutionHistoryListResponseDto } from './dto/http/task-execution-history-list-response.dto';
 import { ListHistoryQueryDto } from './dto/http/list-history-query.dto';
 import { CurrentWorkspace } from '../../auth/guards/decorators/current-workspace.decorator';
+import { WorkspaceAccess } from '../../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('scoped')
 @Controller('executions/history')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)

@@ -11,9 +11,11 @@ import { IssueResponseDto } from './dto/http/issue-response.dto';
 import { toIssueResponse } from './dto/http/issue.mapper';
 import { IssueRefInvalidError } from './errors/issues.errors';
 import { IssueRef, parseIssueRef } from './github/issue-ref';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Issues')
 @ApiCookieAuth('JWT-Cookie')
+@WorkspaceAccess('default-only')
 @Controller('issues')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class IssuesController {

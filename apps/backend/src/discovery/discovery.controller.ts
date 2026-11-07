@@ -21,8 +21,10 @@ import {
   AuthorizationServerMetadataResult,
   ProtectedResourceMetadataResult,
 } from './dto/service/discovery.service.types';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 @ApiTags('Discovery')
+@WorkspaceAccess('installation')
 @Controller('.well-known')
 export class DiscoveryController {
   constructor(private readonly discoveryService: DiscoveryService) {}

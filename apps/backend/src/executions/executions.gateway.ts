@@ -23,11 +23,13 @@ import { ActiveExecutionsChangedEvent } from './events/active-executions-changed
 
 import { isUUID } from 'class-validator';
 import { ExecutionTracesChangedEvent } from './events/execution-traces-changed.event';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 const EXECUTIONS_ROOM = 'executions';
 
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
+@WorkspaceAccess('default-only')
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/executions' })
 export class ExecutionsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

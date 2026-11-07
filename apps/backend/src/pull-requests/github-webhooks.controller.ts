@@ -7,6 +7,7 @@ import { PullRequestsService } from './pull-requests.service';
 import { pullRequestTargetsOf } from './github/webhook-payload';
 import { IssuesService } from '../issues/issues.service';
 import { issueTargetsOf } from '../issues/github/webhook-payload';
+import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 
 /**
  * Receives GitHub webhooks for a connection. Public, but every delivery must
@@ -16,6 +17,7 @@ import { issueTargetsOf } from '../issues/github/webhook-payload';
  * cannot plant state.
  */
 @ApiExcludeController()
+@WorkspaceAccess('installation')
 @Controller('integrations/github/webhooks')
 export class GithubWebhooksController {
   private readonly logger = new Logger(GithubWebhooksController.name);
