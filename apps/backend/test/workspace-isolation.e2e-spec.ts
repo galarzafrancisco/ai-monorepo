@@ -16,7 +16,11 @@ import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.ty
 import { getConfig } from '../src/config/env.config';
 import { ActorType, UserRole } from '../src/identity-provider/enums';
 import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
-import { UserSlugConflictError } from '../src/identity-provider/errors/identity-provider.errors';
+import {
+  InvalidCredentialsError,
+  UserSlugConflictError,
+} from '../src/identity-provider/errors/identity-provider.errors';
+import { ActorService } from '../src/identity-provider/actor.service';
 import { WorkspaceEntity } from '../src/workspaces/workspace.entity';
 import { WorkspaceMemberEntity } from '../src/workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../src/workspaces/enums';
@@ -1097,6 +1101,129 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
             expect(person.reason).toBeInstanceOf(UserSlugConflictError);
           }
         }
+      });
+    });
+
+    describe('writes that wait on a concurrent rename or delete', () => {
+      // A concurrent writer is a transaction holding the rows' locks. The
+      // write under test starts, waits on those locks, and the writer then
+      // renames or deletes the actor, hands its slug to someone else and
+      // commits. The waiting write must work from the committed rows.
+      const ds = () => app.get(DataSource);
+
+      async function holdRows(lockSql: string[], id: string) {
+        const writer = ds().createQueryRunner();
+        await writer.connect();
+        await writer.startTransaction();
+        for (const sql of lockSql) await writer.query(sql, [id]);
+        return writer;
+      }
+      const AGENT_ROWS = [
+        `SELECT 1 FROM agents WHERE actor_id = $1 FOR UPDATE`,
+        `SELECT 1 FROM actors WHERE id = $1 FOR UPDATE`,
+      ];
+
+      async function untilWaitingOnLock() {
+        for (let i = 0; i < 200; i++) {
+          const [{ n }] = await ds().query(
+            `SELECT count(*)::int AS n FROM pg_stat_activity
+              WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+          );
+          if (n > 0) return;
+          await new Promise((r) => setTimeout(r, 25));
+        }
+        throw new Error('the write never waited on the locked rows');
+      }
+
+      const actorRow = async (id: string) =>
+        (await ds().query(`SELECT slug, deleted_at FROM actors WHERE id = $1`, [id]))[0];
+
+      it('does not bring back a slug that was renamed away and reused', async () => {
+        const x = (await createAgent(tokenB, { slug: `iso-stale-x-${suffix}`, name: 'X' }).expect(201)).body;
+        const y = (await createAgent(tokenB, { slug: `iso-stale-y-${suffix}`, name: 'Y' }).expect(201)).body;
+        const writer = await holdRows(AGENT_ROWS, x.actorId);
+        const patch = as(tokenB).patch(`/agents/${x.actorId}`).send({ name: 'X renamed' }).then((r) => r);
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [x.actorId, `${x.slug}-new`]);
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [y.actorId, x.slug]);
+        await writer.commitTransaction();
+        await writer.release();
+
+        const res = await patch;
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ name: 'X renamed', slug: `${x.slug}-new` });
+        expect((await actorRow(x.actorId)).slug).toBe(`${x.slug}-new`);
+        expect((await actorRow(y.actorId)).slug).toBe(x.slug);
+      });
+
+      it("does not revive a deleted agent whose slug a person took", async () => {
+        const x = (await createAgent(tokenB, { slug: `iso-stale-del-${suffix}`, name: 'X' }).expect(201)).body;
+        const writer = await holdRows(AGENT_ROWS, x.actorId);
+        const patch = as(tokenB).patch(`/agents/${x.actorId}`).send({ introduction: 'late' }).then((r) => r);
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE agents SET deleted_at = now() WHERE actor_id = $1`, [x.actorId]);
+        await writer.query(
+          `UPDATE actors SET slug = slug || '~deleted-x', deleted_at = now() WHERE id = $1`,
+          [x.actorId],
+        );
+        const person = await app
+          .get(ActorService)
+          .createUserActor(writer.manager, { slug: x.slug, displayName: 'Took it' });
+        await writer.commitTransaction();
+        await writer.release();
+
+        expect((await patch).status).toBe(404);
+        const after = await actorRow(x.actorId);
+        expect(after.slug).toBe(`${x.slug}~deleted-x`);
+        expect(after.deleted_at).not.toBeNull();
+        expect((await actorRow(person.id)).slug).toBe(x.slug);
+      });
+
+      it('does not delete an agent under a slug it no longer has', async () => {
+        const x = (await createAgent(tokenB, { slug: `iso-stale-rm-${suffix}`, name: 'X' }).expect(201)).body;
+        const y = (await createAgent(tokenB, { slug: `iso-stale-rm-y-${suffix}`, name: 'Y' }).expect(201)).body;
+        const writer = await holdRows(AGENT_ROWS, x.actorId);
+        const removal = as(tokenB).delete(`/agents/${x.actorId}`).then((r) => r);
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [x.actorId, `${x.slug}-new`]);
+        await writer.query(`UPDATE actors SET slug = $2 WHERE id = $1`, [y.actorId, x.slug]);
+        await writer.commitTransaction();
+        await writer.release();
+
+        expect((await removal).status).toBeLessThan(300);
+        const after = await actorRow(x.actorId);
+        expect(after.slug.startsWith(`${x.slug}-new~deleted-`)).toBe(true);
+        expect((await actorRow(y.actorId)).slug).toBe(x.slug);
+      });
+
+      it("does not let account setup undo a person's deactivation", async () => {
+        const email = `iso-stale-setup-${suffix}@example.test`;
+        const identity = app.get(IdentityProviderService);
+        const invited = await identity.createManagedUser({ email, role: UserRole.STANDARD });
+        const writer = await holdRows(
+          [`SELECT 1 FROM users WHERE id = $1 FOR UPDATE`],
+          invited.id,
+        );
+        await writer.query(`SELECT 1 FROM actors WHERE id = $1 FOR UPDATE`, [invited.actorId]);
+        const setup = identity
+          .setupManagedUser({ email, displayName: 'Late', slug: `iso-stale-p-${suffix}`, password: 'password-123' })
+          .then(
+            () => 'set up',
+            (error: unknown) => error,
+          );
+        await untilWaitingOnLock();
+        await writer.query(`UPDATE users SET "isActive" = false WHERE id = $1`, [invited.id]);
+        await writer.query(
+          `UPDATE actors SET slug = slug || '~deleted-x', deleted_at = now() WHERE id = $1`,
+          [invited.actorId],
+        );
+        await writer.commitTransaction();
+        await writer.release();
+
+        expect(await setup).toBeInstanceOf(InvalidCredentialsError);
+        const after = await actorRow(invited.actorId);
+        expect(after.deleted_at).not.toBeNull();
+        expect(after.slug.endsWith('~deleted-x')).toBe(true);
       });
     });
 
