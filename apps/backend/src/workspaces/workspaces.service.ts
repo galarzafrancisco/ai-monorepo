@@ -12,7 +12,9 @@ import {
 import { UserRole } from '../identity-provider/enums';
 
 /** The workspace role a person gets from their installation-wide role. */
-export function workspaceRoleForUserRole(role: UserRole | string): WorkspaceRole {
+export function workspaceRoleForUserRole(
+  role: UserRole | string,
+): WorkspaceRole {
   return role === UserRole.ADMIN ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER;
 }
 
@@ -45,6 +47,19 @@ export class WorkspacesService implements OnModuleInit {
     if (added > 0) {
       this.logger.log(`Added ${added} actor(s) to the default workspace`);
     }
+  }
+
+  /** Ids of every workspace that is not deleted. */
+  async listWorkspaceIds(): Promise<string[]> {
+    const workspaces = await this.workspaceRepository.find({
+      select: { id: true },
+    });
+    return workspaces.map((workspace) => workspace.id);
+  }
+
+  /** Whether an actor is a member of a workspace. */
+  async isMember(workspaceId: string, actorId: string): Promise<boolean> {
+    return this.memberRepository.exists({ where: { workspaceId, actorId } });
   }
 
   /**

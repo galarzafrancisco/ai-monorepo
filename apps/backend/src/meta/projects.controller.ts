@@ -32,6 +32,7 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { MetaScopes } from './meta.scopes';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Meta - Projects')
 @ApiCookieAuth('JWT-Cookie')
@@ -50,9 +51,10 @@ export class ProjectsController {
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createProject(
+    @CurrentWorkspace() workspaceId: string,
     @Body() dto: CreateProjectDto,
   ): Promise<ProjectResponseDto> {
-    const result = await this.projectsService.createProject({
+    const result = await this.projectsService.createProject(workspaceId, {
       slug: dto.slug,
       description: dto.description,
       repoUrl: dto.repoUrl,
@@ -69,8 +71,10 @@ export class ProjectsController {
     type: [ProjectResponseDto],
     description: 'List of all projects',
   })
-  async getAllProjects(): Promise<ProjectResponseDto[]> {
-    const result = await this.projectsService.getAllProjects();
+  async getAllProjects(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<ProjectResponseDto[]> {
+    const result = await this.projectsService.getAllProjects(workspaceId);
     return result.map((project) => this.mapProjectResultToResponse(project));
   }
 
@@ -99,11 +103,12 @@ export class ProjectsController {
     description: 'List of matching projects',
   })
   async searchProjects(
+    @CurrentWorkspace() workspaceId: string,
     @Query('q') query: string,
     @Query('limit') limit?: number,
     @Query('threshold') threshold?: number,
   ): Promise<ProjectResponseDto[]> {
-    const result = await this.projectsService.searchProjects({
+    const result = await this.projectsService.searchProjects(workspaceId, {
       query,
       limit: limit ? parseInt(String(limit), 10) : undefined,
       threshold: threshold ? parseFloat(String(threshold)) : undefined,
@@ -119,9 +124,13 @@ export class ProjectsController {
   })
   @ApiNotFoundResponse({ description: 'Project not found' })
   async getProjectBySlug(
+    @CurrentWorkspace() workspaceId: string,
     @Param('slug') slug: string,
   ): Promise<ProjectResponseDto> {
-    const result = await this.projectsService.getProjectBySlug(slug);
+    const result = await this.projectsService.getProjectBySlug(
+      workspaceId,
+      slug,
+    );
     if (!result) {
       throw new NotFoundException(`Project with slug ${slug} not found`);
     }
@@ -136,9 +145,13 @@ export class ProjectsController {
   })
   @ApiNotFoundResponse({ description: 'Project not found' })
   async getProject(
+    @CurrentWorkspace() workspaceId: string,
     @Param('projectId') projectId: string,
   ): Promise<ProjectResponseDto> {
-    const result = await this.projectsService.getProjectById(projectId);
+    const result = await this.projectsService.getProjectById(
+      workspaceId,
+      projectId,
+    );
     return this.mapProjectResultToResponse(result);
   }
 
@@ -152,16 +165,21 @@ export class ProjectsController {
   @ApiNotFoundResponse({ description: 'Project not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async updateProject(
+    @CurrentWorkspace() workspaceId: string,
     @Param('projectId') projectId: string,
     @Body() dto: PatchProjectDto,
   ): Promise<ProjectResponseDto> {
-    const result = await this.projectsService.updateProject(projectId, {
-      autoTagIds: dto.autoTagIds,
-      description: dto.description,
-      repoUrl: dto.repoUrl,
-      githubConnectionId: dto.githubConnectionId,
-      githubForWorker: dto.githubForWorker,
-    });
+    const result = await this.projectsService.updateProject(
+      workspaceId,
+      projectId,
+      {
+        autoTagIds: dto.autoTagIds,
+        description: dto.description,
+        repoUrl: dto.repoUrl,
+        githubConnectionId: dto.githubConnectionId,
+        githubForWorker: dto.githubForWorker,
+      },
+    );
     return this.mapProjectResultToResponse(result);
   }
 
@@ -171,8 +189,11 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Delete a project' })
   @ApiNoContentResponse({ description: 'Project deleted successfully' })
   @ApiNotFoundResponse({ description: 'Project not found' })
-  async deleteProject(@Param('projectId') projectId: string): Promise<void> {
-    await this.projectsService.deleteProject(projectId);
+  async deleteProject(
+    @CurrentWorkspace() workspaceId: string,
+    @Param('projectId') projectId: string,
+  ): Promise<void> {
+    await this.projectsService.deleteProject(workspaceId, projectId);
   }
 
   private mapProjectResultToResponse(

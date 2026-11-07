@@ -112,6 +112,7 @@ describe('ContextMcpGateway scope enforcement', () => {
       {} as any,
     );
     const server = (gateway as any).buildServer(user, {
+      workspaceId: 'workspace-1',
       scopes: [McpScopes.USE.id, ContextScopes.WRITE.id],
     } as any);
 
@@ -121,6 +122,7 @@ describe('ContextMcpGateway scope enforcement', () => {
     });
 
     expect(contextService.createBlock).toHaveBeenCalledWith(
+      'workspace-1',
       expect.objectContaining({
         title: 'T',
         content: 'C',

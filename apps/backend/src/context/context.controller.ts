@@ -59,12 +59,16 @@ import {
 import { ContextMcpGateway } from './context.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
-import type { AuthContext, UserContext } from '../auth/guards/context/auth-context.types';
+import type {
+  AuthContext,
+  UserContext,
+} from '../auth/guards/context/auth-context.types';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { ContextScopes } from './context.scopes';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Context')
 @ApiCookieAuth('JWT-Cookie')
@@ -86,10 +90,11 @@ export class ContextController {
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Body() dto: CreateBlockDto,
     @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
-    const result = await this.contextService.createBlock({
+    const result = await this.contextService.createBlock(workspaceId, {
       title: dto.title,
       content: dto.content,
       createdByActorId: user.actorId,
@@ -107,9 +112,12 @@ export class ContextController {
     description: 'List of wiki pages',
   })
   async listBlocks(
+    @CurrentWorkspace() workspaceId: string,
     @Query() query: ListBlocksQueryDto,
   ): Promise<BlockListResponseDto> {
-    const items = await this.contextService.listBlocks({ tag: query.tag });
+    const items = await this.contextService.listBlocks(workspaceId, {
+      tag: query.tag,
+    });
     return {
       items: items.map((item) => this.mapToSummary(item)),
     };
@@ -122,9 +130,10 @@ export class ContextController {
     description: 'Search results sorted by relevance',
   })
   async searchBlocks(
+    @CurrentWorkspace() workspaceId: string,
     @Query() query: SearchBlocksQueryDto,
   ): Promise<BlockSearchResultDto[]> {
-    const results = await this.contextService.searchBlocks({
+    const results = await this.contextService.searchBlocks(workspaceId, {
       query: query.query,
       limit: query.limit,
     });
@@ -147,8 +156,10 @@ export class ContextController {
     type: [BlockTreeResponseDto],
     description: 'Page hierarchy tree',
   })
-  async getBlockTree(): Promise<BlockTreeResponseDto[]> {
-    const result = await this.contextService.getBlockTree();
+  async getBlockTree(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<BlockTreeResponseDto[]> {
+    const result = await this.contextService.getBlockTree(workspaceId);
     return result.map((node) => this.mapToTreeResponse(node));
   }
 
@@ -162,8 +173,11 @@ export class ContextController {
       format: 'binary',
     },
   })
-  async exportBlocks(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-    const archive = await this.contextService.exportBlocksAsZip();
+  async exportBlocks(
+    @CurrentWorkspace() workspaceId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const archive = await this.contextService.exportBlocksAsZip(workspaceId);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `context-blocks-${timestamp}.zip`;
 
@@ -200,6 +214,7 @@ export class ContextController {
     description: 'No archive file uploaded or invalid file type',
   })
   async importBlocks(
+    @CurrentWorkspace() workspaceId: string,
     @UploadedFile()
     file:
       | {
@@ -216,14 +231,18 @@ export class ContextController {
 
     const lowerName = file.originalname.toLowerCase();
     const isZipMime =
-      file.mimetype === 'application/zip'
-      || file.mimetype === 'application/x-zip-compressed'
-      || file.mimetype === 'application/octet-stream';
+      file.mimetype === 'application/zip' ||
+      file.mimetype === 'application/x-zip-compressed' ||
+      file.mimetype === 'application/octet-stream';
     if (!lowerName.endsWith('.zip') && !isZipMime) {
       throw new BadRequestException('Only .zip archives are supported');
     }
 
-    return this.contextService.importBlocksFromZip(file.buffer, user.actorId);
+    return this.contextService.importBlocksFromZip(
+      workspaceId,
+      file.buffer,
+      user.actorId,
+    );
   }
 
   @Get(':id')
@@ -232,8 +251,14 @@ export class ContextController {
     type: BlockResponseDto,
     description: 'Context page retrieved successfully',
   })
-  async getBlock(@Param() params: BlockParamsDto): Promise<BlockResponseDto> {
-    const result = await this.contextService.getBlockById(params.id);
+  async getBlock(
+    @CurrentWorkspace() workspaceId: string,
+    @Param() params: BlockParamsDto,
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.getBlockById(
+      workspaceId,
+      params.id,
+    );
     return this.mapToResponse(result);
   }
 
@@ -248,6 +273,7 @@ export class ContextController {
     description: 'No update fields provided',
   })
   async updateBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: BlockParamsDto,
     @Body() dto: UpdateBlockDto,
     @CurrentUser() user: UserContext,
@@ -262,14 +288,18 @@ export class ContextController {
       throw new BadRequestException('At least one field must be provided');
     }
 
-    const result = await this.contextService.updateBlock(params.id, {
-      title: dto.title,
-      content: dto.content,
-      tagNames: dto.tagNames,
-      parentId: dto.parentId,
-      order: dto.order,
-      actorId: user.actorId,
-    });
+    const result = await this.contextService.updateBlock(
+      workspaceId,
+      params.id,
+      {
+        title: dto.title,
+        content: dto.content,
+        tagNames: dto.tagNames,
+        parentId: dto.parentId,
+        order: dto.order,
+        actorId: user.actorId,
+      },
+    );
 
     return this.mapToResponse(result);
   }
@@ -282,14 +312,19 @@ export class ContextController {
     description: 'Context page content appended successfully',
   })
   async appendToBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: BlockParamsDto,
     @Body() dto: AppendBlockDto,
     @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
-    const result = await this.contextService.appendToBlock(params.id, {
-      content: dto.content,
-      actorId: user.actorId,
-    });
+    const result = await this.contextService.appendToBlock(
+      workspaceId,
+      params.id,
+      {
+        content: dto.content,
+        actorId: user.actorId,
+      },
+    );
 
     return this.mapToResponse(result);
   }
@@ -302,10 +337,12 @@ export class ContextController {
     description: 'Page reordered successfully',
   })
   async reorderBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: BlockParamsDto,
     @Body() dto: ReorderBlockDto,
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.reorderBlock(
+      workspaceId,
       params.id,
       dto.newOrder,
     );
@@ -323,10 +360,12 @@ export class ContextController {
     description: 'Circular reference detected or parent not found',
   })
   async moveBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: BlockParamsDto,
     @Body() dto: MoveBlockDto,
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.moveBlock(
+      workspaceId,
       params.id,
       dto.newParentId,
     );
@@ -339,10 +378,11 @@ export class ContextController {
   @ApiOperation({ summary: 'Delete a wiki page' })
   @ApiNoContentResponse({ description: 'Context page deleted successfully' })
   async deleteBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: BlockParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<void> {
-    await this.contextService.deleteBlock(params.id, user.actorId);
+    await this.contextService.deleteBlock(workspaceId, params.id, user.actorId);
   }
 
   @Post(':id/tags')
@@ -354,11 +394,13 @@ export class ContextController {
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addTagToBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: BlockParamsDto,
     @Body() dto: CreateTagDto,
     @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.addTagToBlock(
+      workspaceId,
       params.id,
       {
         name: dto.name,
@@ -376,11 +418,13 @@ export class ContextController {
     description: 'Tag removed from page successfully',
   })
   async removeTagFromBlock(
+    @CurrentWorkspace() workspaceId: string,
     @Param('id') pageId: string,
     @Param('tagId') tagId: string,
     @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.removeTagFromBlock(
+      workspaceId,
       pageId,
       tagId,
       user.actorId,

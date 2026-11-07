@@ -38,9 +38,14 @@ jest.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
   })),
 }));
 
+const WORKSPACE_ID = 'workspace-1';
+
 describe('TasksMcpGateway', () => {
   const user = { actorId: 'actor-1' } as any;
-  const authContext = { scopes: [TasksScopes.WRITE.id] } as any;
+  const authContext = {
+    scopes: [TasksScopes.WRITE.id],
+    workspaceId: WORKSPACE_ID,
+  } as any;
 
   it('exposes and forwards tagNames when creating a task', async () => {
     const tasksService = {
@@ -67,7 +72,7 @@ describe('TasksMcpGateway', () => {
       tagNames: ['code', 'project:taico'],
     });
 
-    expect(tasksService.createTask).toHaveBeenCalledWith({
+    expect(tasksService.createTask).toHaveBeenCalledWith(WORKSPACE_ID, {
       name: 'Task with tags',
       description: 'Created through MCP',
       assigneeActorId: 'actor-2',
@@ -106,7 +111,7 @@ describe('TasksMcpGateway', () => {
       url: 'http://taico.test/tasks/task/task-1',
     });
 
-    expect(tasksService.createTaskInThread).toHaveBeenCalledWith({
+    expect(tasksService.createTaskInThread).toHaveBeenCalledWith(WORKSPACE_ID, {
       name: 'Task with tags',
       description: 'Created through MCP',
       assigneeActorId: undefined,
@@ -146,19 +151,25 @@ describe('TasksMcpGateway', () => {
       await tool.handler({ taskId: 'task-1' });
 
       expect(tasksService.assignTask).toHaveBeenCalledWith(
+        WORKSPACE_ID,
         'task-1',
         { assigneeActorId: 'actor-1' },
         'actor-1',
       );
       expect(tasksService.changeStatus).toHaveBeenCalledWith(
+        WORKSPACE_ID,
         'task-1',
         { status: 'IN_PROGRESS' },
         'actor-1',
       );
-      expect(tasksService.addComment).toHaveBeenCalledWith('task-1', {
-        commenterActorId: 'actor-1',
-        content: 'Starting to work on this.',
-      });
+      expect(tasksService.addComment).toHaveBeenCalledWith(
+        WORKSPACE_ID,
+        'task-1',
+        {
+          commenterActorId: 'actor-1',
+          content: 'Starting to work on this.',
+        },
+      );
     });
 
     it('mentions the branch when one is given', async () => {
@@ -166,10 +177,14 @@ describe('TasksMcpGateway', () => {
 
       await tool.handler({ taskId: 'task-1', branchName: 'feature/x' });
 
-      expect(tasksService.addComment).toHaveBeenCalledWith('task-1', {
-        commenterActorId: 'actor-1',
-        content: 'Starting to work on this on branch `feature/x`.',
-      });
+      expect(tasksService.addComment).toHaveBeenCalledWith(
+        WORKSPACE_ID,
+        'task-1',
+        {
+          commenterActorId: 'actor-1',
+          content: 'Starting to work on this on branch `feature/x`.',
+        },
+      );
     });
   });
 });

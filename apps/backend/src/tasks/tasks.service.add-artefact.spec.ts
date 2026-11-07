@@ -11,6 +11,8 @@ jest.mock('../threads/threads.service', () => ({
 import { TasksService } from './tasks.service';
 import { ArtefactAddedEvent } from './events/tasks.events';
 
+const WORKSPACE_ID = 'workspace-1';
+
 describe('TasksService addArtefact', () => {
   const task = { id: 'task-1' } as any;
 
@@ -51,6 +53,7 @@ describe('TasksService addArtefact', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     return { service, artefactRepository, eventEmitter };
@@ -62,6 +65,7 @@ describe('TasksService addArtefact', () => {
     artefactRepository.findOne.mockResolvedValueOnce(existing);
 
     const result = await service.addArtefact(
+      WORKSPACE_ID,
       task.id,
       { name: 'Pull Request', link: existing.link },
       'actor-1',
@@ -69,7 +73,11 @@ describe('TasksService addArtefact', () => {
 
     expect(artefactRepository.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { taskId: task.id, link: existing.link },
+        where: {
+          workspaceId: WORKSPACE_ID,
+          taskId: task.id,
+          link: existing.link,
+        },
       }),
     );
     expect(artefactRepository.save).not.toHaveBeenCalled();
@@ -85,6 +93,7 @@ describe('TasksService addArtefact', () => {
       .mockResolvedValueOnce(created);
 
     const result = await service.addArtefact(
+      WORKSPACE_ID,
       task.id,
       { name: 'Pull Request', link: created.link },
       'actor-1',

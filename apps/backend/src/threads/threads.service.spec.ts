@@ -57,6 +57,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
   const mockParentTask = {
     id: 'parent-task-uuid',
+    workspaceId: '00000000-0000-4000-8000-000000000001',
     name: 'Parent Task',
     description: 'Parent task description',
     status: 'NOT_STARTED',

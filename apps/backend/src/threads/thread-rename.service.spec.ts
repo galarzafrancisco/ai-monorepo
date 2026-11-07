@@ -7,6 +7,8 @@ import { ThreadRenameService } from './thread-rename.service';
 import { InvalidThreadTitleError, ThreadNotFoundError } from './errors/threads.errors';
 import { ThreadTitleUpdatedEvent } from './events/threads.events';
 
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
+
 describe('ThreadRenameService', () => {
   let repo: { findOne: jest.Mock; save: jest.Mock };
   let context: { updateBlock: jest.Mock };
@@ -31,7 +33,11 @@ describe('ThreadRenameService', () => {
       ThreadTitleUpdatedEvent.INTERNAL,
       expect.any(ThreadTitleUpdatedEvent),
     );
-    expect(context.updateBlock).toHaveBeenCalledWith('b1', { title: 'Thread State: New name' });
+    expect(context.updateBlock).toHaveBeenCalledWith(
+      UNSCOPED_MODULE_WORKSPACE_ID,
+      'b1',
+      { title: 'Thread State: New name' },
+    );
   });
 
   it('throws when the thread is missing', async () => {

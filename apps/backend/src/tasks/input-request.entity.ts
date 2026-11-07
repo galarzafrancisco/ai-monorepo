@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   BeforeUpdate,
+  Index,
 } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -15,6 +16,11 @@ import { ActorEntity } from '../identity-provider/actor.entity';
 export class InputRequestEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'uuid', name: 'task_id' })
   taskId!: string;

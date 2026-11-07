@@ -1,4 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiOkResponse,
@@ -10,6 +17,7 @@ import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
 import { UserWalkthroughStatusResponseDto } from './dto/walkthrough-status-response.dto';
 import { WalkthroughService } from './walkthrough.service';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Walkthrough')
 @ApiCookieAuth('JWT-Cookie')
@@ -20,7 +28,10 @@ export class WalkthroughController {
 
   @Post('acknowledge')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Acknowledge walkthrough — transitions FULL_PAGE display mode to BANNER' })
+  @ApiOperation({
+    summary:
+      'Acknowledge walkthrough — transitions FULL_PAGE display mode to BANNER',
+  })
   @ApiOkResponse({ description: 'Acknowledged' })
   async acknowledge(
     @CurrentUser() user: UserContext,
@@ -36,9 +47,13 @@ export class WalkthroughController {
     description: 'Current walkthrough progress and display mode',
   })
   async getStatus(
+    @CurrentWorkspace() workspaceId: string,
     @CurrentUser() user: UserContext,
   ): Promise<UserWalkthroughStatusResponseDto> {
-    const status = await this.walkthroughService.getStatusForActor(user.actorId);
+    const status = await this.walkthroughService.getStatusForActor(
+      workspaceId,
+      user.actorId,
+    );
 
     return {
       workerConfigured: status.workerConfigured,

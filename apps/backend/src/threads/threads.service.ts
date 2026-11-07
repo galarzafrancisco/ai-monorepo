@@ -61,6 +61,7 @@ import { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import { IssuesService } from '../issues/issues.service';
 import { IssueEntity } from '../issues/issue.entity';
 import { ThreadTaskSubscriptionsService } from './task-subscriptions/thread-task-subscriptions.service';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -156,7 +157,7 @@ export class ThreadsService {
           `Parent goal: ${parentTask.description || 'No description provided.'}`,
         ].join('\n')
       : `This thread was created by @${createdByActor.slug}.`;
-    const stateBlock = await this.contextService.createBlock({
+    const stateBlock = await this.contextService.createBlock(UNSCOPED_MODULE_WORKSPACE_ID, {
       title: `Thread State: ${title}`,
       content: stateBlockContent,
       createdByActorId: input.createdByActorId,
@@ -186,13 +187,14 @@ export class ThreadsService {
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.metaService.findOrCreateTagEntities(
+        UNSCOPED_MODULE_WORKSPACE_ID,
         input.tagNames,
       );
       savedThread.tags = tags;
       await this.threadRepository.save(savedThread);
 
       // Increment usage tracking for all tags
-      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
+      await this.metaService.incrementTagsUsage(UNSCOPED_MODULE_WORKSPACE_ID, tags.map((t) => t.id));
     }
 
     // Handle tasks if provided
@@ -326,7 +328,11 @@ export class ThreadsService {
     if (stateBlockDeleted) {
       this.eventEmitter.emit(
         BlockDeletedEvent.INTERNAL,
-        new BlockDeletedEvent(stateBlockId, { id: actorId }),
+        new BlockDeletedEvent(
+          stateBlockId,
+          { id: actorId },
+          UNSCOPED_MODULE_WORKSPACE_ID,
+        ),
       );
     }
 
@@ -603,7 +609,7 @@ export class ThreadsService {
     });
 
     const thread = await this.getThreadWithRelations(threadId);
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
+    const tag = await this.metaService.findOrCreateTagEntity(UNSCOPED_MODULE_WORKSPACE_ID, input.name);
 
     // Add tag if not already present
     if (!thread.tags.some((t) => t.id === tag.id)) {
@@ -611,7 +617,7 @@ export class ThreadsService {
       await this.threadRepository.save(thread);
 
       // Increment tag usage tracking
-      await this.metaService.incrementTagUsage(tag.id);
+      await this.metaService.incrementTagUsage(UNSCOPED_MODULE_WORKSPACE_ID, tag.id);
 
       this.logger.log({
         message: 'Tag added to thread',
@@ -646,7 +652,7 @@ export class ThreadsService {
     });
 
     // Check if tag is now orphaned and clean it up
-    await this.metaService.cleanupOrphanedTag(tagId);
+    await this.metaService.cleanupOrphanedTag(UNSCOPED_MODULE_WORKSPACE_ID, tagId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(updatedThread);
@@ -820,6 +826,7 @@ export class ThreadsService {
     }
 
     const stateBlock = await this.contextService.getBlockById(
+      UNSCOPED_MODULE_WORKSPACE_ID,
       thread.stateContextBlockId,
     );
 
@@ -841,6 +848,7 @@ export class ThreadsService {
     }
 
     const updatedBlock = await this.contextService.updateBlock(
+      UNSCOPED_MODULE_WORKSPACE_ID,
       thread.stateContextBlockId,
       {
         content,
@@ -870,6 +878,7 @@ export class ThreadsService {
     }
 
     const updatedBlock = await this.contextService.appendToBlock(
+      UNSCOPED_MODULE_WORKSPACE_ID,
       thread.stateContextBlockId,
       {
         content,
@@ -954,7 +963,7 @@ export class ThreadsService {
     );
 
     try {
-      await this.contextService.updateBlock(input.thread.stateContextBlockId, {
+      await this.contextService.updateBlock(UNSCOPED_MODULE_WORKSPACE_ID, input.thread.stateContextBlockId, {
         title: `Thread State: ${generatedTitle}`,
       });
     } catch (error) {

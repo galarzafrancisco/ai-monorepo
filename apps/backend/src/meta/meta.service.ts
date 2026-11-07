@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Raw, Repository } from 'typeorm';
+import { In, Raw, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -18,6 +18,7 @@ import {
   VersionResult,
 } from './dto/service/meta.service.types';
 import { SYSTEM_TAGS, isSystemTagName } from './system-tags';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 
 /**
  * Predefined color palette for tags
@@ -57,15 +58,22 @@ export class MetaService implements OnModuleInit {
     private readonly tagUsageRepository: Repository<TagUsageEntity>,
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.ensureSystemTags();
+    // WorkspacesService (a dependency, so initialised first) has made sure
+    // the default workspace exists.
+    for (const workspaceId of await this.workspacesService.listWorkspaceIds()) {
+      await this.ensureSystemTags(workspaceId);
+    }
   }
 
-  private async ensureSystemTags(): Promise<void> {
+  /** Creates the system tags in a workspace, or puts back their name and color. */
+  async ensureSystemTags(workspaceId: string): Promise<void> {
     for (const systemTag of SYSTEM_TAGS) {
       const tag = await this.findOrCreateTagEntity(
+        workspaceId,
         systemTag.name,
         systemTag.color,
       );
@@ -92,53 +100,19 @@ export class MetaService implements OnModuleInit {
     return TAG_COLOR_PALETTE;
   }
 
-  async createTag(input: CreateTagInput): Promise<TagResult> {
+  async createTag(
+    workspaceId: string,
+    input: CreateTagInput,
+  ): Promise<TagResult> {
     this.logger.log({
       message: 'Creating tag',
       tagName: input.name,
     });
-
-    // Check if tag already exists case-insensitively.
-    let tag = await this.tagRepository.findOne({
-      where: {
-        name: Raw((column) => `lower(${column}) = lower(:name)`, {
-          name: input.name,
-        }),
-      },
-      withDeleted: true,
-    });
-
-    if (tag?.deletedAt) {
-      await this.tagRepository.delete(tag.id);
-      tag = null;
-    }
-
-    if (!tag) {
-      // Create new tag with provided color or random color
-      tag = this.tagRepository.create({
-        name: input.name,
-        color: input.color ?? this.getRandomTagColor(),
-      });
-      tag = await this.tagRepository.save(tag);
-      this.logger.log({
-        message: 'Tag created',
-        tagId: tag.id,
-        tagName: tag.name,
-        color: tag.color,
-      });
-
-      // Auto-create project if tag starts with 'project:'
-      if (tag.name.startsWith('project:')) {
-        await this.autoCreateProject(tag);
-      }
-    } else {
-      this.logger.log({
-        message: 'Tag already exists',
-        tagId: tag.id,
-        tagName: tag.name,
-      });
-    }
-
+    const tag = await this.findOrCreateTagEntity(
+      workspaceId,
+      input.name,
+      input.color,
+    );
     return this.mapTagToResult(tag);
   }
 
@@ -164,11 +138,12 @@ export class MetaService implements OnModuleInit {
 
     // Check if project already exists
     const existingProject = await this.projectRepository.findOne({
-      where: { tagId: tag.id },
+      where: { workspaceId: tag.workspaceId, tagId: tag.id },
     });
 
     if (!existingProject) {
       const project = this.projectRepository.create({
+        workspaceId: tag.workspaceId,
         tagId: tag.id,
         slug,
       });
@@ -182,12 +157,12 @@ export class MetaService implements OnModuleInit {
     }
   }
 
-  async getAllTags(): Promise<TagResult[]> {
+  async getAllTags(workspaceId: string): Promise<TagResult[]> {
     this.logger.log({ message: 'Getting all tags' });
 
     const [tags, usageRows] = await Promise.all([
-      this.tagRepository.find(),
-      this.tagUsageRepository.find(),
+      this.tagRepository.find({ where: { workspaceId } }),
+      this.tagUsageRepository.find({ where: { workspaceId } }),
     ]);
 
     const usageByTagId = new Map(
@@ -230,27 +205,25 @@ export class MetaService implements OnModuleInit {
     return sortedTags.map((tag) => this.mapTagToResult(tag));
   }
 
-  async getTagById(tagId: string): Promise<TagResult | null> {
-    const tag = await this.tagRepository.findOne({ where: { id: tagId } });
-    return tag ? this.mapTagToResult(tag) : null;
-  }
-
-  async getTagByName(name: string): Promise<TagResult | null> {
+  async getTagById(
+    workspaceId: string,
+    tagId: string,
+  ): Promise<TagResult | null> {
     const tag = await this.tagRepository.findOne({
-      where: {
-        name: Raw((column) => `lower(${column}) = lower(:name)`, { name }),
-      },
+      where: { workspaceId, id: tagId },
     });
     return tag ? this.mapTagToResult(tag) : null;
   }
 
-  async deleteTag(tagId: string): Promise<void> {
+  async deleteTag(workspaceId: string, tagId: string): Promise<void> {
     this.logger.log({
       message: 'Deleting tag',
       tagId,
     });
 
-    const tag = await this.tagRepository.findOne({ where: { id: tagId } });
+    const tag = await this.tagRepository.findOne({
+      where: { workspaceId, id: tagId },
+    });
 
     if (!tag) {
       this.logger.warn({
@@ -271,13 +244,15 @@ export class MetaService implements OnModuleInit {
 
     // Deleting the membership tag directly would cascade the project and its
     // provenance without removing automatically applied task tags or notifying listeners.
-    if (await this.projectRepository.exists({ where: { tagId } })) {
+    if (
+      await this.projectRepository.exists({ where: { workspaceId, tagId } })
+    ) {
       throw new BadRequestException(
         'Delete the project through the projects endpoint',
       );
     }
 
-    const result = await this.tagRepository.delete(tagId);
+    const result = await this.tagRepository.delete({ workspaceId, id: tagId });
 
     if (result.affected === 0) {
       this.logger.warn({
@@ -293,114 +268,38 @@ export class MetaService implements OnModuleInit {
   }
 
   /**
-   * Find or create tags by name - used by other modules (tasks, context)
-   * @param tagNames - array of tag names to find or create
-   * @returns array of TagResult
+   * Get raw tag entities - for internal use by other modules that need entities.
+   * Ids from another workspace are left out.
    */
-  async findOrCreateTags(tagNames: string[]): Promise<TagResult[]> {
-    const tags: TagResult[] = [];
-
-    for (const tagName of tagNames) {
-      const normalizedName = tagName.trim();
-      if (!normalizedName) continue;
-
-      // Try to find an existing tag case-insensitively.
-      let tag = await this.tagRepository.findOne({
-        where: {
-          name: Raw((column) => `lower(${column}) = lower(:name)`, {
-            name: normalizedName,
-          }),
-        },
-        withDeleted: true,
-      });
-
-      if (tag?.deletedAt) {
-        await this.tagRepository.delete(tag.id);
-        tag = null;
-      }
-
-      if (!tag) {
-        // Create new tag with normalized name and random color
-        tag = this.tagRepository.create({
-          name: normalizedName,
-          color: this.getRandomTagColor(),
-        });
-        tag = await this.tagRepository.save(tag);
-        this.logger.log({
-          message: 'Tag created',
-          tagId: tag.id,
-          tagName: tag.name,
-          color: tag.color,
-        });
-      }
-
-      tags.push(this.mapTagToResult(tag));
-    }
-
-    return tags;
-  }
-
-  /**
-   * Get raw tag entities - for internal use by other modules that need entities
-   */
-  async getTagEntities(tagIds: string[]): Promise<TagEntity[]> {
+  async getTagEntities(
+    workspaceId: string,
+    tagIds: string[],
+  ): Promise<TagEntity[]> {
     if (tagIds.length === 0) return [];
-    return this.tagRepository.findByIds(tagIds);
+    return this.tagRepository.findBy({ workspaceId, id: In(tagIds) });
   }
 
   /**
    * Find or create tag entities by name - for internal use by other modules
    */
-  async findOrCreateTagEntities(tagNames: string[]): Promise<TagEntity[]> {
+  async findOrCreateTagEntities(
+    workspaceId: string,
+    tagNames: string[],
+  ): Promise<TagEntity[]> {
     const tags: TagEntity[] = [];
-
     for (const tagName of tagNames) {
-      const normalizedName = tagName.trim();
-      if (!normalizedName) continue;
-
-      let tag = await this.tagRepository.findOne({
-        where: {
-          name: Raw((column) => `lower(${column}) = lower(:name)`, {
-            name: normalizedName,
-          }),
-        },
-        withDeleted: true,
-      });
-
-      if (tag?.deletedAt) {
-        await this.tagRepository.delete(tag.id);
-        tag = null;
-      }
-
-      if (!tag) {
-        tag = this.tagRepository.create({
-          name: normalizedName,
-          color: this.getRandomTagColor(),
-        });
-        tag = await this.tagRepository.save(tag);
-        this.logger.log({
-          message: 'Tag created',
-          tagId: tag.id,
-          tagName: tag.name,
-          color: tag.color,
-        });
-
-        // Auto-create project if tag starts with 'project:'
-        if (tag.name.startsWith('project:')) {
-          await this.autoCreateProject(tag);
-        }
-      }
-
-      tags.push(tag);
+      if (!tagName.trim()) continue;
+      tags.push(await this.findOrCreateTagEntity(workspaceId, tagName));
     }
-
     return tags;
   }
 
   /**
-   * Find or create a single tag entity by name with optional color
+   * Find (case-insensitively) or create a single tag entity by name in a
+   * workspace, with an optional color for a new tag.
    */
   async findOrCreateTagEntity(
+    workspaceId: string,
     name: string,
     color?: string,
   ): Promise<TagEntity> {
@@ -408,6 +307,7 @@ export class MetaService implements OnModuleInit {
 
     let tag = await this.tagRepository.findOne({
       where: {
+        workspaceId,
         name: Raw((column) => `lower(${column}) = lower(:name)`, {
           name: normalizedName,
         }),
@@ -416,12 +316,13 @@ export class MetaService implements OnModuleInit {
     });
 
     if (tag?.deletedAt) {
-      await this.tagRepository.delete(tag.id);
+      await this.tagRepository.delete({ workspaceId, id: tag.id });
       tag = null;
     }
 
     if (!tag) {
       tag = this.tagRepository.create({
+        workspaceId,
         name: normalizedName,
         color: color ?? this.getRandomTagColor(),
       });
@@ -446,14 +347,14 @@ export class MetaService implements OnModuleInit {
    * Check if a tag is orphaned (no tasks or blocks reference it)
    * and delete it if so
    */
-  async cleanupOrphanedTag(tagId: string): Promise<void> {
+  async cleanupOrphanedTag(workspaceId: string, tagId: string): Promise<void> {
     this.logger.log({
       message: 'Checking if tag is orphaned',
       tagId,
     });
 
     const tagWithRelations = await this.tagRepository.findOne({
-      where: { id: tagId },
+      where: { workspaceId, id: tagId },
       relations: ['tasks', 'blocks'],
     });
 
@@ -488,7 +389,7 @@ export class MetaService implements OnModuleInit {
       // A project's tag outlives its tasks: deleting it would cascade to the project
       // (description, repository) just because its last task moved elsewhere.
       const project = await this.projectRepository.findOne({
-        where: { tagId },
+        where: { workspaceId, tagId },
       });
       if (project) {
         this.logger.log({
@@ -505,7 +406,7 @@ export class MetaService implements OnModuleInit {
         tagName: tagWithRelations.name,
       });
 
-      await this.tagRepository.delete(tagId);
+      await this.tagRepository.delete({ workspaceId, id: tagId });
 
       this.logger.log({
         message: 'Orphaned tag cleaned up',
@@ -526,7 +427,7 @@ export class MetaService implements OnModuleInit {
    * Uses upsert to handle concurrent updates atomically
    * @param tagId - ID of the tag to track usage for
    */
-  async incrementTagUsage(tagId: string): Promise<void> {
+  async incrementTagUsage(workspaceId: string, tagId: string): Promise<void> {
     this.logger.log({
       message: 'Incrementing tag usage',
       tagId,
@@ -535,17 +436,20 @@ export class MetaService implements OnModuleInit {
     const now = new Date().toISOString();
 
     // Use PostgreSQL INSERT ... ON CONFLICT to handle concurrent updates atomically
-    // This prevents duplicate rows and race conditions
+    // This prevents duplicate rows and race conditions. The SELECT only
+    // inserts when the tag is in the workspace.
     await this.tagUsageRepository.query(
       `
-      INSERT INTO tag_usage (id, tag_id, usage_count, last_used_at, created_at, updated_at)
-      VALUES ($1, $2, 1, $3, $4, $5)
+      INSERT INTO tag_usage (id, workspace_id, tag_id, usage_count, last_used_at, created_at, updated_at)
+      SELECT $1, t.workspace_id, t.id, 1, $3, $4, $5
+      FROM tags t
+      WHERE t.id = $2 AND t.workspace_id = $6
       ON CONFLICT(tag_id) DO UPDATE SET
         usage_count = tag_usage.usage_count + 1,
         last_used_at = excluded.last_used_at,
         updated_at = excluded.updated_at
       `,
-      [randomUUID(), tagId, now, now, now],
+      [randomUUID(), tagId, now, now, now, workspaceId],
     );
 
     this.logger.log({
@@ -558,7 +462,10 @@ export class MetaService implements OnModuleInit {
    * Batch increment usage for multiple tags
    * @param tagIds - Array of tag IDs to track usage for
    */
-  async incrementTagsUsage(tagIds: string[]): Promise<void> {
+  async incrementTagsUsage(
+    workspaceId: string,
+    tagIds: string[],
+  ): Promise<void> {
     if (tagIds.length === 0) return;
 
     this.logger.log({
@@ -567,7 +474,7 @@ export class MetaService implements OnModuleInit {
     });
 
     for (const tagId of tagIds) {
-      await this.incrementTagUsage(tagId);
+      await this.incrementTagUsage(workspaceId, tagId);
     }
   }
 

@@ -59,6 +59,7 @@ import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
 import { ActiveExecutionContextResolverService } from '../executions/active/active-execution-context-resolver.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 
 @Injectable()
 export class TasksService {
@@ -83,9 +84,13 @@ export class TasksService {
     private readonly threadsService: ThreadsService,
     private readonly executionContextResolver: ActiveExecutionContextResolverService,
     private readonly projectAutoTags: ProjectAutoTagsService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
-  async createTask(input: CreateTaskInput): Promise<TaskResult> {
+  async createTask(
+    workspaceId: string,
+    input: CreateTaskInput,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Creating task',
       name: input.name,
@@ -97,7 +102,8 @@ export class TasksService {
     let assigneeActorId: string | null = null;
 
     if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
+      const assigneeActor = await this.findAssignableActor(
+        workspaceId,
         input.assigneeActorId,
       );
       if (!assigneeActor) {
@@ -116,6 +122,7 @@ export class TasksService {
     const createdByActorId = createdByActor.id;
 
     const task = this.taskRepository.create({
+      workspaceId,
       name: input.name,
       description: input.description,
       assigneeActorId,
@@ -129,17 +136,22 @@ export class TasksService {
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.metaService.findOrCreateTagEntities(
+        workspaceId,
         input.tagNames,
       );
       savedTask.tags = tags;
       await this.taskRepository.save(savedTask);
 
       // Increment usage tracking for all tags
-      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
+      await this.metaService.incrementTagsUsage(
+        workspaceId,
+        tags.map((t) => t.id),
+      );
     }
     // Handle dependencies if provided
     if (input.dependsOnIds && input.dependsOnIds.length > 0) {
       const dependencyTasks = await this.taskRepository.findBy({
+        workspaceId,
         id: In(input.dependsOnIds),
       });
       if (dependencyTasks.length !== input.dependsOnIds.length) {
@@ -157,7 +169,7 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: savedTask.id },
+      where: { workspaceId, id: savedTask.id },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -191,6 +203,7 @@ export class TasksService {
   }
 
   async createTaskInThread(
+    workspaceId: string,
     input: CreateTaskInThreadInput,
   ): Promise<TaskResult> {
     this.logger.log({
@@ -216,7 +229,7 @@ export class TasksService {
     const parentTaskId = context.parentTaskId;
 
     // Create the task using the existing method
-    const task = await this.createTask({
+    const task = await this.createTask(workspaceId, {
       name: input.name,
       description: input.description,
       assigneeActorId: input.assigneeActorId,
@@ -273,6 +286,7 @@ export class TasksService {
   }
 
   async updateTask(
+    workspaceId: string,
     taskId: string,
     input: UpdateTaskInput,
     actorId: string,
@@ -284,7 +298,7 @@ export class TasksService {
 
     await this.projectAutoTags.withLockedTask(taskId, async (manager) => {
       const task = await manager.getRepository(TaskEntity).findOne({
-        where: { id: taskId },
+        where: { workspaceId, id: taskId },
         relations: [
           'comments',
           'comments.commenterActor',
@@ -312,10 +326,10 @@ export class TasksService {
         if (input.assigneeActorId === null) {
           task.assigneeActorId = null; // defined but null means they're removing assignee
         } else {
-          const assigneeActor =
-            await this.actorService.getActiveActorByIdOrSlug(
-              input.assigneeActorId,
-            );
+          const assigneeActor = await this.findAssignableActor(
+            workspaceId,
+            input.assigneeActorId,
+          );
           if (assigneeActor) {
             task.assigneeActorId = assigneeActor.id;
           } else {
@@ -336,6 +350,7 @@ export class TasksService {
           task.tags = [];
         } else {
           task.tags = await this.metaService.findOrCreateTagEntities(
+            workspaceId,
             input.tagNames,
           );
         }
@@ -349,6 +364,7 @@ export class TasksService {
           const dependencyTasks = await manager
             .getRepository(TaskEntity)
             .findBy({
+              workspaceId,
               id: In(input.dependsOnIds),
             });
           if (dependencyTasks.length !== input.dependsOnIds.length) {
@@ -379,7 +395,7 @@ export class TasksService {
 
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -409,6 +425,7 @@ export class TasksService {
   }
 
   async assignTask(
+    workspaceId: string,
     taskId: string,
     input: AssignTaskInput,
     actorId: string,
@@ -422,7 +439,7 @@ export class TasksService {
 
     this.logger.debug(`finding task ${taskId}`);
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -447,7 +464,8 @@ export class TasksService {
 
     // Deleted actors keep their past work but cannot be given new tasks
     if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActiveActorByIdOrSlug(
+      const assigneeActor = await this.findAssignableActor(
+        workspaceId,
         input.assigneeActorId,
       );
       if (!assigneeActor) {
@@ -469,7 +487,7 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -497,13 +515,19 @@ export class TasksService {
     return this.mapTaskToResult(taskWithRelations!);
   }
 
-  async deleteTask(taskId: string, actorId: string): Promise<void> {
+  async deleteTask(
+    workspaceId: string,
+    taskId: string,
+    actorId: string,
+  ): Promise<void> {
     this.logger.log({
       message: 'Deleting task',
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    const task = await this.taskRepository.findOne({
+      where: { workspaceId, id: taskId },
+    });
 
     if (!task) {
       throw new TaskNotFoundError(taskId);
@@ -525,11 +549,14 @@ export class TasksService {
 
     this.eventEmitter.emit(
       TaskDeletedEvent.INTERNAL,
-      new TaskDeletedEvent({ id: actorId }, taskId),
+      new TaskDeletedEvent({ id: actorId }, taskId, workspaceId),
     );
   }
 
-  async listTasks(input: ListTasksInput): Promise<ListTasksResult> {
+  async listTasks(
+    workspaceId: string,
+    input: ListTasksInput,
+  ): Promise<ListTasksResult> {
     this.logger.log({
       message: 'Listing tasks',
       filters: {
@@ -551,7 +578,11 @@ export class TasksService {
         const taskRepository = manager.getRepository(TaskEntity);
 
         if (input.status) {
-          const queryBuilder = this.createListTasksQuery(taskRepository, input)
+          const queryBuilder = this.createListTasksQuery(
+            workspaceId,
+            taskRepository,
+            input,
+          )
             .orderBy('task.updatedAt', 'DESC')
             .skip(skip)
             .take(input.limit);
@@ -569,6 +600,7 @@ export class TasksService {
 
         for (const status of Object.values(TaskStatus)) {
           const count = await this.createListTasksQuery(
+            workspaceId,
             taskRepository,
             input,
             status,
@@ -580,6 +612,7 @@ export class TasksService {
           }
 
           const statusTasks = await this.createListTasksQuery(
+            workspaceId,
             taskRepository,
             input,
             status,
@@ -621,6 +654,7 @@ export class TasksService {
   }
 
   private createListTasksQuery(
+    workspaceId: string,
     taskRepository: Repository<TaskEntity>,
     input: ListTasksInput,
     status?: TaskStatus,
@@ -634,12 +668,13 @@ export class TasksService {
       .leftJoinAndSelect('task.tags', 'tags')
       .leftJoinAndSelect('task.dependsOn', 'dependsOn')
       .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
-      .leftJoinAndSelect('task.createdByActor', 'createdByActor');
+      .leftJoinAndSelect('task.createdByActor', 'createdByActor')
+      .where('task.workspaceId = :workspaceId', { workspaceId });
 
     if (input.tag) {
       queryBuilder
         .innerJoin('task.tags', 'filterTag')
-        .where('filterTag.name = :tagName', { tagName: input.tag });
+        .andWhere('filterTag.name = :tagName', { tagName: input.tag });
     }
     if (input.assignee) {
       queryBuilder.andWhere('assigneeActor.slug = :assignee', {
@@ -670,9 +705,9 @@ export class TasksService {
     return queryBuilder;
   }
 
-  async getTaskById(taskId: string): Promise<TaskResult> {
+  async getTaskById(workspaceId: string, taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -693,6 +728,7 @@ export class TasksService {
   }
 
   async addComment(
+    workspaceId: string,
     taskId: string,
     input: CreateCommentInput,
   ): Promise<CommentResult> {
@@ -701,13 +737,16 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    const task = await this.taskRepository.findOne({
+      where: { workspaceId, id: taskId },
+    });
 
     if (!task) {
       throw new TaskNotFoundError(taskId);
     }
 
     const comment = this.commentRepository.create({
+      workspaceId,
       task,
       commenterActorId: input.commenterActorId,
       content: input.content,
@@ -717,7 +756,7 @@ export class TasksService {
 
     // Reload with actor relation
     const commentWithRelations = await this.commentRepository.findOne({
-      where: { id: savedComment.id },
+      where: { workspaceId, id: savedComment.id },
       relations: ['commenterActor', 'task'],
     });
 
@@ -738,6 +777,7 @@ export class TasksService {
   }
 
   async addArtefact(
+    workspaceId: string,
     taskId: string,
     input: CreateArtefactInput,
     actorId: string,
@@ -747,7 +787,9 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    const task = await this.taskRepository.findOne({
+      where: { workspaceId, id: taskId },
+    });
 
     if (!task) {
       throw new TaskNotFoundError(taskId);
@@ -757,7 +799,7 @@ export class TasksService {
     // work (e.g. re-submitting the same PR for review) must not pile up copies,
     // so a duplicate is silently skipped and the existing one is returned.
     const existingArtefact = await this.artefactRepository.findOne({
-      where: { taskId, link: input.link },
+      where: { workspaceId, taskId, link: input.link },
       relations: ['task'],
       order: { createdAt: 'ASC' },
     });
@@ -772,6 +814,7 @@ export class TasksService {
     }
 
     const artefact = this.artefactRepository.create({
+      workspaceId,
       task,
       name: input.name,
       link: input.link,
@@ -781,7 +824,7 @@ export class TasksService {
 
     // Reload with task relation
     const artefactWithRelations = await this.artefactRepository.findOne({
-      where: { id: savedArtefact.id },
+      where: { workspaceId, id: savedArtefact.id },
       relations: ['task'],
     });
 
@@ -799,6 +842,7 @@ export class TasksService {
   }
 
   async changeStatus(
+    workspaceId: string,
     taskId: string,
     input: ChangeStatusInput,
     actorId: string,
@@ -810,7 +854,7 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -848,6 +892,7 @@ export class TasksService {
     if (input.status === TaskStatus.DONE && input.comment) {
       await this.commentRepository.save(
         this.commentRepository.create({
+          workspaceId,
           task,
           commenterActorId: task.assigneeActorId,
           content: input.comment,
@@ -860,7 +905,7 @@ export class TasksService {
 
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -889,7 +934,11 @@ export class TasksService {
     );
 
     if (this.shouldAutoPrune(taskWithRelations)) {
-      await this.autoPruneCompletedTask(taskWithRelations.id, actorId);
+      await this.autoPruneCompletedTask(
+        workspaceId,
+        taskWithRelations.id,
+        actorId,
+      );
     }
 
     return this.mapTaskToResult(taskWithRelations);
@@ -903,6 +952,7 @@ export class TasksService {
   }
 
   private async autoPruneCompletedTask(
+    workspaceId: string,
     taskId: string,
     actorId: string,
   ): Promise<void> {
@@ -917,7 +967,9 @@ export class TasksService {
       return;
     }
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    const task = await this.taskRepository.findOne({
+      where: { workspaceId, id: taskId },
+    });
     if (!task) {
       return;
     }
@@ -931,11 +983,12 @@ export class TasksService {
 
     this.eventEmitter.emit(
       TaskDeletedEvent.INTERNAL,
-      new TaskDeletedEvent({ id: actorId }, taskId),
+      new TaskDeletedEvent({ id: actorId }, taskId, workspaceId),
     );
   }
 
   async addTagToTask(
+    workspaceId: string,
     taskId: string,
     input: AddTagInput,
     actorId: string,
@@ -948,54 +1001,61 @@ export class TasksService {
 
     // Resolve the tag before locking the task so parallel additions serialize on
     // the task row, then read its current memberships under that lock.
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
-    const newlyAdded = await this.projectAutoTags.withLockedTask(taskId, async (manager) => {
-      const task = await manager.getRepository(TaskEntity).findOne({
-        where: { id: taskId },
-        relations: [
-          'comments',
-          'comments.commenterActor',
-          'artefacts',
-          'inputRequests',
-          'tags',
-          'dependsOn',
-          'assigneeActor',
-          'createdByActor',
-        ],
-      });
-
-      if (!task) {
-        throw new TaskNotFoundError(taskId);
-      }
-
-      // Add tag to task if not already present
-      const newlyAdded = !task.tags.some((t) => t.id === tag.id);
-      if (newlyAdded) {
-        task.tags.push(tag);
-        await manager.getRepository(TaskEntity).save(task);
-
-        this.logger.log({
-          message: 'Tag added to task',
-          taskId,
-          tagId: tag.id,
+    const tag = await this.metaService.findOrCreateTagEntity(
+      workspaceId,
+      input.name,
+    );
+    const newlyAdded = await this.projectAutoTags.withLockedTask(
+      taskId,
+      async (manager) => {
+        const task = await manager.getRepository(TaskEntity).findOne({
+          where: { workspaceId, id: taskId },
+          relations: [
+            'comments',
+            'comments.commenterActor',
+            'artefacts',
+            'inputRequests',
+            'tags',
+            'dependsOn',
+            'assigneeActor',
+            'createdByActor',
+          ],
         });
-      }
-      if (tag.name.startsWith('project:')) {
-        if (newlyAdded) {
-          await this.projectAutoTags.syncTask(taskId, [tag.id], [], manager);
-        }
-      } else {
-        // An explicit add of an existing auto tag makes it a manual tag too.
-        await this.projectAutoTags.syncTask(taskId, [], [tag.id], manager);
-      }
-      return newlyAdded;
-    });
 
-    if (newlyAdded) await this.metaService.incrementTagUsage(tag.id);
+        if (!task) {
+          throw new TaskNotFoundError(taskId);
+        }
+
+        // Add tag to task if not already present
+        const newlyAdded = !task.tags.some((t) => t.id === tag.id);
+        if (newlyAdded) {
+          task.tags.push(tag);
+          await manager.getRepository(TaskEntity).save(task);
+
+          this.logger.log({
+            message: 'Tag added to task',
+            taskId,
+            tagId: tag.id,
+          });
+        }
+        if (tag.name.startsWith('project:')) {
+          if (newlyAdded) {
+            await this.projectAutoTags.syncTask(taskId, [tag.id], [], manager);
+          }
+        } else {
+          // An explicit add of an existing auto tag makes it a manual tag too.
+          await this.projectAutoTags.syncTask(taskId, [], [tag.id], manager);
+        }
+        return newlyAdded;
+      },
+    );
+
+    if (newlyAdded)
+      await this.metaService.incrementTagUsage(workspaceId, tag.id);
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -1020,9 +1080,10 @@ export class TasksService {
   }
 
   async removeTagFromTask(
+    workspaceId: string,
     taskId: string,
     tagId: string,
-    actorId,
+    actorId: string,
   ): Promise<TaskResult> {
     this.logger.log({
       message: 'Removing tag from task',
@@ -1032,7 +1093,7 @@ export class TasksService {
 
     await this.projectAutoTags.withLockedTask(taskId, async (manager) => {
       const task = await manager.getRepository(TaskEntity).findOne({
-        where: { id: taskId },
+        where: { workspaceId, id: taskId },
         relations: [
           'comments',
           'comments.commenterActor',
@@ -1053,7 +1114,9 @@ export class TasksService {
       await manager.getRepository(TaskEntity).save(task);
       await this.projectAutoTags.forgetManualRemoval(taskId, tagId, manager);
       if (
-        (await this.metaService.getTagById(tagId))?.name.startsWith('project:')
+        (
+          await this.metaService.getTagById(workspaceId, tagId)
+        )?.name.startsWith('project:')
       ) {
         await this.projectAutoTags.syncTask(taskId, [], [], manager);
       }
@@ -1066,11 +1129,11 @@ export class TasksService {
     });
 
     // Check if tag is now orphaned and clean it up using MetaService
-    await this.metaService.cleanupOrphanedTag(tagId);
+    await this.metaService.cleanupOrphanedTag(workspaceId, tagId);
 
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { workspaceId, id: taskId },
       relations: [
         'comments',
         'comments.commenterActor',
@@ -1092,6 +1155,21 @@ export class TasksService {
       new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
     );
     return this.mapTaskToResult(taskWithRelations);
+  }
+
+  /**
+   * An active actor that can be given work in the workspace (by id or slug);
+   * null if there is none, or it is not a member of the workspace.
+   */
+  private async findAssignableActor(
+    workspaceId: string,
+    idOrSlug: string,
+  ): Promise<ActorEntity | null> {
+    const actor = await this.actorService.getActiveActorByIdOrSlug(idOrSlug);
+    if (!actor) return null;
+    return (await this.workspacesService.isMember(workspaceId, actor.id))
+      ? actor
+      : null;
   }
 
   private mapTaskToResult(task: TaskEntity): TaskResult {
@@ -1186,6 +1264,7 @@ export class TasksService {
   }
 
   async createInputRequest(
+    workspaceId: string,
     input: CreateInputRequestInput,
   ): Promise<InputRequestResult> {
     this.logger.log({
@@ -1196,7 +1275,7 @@ export class TasksService {
 
     // Get task to find creator if assignedToActorId is not provided
     const task = await this.taskRepository.findOne({
-      where: { id: input.taskId },
+      where: { workspaceId, id: input.taskId },
       relations: ['createdByActor'],
     });
 
@@ -1206,6 +1285,12 @@ export class TasksService {
 
     // Default to task creator if assignedToActorId is not provided
     const assignedToActorId = input.assignedToActorId ?? task.createdByActorId;
+    if (
+      input.assignedToActorId &&
+      !(await this.workspacesService.isMember(workspaceId, assignedToActorId))
+    ) {
+      throw new ActorNotFoundError(assignedToActorId);
+    }
 
     if (input.askedByActorId === assignedToActorId) {
       throw new InputRequestSelfAssignmentError(
@@ -1215,6 +1300,7 @@ export class TasksService {
     }
 
     const inputRequest = this.inputRequestRepository.create({
+      workspaceId,
       taskId: input.taskId,
       askedByActorId: input.askedByActorId,
       assignedToActorId: assignedToActorId,
@@ -1236,7 +1322,7 @@ export class TasksService {
 
       // Reload with relations
       const taskWithRelations = await this.taskRepository.findOne({
-        where: { id: input.taskId },
+        where: { workspaceId, id: input.taskId },
         relations: [
           'comments',
           'comments.commenterActor',
@@ -1286,6 +1372,7 @@ export class TasksService {
   }
 
   async answerInputRequest(
+    workspaceId: string,
     taskId: string,
     inputRequestId: string,
     input: AnswerInputRequestInput,
@@ -1298,7 +1385,7 @@ export class TasksService {
     });
 
     const inputRequest = await this.inputRequestRepository.findOne({
-      where: { id: inputRequestId, taskId },
+      where: { workspaceId, id: inputRequestId, taskId },
     });
 
     if (!inputRequest) {
@@ -1327,25 +1414,44 @@ export class TasksService {
     return this.mapInputRequestToResult(updatedInputRequest);
   }
 
-  async searchTasks(input: SearchTasksInput): Promise<TaskSearchResult[]> {
+  async searchTasks(
+    workspaceId: string,
+    input: SearchTasksInput,
+  ): Promise<TaskSearchResult[]> {
     const results = await this.indexSearchService.search({
       query: input.query,
       limit: input.limit,
       types: [SearchResultType.TASK],
     });
+    // The search index is not scoped by workspace yet (phase 3e): drop hits
+    // from other workspaces.
+    const ids = results.map((result) => result.id);
+    const inWorkspace =
+      ids.length === 0
+        ? new Set<string>()
+        : new Set(
+            (
+              await this.taskRepository.find({
+                where: { workspaceId, id: In(ids) },
+                select: { id: true },
+              })
+            ).map((task) => task.id),
+          );
 
-    return results.map((result) => ({
-      id: result.id,
-      name: result.title,
-      status:
-        typeof result.meta.status === 'string' ? result.meta.status : null,
-      score: result.score,
-      matchedBy: result.matchedBy,
-      matchedOn: result.matchedOn,
-      excerpt: result.excerpt,
-      excerptIsComplete: result.excerptIsComplete,
-      commentId: result.commentId,
-      commentAuthor: result.commentAuthor,
-    }));
+    return results
+      .filter((result) => inWorkspace.has(result.id))
+      .map((result) => ({
+        id: result.id,
+        name: result.title,
+        status:
+          typeof result.meta.status === 'string' ? result.meta.status : null,
+        score: result.score,
+        matchedBy: result.matchedBy,
+        matchedOn: result.matchedOn,
+        excerpt: result.excerpt,
+        excerptIsComplete: result.excerptIsComplete,
+        commentId: result.commentId,
+        commentAuthor: result.commentAuthor,
+      }));
   }
 }

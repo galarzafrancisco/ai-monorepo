@@ -21,6 +21,8 @@ import {
   TaskStatusChangedEvent,
 } from './events/tasks.events';
 
+const WORKSPACE_ID = 'workspace-1';
+
 describe('TasksService auto-prune', () => {
   const actor = {
     id: 'actor-1',
@@ -89,6 +91,7 @@ describe('TasksService auto-prune', () => {
       threadsService as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     return {
@@ -115,6 +118,7 @@ describe('TasksService auto-prune', () => {
       .mockResolvedValueOnce(completedTask);
 
     const result = await service.changeStatus(
+      WORKSPACE_ID,
       task.id,
       { status: TaskStatus.DONE, comment: 'Finished' },
       actor.id,
@@ -152,6 +156,7 @@ describe('TasksService auto-prune', () => {
       .mockResolvedValueOnce(completedTask);
 
     await service.changeStatus(
+      WORKSPACE_ID,
       task.id,
       { status: TaskStatus.DONE, comment: 'Finished' },
       actor.id,
@@ -179,6 +184,7 @@ describe('TasksService auto-prune', () => {
       .mockResolvedValueOnce(completedTask);
 
     const result = await service.changeStatus(
+      WORKSPACE_ID,
       task.id,
       { status: TaskStatus.DONE, comment: 'Finished' },
       actor.id,

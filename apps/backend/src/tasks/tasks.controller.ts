@@ -60,6 +60,7 @@ import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 import { CurrentRunId } from 'src/auth/guards/decorators/current-run-id.decorator';
 import { CurrentExecutionId } from 'src/auth/guards/decorators/current-execution-id.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -81,6 +82,7 @@ export class TasksController {
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createTask(
+    @CurrentWorkspace() workspaceId: string,
     @Body() dto: CreateTaskDto,
     @CurrentUser() user: UserContext,
     @CurrentExecutionId() executionId: string | undefined,
@@ -88,7 +90,7 @@ export class TasksController {
   ): Promise<TaskResponseDto> {
     const result =
       executionId || runId
-        ? await this.TasksService.createTaskInThread({
+        ? await this.TasksService.createTaskInThread(workspaceId, {
             name: dto.name,
             description: dto.description,
             assigneeActorId: dto.assigneeActorId,
@@ -99,7 +101,7 @@ export class TasksController {
             executionId,
             runId,
           })
-        : await this.TasksService.createTask({
+        : await this.TasksService.createTask(workspaceId, {
             name: dto.name,
             description: dto.description,
             assigneeActorId: dto.assigneeActorId,
@@ -121,11 +123,13 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async updateTask(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: UpdateTaskDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.updateTask(
+      workspaceId,
       params.id,
       {
         name: dto.name,
@@ -150,11 +154,13 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async assignTask(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: AssignTaskDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.assignTask(
+      workspaceId,
       params.id,
       {
         assigneeActorId: dto.assigneeActorId,
@@ -174,10 +180,12 @@ export class TasksController {
   })
   @ApiNotFoundResponse({ description: 'Task not found' })
   async assignTaskToMe(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.assignTask(
+      workspaceId,
       params.id,
       {
         assigneeActorId: user.actorId,
@@ -194,10 +202,11 @@ export class TasksController {
   @ApiNoContentResponse({ description: 'Task deleted successfully' })
   @ApiNotFoundResponse({ description: 'Task not found' })
   async deleteTask(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<void> {
-    await this.TasksService.deleteTask(params.id, user.actorId);
+    await this.TasksService.deleteTask(workspaceId, params.id, user.actorId);
   }
 
   @Get()
@@ -209,9 +218,10 @@ export class TasksController {
     description: 'Paginated list of tasks',
   })
   async listTasks(
+    @CurrentWorkspace() workspaceId: string,
     @Query() query: ListTasksQueryDto,
   ): Promise<TaskListResponseDto> {
-    const result = await this.TasksService.listTasks({
+    const result = await this.TasksService.listTasks(workspaceId, {
       assignee: query.assignee,
       sessionId: query.sessionId,
       tag: query.tag,
@@ -236,9 +246,10 @@ export class TasksController {
     description: 'Search results sorted by relevance',
   })
   async searchTasks(
+    @CurrentWorkspace() workspaceId: string,
     @Query() query: SearchTasksQueryDto,
   ): Promise<TaskSearchResultDto[]> {
-    const results = await this.TasksService.searchTasks({
+    const results = await this.TasksService.searchTasks(workspaceId, {
       query: query.query,
       limit: query.limit,
     });
@@ -262,8 +273,11 @@ export class TasksController {
   @ApiOperation({ summary: 'Get a task by ID' })
   @ApiOkResponse({ type: TaskResponseDto, description: 'Task found' })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
-    const result = await this.TasksService.getTaskById(params.id);
+  async getTask(
+    @CurrentWorkspace() workspaceId: string,
+    @Param() params: TaskParamsDto,
+  ): Promise<TaskResponseDto> {
+    const result = await this.TasksService.getTaskById(workspaceId, params.id);
     return TaskResponseDto.fromResult(result);
   }
 
@@ -277,11 +291,12 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addComment(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: CreateCommentDto,
     @CurrentUser() user: UserContext,
   ): Promise<CommentResponseDto> {
-    const result = await this.TasksService.addComment(params.id, {
+    const result = await this.TasksService.addComment(workspaceId, params.id, {
       commenterActorId: user.actorId,
       content: dto.content,
     });
@@ -298,11 +313,13 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addArtefact(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: CreateArtefactDto,
     @CurrentUser() user: UserContext,
   ): Promise<ArtefactResponseDto> {
     const result = await this.TasksService.addArtefact(
+      workspaceId,
       params.id,
       {
         name: dto.name,
@@ -325,11 +342,13 @@ export class TasksController {
     description: 'Invalid status transition or comment required',
   })
   async changeStatus(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: ChangeTaskStatusDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.changeStatus(
+      workspaceId,
       params.id,
       {
         status: dto.status,
@@ -350,11 +369,13 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addTagToTask(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: CreateTagDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.addTagToTask(
+      workspaceId,
       params.id,
       { name: dto.name },
       user.actorId,
@@ -371,11 +392,13 @@ export class TasksController {
   })
   @ApiNotFoundResponse({ description: 'Task not found' })
   async removeTagFromTask(
+    @CurrentWorkspace() workspaceId: string,
     @Param('id') taskId: string,
     @Param('tagId') tagId: string,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.removeTagFromTask(
+      workspaceId,
       taskId,
       tagId,
       user.actorId,
@@ -393,11 +416,12 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createInputRequest(
+    @CurrentWorkspace() workspaceId: string,
     @Param() params: TaskParamsDto,
     @Body() dto: CreateInputRequestDto,
     @CurrentUser() user: UserContext,
   ): Promise<InputRequestResponseDto> {
-    const result = await this.TasksService.createInputRequest({
+    const result = await this.TasksService.createInputRequest(workspaceId, {
       taskId: params.id,
       askedByActorId: user.actorId,
       assignedToActorId: dto.assignedToActorId,
@@ -416,12 +440,14 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Input request not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async answerInputRequest(
+    @CurrentWorkspace() workspaceId: string,
     @Param('id') taskId: string,
     @Param('inputRequestId') inputRequestId: string,
     @Body() dto: AnswerInputRequestDto,
     @CurrentUser() user: UserContext,
   ): Promise<InputRequestResponseDto> {
     const result = await this.TasksService.answerInputRequest(
+      workspaceId,
       taskId,
       inputRequestId,
       {

@@ -36,5 +36,7 @@ export class BlockDeletedEvent {
   constructor(
     public readonly blockId: string,
     public readonly actor: EventActor,
+    /** The workspace the block was in (it is gone, so it cannot be read back). */
+    public readonly workspaceId: string,
   ) {}
 }

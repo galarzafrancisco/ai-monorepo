@@ -8,6 +8,7 @@ import {
   VersionColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { TaskEntity } from './task.entity';
 
@@ -15,6 +16,11 @@ import { TaskEntity } from './task.entity';
 export class ArtefactEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column()
   name!: string;
@@ -25,7 +31,9 @@ export class ArtefactEntity {
   @Column({ type: 'uuid', name: 'task_id' })
   taskId!: string;
 
-  @ManyToOne(() => TaskEntity, (task) => task.artefacts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => TaskEntity, (task) => task.artefacts, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'task_id' })
   task!: TaskEntity;
 

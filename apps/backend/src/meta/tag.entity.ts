@@ -7,6 +7,7 @@ import {
   DeleteDateColumn,
   VersionColumn,
   ManyToMany,
+  Index,
 } from 'typeorm';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from 'src/context/block.entity';
@@ -16,6 +17,11 @@ import { ThreadEntity } from '../threads/thread.entity';
 export class TagEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text' })
   name!: string;

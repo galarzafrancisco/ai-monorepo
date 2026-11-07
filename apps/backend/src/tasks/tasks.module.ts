@@ -17,9 +17,15 @@ import { AgentRunsModule } from '../agent-runs/agent-runs.module';
 import { ThreadsModule } from '../threads/threads.module';
 import { ExecutionsModule } from '../executions/executions.module';
 
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TaskEntity, CommentEntity, ArtefactEntity, InputRequestEntity]),
+    TypeOrmModule.forFeature([
+      TaskEntity,
+      CommentEntity,
+      ArtefactEntity,
+      InputRequestEntity,
+    ]),
     AuthorizationServerModule,
     AuthGuardsModule,
     IdentityProviderModule,
@@ -28,6 +34,7 @@ import { ExecutionsModule } from '../executions/executions.module';
     AgentRunsModule,
     ThreadsModule,
     ExecutionsModule,
+    WorkspacesModule,
   ],
   controllers: [TasksController],
   providers: [TasksService, TasksGateway, TasksMcpGateway],

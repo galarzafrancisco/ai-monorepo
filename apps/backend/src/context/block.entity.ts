@@ -22,6 +22,11 @@ export class ContextBlockEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  /** The workspace this row belongs to. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @Column({ type: 'text' })
   title!: string;
 

@@ -21,6 +21,7 @@ import {
 } from './errors/task-blueprints.errors';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorResult, TagResult, TaskResult } from '../tasks/dto/service/tasks.service.types';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 @Injectable()
 export class TaskBlueprintsService {
@@ -86,6 +87,7 @@ export class TaskBlueprintsService {
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.metaService.findOrCreateTagEntities(
+        UNSCOPED_MODULE_WORKSPACE_ID,
         input.tagNames,
       );
       savedBlueprint.tags = tags;
@@ -154,6 +156,7 @@ export class TaskBlueprintsService {
         blueprint.tags = [];
       } else {
         blueprint.tags = await this.metaService.findOrCreateTagEntities(
+          UNSCOPED_MODULE_WORKSPACE_ID,
           input.tagNames,
         );
       }
@@ -281,7 +284,7 @@ export class TaskBlueprintsService {
 
     const blueprint = await this.getTaskBlueprintById(blueprintId);
 
-    const task = await this.tasksService.createTask({
+    const task = await this.tasksService.createTask(UNSCOPED_MODULE_WORKSPACE_ID, {
       name: blueprint.name,
       description: blueprint.description,
       assigneeActorId: blueprint.assigneeActorId ?? undefined,

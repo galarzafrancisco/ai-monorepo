@@ -56,6 +56,7 @@ describe('ThreadsService - State Context Block', () => {
 
   const mockParentTask: TaskEntity = {
     id: 'parent-task-uuid',
+    workspaceId: '00000000-0000-4000-8000-000000000001',
     name: 'Parent Task',
     description: 'Parent task description',
     status: TaskStatus.NOT_STARTED,
@@ -246,7 +247,7 @@ describe('ThreadsService - State Context Block', () => {
 
         await service.createThread(input);
 
-        const createBlockCall = contextService.createBlock.mock.calls[0][0];
+        const createBlockCall = contextService.createBlock.mock.calls[0][1];
         expect(createBlockCall.content).toBe(
           'This thread was created to achieve task Parent Task (id parent-task-uuid).',
         );

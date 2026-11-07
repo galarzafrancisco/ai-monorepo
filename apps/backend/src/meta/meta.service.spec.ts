@@ -1,6 +1,11 @@
 import { MetaService } from './meta.service';
 import { AUTO_PRUNE_TAG_NAME } from './system-tags';
 
+const WORKSPACE_ID = 'workspace-1';
+const workspacesService = {
+  listWorkspaceIds: jest.fn(async () => [WORKSPACE_ID]),
+};
+
 describe('MetaService system tags', () => {
   function createService() {
     const tagRepository = {
@@ -28,6 +33,7 @@ describe('MetaService system tags', () => {
       tagRepository as any,
       tagUsageRepository as any,
       projectRepository as any,
+      workspacesService as any,
     );
 
     return {
@@ -44,6 +50,7 @@ describe('MetaService system tags', () => {
     await service.onModuleInit();
 
     expect(tagRepository.create).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
       name: AUTO_PRUNE_TAG_NAME,
       color: '#8E7CC3',
     });
@@ -76,7 +83,7 @@ describe('MetaService system tags', () => {
       name: AUTO_PRUNE_TAG_NAME,
     });
 
-    await service.deleteTag('tag-1');
+    await service.deleteTag(WORKSPACE_ID, 'tag-1');
 
     expect(tagRepository.delete).not.toHaveBeenCalled();
   });
@@ -88,7 +95,7 @@ describe('MetaService system tags', () => {
       name: 'Auto-Prune',
     });
 
-    await service.deleteTag('tag-1');
+    await service.deleteTag(WORKSPACE_ID, 'tag-1');
 
     expect(tagRepository.delete).not.toHaveBeenCalled();
   });
@@ -102,7 +109,7 @@ describe('MetaService system tags', () => {
       blocks: [],
     });
 
-    await service.cleanupOrphanedTag('tag-1');
+    await service.cleanupOrphanedTag(WORKSPACE_ID, 'tag-1');
 
     expect(tagRepository.delete).not.toHaveBeenCalled();
   });
@@ -116,7 +123,7 @@ describe('MetaService system tags', () => {
       blocks: [],
     });
 
-    await service.cleanupOrphanedTag('tag-1');
+    await service.cleanupOrphanedTag(WORKSPACE_ID, 'tag-1');
 
     expect(tagRepository.delete).not.toHaveBeenCalled();
   });
@@ -124,31 +131,59 @@ describe('MetaService system tags', () => {
 
 describe('MetaService orphaned tag cleanup', () => {
   function createService() {
-    const tagRepository = { findOne: jest.fn(), delete: jest.fn(async () => ({ affected: 1 })) };
+    const tagRepository = {
+      findOne: jest.fn(),
+      delete: jest.fn(async () => ({ affected: 1 })),
+      query: jest.fn(async () => []),
+    };
     const projectRepository = { findOne: jest.fn() };
-    const service = new MetaService(tagRepository as any, {} as any, projectRepository as any);
+    const service = new MetaService(
+      tagRepository as any,
+      {} as any,
+      projectRepository as any,
+      workspacesService as any,
+    );
     return { service, tagRepository, projectRepository };
   }
 
   it('keeps a project tag when its last task leaves the project', async () => {
     // Deleting the tag would cascade to the project and lose its description and repo.
     const { service, tagRepository, projectRepository } = createService();
-    tagRepository.findOne.mockResolvedValue({ id: 'tag-1', name: 'project:taico', tasks: [], blocks: [] });
-    projectRepository.findOne.mockResolvedValue({ id: 'project-1', tagId: 'tag-1', slug: 'taico' });
+    tagRepository.findOne.mockResolvedValue({
+      id: 'tag-1',
+      name: 'project:taico',
+      tasks: [],
+      blocks: [],
+    });
+    projectRepository.findOne.mockResolvedValue({
+      id: 'project-1',
+      tagId: 'tag-1',
+      slug: 'taico',
+    });
 
-    await service.cleanupOrphanedTag('tag-1');
+    await service.cleanupOrphanedTag(WORKSPACE_ID, 'tag-1');
 
-    expect(projectRepository.findOne).toHaveBeenCalledWith({ where: { tagId: 'tag-1' } });
+    expect(projectRepository.findOne).toHaveBeenCalledWith({
+      where: { workspaceId: WORKSPACE_ID, tagId: 'tag-1' },
+    });
     expect(tagRepository.delete).not.toHaveBeenCalled();
   });
 
   it('still deletes an unused tag that no project owns', async () => {
     const { service, tagRepository, projectRepository } = createService();
-    tagRepository.findOne.mockResolvedValue({ id: 'tag-2', name: 'backend', tasks: [], blocks: [] });
+    tagRepository.findOne.mockResolvedValue({
+      id: 'tag-2',
+      name: 'backend',
+      tasks: [],
+      blocks: [],
+    });
     projectRepository.findOne.mockResolvedValue(null);
 
-    await service.cleanupOrphanedTag('tag-2');
+    await service.cleanupOrphanedTag(WORKSPACE_ID, 'tag-2');
 
-    expect(tagRepository.delete).toHaveBeenCalledWith('tag-2');
+    expect(tagRepository.delete).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      id: 'tag-2',
+    });
   });
 });

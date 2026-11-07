@@ -6,6 +6,7 @@ import { ContextService } from '../context/context.service';
 import { ThreadEntity } from './thread.entity';
 import { InvalidThreadTitleError, ThreadNotFoundError } from './errors/threads.errors';
 import { ThreadTitleUpdatedEvent } from './events/threads.events';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 /**
  * Renames a thread. Shared by the REST endpoint and the thread agent's
@@ -39,7 +40,7 @@ export class ThreadRenameService {
       new ThreadTitleUpdatedEvent({ id: actorId }, { threadId, title: trimmed }),
     );
     try {
-      await this.contextService.updateBlock(thread.stateContextBlockId, {
+      await this.contextService.updateBlock(UNSCOPED_MODULE_WORKSPACE_ID, thread.stateContextBlockId, {
         title: `Thread State: ${trimmed}`,
       });
     } catch (error) {

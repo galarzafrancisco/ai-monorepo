@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -30,19 +35,25 @@ export class ProjectsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  private async assertGithubConnectionExists(connectionId: string | null | undefined): Promise<void> {
+  private async assertGithubConnectionExists(
+    connectionId: string | null | undefined,
+  ): Promise<void> {
     if (!connectionId) return;
     const rows: unknown[] = await this.dataSource.query(
       'SELECT 1 FROM github_connections WHERE id = $1',
       [connectionId],
     );
-    if (rows.length === 0) throw new GithubConnectionNotFoundError(connectionId);
+    if (rows.length === 0)
+      throw new GithubConnectionNotFoundError(connectionId);
   }
 
   /**
    * Create a new project with associated tag
    */
-  async createProject(input: CreateProjectInput): Promise<ProjectResult> {
+  async createProject(
+    workspaceId: string,
+    input: CreateProjectInput,
+  ): Promise<ProjectResult> {
     this.logger.log({
       message: 'Creating project',
       slug: input.slug,
@@ -53,19 +64,21 @@ export class ProjectsService {
     // Create tag with project: prefix
     const tagName = `project:${input.slug}`;
     const tag = await this.metaService.findOrCreateTagEntity(
+      workspaceId,
       tagName,
       input.color,
     );
 
     // Check if project already exists
     let project = await this.projectRepository.findOne({
-      where: { tagId: tag.id },
+      where: { workspaceId, tagId: tag.id },
       relations: ['tag', 'autoTags'],
     });
 
     if (!project) {
       // Create new project
       project = this.projectRepository.create({
+        workspaceId,
         tagId: tag.id,
         slug: input.slug,
         description: input.description,
@@ -109,10 +122,11 @@ export class ProjectsService {
   /**
    * Get all projects
    */
-  async getAllProjects(): Promise<ProjectResult[]> {
+  async getAllProjects(workspaceId: string): Promise<ProjectResult[]> {
     this.logger.log({ message: 'Getting all projects' });
 
     const projects = await this.projectRepository.find({
+      where: { workspaceId },
       relations: ['tag', 'autoTags'],
       order: { slug: 'ASC' },
     });
@@ -128,9 +142,12 @@ export class ProjectsService {
   /**
    * Get project by ID
    */
-  async getProjectById(projectId: string): Promise<ProjectResult> {
+  async getProjectById(
+    workspaceId: string,
+    projectId: string,
+  ): Promise<ProjectResult> {
     const project = await this.projectRepository.findOne({
-      where: { id: projectId },
+      where: { workspaceId, id: projectId },
       relations: ['tag', 'autoTags'],
     });
 
@@ -144,9 +161,12 @@ export class ProjectsService {
   /**
    * Get project by slug
    */
-  async getProjectBySlug(slug: string): Promise<ProjectResult | null> {
+  async getProjectBySlug(
+    workspaceId: string,
+    slug: string,
+  ): Promise<ProjectResult | null> {
     const project = await this.projectRepository.findOne({
-      where: { slug },
+      where: { workspaceId, slug },
       relations: ['tag', 'autoTags'],
     });
 
@@ -156,14 +176,17 @@ export class ProjectsService {
   /**
    * Search projects by name and description
    */
-  async searchProjects(input: SearchProjectsInput): Promise<ProjectResult[]> {
+  async searchProjects(
+    workspaceId: string,
+    input: SearchProjectsInput,
+  ): Promise<ProjectResult[]> {
     this.logger.log({
       message: 'Searching projects',
       query: input.query,
     });
 
     // Get all projects
-    const projects = await this.getAllProjects();
+    const projects = await this.getAllProjects(workspaceId);
 
     // Use search service to fuzzy search
     const searchResults = this.searchService.search({
@@ -188,6 +211,7 @@ export class ProjectsService {
    * Update project (partial update)
    */
   async updateProject(
+    workspaceId: string,
     projectId: string,
     input: UpdateProjectInput,
   ): Promise<ProjectResult> {
@@ -197,7 +221,7 @@ export class ProjectsService {
     });
 
     const project = await this.projectRepository.findOne({
-      where: { id: projectId },
+      where: { workspaceId, id: projectId },
       relations: ['tag', 'autoTags'],
     });
 
@@ -222,9 +246,14 @@ export class ProjectsService {
     }
     if (input.autoTagIds !== undefined) {
       const ids = [...new Set(input.autoTagIds)];
-      const tags = await this.metaService.getTagEntities(ids);
-      if (tags.length !== ids.length || tags.some((tag) => tag.name.startsWith('project:'))) {
-        throw new BadRequestException('Auto tags must be existing non-project tags');
+      const tags = await this.metaService.getTagEntities(workspaceId, ids);
+      if (
+        tags.length !== ids.length ||
+        tags.some((tag) => tag.name.startsWith('project:'))
+      ) {
+        throw new BadRequestException(
+          'Auto tags must be existing non-project tags',
+        );
       }
       project.autoTags = tags;
     }
@@ -242,14 +271,14 @@ export class ProjectsService {
   /**
    * Delete project
    */
-  async deleteProject(projectId: string): Promise<void> {
+  async deleteProject(workspaceId: string, projectId: string): Promise<void> {
     this.logger.log({
       message: 'Deleting project',
       projectId,
     });
 
     const project = await this.projectRepository.findOne({
-      where: { id: projectId },
+      where: { workspaceId, id: projectId },
     });
 
     if (!project) {
@@ -265,7 +294,8 @@ export class ProjectsService {
     const taskIds = await this.dataSource.transaction(async (manager) => {
       await manager.softDelete(ProjectEntity, projectId);
       const affected: { task_id: string }[] = await manager.query(
-        'SELECT task_id FROM task_tags WHERE tag_id = $1', [project.tagId],
+        'SELECT task_id FROM task_tags WHERE tag_id = $1',
+        [project.tagId],
       );
       for (const { task_id: taskId } of affected) {
         await this.projectAutoTags.syncTask(taskId, [], [], manager);
@@ -276,10 +306,16 @@ export class ProjectsService {
 
     for (const { task_id: taskId } of taskIds) {
       const task = await this.dataSource.getRepository(TaskEntity).findOne({
-        where: { id: taskId },
+        where: { workspaceId, id: taskId },
         relations: [
-          'tags', 'dependsOn', 'assigneeActor', 'createdByActor',
-          'comments', 'comments.commenterActor', 'artefacts', 'inputRequests',
+          'tags',
+          'dependsOn',
+          'assigneeActor',
+          'createdByActor',
+          'comments',
+          'comments.commenterActor',
+          'artefacts',
+          'inputRequests',
         ],
       });
       if (task) {
