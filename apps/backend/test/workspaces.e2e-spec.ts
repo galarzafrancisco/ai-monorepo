@@ -59,8 +59,13 @@ describe('Workspaces (e2e)', () => {
   });
 
   it('puts a new person in the default workspace and signs it into their session token', async () => {
-    const membership = await members.findOneBy({ actorId: testUserActorId });
-    expect(membership?.workspaceId).toBe(DEFAULT_WORKSPACE_ID);
+    // Other suites sharing this database may add the test user to more
+    // workspaces, so look for the default membership itself.
+    const membership = await members.findOneBy({
+      actorId: testUserActorId,
+      workspaceId: DEFAULT_WORKSPACE_ID,
+    });
+    expect(membership).not.toBeNull();
 
     const accessToken = authCookies
       .split('; ')
