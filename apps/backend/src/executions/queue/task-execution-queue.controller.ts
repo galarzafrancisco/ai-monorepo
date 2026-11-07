@@ -86,9 +86,10 @@ export class TaskExecutionQueueController {
   async claimTask(
     @Param('taskId') taskId: string,
     @CurrentAuth() auth: AuthContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ActiveTaskExecutionResponseDto> {
     try {
-      const execution = await this.activeTaskExecutionService.claimTask({
+      const execution = await this.activeTaskExecutionService.claimTask(workspaceId, {
         taskId,
         workerClientId: auth.claims.client_id,
       });

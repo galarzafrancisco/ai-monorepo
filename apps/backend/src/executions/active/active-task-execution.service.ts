@@ -113,12 +113,17 @@ export class ActiveTaskExecutionService {
     };
   }
 
+  /**
+   * A worker only claims tasks in its token's workspace, like the queue it
+   * lists. A task in another workspace is not found.
+   */
   async claimTask(
+    workspaceId: string,
     input: ClaimTaskExecutionInput,
   ): Promise<ActiveTaskExecutionResult> {
     const execution = await this.dataSource.transaction(async (manager) => {
       const task = await manager.findOne(TaskEntity, {
-        where: { id: input.taskId },
+        where: { workspaceId, id: input.taskId },
         relations: ['tags'],
       });
 
