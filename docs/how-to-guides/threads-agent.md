@@ -31,13 +31,13 @@ Nothing is kept in memory between turns. A turn whose process died stops heartbe
 
 ## Providers and models
 
-Providers and models are separate, and both are set in Settings → AI models.
+Providers and models are separate, and both are set in Settings → AI models. They belong to the workspace: a workspace admin sets them up, and every member's threads use them. Members see the page read-only. A thread's own provider must be one of its workspace's (see [Workspaces](../architecture/workspaces.md#ai-models-and-secrets-phase-3d)).
 
 An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai`, `openai_compatible` or `chatgpt_subscription`), an optional stored secret, and an endpoint. It has no model.
 
 `chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider only runs jobs that say whose plan pays (conversation, user small tasks, middle manager). It never runs system small tasks. See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
 
-A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
+A model is picked per job (`ai_model_selections`, one row per workspace and job, holding a provider and a model id):
 
 | Job | Used by | When nothing is selected |
 |---|---|---|

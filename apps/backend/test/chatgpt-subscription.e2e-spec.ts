@@ -24,7 +24,8 @@ import { ThreadTitleService } from '../src/threads/thread-title.service';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadAgentResponseDeltaEvent } from '../src/threads/events/threads.events';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 import {
   failedResponse,
   FakeOpenAi,
@@ -183,6 +184,8 @@ describe('Sign in with ChatGPT E2E', () => {
     dataSource = app.get(DataSource);
 
     aliceActorId = await ensureTestUser(app);
+    // Only a workspace admin may set up AI models; the scope is decided at login.
+    await setTestUserRole(app, UserRole.ADMIN);
     aliceCookies = await getAuthCookies(httpServer);
 
     const bob = await app.get(IdentityProviderService).createUser({
@@ -206,6 +209,7 @@ describe('Sign in with ChatGPT E2E', () => {
   }, 30000);
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
     await fake.stop();
   });
@@ -795,7 +799,7 @@ describe('Sign in with ChatGPT E2E', () => {
     const turnFor = (actorId: string, automated: boolean) =>
       app
         .get(ChatgptConnectionsService)
-        .authorizeTurn(providerId, { actorId, automated });
+        .authorizeTurn(DEFAULT_WORKSPACE_ID, providerId, { actorId, automated });
 
     it('does not run a turn nobody typed on a person’s plan without their consent', async () => {
       await expect(turnFor(aliceActorId, false)).resolves.toEqual({

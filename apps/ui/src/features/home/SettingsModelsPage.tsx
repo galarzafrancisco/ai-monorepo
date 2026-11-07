@@ -10,6 +10,7 @@ import { Stack, Text, Card, Button, Modal, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useHomeCtx } from './HomeProvider';
+import { useAuth } from '../../auth/AuthContext';
 import { ChatgptConnection } from '../ai-models/ChatgptConnection';
 import './SettingsPage.css';
 import './SettingsModelsPage.css';
@@ -163,6 +164,9 @@ const errorDetail = (err: unknown, fallback: string): string =>
 
 export function SettingsModelsPage() {
   const { setSectionTitle } = useHomeCtx();
+  const { user } = useAuth();
+  // The workspace's models are shared by every member; only a workspace admin changes them.
+  const canManage = user?.role === 'admin';
   const [providers, setProviders] = useState<AiProviderResponseDto[]>([]);
   const [selections, setSelections] = useState<AiModelSelectionResponseDto[]>([]);
   const [modelsByProvider, setModelsByProvider] = useState<Record<string, ProviderModels>>({});
@@ -326,6 +330,9 @@ export function SettingsModelsPage() {
       <Text tone="muted" className="settings-subpage__intro">
         Providers are the AI services Taico can call. Models are picked per job, so each job can
         use a different model from a different provider.
+        {canManage
+          ? ' Every member of this workspace uses the models you pick here.'
+          : ' These are the models of this workspace. Only a workspace admin can change them.'}
       </Text>
 
       {error && (
@@ -349,6 +356,7 @@ export function SettingsModelsPage() {
                   selection={selection}
                   providers={providers}
                   conversationUsesPersonalPlan={conversationUsesPersonalPlan}
+                  canManage={canManage}
                   modelsByProvider={modelsByProvider}
                   onLoadModels={loadModels}
                   onSave={(providerId, modelId) =>
@@ -367,9 +375,11 @@ export function SettingsModelsPage() {
           <Text size="4" weight="semibold">
             Providers
           </Text>
-          <Button variant="primary" size="sm" onClick={() => setIsAddingProvider(true)}>
-            Add provider
-          </Button>
+          {canManage ? (
+            <Button variant="primary" size="sm" onClick={() => setIsAddingProvider(true)}>
+              Add provider
+            </Button>
+          ) : null}
         </Row>
 
         <Card padding="5" className="settings-panel-card">
@@ -384,6 +394,7 @@ export function SettingsModelsPage() {
                   key={provider.id}
                   provider={provider}
                   usedBy={jobsByProvider(provider.id)}
+                  canManage={canManage}
                   models={modelsByProvider[provider.id]}
                   isEditing={editingProviderId === provider.id}
                   onEdit={() => {
@@ -694,6 +705,7 @@ function JobRow({
   selection,
   providers,
   conversationUsesPersonalPlan,
+  canManage,
   modelsByProvider,
   onLoadModels,
   onSave,
@@ -704,6 +716,8 @@ function JobRow({
   providers: AiProviderResponseDto[];
   /** True when the conversation runs on each person's own plan, which other jobs do not inherit. */
   conversationUsesPersonalPlan: boolean;
+  /** False for members who are not workspace admins: they see the choice but cannot change it. */
+  canManage: boolean;
   modelsByProvider: Record<string, ProviderModels>;
   onLoadModels: (providerId: string) => void;
   onSave: (providerId: string, modelId: string) => Promise<boolean>;
@@ -812,6 +826,7 @@ function JobRow({
           onChange={(e) => handleProviderChange(e.target.value)}
           className="settings-models__control"
           aria-label={`${info.label} provider`}
+          disabled={!canManage}
         >
           <option value="">{emptyLabel}</option>
           {selectableProviders.map((p) => (
@@ -823,7 +838,9 @@ function JobRow({
           <option value={ADD_PROVIDER_OPTION}>Add provider…</option>
         </select>
 
-        {providerId === '' ? null : (
+        {providerId === '' ? null : !canManage ? (
+          <Text size="2">{modelId}</Text>
+        ) : (
           <ModelCombobox
             value={modelId}
             onChange={setModelId}
@@ -833,9 +850,11 @@ function JobRow({
           />
         )}
 
-        <Button variant="primary" size="sm" onClick={handleSave} disabled={!canSave}>
-          {justSaved && !isDirty ? 'Saved' : 'Save'}
-        </Button>
+        {canManage ? (
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={!canSave}>
+            {justSaved && !isDirty ? 'Saved' : 'Save'}
+          </Button>
+        ) : null}
       </div>
 
       {providerId !== '' && listing?.status === 'error' ? (
@@ -890,6 +909,7 @@ function JobRow({
 function ProviderRow({
   provider,
   usedBy,
+  canManage,
   models,
   isEditing,
   onEdit,
@@ -900,6 +920,8 @@ function ProviderRow({
 }: {
   provider: AiProviderResponseDto;
   usedBy: string[];
+  /** Only a workspace admin may edit or delete a provider. */
+  canManage: boolean;
   models: ProviderModels | undefined;
   isEditing: boolean;
   onEdit: () => void;
@@ -999,9 +1021,11 @@ function ProviderRow({
           </Row>
         ) : (
           <Row spacing="2" align="center" className="settings-models__actions">
-            <Button variant="secondary" size="sm" onClick={onEdit}>
-              {provider.isConfigured || info.personalPlan ? 'Edit' : 'Set up'}
-            </Button>
+            {canManage ? (
+              <Button variant="secondary" size="sm" onClick={onEdit}>
+                {provider.isConfigured || info.personalPlan ? 'Edit' : 'Set up'}
+              </Button>
+            ) : null}
             <Button
               variant="secondary"
               size="sm"
@@ -1013,9 +1037,11 @@ function ProviderRow({
             >
               Test connection
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setIsConfirmingDelete(true)}>
-              Delete
-            </Button>
+            {canManage ? (
+              <Button variant="secondary" size="sm" onClick={() => setIsConfirmingDelete(true)}>
+                Delete
+              </Button>
+            ) : null}
           </Row>
         )}
 
