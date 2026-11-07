@@ -17,8 +17,10 @@ export class WorkersService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async findAll(): Promise<WorkerResult[]> {
+  /** The workers registered in a workspace. */
+  async findAll(workspaceId: string): Promise<WorkerResult[]> {
     const workers = await this.workersRepository.find({
+      where: { workspaceId },
       order: {
         lastSeenAt: 'DESC',
       },
@@ -27,11 +29,20 @@ export class WorkersService {
     return workers.map((worker) => this.mapWorkerToResult(worker));
   }
 
-  async recordWorkerSeen(input: RecordWorkerSeenInput): Promise<WorkerEntity> {
+  /**
+   * Records a worker in the workspace of the token it connected with. The
+   * same OAuth client connecting with another workspace's token is another
+   * worker row: a worker never moves between workspaces.
+   */
+  async recordWorkerSeen(
+    workspaceId: string,
+    input: RecordWorkerSeenInput,
+  ): Promise<WorkerEntity> {
     // Upsert only supplied fields: a heartbeat must never write back a stale
     // capability report read before another socket message updated it.
     await this.workersRepository.upsert(
       {
+        workspaceId,
         oauthClientId: input.oauthClientId,
         lastSeenAt: input.seenAt ?? new Date(),
         ...(input.workerVersion !== undefined && {
@@ -40,9 +51,10 @@ export class WorkersService {
         ...(input.harnesses !== undefined && { harnesses: input.harnesses }),
         ...(input.capabilities !== undefined && { capabilities: input.capabilities }),
       },
-      { conflictPaths: ['oauthClientId'] },
+      { conflictPaths: ['workspaceId', 'oauthClientId'] },
     );
     const savedWorker = await this.workersRepository.findOneByOrFail({
+      workspaceId,
       oauthClientId: input.oauthClientId,
     });
 

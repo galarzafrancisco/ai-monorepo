@@ -1,4 +1,6 @@
 export type ExecutionInterruptPayload = {
+  /** The execution's workspace: only that workspace's worker sockets hear it. */
+  workspaceId: string;
   executionId: string;
   workerClientId: string;
 };

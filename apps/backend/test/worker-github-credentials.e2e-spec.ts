@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -57,7 +58,7 @@ describe('Worker GitHub credentials E2E', () => {
     await ds.query(`UPDATE projects SET github_connection_id = NULL`);
     await ds.query(`DELETE FROM github_connections`);
     agentActorId = (
-      await app.get(AgentsService).createAgent({
+      await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
         slug: `gh-${randomUUID()}`,
         name: 'GitHub agent',
         systemPrompt: 'test',

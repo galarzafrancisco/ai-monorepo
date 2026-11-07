@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, QueryFailedError } from 'typeorm';
+import { EntityManager, In, Not, Repository, QueryFailedError } from 'typeorm';
+import { WorkspaceMemberEntity } from '../workspaces/workspace-member.entity';
+import { WorkspaceRole } from '../workspaces/enums';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { buildDeletedActorSlug } from '../identity-provider/actor.service';
@@ -40,15 +42,20 @@ export class AgentsService {
   constructor(
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
-    @InjectRepository(ActorEntity)
-    private readonly actorRepository: Repository<ActorEntity>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createAgent(input: CreateAgentInput): Promise<AgentResult> {
+  /**
+   * Creates an agent in a workspace. The agent's actor is a member of that
+   * workspace only (an agent never moves), and its slug must be free in it
+   * (see `assertAgentSlugAvailable`).
+   */
+  async createAgent(
+    workspaceId: string,
+    input: CreateAgentInput,
+  ): Promise<AgentResult> {
     this.logger.log(`Creating agent with slug: ${input.slug}`);
 
-    // Create actor first
     let avatarUrl: string | null = null;
     if (input.avatarUrl !== undefined) {
       this.assertManagedAgentAvatarUrl(input.avatarUrl);
@@ -60,62 +67,48 @@ export class AgentsService {
         modelId: input.modelId,
       });
     }
-    const actor = this.actorRepository.create({
-      type: ActorType.AGENT,
-      slug: input.slug,
-      displayName: input.name,
-      avatarUrl: avatarUrl,
-      introduction: input.introduction ?? null,
-    });
 
-    // Save actor with slug uniqueness check
-    let savedActor: ActorEntity;
-    try {
-      savedActor = await this.actorRepository.save(actor);
-    } catch (error) {
-      // Convert DB unique constraint violation on actor.slug to domain error
-      if (error instanceof QueryFailedError) {
-        const driverError = (error as any).driverError;
-        // PostgreSQL reports unique violations with SQLSTATE 23505.
-        if (
-          driverError?.code === '23505' &&
-          (driverError?.constraint === 'UQ_d728e8d8a38480121d06532aabf' ||
-            driverError?.message?.includes('actors_slug'))
-        ) {
-          throw new AgentSlugConflictError(input.slug);
-        }
-      }
-      throw error;
-    }
+    const savedAgentId = await this.agentRepository.manager.transaction(
+      async (manager) => {
+        await this.assertAgentSlugAvailable(manager, workspaceId, input.slug);
 
-    const agent = this.agentRepository.create({
-      actorId: savedActor.id,
-      type: input.type ?? AgentType.OTHER,
-      description: input.description ?? null,
-      systemPrompt: input.systemPrompt ?? '',
-      followUpPrompt: input.followUpPrompt ?? null,
-      providerId: this.normalizeOptionalId(input.providerId),
-      modelId: this.normalizeOptionalId(input.modelId),
-      statusTriggers: input.statusTriggers ?? [],
-      tagTriggers: input.tagTriggers ?? [],
-      allowedTools: input.allowedTools ?? [],
-      isActive: input.isActive ?? true,
-      concurrencyLimit: input.concurrencyLimit ?? null,
-    });
+        const savedActor = await this.saveActor(
+          manager,
+          manager.create(ActorEntity, {
+            type: ActorType.AGENT,
+            slug: input.slug,
+            displayName: input.name,
+            avatarUrl: avatarUrl,
+            introduction: input.introduction ?? null,
+          }),
+        );
+        await this.setAgentMembership(manager, workspaceId, savedActor.id);
 
-    const savedAgent = await this.agentRepository.save(agent);
+        const agent = manager.create(AgentEntity, {
+          workspaceId,
+          actorId: savedActor.id,
+          type: input.type ?? AgentType.OTHER,
+          description: input.description ?? null,
+          systemPrompt: input.systemPrompt ?? '',
+          followUpPrompt: input.followUpPrompt ?? null,
+          providerId: this.normalizeOptionalId(input.providerId),
+          modelId: this.normalizeOptionalId(input.modelId),
+          statusTriggers: input.statusTriggers ?? [],
+          tagTriggers: input.tagTriggers ?? [],
+          allowedTools: input.allowedTools ?? [],
+          isActive: input.isActive ?? true,
+          concurrencyLimit: input.concurrencyLimit ?? null,
+        });
+        return (await manager.save(agent)).id;
+      },
+    );
 
-    // Load with actor relation
     const agentWithRelations = await this.agentRepository.findOne({
-      where: { id: savedAgent.id },
+      where: { workspaceId, id: savedAgentId },
       relations: ['actor'],
     });
-
-    if (!agentWithRelations) {
-      throw new AgentNotFoundError(savedAgent.id);
-    }
-    if (!agentWithRelations.actor) {
-      throw new AgentNotFoundError(savedAgent.id);
+    if (!agentWithRelations || !agentWithRelations.actor) {
+      throw new AgentNotFoundError(savedAgentId);
     }
 
     this.eventEmitter.emit(
@@ -126,12 +119,15 @@ export class AgentsService {
     return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
   }
 
-  async listAgents(input: ListAgentsInput): Promise<ListAgentsResult> {
+  async listAgents(
+    workspaceId: string,
+    input: ListAgentsInput,
+  ): Promise<ListAgentsResult> {
     this.logger.log(`Listing agents with filters: ${JSON.stringify(input)}`);
 
     const skip = (input.page - 1) * input.limit;
 
-    const whereClause: Record<string, unknown> = {};
+    const whereClause: Record<string, unknown> = { workspaceId };
     if (input.isActive !== undefined) {
       whereClause.isActive = input.isActive;
     }
@@ -155,8 +151,9 @@ export class AgentsService {
     };
   }
 
-  async listAllAgents(): Promise<AgentResult[]> {
+  async listAllAgents(workspaceId: string): Promise<AgentResult[]> {
     const agents = await this.agentRepository.find({
+      where: { workspaceId },
       relations: ['actor'],
     });
 
@@ -172,31 +169,18 @@ export class AgentsService {
     return AGENT_TEMPLATE_CATALOG;
   }
 
-  async getAgentById({ agentId }: { agentId: string }): Promise<AgentResult> {
-    this.logger.log(`Getting agent by ID: ${agentId}`);
-
-    const agent = await this.agentRepository.findOne({
-      where: { id: agentId },
-      relations: ['actor'],
-    });
-
-    if (!agent) {
-      throw new AgentNotFoundError(agentId);
-    }
-    if (!agent.actor) {
-      throw new AgentNotFoundError(agentId);
-    }
-
-    return this.mapAgentToResult(agent, agent.actor);
-  }
-
-  async getAgentBySlug({ slug }: { slug: string }): Promise<AgentResult> {
+  /** The agent with this slug in the workspace. Agent slugs are only unique per workspace. */
+  async getAgentBySlug(
+    workspaceId: string,
+    { slug }: { slug: string },
+  ): Promise<AgentResult> {
     this.logger.log(`Getting agent by slug: ${slug}`);
 
     const agent = await this.agentRepository
       .createQueryBuilder('agent')
       .innerJoinAndSelect('agent.actor', 'actor')
-      .where('actor.slug = :slug', { slug })
+      .where('agent.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('actor.slug = :slug', { slug })
       .getOne();
 
     if (!agent) {
@@ -209,20 +193,16 @@ export class AgentsService {
     return this.mapAgentToResult(agent, agent.actor);
   }
 
-  async getActiveAgentsByActorIds({
-    actorIds,
-  }: {
-    actorIds: string[];
-  }): Promise<AgentResult[]> {
+  async getActiveAgentsByActorIds(
+    workspaceId: string,
+    { actorIds }: { actorIds: string[] },
+  ): Promise<AgentResult[]> {
     if (actorIds.length === 0) {
       return [];
     }
 
     const agents = await this.agentRepository.find({
-      where: actorIds.map((actorId) => ({
-        actorId,
-        isActive: true,
-      })),
+      where: { workspaceId, actorId: In(actorIds), isActive: true },
       relations: ['actor'],
     });
 
@@ -233,76 +213,11 @@ export class AgentsService {
       .map((agent) => this.mapAgentToResult(agent, agent.actor));
   }
 
-  // async updateAgent(
-  //   actorId: string,
-  //   input: UpdateAgentInput,
-  // ): Promise<AgentResult> {
-  //   this.logger.log(`Updating agent: ${agentId}`);
-
-  //   const agent = await this.agentRepository.findOne({
-  //     where: { id: agentId },
-  //     relations: ['actor'],
-  //   });
-
-  //   if (!agent) {
-  //     throw new AgentNotFoundError(agentId);
-  //   }
-
-  //   // Check for slug conflict if slug is being updated
-  //   if (input.slug !== undefined && input.slug !== agent.actor?.slug) {
-  //     const existingActor = await this.actorRepository.findOne({
-  //       where: { slug: input.slug },
-  //     });
-
-  //     if (existingActor && existingActor.id !== agent.actorId) {
-  //       throw new AgentSlugConflictError(input.slug);
-  //     }
-  //   }
-
-  //   // Apply partial updates to agent
-  //   if (input.type !== undefined) agent.type = input.type;
-  //   if (input.description !== undefined) agent.description = input.description;
-  //   if (input.systemPrompt !== undefined)
-  //     agent.systemPrompt = input.systemPrompt;
-  //   if (input.statusTriggers !== undefined)
-  //     agent.statusTriggers = input.statusTriggers;
-  //   if (input.allowedTools !== undefined)
-  //     agent.allowedTools = input.allowedTools;
-  //   if (input.isActive !== undefined) agent.isActive = input.isActive;
-  //   if (input.concurrencyLimit !== undefined)
-  //     agent.concurrencyLimit = input.concurrencyLimit;
-
-  //   // Update actor if name or slug changed
-  //   if (agent.actor && (input.name !== undefined || input.slug !== undefined)) {
-  //     if (input.name !== undefined) agent.actor.displayName = input.name;
-  //     if (input.slug !== undefined) agent.actor.slug = input.slug;
-  //     await this.actorRepository.save(agent.actor);
-  //   }
-
-  //   const updatedAgent = await this.agentRepository.save(agent);
-
-  //   // Reload with actor relation
-  //   const agentWithRelations = await this.agentRepository.findOne({
-  //     where: { id: updatedAgent.id },
-  //     relations: ['actor'],
-  //   });
-  //   if (!agentWithRelations || !agentWithRelations.actor) {
-  //     throw new AgentNotFoundError(updatedAgent.id);
-  //   }
-
-  //   this.eventEmitter.emit(
-  //     'agent.updated',
-  //     new AgentUpdatedEvent(agentWithRelations!),
-  //   );
-
-  //   return this.mapAgentToResult(agentWithRelations);
-  // }
-
-  async deleteAgent(actorId: string): Promise<void> {
+  async deleteAgent(workspaceId: string, actorId: string): Promise<void> {
     this.logger.log(`Deleting agent with actorId: ${actorId}`);
 
     const agent = await this.agentRepository.findOne({
-      where: { actorId },
+      where: { workspaceId, actorId },
       relations: ['actor'],
     });
 
@@ -323,18 +238,21 @@ export class AgentsService {
       await manager.save(actor);
     });
 
-    this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(actorId));
+    this.eventEmitter.emit(
+      'agent.deleted',
+      new AgentDeletedEvent(workspaceId, actorId),
+    );
   }
 
   async patchAgent(
+    workspaceId: string,
     actorId: string,
     input: PatchAgentInput,
   ): Promise<AgentResult> {
     this.logger.log(`Patching agent with actorId: ${actorId}`);
 
-    // Find agent by actorId
     const agent = await this.agentRepository.findOne({
-      where: { actorId },
+      where: { workspaceId, actorId },
       relations: ['actor'],
     });
 
@@ -343,16 +261,6 @@ export class AgentsService {
     }
     if (!agent.actor) {
       throw new AgentNotFoundError(actorId);
-    }
-
-    if (input.slug !== undefined && input.slug !== agent.actor.slug) {
-      const existingActor = await this.actorRepository.findOne({
-        where: { slug: input.slug },
-      });
-
-      if (existingActor && existingActor.id !== agent.actorId) {
-        throw new AgentSlugConflictError(input.slug);
-      }
     }
 
     // Apply partial updates to agent
@@ -390,6 +298,8 @@ export class AgentsService {
       agent.concurrencyLimit = input.concurrencyLimit;
     }
 
+    const slugChanged = input.slug !== undefined && input.slug !== agent.actor.slug;
+
     // Apply updates to actor fields
     if (input.name !== undefined) {
       agent.actor.displayName = input.name;
@@ -411,33 +321,27 @@ export class AgentsService {
       input.introduction !== undefined ||
       input.avatarUrl !== undefined;
 
-    if (isActorUpdateRequested) {
-      try {
-        await this.actorRepository.save(agent.actor);
-      } catch (error) {
-        if (error instanceof QueryFailedError) {
-          const driverError = (error as any).driverError;
-          if (
-            driverError?.code === '23505' &&
-            (driverError?.constraint === 'UQ_d728e8d8a38480121d06532aabf' ||
-              driverError?.message?.includes('actors_slug'))
-          ) {
-            throw new AgentSlugConflictError(agent.actor.slug);
-          }
+    await this.agentRepository.manager.transaction(async (manager) => {
+      if (isActorUpdateRequested) {
+        if (slugChanged) {
+          await this.assertAgentSlugAvailable(
+            manager,
+            workspaceId,
+            agent.actor!.slug,
+            agent.actorId,
+          );
         }
-        throw error;
+        await this.saveActor(manager, agent.actor!);
       }
-    }
+      await manager.save(agent);
+    });
 
-    const updatedAgent = await this.agentRepository.save(agent);
-
-    // Reload with actor relation
     const agentWithRelations = await this.agentRepository.findOne({
-      where: { id: updatedAgent.id },
+      where: { workspaceId, id: agent.id },
       relations: ['actor'],
     });
     if (!agentWithRelations || !agentWithRelations.actor) {
-      throw new AgentNotFoundError(updatedAgent.id);
+      throw new AgentNotFoundError(agent.id);
     }
 
     this.eventEmitter.emit(
@@ -446,6 +350,80 @@ export class AgentsService {
     );
 
     return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
+  }
+
+  /**
+   * An agent's slug is unique in its workspace, not across the installation,
+   * so each workspace can have its own `@claude-dev`. It may never be a
+   * person's slug: people's slugs are installation-wide, because a person can
+   * join any workspace. Writers of the same slug are serialized with a
+   * transaction-scoped advisory lock, so two workspaces' concurrent checks
+   * cannot both pass for one workspace.
+   */
+  private async assertAgentSlugAvailable(
+    manager: EntityManager,
+    workspaceId: string,
+    slug: string,
+    selfActorId?: string,
+  ): Promise<void> {
+    await manager.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
+      `actor-slug:${slug}`,
+    ]);
+    const [conflict] = await manager.query(
+      `SELECT 1 FROM actors a
+        WHERE a.slug = $1
+          AND ($3::uuid IS NULL OR a.id <> $3::uuid)
+          AND (a.type <> '${ActorType.AGENT}'
+               OR EXISTS (SELECT 1 FROM workspace_members m
+                           WHERE m.actor_id = a.id AND m.workspace_id = $2))
+        LIMIT 1`,
+      [slug, workspaceId, selfActorId ?? null],
+    );
+    if (conflict) {
+      throw new AgentSlugConflictError(slug);
+    }
+  }
+
+  /** Saves an agent's actor, turning a slug unique violation into a conflict. */
+  private async saveActor(
+    manager: EntityManager,
+    actor: ActorEntity,
+  ): Promise<ActorEntity> {
+    try {
+      return await manager.save(ActorEntity, actor);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error as QueryFailedError & { driverError?: { code?: string } })
+          .driverError?.code === '23505'
+      ) {
+        throw new AgentSlugConflictError(actor.slug);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * An agent is a member of exactly its own workspace. Actor inserts put
+   * every new actor in the default workspace (`WorkspaceMembershipSubscriber`),
+   * so the agent's membership is set here, in the same transaction.
+   */
+  private async setAgentMembership(
+    manager: EntityManager,
+    workspaceId: string,
+    actorId: string,
+  ): Promise<void> {
+    await manager.delete(WorkspaceMemberEntity, {
+      actorId,
+      workspaceId: Not(workspaceId),
+    });
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(WorkspaceMemberEntity)
+      .values({ workspaceId, actorId, role: WorkspaceRole.MEMBER })
+      .orIgnore()
+      .execute();
   }
 
   private mapAgentToResult(

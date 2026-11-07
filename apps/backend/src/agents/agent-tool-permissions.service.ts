@@ -19,7 +19,14 @@ import {
   InvalidAgentToolPermissionScopeError,
 } from './errors/agents.errors';
 import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS } from '@taico/shared';
+import { holdsUnscopedModuleData } from '../workspaces/unscoped-modules';
 
+/**
+ * An agent's grants are in the agent's workspace. They point at MCP registry
+ * servers, which are default-workspace rows until phase 3e, so only the
+ * default workspace can grant them; other workspaces' agents get Taico's own
+ * baseline tools only.
+ */
 @Injectable()
 export class AgentToolPermissionsService {
   constructor(
@@ -33,11 +40,14 @@ export class AgentToolPermissionsService {
     private readonly permissionScopeRepository: Repository<AgentToolPermissionScopeEntity>,
   ) {}
 
-  async listAgentToolPermissions(actorId: string): Promise<AgentToolPermissionRecord[]> {
-    await this.assertAgentExists(actorId);
+  async listAgentToolPermissions(
+    workspaceId: string,
+    actorId: string,
+  ): Promise<AgentToolPermissionRecord[]> {
+    await this.assertAgentExists(workspaceId, actorId);
 
     const permissions = await this.permissionRepository.find({
-      where: { agentActorId: actorId },
+      where: { workspaceId, agentActorId: actorId },
       relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
       order: {
         server: { name: 'ASC' },
@@ -76,12 +86,13 @@ export class AgentToolPermissionsService {
   }
 
   async listStoredAgentToolPermissions(
+    workspaceId: string,
     actorId: string,
   ): Promise<AgentToolPermissionRecord[]> {
-    await this.assertAgentExists(actorId);
+    await this.assertAgentExists(workspaceId, actorId);
 
     const permissions = await this.permissionRepository.find({
-      where: { agentActorId: actorId },
+      where: { workspaceId, agentActorId: actorId },
       relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
       order: {
         server: { name: 'ASC' },
@@ -102,8 +113,16 @@ export class AgentToolPermissionsService {
    * Read-only, so callers can reject a definition before changing anything.
    */
   async resolveToolGrants(
+    workspaceId: string,
     grants: { serverProvidedId: string; scopeIds: string[] }[],
   ): Promise<ResolvedAgentToolGrants> {
+    if (!holdsUnscopedModuleData(workspaceId)) {
+      return {
+        grants: [],
+        missingServers: grants.map((grant) => grant.serverProvidedId),
+        invalidScopes: [],
+      };
+    }
     const servers = await this.serverRepository.find({
       where: { providedId: In(grants.map((grant) => grant.serverProvidedId)) },
       relations: ['scopes'],
@@ -145,33 +164,37 @@ export class AgentToolPermissionsService {
    * of it applies or the agent keeps the grants it had.
    */
   async replaceAgentToolPermissions(
+    workspaceId: string,
     actorId: string,
     grants: ResolvedAgentToolGrant[],
   ): Promise<void> {
-    await this.assertAgentExists(actorId);
+    await this.assertAgentExists(workspaceId, actorId);
 
     await this.permissionRepository.manager.transaction(async (manager) => {
       await manager
         .getRepository(AgentToolPermissionEntity)
-        .delete({ agentActorId: actorId });
+        .delete({ workspaceId, agentActorId: actorId });
 
       for (const grant of grants) {
-        await this.writePermission(manager, actorId, grant);
+        await this.writePermission(manager, workspaceId, actorId, grant);
       }
     });
   }
 
   async upsertAgentToolPermission(
+    workspaceId: string,
     actorId: string,
     serverId: string,
     input: UpsertAgentToolPermissionInput,
   ): Promise<AgentToolPermissionRecord> {
-    await this.assertAgentExists(actorId);
+    await this.assertAgentExists(workspaceId, actorId);
 
-    const server = await this.serverRepository.findOne({
-      where: { id: serverId },
-      relations: ['scopes'],
-    });
+    const server = holdsUnscopedModuleData(workspaceId)
+      ? await this.serverRepository.findOne({
+          where: { id: serverId },
+          relations: ['scopes'],
+        })
+      : null;
     if (!server) {
       throw new ServerNotFoundError(serverId);
     }
@@ -185,7 +208,7 @@ export class AgentToolPermissionsService {
     }
 
     await this.permissionRepository.manager.transaction((manager) =>
-      this.writePermission(manager, actorId, {
+      this.writePermission(manager, workspaceId, actorId, {
         serverId,
         scopeIds: normalizedScopeIds,
       }),
@@ -209,10 +232,15 @@ export class AgentToolPermissionsService {
     };
   }
 
-  async deleteAgentToolPermission(actorId: string, serverId: string): Promise<void> {
-    await this.assertAgentExists(actorId);
+  async deleteAgentToolPermission(
+    workspaceId: string,
+    actorId: string,
+    serverId: string,
+  ): Promise<void> {
+    await this.assertAgentExists(workspaceId, actorId);
 
     const result = await this.permissionRepository.delete({
+      workspaceId,
       agentActorId: actorId,
       serverId,
     });
@@ -224,6 +252,7 @@ export class AgentToolPermissionsService {
 
   private async writePermission(
     manager: EntityManager,
+    workspaceId: string,
     actorId: string,
     { serverId, scopeIds }: ResolvedAgentToolGrant,
   ): Promise<void> {
@@ -232,6 +261,7 @@ export class AgentToolPermissionsService {
 
     await permissionRepo.save(
       permissionRepo.create({
+        workspaceId,
         agentActorId: actorId,
         serverId,
       }),
@@ -249,6 +279,7 @@ export class AgentToolPermissionsService {
     await permissionScopeRepo.save(
       scopeIds.map((scopeId) =>
         permissionScopeRepo.create({
+          workspaceId,
           agentActorId: actorId,
           serverId,
           scopeId,
@@ -257,9 +288,12 @@ export class AgentToolPermissionsService {
     );
   }
 
-  private async assertAgentExists(actorId: string): Promise<void> {
+  private async assertAgentExists(
+    workspaceId: string,
+    actorId: string,
+  ): Promise<void> {
     const exists = await this.agentRepository.exist({
-      where: { actorId },
+      where: { workspaceId, actorId },
     });
     if (!exists) {
       throw new AgentNotFoundError(actorId);

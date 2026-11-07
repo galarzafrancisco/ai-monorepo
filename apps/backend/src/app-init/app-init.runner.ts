@@ -199,7 +199,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     try {
       const agent = await this.ensureAgentExists(createTaico);
       if (agent && agent.systemPrompt !== createTaico.systemPrompt) {
-        await this.agentsService.patchAgent(agent.actorId, {
+        await this.agentsService.patchAgent(DEFAULT_WORKSPACE_ID, agent.actorId, {
           systemPrompt: createTaico.systemPrompt,
         });
       }
@@ -307,7 +307,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     if (stored === normalizePrompt(seed.systemPrompt)) return;
     if (!legacyPrompts.some((p) => normalizePrompt(p) === stored)) return;
 
-    await this.agentsService.patchAgent(agent.actorId, {
+    await this.agentsService.patchAgent(DEFAULT_WORKSPACE_ID, agent.actorId, {
       systemPrompt: seed.systemPrompt,
     });
     this.logger.log(`Updated ${agent.slug} to the current seeded prompt`);
@@ -375,7 +375,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
   ): Promise<AgentResult | null> {
     let agent: AgentResult | null = null;
     try {
-      return await this.agentsService.getAgentBySlug({
+      return await this.agentsService.getAgentBySlug(DEFAULT_WORKSPACE_ID, {
         slug: agentConfig.slug,
       });
     } catch (error) {
@@ -388,16 +388,16 @@ export class AppInitRunner implements OnApplicationBootstrap {
     // agents cannot be deleted, so they are always recreated when missing.
     if (
       !PROTECTED_AGENT_SLUGS.includes(agentConfig.slug) &&
-      (await this.actorService.hasDeletedActorForSlug(agentConfig.slug))
+      (await this.actorService.hasDeletedActorForSlug(DEFAULT_WORKSPACE_ID, agentConfig.slug))
     ) {
       return null;
     }
 
     try {
-      agent = await this.agentsService.createAgent(agentConfig);
+      agent = await this.agentsService.createAgent(DEFAULT_WORKSPACE_ID, agentConfig);
     } catch (error) {
       if (error instanceof AgentSlugConflictError) {
-        agent = await this.agentsService.getAgentBySlug({
+        agent = await this.agentsService.getAgentBySlug(DEFAULT_WORKSPACE_ID, {
           slug: agentConfig.slug,
         });
       } else {

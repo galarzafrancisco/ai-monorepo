@@ -41,7 +41,7 @@ import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.de
  */
 @ApiTags('Agent Tokens')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('agents/:slug/tokens')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.WRITE.id)
@@ -75,7 +75,7 @@ export class AgentTokensController {
     }
 
     // Get the agent (validates it exists)
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug(workspaceId, { slug });
 
     // Get the subject actor (agent's actor)
     const subjectActor = await this.actorService.getActorById(agent.actorId);
@@ -119,9 +119,10 @@ export class AgentTokensController {
   @ApiOkResponse({ type: [IssuedAccessTokenResponseDto] })
   async listTokens(
     @Param('slug') slug: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<IssuedAccessTokenResponseDto[]> {
     // Get the agent (validates it exists)
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug(workspaceId, { slug });
 
     // Get all tokens for this agent
     const tokens = await this.issuedAccessTokenService.listTokensForSubject(
@@ -158,6 +159,7 @@ export class AgentTokensController {
     @Param('slug') slug: string,
     @Param('tokenId') tokenId: string,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<IssuedAccessTokenResponseDto> {
     // Only humans can revoke tokens
     if (user.actorType !== ActorType.HUMAN) {
@@ -165,7 +167,7 @@ export class AgentTokensController {
     }
 
     // Get the agent (validates it exists)
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug(workspaceId, { slug });
 
     // Get the token to verify it belongs to this agent
     const token = await this.issuedAccessTokenService.getTokenById(tokenId);

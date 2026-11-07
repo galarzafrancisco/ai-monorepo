@@ -7,5 +7,9 @@ export class TaskExecutionQueuedEvent {
 
   readonly occurredAt: Date = new Date();
 
-  constructor(public readonly taskId: string) {}
+  constructor(
+    /** The task's workspace: only that workspace's workers hear it. */
+    public readonly workspaceId: string,
+    public readonly taskId: string,
+  ) {}
 }

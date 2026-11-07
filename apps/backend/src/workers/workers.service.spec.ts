@@ -27,15 +27,15 @@ describe('WorkersService', () => {
     };
 
     await Promise.all([
-      service.recordWorkerSeen({ oauthClientId: 'worker-1', workerVersion: '1.0' }),
-      service.recordWorkerSeen({ oauthClientId: 'worker-1', capabilities }),
+      service.recordWorkerSeen('00000000-0000-4000-8000-000000000001', { oauthClientId: 'worker-1', workerVersion: '1.0' }),
+      service.recordWorkerSeen('00000000-0000-4000-8000-000000000001', { oauthClientId: 'worker-1', capabilities }),
     ]);
 
     expect(stored.capabilities).toEqual(capabilities);
     expect(stored.workerVersion).toBe('1.0');
     expect(repository.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ capabilities }),
-      { conflictPaths: ['oauthClientId'] },
+      { conflictPaths: ['workspaceId', 'oauthClientId'] },
     );
     expect(repository.upsert.mock.calls[0][0]).not.toHaveProperty('capabilities');
   });

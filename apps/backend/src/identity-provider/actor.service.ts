@@ -75,11 +75,17 @@ export class ActorService {
   }
 
   /**
-   * Get actor by slug
+   * The actor with this slug among the workspace's members. A person's slug
+   * is unique across the installation, but an agent's only in its
+   * workspace, so a slug always resolves within a workspace: `@claude-dev`
+   * in one workspace is not `@claude-dev` in another.
    */
-  async getActorBySlug(slug: string): Promise<ActorEntity | null> {
+  async getActorBySlug(
+    workspaceId: string,
+    slug: string,
+  ): Promise<ActorEntity | null> {
     return this.actorRepository.findOne({
-      where: { slug },
+      where: { slug, id: memberOfWorkspace(workspaceId) },
     });
   }
 
@@ -96,30 +102,42 @@ export class ActorService {
     });
   }
 
-  async getActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
+  /** By id (unambiguous), or else by slug among the workspace's members. */
+  async getActorByIdOrSlug(
+    workspaceId: string,
+    idOrSlug: string,
+  ): Promise<ActorEntity | null> {
     if (isUUID(idOrSlug)) {
       const actor = await this.getActorById(idOrSlug);
       if (actor) return actor;
     }
-    return this.getActorBySlug(idOrSlug);
+    return this.getActorBySlug(workspaceId, idOrSlug);
   }
 
   /**
    * Resolve an actor that new work can be given to. Deleted actors stay
    * readable through getActorByIdOrSlug but are not assignable.
    */
-  async getActiveActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
-    const actor = await this.getActorByIdOrSlug(idOrSlug);
+  async getActiveActorByIdOrSlug(
+    workspaceId: string,
+    idOrSlug: string,
+  ): Promise<ActorEntity | null> {
+    const actor = await this.getActorByIdOrSlug(workspaceId, idOrSlug);
     return actor?.deletedAt ? null : actor;
   }
 
   /**
-   * Whether an actor that used to own this slug has been deleted.
+   * Whether an actor of the workspace that used to own this slug has been
+   * deleted.
    */
-  async hasDeletedActorForSlug(slug: string): Promise<boolean> {
+  async hasDeletedActorForSlug(
+    workspaceId: string,
+    slug: string,
+  ): Promise<boolean> {
     return this.actorRepository.existsBy({
       slug: Like(`${slug}${DELETED_SLUG_MARKER}%`),
       deletedAt: Not(IsNull()),
+      id: memberOfWorkspace(workspaceId),
     });
   }
 
@@ -153,7 +171,8 @@ export class ActorService {
   }
 
   /**
-   * Check if a slug is already taken
+   * Whether any actor, in any workspace, has this slug. People's slugs are
+   * installation-wide, so a person never takes an agent's slug either.
    */
   async isSlugTaken(slug: string): Promise<boolean> {
     const count = await this.actorRepository.count({ where: { slug } });
@@ -169,11 +188,7 @@ export class ActorService {
     workspaceId: string,
     { includeDeleted = true }: { includeDeleted?: boolean } = {},
   ): Promise<ActorEntity[]> {
-    const id = Raw(
-      (alias) =>
-        `${alias} IN (SELECT actor_id FROM workspace_members WHERE workspace_id = :actorWorkspaceId)`,
-      { actorWorkspaceId: workspaceId },
-    );
+    const id = memberOfWorkspace(workspaceId);
     return this.actorRepository.find({
       where: includeDeleted ? { id } : { id, deletedAt: IsNull() },
       order: { displayName: 'ASC' },
@@ -210,4 +225,13 @@ export class ActorService {
 
     return results;
   }
+}
+
+/** A `where` value for an actor id column: the actor is a member of the workspace. */
+function memberOfWorkspace(workspaceId: string) {
+  return Raw(
+    (alias) =>
+      `${alias} IN (SELECT actor_id FROM workspace_members WHERE workspace_id = :actorWorkspaceId)`,
+    { actorWorkspaceId: workspaceId },
+  );
 }

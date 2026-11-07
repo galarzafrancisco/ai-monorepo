@@ -28,6 +28,7 @@ import { ThreadsScopes } from '../src/threads/threads.scopes';
 import { AgentRunsScopes } from '../src/agent-runs/agent-runs.scopes';
 import { PullRequestsScopes } from '../src/pull-requests/pull-requests.scopes';
 import { IssuesScopes } from '../src/issues/issues.scopes';
+import { AgentsScopes } from '../src/agents/agents.scopes';
 import { ThreadTaskSubscriptionsService } from '../src/threads/task-subscriptions/thread-task-subscriptions.service';
 import { ThreadTimersService } from '../src/threads/timers/thread-timers.service';
 import { ThreadTimerKind } from '../src/threads/timers/thread-timer.enums';
@@ -108,6 +109,9 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
         PullRequestsScopes.READ.id,
         IssuesScopes.READ.id,
         McpScopes.USE.id,
+        AgentsScopes.READ.id,
+        AgentsScopes.WRITE.id,
+        AgentsScopes.ACT_AS.id,
       ],
       resource: config.issuerUrl,
       version: '0.0.0',
@@ -956,7 +960,7 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
 
     it('leaves agents out of global search for another workspace, even when the query matches', async () => {
       const canary = `agentcanary${suffix}`;
-      const agent = await app.get(AgentsService).createAgent({
+      const agent = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
         slug: `iso-search-agent-${suffix}`,
         name: `Agent ${canary}`,
         description: `Searchable ${canary}`,
@@ -1007,6 +1011,98 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       const listB = (await as(tokenB).get('/agent-runs?limit=100').expect(200)).body;
       expect(listB.items.map((run: any) => run.id)).not.toContain(runA.id);
       await as(tokenA).get(`/agent-runs/${runA.id}`).expect(200);
+    });
+  });
+
+  describe('agents and slugs', () => {
+    const slug = `iso-same-slug-${suffix}`;
+    let agentA: { actorId: string; slug: string };
+    let agentB: { actorId: string; slug: string };
+
+    const createAgent = (token: string, body: Record<string, unknown>) =>
+      as(token)
+        .post('/agents')
+        .send({ systemPrompt: 'prompt', statusTriggers: [], allowedTools: [], ...body });
+
+    beforeAll(async () => {
+      agentA = (await createAgent(tokenA, { slug, name: `A agent ${suffix}` }).expect(201)).body;
+      // Each workspace can have its own agent with the same slug.
+      agentB = (await createAgent(tokenB, { slug, name: `B agent ${suffix}` }).expect(201)).body;
+    });
+
+    it('lets each workspace have its own agent with the same slug', async () => {
+      expect(agentB.actorId).not.toBe(agentA.actorId);
+      expect((await as(tokenA).get(`/agents/${slug}`).expect(200)).body.actorId).toBe(agentA.actorId);
+      expect((await as(tokenB).get(`/agents/${slug}`).expect(200)).body.actorId).toBe(agentB.actorId);
+    });
+
+    it('refuses a slug taken in the same workspace or by a person', async () => {
+      await createAgent(tokenB, { slug, name: 'Again' }).expect(409);
+      await createAgent(tokenB, { slug: TEST_USER_SLUG, name: 'Person slug' }).expect(409);
+      await as(tokenB).patch(`/agents/${agentB.actorId}`).send({ slug: TEST_USER_SLUG }).expect(409);
+    });
+
+    it('makes an agent a member of its own workspace only', async () => {
+      const members: Repository<WorkspaceMemberEntity> = app.get(
+        getRepositoryToken(WorkspaceMemberEntity),
+      );
+      const workspacesOf = async (id: string) =>
+        (await members.find({ where: { actorId: id } })).map((m) => m.workspaceId);
+      expect(await workspacesOf(agentB.actorId)).toEqual([WORKSPACE_B_ID]);
+      expect(await workspacesOf(agentA.actorId)).toEqual([DEFAULT_WORKSPACE_ID]);
+    });
+
+    it("never lists, changes or deletes another workspace's agent", async () => {
+      const listB = (await as(tokenB).get('/agents?limit=100').expect(200)).body;
+      expect(listB.items.map((a: any) => a.actorId)).toContain(agentB.actorId);
+      expect(listB.items.map((a: any) => a.actorId)).not.toContain(agentA.actorId);
+      const listA = (await as(tokenA).get('/agents?limit=100').expect(200)).body;
+      expect(listA.items.map((a: any) => a.actorId)).not.toContain(agentB.actorId);
+
+      await as(tokenB).patch(`/agents/${agentA.actorId}`).send({ name: 'Hijacked' }).expect(404);
+      await as(tokenB).delete(`/agents/${agentA.actorId}`).expect(404);
+      expect((await as(tokenA).get(`/agents/${slug}`).expect(200)).body.name).toBe(`A agent ${suffix}`);
+
+      const exported = (await as(tokenB).get('/agent-definitions/export').expect(200)).body;
+      expect(exported.agents.map((a: any) => a.name)).not.toContain(`A agent ${suffix}`);
+    });
+
+    it("resolves a mention by slug to the caller's workspace agent", async () => {
+      const taskB = (
+        await as(tokenB)
+          .post('/tasks/tasks')
+          .send({ name: `Mention ${suffix}`, description: 'mention', assigneeActorId: slug })
+          .expect(201)
+      ).body;
+      expect(taskB.assigneeActor.id).toBe(agentB.actorId);
+      const taskInA = (
+        await as(tokenA)
+          .post('/tasks/tasks')
+          .send({ name: `Mention ${suffix}`, description: 'mention', assigneeActorId: slug })
+          .expect(201)
+      ).body;
+      expect(taskInA.assigneeActor.id).toBe(agentA.actorId);
+      // A's agent by id is not a member of B, so it cannot be given B's work.
+      await as(tokenB)
+        .post('/tasks/tasks')
+        .send({ name: `Foreign ${suffix}`, description: 'foreign', assigneeActorId: agentA.actorId })
+        .expect(404);
+    });
+
+    it("issues an execution token for the workspace's own agent, which works there only", async () => {
+      const res = await as(tokenB)
+        .post(`/agents/${slug}/execution-token`)
+        .send({ scopes: [TasksScopes.READ.id] })
+        .expect(201);
+      const claims = JSON.parse(Buffer.from(res.body.token.split('.')[1], 'base64url').toString());
+      expect(claims.workspace_id).toBe(WORKSPACE_B_ID);
+      expect(claims.sub).toBe(agentB.actorId);
+
+      const taskB = (
+        await as(tokenB).post('/tasks/tasks').send({ name: `Run ${suffix}`, description: 'run' }).expect(201)
+      ).body;
+      await as(res.body.token).get(`/tasks/tasks/${taskB.id}`).expect(200);
+      await as(res.body.token).get(`/tasks/tasks/${taskA.id}`).expect(404);
     });
   });
 

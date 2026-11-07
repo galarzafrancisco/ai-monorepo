@@ -1,4 +1,6 @@
 export type ExecutionActivityPayload = {
+  /** The execution's workspace. */
+  workspaceId: string;
   executionId: string;
   taskId: string;
   agentActorId: string;

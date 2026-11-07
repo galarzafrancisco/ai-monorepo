@@ -6,6 +6,8 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
+  Column,
 } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { McpServerEntity } from '../mcp-registry/entities/mcp-server.entity';
@@ -13,6 +15,11 @@ import { AgentToolPermissionScopeEntity } from './agent-tool-permission-scope.en
 
 @Entity({ name: 'agent_tool_permissions' })
 export class AgentToolPermissionEntity {
+  /** Always its agent's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryColumn({ type: 'uuid', name: 'agent_actor_id' })
   agentActorId!: string;
 

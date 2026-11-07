@@ -214,7 +214,7 @@ describe('Thread ordering E2E', () => {
     userActorId = await ensureTestUser(app);
     otherActorId = await ensureAgentActor(app, 'ordering-agent', 'Ordering Agent');
     authCookies = await getAuthCookies(httpServer);
-    agentActorId = (await app.get(AgentsService).getAgentBySlug({ slug: 'taico' })).actorId;
+    agentActorId = (await app.get(AgentsService).getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: 'taico' })).actorId;
   }, 30000);
 
   afterAll(async () => {

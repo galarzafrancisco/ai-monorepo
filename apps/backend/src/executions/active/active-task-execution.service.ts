@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { taskIdInWorkspace } from '../../workspaces/task-in-workspace';
 import {
   ActiveTaskExecutionEntity,
   type ActiveTaskExecutionTagSnapshot,
@@ -94,7 +93,10 @@ export class ActiveTaskExecutionService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    const where = { taskId: taskIdInWorkspace(workspaceId, options?.taskId) };
+    const where = {
+      workspaceId,
+      ...(options?.taskId ? { taskId: options.taskId } : {}),
+    };
 
     const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
       where,
@@ -131,6 +133,7 @@ export class ActiveTaskExecutionService {
       }
 
       const deleteResult = await manager.delete(TaskExecutionQueueEntity, {
+        workspaceId,
         taskId: input.taskId,
       });
 
@@ -138,7 +141,7 @@ export class ActiveTaskExecutionService {
         const existingActiveExecution = await manager.findOne(
           ActiveTaskExecutionEntity,
           {
-            where: { taskId: input.taskId },
+            where: { workspaceId, taskId: input.taskId },
           },
         );
 
@@ -155,6 +158,7 @@ export class ActiveTaskExecutionService {
       }
 
       const activeExecution = manager.create(ActiveTaskExecutionEntity, {
+        workspaceId,
         taskId: task.id,
         claimedAt: new Date(),
         taskStatusBeforeClaim: task.status,
@@ -175,7 +179,7 @@ export class ActiveTaskExecutionService {
       const savedExecution = await manager.save(activeExecution);
 
       const hydratedExecution = await manager.findOne(ActiveTaskExecutionEntity, {
-        where: { id: savedExecution.id },
+        where: { workspaceId, id: savedExecution.id },
         relations: ['task', 'stats'],
       });
 
@@ -184,6 +188,7 @@ export class ActiveTaskExecutionService {
       }
 
       const stats = manager.create(ExecutionStatsEntity, {
+        workspaceId,
         executionId: savedExecution.id,
         harness: null,
         providerId: null,
@@ -201,13 +206,17 @@ export class ActiveTaskExecutionService {
     });
 
     this.executionActivityService.publishSystemActivity({
+      workspaceId: execution.workspaceId,
       executionId: execution.id,
       taskId: execution.taskId,
       agentActorId: execution.agentActorId,
       kind: 'execution.started',
       message: 'Execution started',
     });
-    this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
+    this.eventEmitter.emit(
+      ActiveExecutionsChangedEvent.INTERNAL,
+      new ActiveExecutionsChangedEvent(execution.workspaceId),
+    );
 
     return this.mapActiveExecutionToResult(execution);
   }
@@ -225,7 +234,7 @@ export class ActiveTaskExecutionService {
     const historyEntry = await this.dataSource.transaction(async (manager) => {
       await findWorkerExecution(manager, caller, input.executionId, { lock: true });
       const activeExecution = await manager.findOneOrFail(ActiveTaskExecutionEntity, {
-        where: { id: input.executionId },
+        where: { workspaceId: caller.workspaceId, id: input.executionId },
       });
 
       await manager.delete(ActiveTaskExecutionEntity, {
@@ -233,6 +242,7 @@ export class ActiveTaskExecutionService {
       });
 
       const historyEntry = manager.create(TaskExecutionHistoryEntity, {
+        workspaceId: activeExecution.workspaceId,
         id: activeExecution.id,
         taskId: activeExecution.taskId,
         claimedAt: activeExecution.claimedAt,
@@ -251,7 +261,7 @@ export class ActiveTaskExecutionService {
       const hydratedHistoryEntry = await manager.findOne(
         TaskExecutionHistoryEntity,
         {
-          where: { id: savedHistoryEntry.id },
+          where: { workspaceId: activeExecution.workspaceId, id: savedHistoryEntry.id },
           relations: ['task', 'stats'],
         },
       );
@@ -266,6 +276,7 @@ export class ActiveTaskExecutionService {
     });
 
     this.executionActivityService.publishSystemActivity({
+      workspaceId: historyEntry.workspaceId,
       executionId: input.executionId,
       taskId: historyEntry.taskId,
       agentActorId: historyEntry.agentActorId,
@@ -274,13 +285,17 @@ export class ActiveTaskExecutionService {
     });
 
     this.executionActivityService.publishSystemActivity({
+      workspaceId: historyEntry.workspaceId,
       executionId: input.executionId,
       taskId: historyEntry.taskId,
       agentActorId: historyEntry.agentActorId,
       kind: 'execution.history.added',
       message: `Execution history recorded (${historyEntry.status.toLowerCase()})`,
     });
-    this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
+    this.eventEmitter.emit(
+      ActiveExecutionsChangedEvent.INTERNAL,
+      new ActiveExecutionsChangedEvent(historyEntry.workspaceId),
+    );
 
     return this.mapHistoryEntryToResult(historyEntry);
   }
@@ -305,7 +320,7 @@ export class ActiveTaskExecutionService {
       });
       await manager.upsert(
         TaskExecutionQueueEntity,
-        { taskId: activeExecution.taskId },
+        { workspaceId: activeExecution.workspaceId, taskId: activeExecution.taskId },
         ['taskId'],
       );
 
@@ -313,13 +328,17 @@ export class ActiveTaskExecutionService {
     });
 
     this.executionActivityService.publishSystemActivity({
+      workspaceId: execution.workspaceId,
       executionId: execution.id,
       taskId: execution.taskId,
       agentActorId: execution.agentActorId,
       kind: 'execution.unclaimed',
       message: 'Execution unclaimed and returned to queue',
     });
-    this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
+    this.eventEmitter.emit(
+      ActiveExecutionsChangedEvent.INTERNAL,
+      new ActiveExecutionsChangedEvent(execution.workspaceId),
+    );
   }
 
   async updateRunnerSessionId(
@@ -427,7 +446,7 @@ export class ActiveTaskExecutionService {
     actorId: string,
   ): Promise<void> {
     const execution = await this.activeTaskExecutionRepository.findOne({
-      where: { id: input.executionId, taskId: taskIdInWorkspace(workspaceId) },
+      where: { workspaceId, id: input.executionId },
     });
 
     if (!execution) {
@@ -440,6 +459,7 @@ export class ActiveTaskExecutionService {
       new ExecutionInterruptEvent(
         { id: actorId },
         {
+          workspaceId: execution.workspaceId,
           executionId: execution.id,
           workerClientId: execution.workerClientId,
         },
@@ -448,6 +468,7 @@ export class ActiveTaskExecutionService {
 
     // Publish activity for visibility
     this.executionActivityService.publishSystemActivity({
+      workspaceId: execution.workspaceId,
       executionId: execution.id,
       taskId: execution.taskId,
       agentActorId: execution.agentActorId,

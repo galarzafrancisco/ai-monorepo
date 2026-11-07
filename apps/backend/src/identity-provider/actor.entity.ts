@@ -5,12 +5,23 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
+  Index,
 } from 'typeorm';
 import { ActorType } from './enums';
 import { User } from './user.entity';
 import { AgentEntity } from '../agents/agent.entity';
 
+/**
+ * A person's slug is unique across the installation (a person can be in
+ * several workspaces). An agent's slug is only unique in its workspace,
+ * which the agents service checks. See docs/architecture/workspaces.md.
+ */
 @Entity('actors')
+@Index('UQ_actors_person_slug', ['slug'], {
+  unique: true,
+  where: `"type" <> 'agent'`,
+})
+@Index('IDX_actors_slug', ['slug'])
 export class ActorEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -18,7 +29,7 @@ export class ActorEntity {
   @Column({ type: 'text', enum: ActorType })
   type!: ActorType;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   slug!: string;
 
   @Column({ type: 'text', name: 'display_name' })

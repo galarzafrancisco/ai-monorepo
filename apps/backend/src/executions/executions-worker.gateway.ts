@@ -26,7 +26,6 @@ import {
 } from '@taico/events';
 import { WsAccessTokenGuard } from '../auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from '../auth/guards/guards/ws-scopes.guard';
-import { enforceWorkspaceAccess } from '../auth/guards/guards/workspace-access';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { WorkersScopes } from './workers.scopes';
 import { ExecutionActivityService } from './execution-activity.service';
@@ -47,12 +46,20 @@ import { ExecutionInterruptEvent } from './events/execution-interrupt.event';
 import { ExecutionTracesService } from './traces/execution-traces.service';
 import { ExecutionTraceNotFoundError, ExecutionTraceWorkerMismatchError, InvalidExecutionTraceError } from './traces/execution-traces.errors';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { socketWorkspaceId, workspaceRoom } from '../workspaces/workspace-rooms';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
+/** Every worker socket joins its workspace's room on connect. */
+const WORKERS_ROOM = 'workers';
 
+/**
+ * A worker works in its token's workspace: it is registered there, hears
+ * only that workspace's queued tasks and interrupts, and every per-execution
+ * message is checked by `findWorkerExecution`.
+ */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(WorkersScopes.CONNECT.id)
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -72,7 +79,7 @@ export class ExecutionsWorkerGateway
     ReturnType<typeof setTimeout>
   >();
   private readonly harnessReportRequestedSocketIds = new Set<string>();
-  private readonly workerSocketsByClientId = new Map<string, Set<string>>();
+  private readonly workerSocketsByWorker = new Map<string, Set<string>>();
 
   constructor(
     private readonly executionActivityService: ExecutionActivityService,
@@ -100,13 +107,14 @@ export class ExecutionsWorkerGateway
   handleConnection(client: Socket) {
     this.logger.log(`Worker client connected: ${client.id}`);
 
-    // Track socket by worker client ID
-    const oauthClientId = this.getOauthClientId(client);
-    if (oauthClientId) {
-      if (!this.workerSocketsByClientId.has(oauthClientId)) {
-        this.workerSocketsByClientId.set(oauthClientId, new Set());
+    // Track socket by worker (client ID in its workspace)
+    const workerKey = this.getWorkerKey(client);
+    if (workerKey) {
+      if (!this.workerSocketsByWorker.has(workerKey)) {
+        this.workerSocketsByWorker.set(workerKey, new Set());
       }
-      this.workerSocketsByClientId.get(oauthClientId)!.add(client.id);
+      this.workerSocketsByWorker.get(workerKey)!.add(client.id);
+      void client.join(workspaceRoom(socketWorkspaceId(client), WORKERS_ROOM));
     }
 
     void this.recordAuthenticatedWorkerSeen(client).catch((error: unknown) => {
@@ -124,13 +132,13 @@ export class ExecutionsWorkerGateway
     this.harnessReportRequestedSocketIds.delete(client.id);
 
     // Remove socket from worker tracking
-    const oauthClientId = this.getOauthClientId(client);
-    if (oauthClientId) {
-      const sockets = this.workerSocketsByClientId.get(oauthClientId);
+    const workerKey = this.getWorkerKey(client);
+    if (workerKey) {
+      const sockets = this.workerSocketsByWorker.get(workerKey);
       if (sockets) {
         sockets.delete(client.id);
         if (sockets.size === 0) {
-          this.workerSocketsByClientId.delete(oauthClientId);
+          this.workerSocketsByWorker.delete(workerKey);
         }
       }
     }
@@ -255,7 +263,10 @@ export class ExecutionsWorkerGateway
     if (!oauthClientId) return { ok: false, error: 'missing worker identity' };
 
     try {
-      await this.workersService.recordWorkerSeen({ oauthClientId, capabilities: body });
+      await this.workersService.recordWorkerSeen(socketWorkspaceId(client), {
+        oauthClientId,
+        capabilities: body,
+      });
       return { ok: true };
     } catch (error) {
       this.logger.error({ message: 'Failed to store worker capabilities', socketId: client.id,
@@ -308,7 +319,7 @@ export class ExecutionsWorkerGateway
       return false;
     }
 
-    await this.workersService.recordWorkerSeen({
+    await this.workersService.recordWorkerSeen(socketWorkspaceId(client), {
       oauthClientId,
       workerVersion: workerVersion ?? this.getHandshakeWorkerVersion(client),
     });
@@ -345,6 +356,12 @@ export class ExecutionsWorkerGateway
     return oauthClientId;
   }
 
+  /** A worker is its OAuth client in its token's workspace. */
+  private getWorkerKey(client: Socket): string | null {
+    const oauthClientId = this.getOauthClientId(client);
+    return oauthClientId ? workerKey(socketWorkspaceId(client), oauthClientId) : null;
+  }
+
   private getHandshakeWorkerVersion(client: Socket): string | null {
     const workerVersion = client.handshake.auth?.workerVersion;
     return typeof workerVersion === 'string' ? workerVersion : null;
@@ -375,9 +392,7 @@ export class ExecutionsWorkerGateway
     }
 
     const authContext: AuthContext = createAuthContext(token, claims);
-    // Connecting records the worker (`workers` has no workspace_id until
-    // phase 3c), so the socket itself is default-only, like its class.
-    enforceWorkspaceAccess('default-only', authContext, 'ExecutionsWorkerGateway.connect');
+    // Connecting records the worker in the token's workspace.
     client.data.auth = authContext;
   }
 
@@ -396,10 +411,12 @@ export class ExecutionsWorkerGateway
       occurredAt: event.occurredAt.toISOString(),
     };
 
-    // Broadcast to all connected workers
-    this.server.emit(ExecutionWireEvents.TASK_EXECUTION_QUEUED, wireEvent);
+    // Only the workers of the task's workspace can claim it.
+    this.server
+      .to(workspaceRoom(event.workspaceId, WORKERS_ROOM))
+      .emit(ExecutionWireEvents.TASK_EXECUTION_QUEUED, wireEvent);
     this.logger.debug(
-      `Emitted ${ExecutionWireEvents.TASK_EXECUTION_QUEUED} for task ${event.taskId} to all workers`,
+      `Emitted ${ExecutionWireEvents.TASK_EXECUTION_QUEUED} for task ${event.taskId} to the workers of its workspace`,
     );
   }
 
@@ -414,8 +431,8 @@ export class ExecutionsWorkerGateway
     );
 
     // Find the worker socket(s) for this worker client ID
-    const socketIds = this.workerSocketsByClientId.get(
-      event.payload.workerClientId,
+    const socketIds = this.workerSocketsByWorker.get(
+      workerKey(event.payload.workspaceId, event.payload.workerClientId),
     );
     if (!socketIds || socketIds.size === 0) {
       this.logger.warn(
@@ -438,6 +455,10 @@ export class ExecutionsWorkerGateway
       `Finished emitting ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker client ${event.payload.workerClientId}`,
     );
   }
+}
+
+function workerKey(workspaceId: string, oauthClientId: string): string {
+  return `${workspaceId}:${oauthClientId}`;
 }
 
 function isWorkerCapabilities(value: unknown): value is WorkerCapabilities {

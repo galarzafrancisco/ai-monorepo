@@ -26,9 +26,8 @@ export class ActiveExecutionContextResolverService {
   ) {}
 
   /**
-   * `workspaceId` is the caller's. Executions and agent runs get their own
-   * workspace in phase 3c; until then a task outside the caller's workspace
-   * has no thread here, and the caller's scoped task lookups refuse it.
+   * `workspaceId` is the caller's. An execution or agent run in another
+   * workspace is not found.
    */
   async resolveContext(
     workspaceId: string,
@@ -39,7 +38,7 @@ export class ActiveExecutionContextResolverService {
     // If provided but not found, fail fast and do not fall back to run-id.
     if (executionId) {
       const activeExecution = await this.activeTaskExecutionRepository.findOne({
-        where: { id: executionId },
+        where: { workspaceId, id: executionId },
       });
 
       if (!activeExecution) {
@@ -63,7 +62,7 @@ export class ActiveExecutionContextResolverService {
     // Compatibility path for agent-run context
     if (runId) {
       const agentRun = await this.agentRunRepository.findOne({
-        where: { id: runId },
+        where: { workspaceId, id: runId },
       });
 
       if (!agentRun) {

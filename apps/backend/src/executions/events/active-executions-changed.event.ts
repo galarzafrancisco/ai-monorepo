@@ -1,5 +1,9 @@
 export class ActiveExecutionsChangedEvent {
   static readonly INTERNAL = Symbol('executions.ActiveExecutionsChangedEvent');
 
-  constructor(readonly occurredAt = new Date()) {}
+  /** `workspaceId`: the workspace whose executions changed. */
+  constructor(
+    readonly workspaceId: string,
+    readonly occurredAt = new Date(),
+  ) {}
 }

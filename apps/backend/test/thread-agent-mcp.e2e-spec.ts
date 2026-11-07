@@ -52,7 +52,7 @@ describe('Thread agent MCP tools E2E', () => {
     const members: Repository<WorkspaceMemberEntity> = app.get(
       getRepositoryToken(WorkspaceMemberEntity),
     );
-    const self = await app.get(AgentsService).getAgentBySlug({ slug: 'taico' });
+    const self = await app.get(AgentsService).getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: 'taico' });
     for (const [id, slug, actorIds] of [
       [WORKSPACE_B_ID, 'agent-mcp-b', [userActorId, self.actorId]],
       [WORKSPACE_C_ID, 'agent-mcp-c', [userActorId]],
@@ -77,7 +77,7 @@ describe('Thread agent MCP tools E2E', () => {
   });
 
   async function agentSubject() {
-    const self = await app.get(AgentsService).getAgentBySlug({ slug: 'taico' });
+    const self = await app.get(AgentsService).getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: 'taico' });
     return { id: self.actorId, slug: self.slug, type: ActorType.AGENT, displayName: self.name };
   }
 
@@ -97,7 +97,7 @@ describe('Thread agent MCP tools E2E', () => {
   });
 
   it('loads the tasks and context tools and can call them as the agent', async () => {
-    const self = await app.get(AgentsService).getAgentBySlug({ slug: 'taico' });
+    const self = await app.get(AgentsService).getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: 'taico' });
 
     const mcp = await app.get(TaicoMcpToolsFactory).open({
       workspaceId: DEFAULT_WORKSPACE_ID,

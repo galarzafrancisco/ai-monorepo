@@ -39,6 +39,8 @@ import { TaskExecutionHistoryEntity } from '../src/executions/history/task-execu
 import { TaskExecutionHistoryStatus } from '../src/executions/history/task-execution-history-status.enum';
 import { TaskStatus } from '../src/tasks/enums';
 import { AgentsService } from '../src/agents/agents.service';
+import { RegisteredClientEntity } from '../src/authorization-server/entities/registered-client.entity';
+import { TokenEndpointAuthMethod } from '../src/authorization-server/enums';
 import { ensureTestUser, TEST_USER_SLUG } from './helpers/auth.helper';
 
 const WORKSPACE_B_ID = '44444444-4444-4444-8444-444444444444';
@@ -90,6 +92,7 @@ describe('Workspace entry points (e2e)', () => {
   let allScopes: string[];
   let actorId: string;
   let otherActorA: string;
+  const agentSlugA = `entry-points-${randomBytes(4).toString('hex')}`;
   let tokenA: string;
   let tokenB: string;
 
@@ -206,6 +209,9 @@ describe('Workspace entry points (e2e)', () => {
       if (segment.endsWith('/executions/history')) return ids.history;
       return ids.task;
     }
+    if (n === 'slug' && path.startsWith('/agents')) return agentSlugA;
+    // Free text that only looks like an id (an agent's model choice).
+    if (n === 'providerid' || n === 'modelid') return `probe-${hex}`;
     if (n.includes('execution')) return ids.execution;
     if (n.includes('statecontextblock') || n.includes('stateblock')) return ids.stateBlock;
     if (n.includes('block') || n === 'parentid' || n === 'targetparentid') return ids.block;
@@ -355,8 +361,8 @@ describe('Workspace entry points (e2e)', () => {
 
     actorId = await ensureTestUser(app);
     otherActorA = (
-      await app.get(AgentsService).createAgent({
-        slug: `entry-points-${hex}`,
+      await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
+        slug: agentSlugA,
         name: `Agent ${CANARY}`,
         systemPrompt: `Prompt ${CANARY}`,
         statusTriggers: [],
@@ -417,6 +423,7 @@ describe('Workspace entry points (e2e)', () => {
     ).id;
     ids.run = (await created('POST', '/agent-runs', { parentTaskId: task.id })).id;
     const execution = await db.getRepository(ActiveTaskExecutionEntity).save({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       taskId: task.id,
       agentActorId: otherActorA,
       workerClientId: WORKER_A,
@@ -430,6 +437,7 @@ describe('Workspace entry points (e2e)', () => {
     ids.execution = execution.id;
     ids.history = (
       await db.getRepository(TaskExecutionHistoryEntity).save({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         taskId: task.id,
         agentActorId: otherActorA,
         workerClientId: WORKER_A,
@@ -524,20 +532,6 @@ describe('Workspace entry points (e2e)', () => {
       expect(failures).toEqual([]);
     }, 120000);
 
-    it('refuse a worker socket of another workspace', async () => {
-      const token = await sign(WORKSPACE_B_ID, { clientId: WORKER_A });
-      const socket = io(`http://127.0.0.1:${port}/executions/worker`, {
-        auth: { token },
-        transports: ['websocket'],
-        forceNew: true,
-      });
-      const connected = await new Promise<boolean>((resolve) => {
-        socket.once('connect', () => resolve(true));
-        socket.once('connect_error', () => resolve(false));
-      });
-      socket.close();
-      expect(connected).toBe(false);
-    });
   });
 
   describe('scoped and worker entry points, called from another workspace with A ids', () => {
@@ -716,5 +710,76 @@ describe('Workspace entry points (e2e)', () => {
       socket.close();
       expect(acks.map((ack: any) => ack.ok)).toEqual([false, false, false]);
     });
+  });
+
+  describe('workers of another workspace', () => {
+    const connectWorker = async (token: string) => {
+      const socket = io(`http://127.0.0.1:${port}/executions/worker`, {
+        auth: { token },
+        transports: ['websocket'],
+        forceNew: true,
+      });
+      await new Promise<void>((resolve, reject) => {
+        socket.once('connect', () => resolve());
+        socket.once('connect_error', reject);
+      });
+      return socket;
+    };
+
+    it("never hear, list or claim A's queued work, even with the same OAuth client", async () => {
+      const workerA = await connectWorker(await sign(DEFAULT_WORKSPACE_ID, { clientId: WORKER_A }));
+      const workerB = await connectWorker(await sign(WORKSPACE_B_ID, { clientId: WORKER_A }));
+      const heardA: string[] = [];
+      const heardB: string[] = [];
+      workerA.on(ExecutionWireEvents.TASK_EXECUTION_QUEUED, (e: { taskId: string }) => heardA.push(e.taskId));
+      workerB.onAny((event, payload) => heardB.push(`${event} ${JSON.stringify(payload)}`));
+
+      const runner = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
+        slug: `entry-points-runner-${hex}`,
+        name: `Runner ${CANARY}`,
+        systemPrompt: 'run',
+        statusTriggers: [TaskStatus.NOT_STARTED],
+        allowedTools: [],
+      });
+      const task = (
+        await call(tokenA, 'POST', '/tasks/tasks')
+          .send({ name: `Queued ${CANARY}`, description: 'queued', assigneeActorId: runner.actorId })
+          .expect(201)
+      ).body;
+
+      for (let i = 0; i < 40 && !heardA.includes(task.id); i++) {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      expect(heardA).toContain(task.id);
+
+      const workerTokenB = await sign(WORKSPACE_B_ID, { clientId: WORKER_A });
+      const queueB = await call(workerTokenB, 'GET', '/executions/queue').expect(200);
+      expect(queueB.text).not.toContain(task.id);
+      await call(workerTokenB, 'POST', `/executions/queue/${task.id}/claim`).expect(404);
+      const queueA = await call(await sign(DEFAULT_WORKSPACE_ID, { clientId: WORKER_A }), 'GET', '/executions/queue').expect(200);
+      expect(queueA.text).toContain(task.id);
+
+      workerA.close();
+      workerB.close();
+      expect(heardB.filter((line) => line.includes(task.id))).toEqual([]);
+    }, 30000);
+
+    it('are registered in their own workspace and listed only there', async () => {
+      await db.getRepository(RegisteredClientEntity).save({
+        clientId: `${WORKER_A}-b-only`,
+        clientName: 'Workspace B worker',
+        redirectUris: ['http://127.0.0.1/callback'],
+        grantTypes: [],
+        scopes: [],
+        tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
+      });
+      const workerB = await connectWorker(await sign(WORKSPACE_B_ID, { clientId: `${WORKER_A}-b-only` }));
+      await new Promise((r) => setTimeout(r, 500));
+      workerB.close();
+      const listB = await call(tokenB, 'GET', '/workers').expect(200);
+      const listA = await call(tokenA, 'GET', '/workers').expect(200);
+      expect(listB.body.map((w: { oauthClientId: string }) => w.oauthClientId)).toContain(`${WORKER_A}-b-only`);
+      expect(listA.body.map((w: { oauthClientId: string }) => w.oauthClientId)).not.toContain(`${WORKER_A}-b-only`);
+    }, 30000);
   });
 });

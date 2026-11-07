@@ -5,10 +5,16 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
   VersionColumn,
+  Index,
 } from 'typeorm';
 
 @Entity({ name: 'execution_stats' })
 export class ExecutionStatsEntity {
+  /** Always its execution's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryColumn({ type: 'uuid', name: 'execution_id' })
   executionId!: string;
 

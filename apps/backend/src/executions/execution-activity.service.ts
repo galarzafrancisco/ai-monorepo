@@ -15,6 +15,7 @@ export type PublishExecutionActivityInput = {
 };
 
 export type PublishSystemExecutionActivityInput = {
+  workspaceId: string;
   executionId: string;
   taskId: string;
   agentActorId: string;
@@ -47,6 +48,7 @@ export class ExecutionActivityService {
     );
 
     this.emitExecutionActivity({
+      workspaceId: execution.workspaceId,
       executionId: execution.id,
       taskId: execution.taskId,
       agentActorId: execution.agentActorId,
@@ -59,6 +61,7 @@ export class ExecutionActivityService {
 
   publishSystemActivity(input: PublishSystemExecutionActivityInput): void {
     this.emitExecutionActivity({
+      workspaceId: input.workspaceId,
       executionId: input.executionId,
       taskId: input.taskId,
       agentActorId: input.agentActorId,
@@ -88,11 +91,13 @@ export class ExecutionActivityService {
         rowVersion: () => 'row_version + 1',
       })
       .where('id = :executionId', { executionId: input.executionId })
+      .andWhere('workspace_id = :workspaceId', { workspaceId: caller.workspaceId })
       .execute()
       .then((result) => (result.affected ?? 0) > 0);
   }
 
   private emitExecutionActivity(input: {
+    workspaceId: string;
     executionId: string;
     taskId: string;
     agentActorId: string;
@@ -106,6 +111,7 @@ export class ExecutionActivityService {
       new ExecutionActivityEvent(
         { id: input.agentActorId },
         {
+          workspaceId: input.workspaceId,
           executionId: input.executionId,
           taskId: input.taskId,
           agentActorId: input.agentActorId,

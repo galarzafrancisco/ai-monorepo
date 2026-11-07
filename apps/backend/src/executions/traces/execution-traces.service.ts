@@ -55,6 +55,7 @@ export class ExecutionTracesService {
       input.executionId,
       input.harness,
       input.source ?? 'harness',
+      caller.workspaceId,
     ];
     const rows = input.events.map((event) => {
       const offset = parameters.length;
@@ -64,10 +65,10 @@ export class ExecutionTracesService {
         event.runnerSessionId,
         JSON.stringify(event.payload),
       );
-      return `($1::uuid, $2, $3, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
+      return `($1::uuid, $4::uuid, $2, $3, $${offset + 1}::integer, $${offset + 2}::timestamptz, $${offset + 3}, $${offset + 4}::json)`;
     });
     const inserted = await this.traces.query(
-      `INSERT INTO execution_traces (execution_id, harness, source, sequence, emitted_at, runner_session_id, payload)
+      `INSERT INTO execution_traces (execution_id, workspace_id, harness, source, sequence, emitted_at, runner_session_id, payload)
        VALUES ${rows.join(', ')}
        ON CONFLICT (execution_id, sequence) DO NOTHING RETURNING sequence`,
       parameters,
@@ -75,12 +76,12 @@ export class ExecutionTracesService {
     if (inserted.length) {
       this.eventEmitter.emit(
         ExecutionTracesChangedEvent.INTERNAL,
-        new ExecutionTracesChangedEvent(input.executionId),
+        new ExecutionTracesChangedEvent(caller.workspaceId, input.executionId),
       );
     }
   }
 
-  /** An execution of a task in another workspace is not found. */
+  /** An execution in another workspace is not found. */
   async list(
     workspaceId: string,
     executionId: string,
@@ -93,6 +94,7 @@ export class ExecutionTracesService {
     const [items, lifecycle] = await Promise.all([
       this.traces.find({
         where: {
+          workspaceId,
           executionId,
           sequence:
             options.beforeSequence !== undefined
@@ -103,7 +105,7 @@ export class ExecutionTracesService {
         take: limit + 1,
       }),
       this.traces.find({
-        where: { executionId, source: 'worker' },
+        where: { workspaceId, executionId, source: 'worker' },
         order: { sequence: 'ASC' },
       }),
     ]);
@@ -118,16 +120,12 @@ export class ExecutionTracesService {
     };
   }
 
-  /**
-   * With a workspace (user reads), only an execution of a task in that
-   * workspace is found. Worker writes pass none: workers are installation-wide
-   * until phase 3c.
-   */
+  /** An execution in the workspace (active or finished), or not found. */
   private async resolveExecution(
     executionId: string,
     workspaceId: string,
   ): Promise<{ workerClientId: string }> {
-    const inWorkspace = `AND task_id IN (SELECT id FROM tasks WHERE workspace_id = $2)`;
+    const inWorkspace = `AND workspace_id = $2`;
     // A single snapshot avoids a race when an execution moves to history.
     const [execution] = await this.traces.query(
       `

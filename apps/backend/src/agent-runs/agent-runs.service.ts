@@ -15,10 +15,6 @@ import { AgentRunNotFoundError } from './errors/agent-runs.errors';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { TaskNotFoundError } from '../tasks/errors/tasks.errors';
-import {
-  TASK_IN_WORKSPACE_SQL,
-  taskIdInWorkspace,
-} from '../workspaces/task-in-workspace';
 
 /**
  * AgentRunsService - agent-run compatibility facade
@@ -50,8 +46,7 @@ export class AgentRunsService {
   ) {}
 
   /**
-   * Agent runs have no `workspace_id` until phase 3c: every method reaches
-   * the workspace through the run's parent task. A run (or parent task) in
+   * A run is in its parent task's workspace. A run (or parent task) in
    * another workspace is not found.
    */
   async createAgentRun(
@@ -83,6 +78,7 @@ export class AgentRunsService {
     });
 
     const agentRun = this.agentRunRepository.create({
+      workspaceId,
       actorId: input.actorId,
       parentTaskId: input.parentTaskId,
       startedAt: null,
@@ -95,7 +91,7 @@ export class AgentRunsService {
 
     // Reload with relations
     const agentRunWithRelations = await this.agentRunRepository.findOne({
-      where: { id: savedAgentRun.id },
+      where: { workspaceId, id: savedAgentRun.id },
       relations: ['actor', 'parentTask'],
     });
 
@@ -122,7 +118,7 @@ export class AgentRunsService {
     });
 
     const agentRun = await this.agentRunRepository.findOne({
-      where: { id: runId, parentTaskId: taskIdInWorkspace(workspaceId) },
+      where: { workspaceId, id: runId },
       relations: ['actor', 'parentTask'],
     });
 
@@ -141,7 +137,7 @@ export class AgentRunsService {
 
     // Reload with relations
     const agentRunWithRelations = await this.agentRunRepository.findOne({
-      where: { id: runId },
+      where: { workspaceId, id: runId },
       relations: ['actor', 'parentTask'],
     });
 
@@ -162,7 +158,7 @@ export class AgentRunsService {
     runId: string,
   ): Promise<AgentRunResult> {
     const agentRun = await this.agentRunRepository.findOne({
-      where: { id: runId, parentTaskId: taskIdInWorkspace(workspaceId) },
+      where: { workspaceId, id: runId },
       relations: ['actor', 'parentTask'],
     });
 
@@ -193,9 +189,7 @@ export class AgentRunsService {
       .createQueryBuilder('agentRun')
       .leftJoinAndSelect('agentRun.actor', 'actor')
       .leftJoinAndSelect('agentRun.parentTask', 'parentTask')
-      .where(TASK_IN_WORKSPACE_SQL('agentRun.parentTaskId'), {
-        taskWorkspaceId: workspaceId,
-      });
+      .where('agentRun.workspaceId = :workspaceId', { workspaceId });
 
     if (input.actorId) {
       queryBuilder.andWhere('agentRun.actorId = :actorId', {

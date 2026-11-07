@@ -201,7 +201,7 @@ describe('Sign in with ChatGPT E2E', () => {
       .join('; ');
 
     agentActorId = (
-      await app.get(AgentsService).getAgentBySlug({ slug: 'taico' })
+      await app.get(AgentsService).getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: 'taico' })
     ).actorId;
   }, 30000);
 

@@ -7,6 +7,8 @@ import { TaskExecutionHistoryStatus } from './task-execution-history-status.enum
 import { TaskExecutionHistoryErrorCode } from './task-execution-history-error-code.enum';
 import { TaskExecutionHistoryEntryNotFoundError } from '../errors/executions.errors';
 
+const workspaceId = '00000000-0000-4000-8000-000000000001';
+
 describe('TaskExecutionHistoryService', () => {
   let service: TaskExecutionHistoryService;
   let repository: jest.Mocked<Repository<TaskExecutionHistoryEntity>>;
@@ -78,11 +80,11 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.findOne.mockResolvedValue(mockHistory);
 
-      const result = await service.getLatestHistoryForTask(taskId);
+      const result = await service.getLatestHistoryForTask(workspaceId, taskId);
 
       expect(result).toBe(mockHistory);
       expect(repository.findOne).toHaveBeenCalledWith({
-        where: { taskId },
+        where: { workspaceId, taskId },
         order: { transitionedAt: 'DESC' },
       });
     });
@@ -92,7 +94,7 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.findOne.mockResolvedValue(null);
 
-      const result = await service.getLatestHistoryForTask(taskId);
+      const result = await service.getLatestHistoryForTask(workspaceId, taskId);
 
       expect(result).toBeNull();
     });
@@ -143,11 +145,11 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.find.mockResolvedValue(histories);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(3);
       expect(repository.find).toHaveBeenCalledWith({
-        where: { taskId },
+        where: { workspaceId, taskId },
         order: { transitionedAt: 'DESC' },
       });
     });
@@ -168,7 +170,7 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.find.mockResolvedValue(histories);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(0);
     });
@@ -176,7 +178,7 @@ describe('TaskExecutionHistoryService', () => {
     it('should return 0 when no history exists', async () => {
       repository.find.mockResolvedValue([]);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(0);
     });
@@ -212,7 +214,7 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.find.mockResolvedValue(histories);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(5);
     });
@@ -243,7 +245,7 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.find.mockResolvedValue(histories);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(2);
     });
@@ -269,7 +271,7 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.find.mockResolvedValue(histories);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(1);
     });
@@ -285,7 +287,7 @@ describe('TaskExecutionHistoryService', () => {
 
       repository.find.mockResolvedValue(histories);
 
-      const result = await service.countConsecutiveQuotaErrors(taskId);
+      const result = await service.countConsecutiveQuotaErrors(workspaceId, taskId);
 
       expect(result).toBe(1);
     });

@@ -63,10 +63,14 @@ export class ReadinessCandidateRepository {
       );
   }
 
-  async countActiveExecutionsForAgent(agentActorId: string): Promise<number> {
+  async countActiveExecutionsForAgent(
+    workspaceId: string,
+    agentActorId: string,
+  ): Promise<number> {
     return this.activeTaskExecutionRepository
       .createQueryBuilder('execution')
-      .where('execution.agent_actor_id = :agentActorId', { agentActorId })
+      .where('execution.workspace_id = :workspaceId', { workspaceId })
+      .andWhere('execution.agent_actor_id = :agentActorId', { agentActorId })
       .getCount();
   }
 }

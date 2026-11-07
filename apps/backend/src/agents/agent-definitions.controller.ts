@@ -27,11 +27,12 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { AgentsScopes } from './agents.scopes';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 // Lives outside `/agents` because a fixed path there would shadow `GET /agents/:slug`.
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('agent-definitions')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.READ.id)
@@ -48,8 +49,10 @@ export class AgentDefinitionsController {
   async exportAgents(
     @Query() query: ExportAgentsQueryDto,
     @Res({ passthrough: true }) res: Response,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AgentDefinitionsDocumentDto> {
     const document = await this.agentImportExportService.exportAgents(
+      workspaceId,
       query.slug,
     );
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -70,8 +73,9 @@ export class AgentDefinitionsController {
   @ApiOkResponse({ type: ImportAgentsResponseDto })
   async importAgents(
     @Body() dto: AgentDefinitionsDocumentDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ImportAgentsResponseDto> {
-    const result = await this.agentImportExportService.importAgents({
+    const result = await this.agentImportExportService.importAgents(workspaceId, {
       version: dto.version,
       agents: dto.agents,
     });

@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
   VersionColumn,
   OneToOne,
+  Index,
 } from 'typeorm';
 import { AgentEntity } from '../../agents/agent.entity';
 import { TaskEntity } from '../../tasks/task.entity';
@@ -18,6 +19,11 @@ import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
 
 @Entity({ name: 'task_execution_history' })
 export class TaskExecutionHistoryEntity {
+  /** Always its task's workspace. See docs/architecture/workspaces.md. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

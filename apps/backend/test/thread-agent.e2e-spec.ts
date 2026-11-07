@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -157,7 +158,7 @@ describe('Thread agent E2E', () => {
     userActorId = await ensureTestUser(app);
     authCookies = await getAuthCookies(httpServer);
     agentActorId = (
-      await app.get(AgentsService).getAgentBySlug({ slug: 'taico' })
+      await app.get(AgentsService).getAgentBySlug(DEFAULT_WORKSPACE_ID, { slug: 'taico' })
     ).actorId;
   }, 30000);
 
