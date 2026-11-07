@@ -31,6 +31,7 @@ import { WorkersScopes } from './workers.scopes';
 import { ExecutionActivityService } from './execution-activity.service';
 import { ActiveTaskExecutionNotFoundError } from './errors/executions.errors';
 import { AuthContext } from '../auth/guards/context/auth-context.types';
+import { createAuthContext } from '../auth/guards/context/auth-context.factory';
 import { WorkersService } from '../workers/workers.service';
 import { AccessTokenValidationService } from '../auth/guards/validation/access-token-validation.service';
 import { tokenFromHeaders } from '../auth/guards/extractors/token-header.extractor';
@@ -349,12 +350,7 @@ export class ExecutionsWorkerGateway
       throw new Error(`missing required scope ${WorkersScopes.CONNECT.id}`);
     }
 
-    const authContext: AuthContext = {
-      token,
-      claims,
-      scopes: claims.scope,
-      subject: claims.sub,
-    };
+    const authContext: AuthContext = createAuthContext(token, claims);
     client.data.auth = authContext;
   }
 

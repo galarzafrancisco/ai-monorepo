@@ -11,6 +11,7 @@ import { tokenFromCookies } from '../extractors/token-cookie.extractor';
 import * as cookie from 'cookie';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { AuthContext } from '../context/auth-context.types';
+import { createAuthContext } from '../context/auth-context.factory';
 import { isFirstPartyAudience } from 'src/auth/core/resource-audience';
 
 @Injectable()
@@ -59,12 +60,7 @@ export class WsAccessTokenGuard implements CanActivate {
     }
 
     // 4) Attach context (same shape as HTTP)
-    const authContext: AuthContext = {
-      token,
-      claims,
-      scopes: claims.scope,
-      subject: claims.sub,
-    };
+    const authContext: AuthContext = createAuthContext(token, claims);
     client.data.auth = authContext;
 
     return true;

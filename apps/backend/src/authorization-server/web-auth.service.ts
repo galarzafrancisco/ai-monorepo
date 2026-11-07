@@ -8,7 +8,11 @@ import { Repository } from 'typeorm';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { getConfig } from '../config/env.config';
 import { JwksService } from '../auth/crypto/jwks.service';
-import { WorkspacesService } from '../workspaces/workspaces.service';
+import {
+  WorkspacesService,
+  workspaceRoleForUserRole,
+} from '../workspaces/workspaces.service';
+import { WorkspaceRole } from '../workspaces/enums';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { UserScopes } from 'src/auth/core/scopes/user.scopes';
@@ -101,16 +105,24 @@ export class WebAuthService {
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
 
-    // Determine scopes based on role
+    // The admin scope follows the membership role in the token's workspace,
+    // not the installation-wide users.role (docs/architecture/workspaces.md).
+    // An actor with no membership (only possible before the startup backfill
+    // has run) keeps the role from users.role, as before workspaces.
+    const membership = await this.workspacesService.findMembershipForActor(
+      actor.id,
+    );
+    const workspaceId = membership?.workspaceId;
+    const workspaceRole =
+      membership?.role ?? workspaceRoleForUserRole(user.role);
+
     const scopes: Scope[] = [
       ...ALL_WEB_SCOPES,
       ...ALL_MCP_REGISTRY_SCOPES,
-      user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
+      workspaceRole === WorkspaceRole.ADMIN
+        ? UserScopes.ADMIN
+        : UserScopes.STANDARD,
     ];
-
-    const workspaceId = await this.workspacesService.findWorkspaceIdForActor(
-      actor.id,
-    );
 
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,

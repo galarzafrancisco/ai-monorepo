@@ -20,6 +20,7 @@ import {
   MissingAccessTokenError,
 } from '../errors/access-token.errors';
 import type { AuthContext } from '../context/auth-context.types';
+import { createAuthContext } from '../context/auth-context.factory';
 import { tokenFromHeaders } from '../extractors/token-header.extractor';
 import { tokenFromCookies } from '../extractors/token-cookie.extractor';
 import { Reflector } from '@nestjs/core';
@@ -91,12 +92,7 @@ export class AccessTokenGuard implements CanActivate {
     }
 
     // 4) Attach auth context
-    const authContext: AuthContext = {
-      token,
-      claims,
-      scopes: claims.scope,
-      subject: claims.sub,
-    };
+    const authContext: AuthContext = createAuthContext(token, claims);
 
     res.locals.auth = authContext;
 
