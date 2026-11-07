@@ -21,26 +21,28 @@ export class ThreadReadStateService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  /** Marks everything in the thread so far as read by the actor. */
-  async markRead(threadId: string, actorId: string): Promise<void> {
-    const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-      select: { id: true },
+  /**
+   * Marks everything in the thread so far as read by the actor. A thread in
+   * another workspace is not found.
+   */
+  async markRead(workspaceId: string, threadId: string, actorId: string): Promise<void> {
+    const exists = await this.threadRepository.exists({
+      where: { workspaceId, id: threadId },
     });
-    if (!thread) {
+    if (!exists) {
       throw new ThreadNotFoundError(threadId);
     }
 
     await this.readStateRepository
       .createQueryBuilder()
       .insert()
-      .values({ threadId, actorId, lastReadAt: () => 'now()' })
+      .values({ workspaceId, threadId, actorId, lastReadAt: () => 'now()' })
       .orUpdate(['last_read_at'], ['thread_id', 'actor_id'])
       .execute();
 
     this.eventEmitter.emit(
       ThreadReadEvent.INTERNAL,
-      new ThreadReadEvent({ id: actorId }, { threadId, actorId }),
+      new ThreadReadEvent({ id: actorId }, { threadId, workspaceId, actorId }),
     );
   }
 
@@ -49,6 +51,7 @@ export class ThreadReadStateService {
    * are left out of the map. The actor's own messages never count.
    */
   async getUnreadCounts(
+    workspaceId: string,
     threadIds: string[],
     actorId: string,
   ): Promise<Map<string, number>> {
@@ -65,10 +68,11 @@ export class ThreadReadStateService {
         'r',
         'r.thread_id = m.thread_id AND r.actor_id = :actorId',
       )
-      .where('m.thread_id IN (:...threadIds)')
+      .where('m.workspace_id = :workspaceId')
+      .andWhere('m.thread_id IN (:...threadIds)')
       .andWhere('m.created_by_actor_id <> :actorId')
       .andWhere('(r.last_read_at IS NULL OR m.created_at > r.last_read_at)')
-      .setParameters({ actorId, threadIds })
+      .setParameters({ workspaceId, actorId, threadIds })
       .groupBy('m.thread_id')
       .getRawMany<{ threadId: string; count: string }>();
 

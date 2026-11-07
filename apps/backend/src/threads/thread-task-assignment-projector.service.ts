@@ -17,7 +17,7 @@ export class ThreadTaskAssignmentProjectorService {
     // The task's workspace is the thread's: TasksService checked the assignee
     // is a member of it.
     const workspaceId = event.payload.workspaceId;
-    const thread = await this.threadsService.findThreadByTaskIdInWorkspace(
+    const thread = await this.threadsService.findThreadByTaskId(
       workspaceId,
       event.payload.id,
     );

@@ -7,7 +7,7 @@ import { ThreadRenameService } from './thread-rename.service';
 import { InvalidThreadTitleError, ThreadNotFoundError } from './errors/threads.errors';
 import { ThreadTitleUpdatedEvent } from './events/threads.events';
 
-import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
+const WORKSPACE_ID = 'workspace-1';
 
 describe('ThreadRenameService', () => {
   let repo: { findOne: jest.Mock; save: jest.Mock };
@@ -26,15 +26,16 @@ describe('ThreadRenameService', () => {
   });
 
   it('persists the trimmed title, emits the event and updates the state block', async () => {
-    const result = await service.rename('t1', '  New name  ', 'a1');
+    const result = await service.rename(WORKSPACE_ID, 't1', '  New name  ', 'a1');
     expect(result).toBe('New name');
+    expect(repo.findOne).toHaveBeenCalledWith({ where: { workspaceId: WORKSPACE_ID, id: 't1' } });
     expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({ title: 'New name' }));
     expect(emitter.emit).toHaveBeenCalledWith(
       ThreadTitleUpdatedEvent.INTERNAL,
       expect.any(ThreadTitleUpdatedEvent),
     );
     expect(context.updateBlock).toHaveBeenCalledWith(
-      UNSCOPED_MODULE_WORKSPACE_ID,
+      WORKSPACE_ID,
       'b1',
       { title: 'Thread State: New name' },
     );
@@ -42,18 +43,18 @@ describe('ThreadRenameService', () => {
 
   it('throws when the thread is missing', async () => {
     repo.findOne.mockResolvedValue(null);
-    await expect(service.rename('x', 'Title', 'a1')).rejects.toBeInstanceOf(ThreadNotFoundError);
+    await expect(service.rename(WORKSPACE_ID, 'x', 'Title', 'a1')).rejects.toBeInstanceOf(ThreadNotFoundError);
     expect(repo.save).not.toHaveBeenCalled();
   });
 
   it('rejects a blank title', async () => {
-    await expect(service.rename('t1', '   ', 'a1')).rejects.toMatchObject({ code: 'INVALID_THREAD_TITLE' });
+    await expect(service.rename(WORKSPACE_ID, 't1', '   ', 'a1')).rejects.toMatchObject({ code: 'INVALID_THREAD_TITLE' });
     expect(repo.save).not.toHaveBeenCalled();
     expect(emitter.emit).not.toHaveBeenCalled();
   });
 
   it('still succeeds when the state block update fails', async () => {
     context.updateBlock.mockRejectedValue(new Error('boom'));
-    await expect(service.rename('t1', 'Ok', 'a1')).resolves.toBe('Ok');
+    await expect(service.rename(WORKSPACE_ID, 't1', 'Ok', 'a1')).resolves.toBe('Ok');
   });
 });

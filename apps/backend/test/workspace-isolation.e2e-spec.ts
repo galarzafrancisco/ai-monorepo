@@ -29,6 +29,14 @@ import { AgentRunsScopes } from '../src/agent-runs/agent-runs.scopes';
 import { PullRequestsScopes } from '../src/pull-requests/pull-requests.scopes';
 import { IssuesScopes } from '../src/issues/issues.scopes';
 import { ThreadTaskSubscriptionsService } from '../src/threads/task-subscriptions/thread-task-subscriptions.service';
+import { ThreadTimersService } from '../src/threads/timers/thread-timers.service';
+import { ThreadTimerKind } from '../src/threads/timers/thread-timer.enums';
+import { ThreadWatchesService } from '../src/threads/watches/thread-watches.service';
+import { ThreadWatchKind } from '../src/threads/watches/thread-watch.enums';
+import { ThreadTurnsService } from '../src/threads/agent/thread-turns.service';
+import { ThreadAgentLogService } from '../src/threads/agent/thread-agent-log.service';
+import { ThreadAgentMessageRole } from '../src/threads/agent/thread-agent.enums';
+import { TaskStatus } from '../src/tasks/enums';
 import { ThreadAgentToolsFactory } from '../src/threads/agent/thread-agent-tools.factory';
 import { GET_PULL_REQUEST_TOOL } from '../src/threads/agent/thread-agent.prompts';
 import { WATCH_PULL_REQUEST_TOOL } from '../src/threads/watches/pull-request-watch.format';
@@ -49,11 +57,12 @@ const TASKS_MCP_PATH = '/api/v1/tasks/tasks/mcp';
 const CONTEXT_MCP_PATH = '/api/v1/context/blocks/mcp';
 
 /**
- * Workspaces phase 3a: tasks, context blocks, tags and projects in one
- * workspace cannot be seen or changed from another, over REST, MCP or the
- * WebSocket. Another workspace's row answers "not found".
+ * Workspaces phase 3: tasks, context blocks, tags and projects (3a) and
+ * threads with everything that hangs off them (3b) in one workspace cannot
+ * be seen or changed from another, over REST, MCP or the WebSocket. Another
+ * workspace's row answers "not found".
  */
-describe('Workspace isolation: tasks, context and meta (e2e)', () => {
+describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
   let app: INestApplication<App>;
   let http: App;
   let port: number;
@@ -420,7 +429,7 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
     });
   });
 
-  describe('threads (scoped by their state block until phase 3b)', () => {
+  describe('threads', () => {
     it('creates a thread and its state block in the caller workspace', async () => {
       const threadB = (
         await as(tokenB)
@@ -670,7 +679,7 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
           .expect(201)
       ).body;
       expect(
-        await subscriptions.subscribe({
+        await subscriptions.subscribe(WORKSPACE_B_ID, {
           threadId: threadB.id,
           taskId: taskA.id,
           forActorId: actorId,
@@ -678,13 +687,247 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
         }),
       ).toBeNull();
       expect(
-        await subscriptions.subscribe({
+        await subscriptions.subscribe(WORKSPACE_B_ID, {
           threadId: threadB.id,
           taskId: taskB.id,
           forActorId: actorId,
           waitingFor: '',
         }),
       ).toMatchObject({ id: taskB.id });
+    });
+  });
+
+  /**
+   * Phase 3b: threads and every table that hangs off them carry their own
+   * `workspace_id`, always the thread's.
+   */
+  describe('rows that hang off a thread', () => {
+    const THREAD_CHILD_TABLES = [
+      'thread_messages',
+      'thread_agent_messages',
+      'thread_turns',
+      'thread_pins',
+      'thread_read_states',
+      'thread_task_subscriptions',
+      'thread_timers',
+      'thread_timer_firings',
+      'thread_watches',
+      'thread_watch_deliveries',
+    ];
+
+    /** The workspaces of a thread's own row and of every row hanging off it, per table. */
+    async function workspacesOf(threadId: string): Promise<Record<string, string[]>> {
+      const db = app.get(DataSource);
+      const result: Record<string, string[]> = {};
+      for (const table of ['threads', ...THREAD_CHILD_TABLES]) {
+        const column = table === 'threads' ? 'id' : 'thread_id';
+        const rows: Array<{ workspace_id: string }> = await db.query(
+          `SELECT DISTINCT workspace_id FROM "${table}" WHERE "${column}" = $1`,
+          [threadId],
+        );
+        result[table] = rows.map((row) => row.workspace_id);
+      }
+      return result;
+    }
+
+    it("puts every row a thread writes in the thread's workspace", async () => {
+      const b = as(tokenB);
+      const threadB = (
+        await b.post('/threads').send({ title: `Stamped in B ${suffix}` }).expect(201)
+      ).body;
+      const taskB = (
+        await b.post('/tasks/tasks').send({ name: 'B stamped', description: 'd' }).expect(201)
+      ).body;
+      await b.post(`/threads/${threadB.id}/messages`).send({ content: 'hello from B' }).expect(201);
+      await b.put(`/threads/${threadB.id}/pin`).expect(204);
+      await b.post(`/threads/${threadB.id}/read`).expect(204);
+
+      const timers = app.get(ThreadTimersService);
+      const subscriptions = app.get(ThreadTaskSubscriptionsService);
+      const watches = app.get(ThreadWatchesService);
+      // Already due, so a sweep queues a firing for it.
+      const timer = await timers.create(WORKSPACE_B_ID, {
+        threadId: threadB.id,
+        kind: ThreadTimerKind.REMINDER,
+        reason: 'B reminder',
+        periodSeconds: null,
+        maxIterations: 1,
+        firstFireAt: new Date(Date.now() - 1000),
+        forActorId: actorId,
+      });
+      expect(timer).not.toBeNull();
+      expect(await timers.fireDue()).toContain(threadB.id);
+      expect(
+        await subscriptions.subscribe(WORKSPACE_B_ID, {
+          threadId: threadB.id,
+          taskId: taskB.id,
+          forActorId: actorId,
+          waitingFor: 'done',
+        }),
+      ).toMatchObject({ id: taskB.id, workspaceId: WORKSPACE_B_ID });
+      const watch = await watches.watch(WORKSPACE_B_ID, {
+        threadId: threadB.id,
+        kind: ThreadWatchKind.PULL_REQUEST,
+        targetId: '00000000-0000-4000-8000-0000000000aa',
+        targetLabel: 'acme/api#1',
+        targetUrl: null,
+        conditions: [],
+        once: true,
+        waitingFor: null,
+        forActorId: actorId,
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+      expect(watch).toMatchObject({ workspaceId: WORKSPACE_B_ID });
+      await watches.notify([{ watch: watch!, message: 'B notification', final: false }]);
+      await app.get(ThreadAgentLogService).append(threadB.id, [
+        {
+          role: ThreadAgentMessageRole.USER,
+          message: { role: 'user', content: 'B log row' },
+          source: 'user',
+        },
+      ]);
+      // A turn may already be running for the message above; either way a
+      // turn row exists for the thread.
+      const turn = await app.get(ThreadTurnsService).tryClaim(threadB.id);
+      if (turn) {
+        expect(turn.workspaceId).toBe(WORKSPACE_B_ID);
+      }
+
+      const stamped = await workspacesOf(threadB.id);
+      for (const table of ['threads', ...THREAD_CHILD_TABLES]) {
+        expect({ table, workspaces: stamped[table] }).toEqual({
+          table,
+          workspaces: [WORKSPACE_B_ID],
+        });
+      }
+
+      // A's thread is untouched by all of it.
+      const ofA = await workspacesOf(threadA.id);
+      for (const workspaces of Object.values(ofA)) {
+        expect(workspaces.every((id) => id === DEFAULT_WORKSPACE_ID)).toBe(true);
+      }
+    });
+
+    it("writes no timer, watch or subscription onto another workspace's thread", async () => {
+      const taskB = (
+        await as(tokenB)
+          .post('/tasks/tasks')
+          .send({ name: 'B not linked', description: 'd' })
+          .expect(201)
+      ).body;
+      const before = await workspacesOf(threadA.id);
+
+      expect(
+        await app.get(ThreadTimersService).create(WORKSPACE_B_ID, {
+          threadId: threadA.id,
+          kind: ThreadTimerKind.REMINDER,
+          reason: 'sneaky',
+          periodSeconds: null,
+          maxIterations: 1,
+          firstFireAt: new Date(Date.now() + 60_000),
+          forActorId: actorId,
+        }),
+      ).toBeNull();
+      expect(
+        await app.get(ThreadWatchesService).watch(WORKSPACE_B_ID, {
+          threadId: threadA.id,
+          kind: ThreadWatchKind.PULL_REQUEST,
+          targetId: '00000000-0000-4000-8000-0000000000bb',
+          targetLabel: 'acme/api#2',
+          targetUrl: null,
+          conditions: [],
+          once: true,
+          waitingFor: null,
+          forActorId: actorId,
+          expiresAt: new Date(Date.now() + 60_000),
+        }),
+      ).toBeNull();
+      // Neither from B onto A's thread, nor from A onto A's thread with B's task.
+      const subscriptions = app.get(ThreadTaskSubscriptionsService);
+      expect(
+        await subscriptions.subscribe(WORKSPACE_B_ID, {
+          threadId: threadA.id,
+          taskId: taskB.id,
+          forActorId: actorId,
+          waitingFor: '',
+        }),
+      ).toBeNull();
+      expect(
+        await subscriptions.subscribe(DEFAULT_WORKSPACE_ID, {
+          threadId: threadA.id,
+          taskId: taskB.id,
+          forActorId: actorId,
+          waitingFor: '',
+        }),
+      ).toBeNull();
+      // B cannot list or cancel what A's thread waits for.
+      expect(await app.get(ThreadTimersService).listActive(WORKSPACE_B_ID, threadA.id)).toEqual([]);
+      expect(await subscriptions.listForThread(WORKSPACE_B_ID, threadA.id)).toEqual([]);
+      expect(await app.get(ThreadWatchesService).listForThread(WORKSPACE_B_ID, threadA.id)).toEqual([]);
+
+      expect(await workspacesOf(threadA.id)).toEqual(before);
+    });
+
+    it('fires timers of every workspace, each in its own workspace', async () => {
+      const timers = app.get(ThreadTimersService);
+      const threadB = (
+        await as(tokenB).post('/threads').send({ title: `Timers in B ${suffix}` }).expect(201)
+      ).body;
+      const threadOwnA = (
+        await as(tokenA).post('/threads').send({ title: `Timers in A ${suffix}` }).expect(201)
+      ).body;
+      const due = {
+        kind: ThreadTimerKind.REMINDER,
+        reason: 'due',
+        periodSeconds: null,
+        maxIterations: 1,
+        firstFireAt: new Date(Date.now() - 1000),
+        forActorId: actorId,
+      };
+      await timers.create(WORKSPACE_B_ID, { ...due, threadId: threadB.id });
+      await timers.create(DEFAULT_WORKSPACE_ID, { ...due, threadId: threadOwnA.id });
+
+      // One sweep (any backend) fires both.
+      const fired = await timers.fireDue();
+      expect(fired).toEqual(expect.arrayContaining([threadB.id, threadOwnA.id]));
+
+      expect((await workspacesOf(threadB.id)).thread_timer_firings).toEqual([WORKSPACE_B_ID]);
+      expect((await workspacesOf(threadOwnA.id)).thread_timer_firings).toEqual([
+        DEFAULT_WORKSPACE_ID,
+      ]);
+    });
+
+    it("only tells threads of the task's workspace that a task changed", async () => {
+      const subscriptions = app.get(ThreadTaskSubscriptionsService);
+      const threadOwnA = (
+        await as(tokenA).post('/threads').send({ title: `Watcher in A ${suffix}` }).expect(201)
+      ).body;
+      const taskOwnA = (
+        await as(tokenA).post('/tasks/tasks').send({ name: 'A watched', description: 'd' }).expect(201)
+      ).body;
+      await subscriptions.subscribe(DEFAULT_WORKSPACE_ID, {
+        threadId: threadOwnA.id,
+        taskId: taskOwnA.id,
+        forActorId: actorId,
+        waitingFor: '',
+      });
+      // The same task id, claimed by another workspace, triggers nothing.
+      expect(
+        await subscriptions.markTriggered({
+          id: taskOwnA.id,
+          workspaceId: WORKSPACE_B_ID,
+          name: 'x',
+          status: TaskStatus.DONE,
+        }),
+      ).toEqual([]);
+      expect(
+        await subscriptions.markTriggered({
+          id: taskOwnA.id,
+          workspaceId: DEFAULT_WORKSPACE_ID,
+          name: 'A watched',
+          status: TaskStatus.DONE,
+        }),
+      ).toEqual([threadOwnA.id]);
     });
   });
 
@@ -1190,6 +1433,26 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
           ThreadWireEvents.THREAD_UPDATED,
           (e) => e.payload.id,
         );
+        const messagesA = collect(
+          socketA,
+          ThreadWireEvents.MESSAGE_CREATED,
+          (e) => e.payload.threadId,
+        );
+        const messagesB = collect(
+          socketB,
+          ThreadWireEvents.MESSAGE_CREATED,
+          (e) => e.payload.threadId,
+        );
+        const activityA = collect(
+          socketA,
+          ThreadWireEvents.THREAD_ACTIVITY,
+          (e) => e.payload.threadId,
+        );
+        const activityB = collect(
+          socketB,
+          ThreadWireEvents.THREAD_ACTIVITY,
+          (e) => e.payload.threadId,
+        );
 
         await as(tokenA)
           .patch(`/threads/${threadA.id}`)
@@ -1205,12 +1468,20 @@ describe('Workspace isolation: tasks, context and meta (e2e)', () => {
           .post(`/threads/${threadA.id}/context-blocks`)
           .send({ contextBlockId: blockA2.id })
           .expect(201);
+        await as(tokenA)
+          .post(`/threads/${threadA.id}/messages`)
+          .send({ content: `Realtime message in A ${suffix}` })
+          .expect(201);
         await settle();
 
         expect(titlesA).toContain(threadA.id);
         expect(titlesB).not.toContain(threadA.id);
         expect(updatesA).toContain(threadA.id);
         expect(updatesB).not.toContain(threadA.id);
+        expect(messagesA).toContain(threadA.id);
+        expect(messagesB).not.toContain(threadA.id);
+        expect(activityA).toContain(threadA.id);
+        expect(activityB).not.toContain(threadA.id);
       } finally {
         socketA.disconnect();
         socketB.disconnect();

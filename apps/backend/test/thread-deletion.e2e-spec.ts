@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ThreadMessageEntity } from '../src/threads/thread-message.entity';
@@ -74,6 +75,7 @@ describe('Thread deletion E2E', () => {
       participantActorIds: [userActorId],
     });
     await dataSource.getRepository(ThreadMessageEntity).save({
+      workspaceId: DEFAULT_WORKSPACE_ID,
       threadId: thread.id,
       content: 'hello',
       createdByActorId: userActorId,

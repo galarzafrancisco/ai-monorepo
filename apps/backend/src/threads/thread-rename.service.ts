@@ -23,14 +23,19 @@ export class ThreadRenameService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async rename(threadId: string, title: string, actorId: string): Promise<string> {
+  /** A thread in another workspace is not found. */
+  async rename(
+    workspaceId: string,
+    threadId: string,
+    title: string,
+    actorId: string,
+  ): Promise<string> {
     const trimmed = title.trim();
     if (!trimmed) {
       throw new InvalidThreadTitleError();
     }
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-      relations: { stateContextBlock: true },
+      where: { workspaceId, id: threadId },
     });
     if (!thread) {
       throw new ThreadNotFoundError(threadId);
@@ -39,11 +44,11 @@ export class ThreadRenameService {
     await this.threadRepository.save(thread);
     this.eventEmitter.emit(
       ThreadTitleUpdatedEvent.INTERNAL,
-      new ThreadTitleUpdatedEvent({ id: actorId }, { threadId, title: trimmed }),
+      new ThreadTitleUpdatedEvent({ id: actorId }, { threadId, workspaceId, title: trimmed }),
     );
     try {
       // The state block lives in the thread's workspace.
-      await this.contextService.updateBlock(thread.stateContextBlock!.workspaceId, thread.stateContextBlockId, {
+      await this.contextService.updateBlock(workspaceId, thread.stateContextBlockId, {
         title: `Thread State: ${trimmed}`,
       });
     } catch (error) {

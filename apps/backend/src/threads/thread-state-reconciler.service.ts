@@ -14,6 +14,8 @@ type TaskActivityKind = 'comment_added' | 'status_changed';
 
 type ReconcileThreadStateInput = {
   threadId: string;
+  /** The task's workspace, which is its thread's. */
+  workspaceId: string;
   taskId: string;
   actorId: string;
   kind: TaskActivityKind;
@@ -126,12 +128,10 @@ Now run the required process. If relevant, update the state block with context__
       return;
     }
 
-    const thread = await this.threadsService.getThreadById(threadId);
-    const workspaceId = await this.threadsService.getThreadWorkspaceId(threadId);
-    if (!workspaceId) {
-      return;
-    }
     const latestItem = items[items.length - 1];
+    // Batches are keyed by thread, and a thread is in one workspace.
+    const { workspaceId } = latestItem;
+    const thread = await this.threadsService.getThreadById(workspaceId, threadId);
 
     const actor = await this.actorRepository.findOne({
       where: { id: latestItem.actorId },
@@ -180,13 +180,17 @@ Now run the required process. If relevant, update the state block with context__
   private async enqueueActivity(
     input: Omit<ReconcileThreadStateInput, 'threadId'>,
   ): Promise<void> {
-    const thread = await this.threadsService.findThreadByTaskId(input.taskId);
+    const thread = await this.threadsService.findThreadByTaskId(
+      input.workspaceId,
+      input.taskId,
+    );
     if (!thread) {
       return;
     }
 
     this.activityBatcher.enqueue(thread.id, {
       threadId: thread.id,
+      workspaceId: input.workspaceId,
       taskId: input.taskId,
       actorId: input.actorId,
       kind: input.kind,
@@ -205,6 +209,7 @@ Now run the required process. If relevant, update the state block with context__
       : event.payload.content;
 
     await this.enqueueActivity({
+      workspaceId: event.payload.workspaceId,
       taskId: event.payload.taskId,
       actorId: event.actor.id,
       kind: 'comment_added',
@@ -219,6 +224,7 @@ Now run the required process. If relevant, update the state block with context__
     }
 
     await this.enqueueActivity({
+      workspaceId: event.payload.workspaceId,
       taskId: event.payload.id,
       actorId: event.actor.id,
       kind: 'status_changed',

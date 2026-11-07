@@ -16,16 +16,24 @@ export class ThreadTimeService {
     private readonly messages: Repository<ThreadMessageEntity>,
   ) {}
 
-  async getTimeContext(threadId: string, now: Date = new Date()): Promise<TimeContext> {
-    return buildTimeContext(now, await this.findLatestUserMessage(threadId));
+  async getTimeContext(
+    workspaceId: string,
+    threadId: string,
+    now: Date = new Date(),
+  ): Promise<TimeContext> {
+    return buildTimeContext(now, await this.findLatestUserMessage(workspaceId, threadId));
   }
 
   /** The newest message a person (not an agent) wrote in the thread. */
-  async findLatestUserMessage(threadId: string): Promise<LatestUserMessage | null> {
+  async findLatestUserMessage(
+    workspaceId: string,
+    threadId: string,
+  ): Promise<LatestUserMessage | null> {
     const message = await this.messages
       .createQueryBuilder('message')
       .innerJoin('message.createdByActor', 'actor')
-      .where('message.thread_id = :threadId', { threadId })
+      .where('message.workspace_id = :workspaceId', { workspaceId })
+      .andWhere('message.thread_id = :threadId', { threadId })
       .andWhere('actor.type = :type', { type: ActorType.HUMAN })
       .orderBy('message.created_at', 'DESC')
       .addOrderBy('message.id', 'DESC')

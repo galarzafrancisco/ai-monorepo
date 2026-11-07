@@ -43,6 +43,8 @@ Use room scopes to control fanout and payload relevance.
 - **Entity collection room**: list-level updates (e.g. `threads`, `tasks`).
 - **Entity instance room**: detailed updates for one entity (e.g. `threads-<threadId>`).
 
+Every room that carries workspace data is inside a workspace: its real name is `workspaceRoom(workspaceId, room)` (`workspace:<id>:threads-<threadId>`). A socket joins rooms of its token's workspace only, and a gateway emits to the workspace of the row in the event, which the event carries. The names below leave the prefix out. See [Workspaces](../architecture/workspaces.md).
+
 Threads are the reference implementation:
 
 - Subscribe without `threadId` -> joins `threads` room.

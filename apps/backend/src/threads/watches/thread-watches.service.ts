@@ -10,6 +10,8 @@ import { ThreadWatchKind } from './thread-watch.enums';
 export type ThreadWatchResult = {
   id: string;
   threadId: string;
+  /** The thread's workspace. */
+  workspaceId: string;
   kind: ThreadWatchKind;
   targetId: string;
   targetLabel: string;
@@ -57,12 +59,16 @@ export class ThreadWatchesService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  /** Watching the same target again replaces the conditions, purpose and expiry. */
-  async watch(input: WatchInput): Promise<ThreadWatchResult> {
+  /**
+   * Watching the same target again replaces the conditions, purpose and
+   * expiry. Returns null when the thread is not in the workspace.
+   */
+  async watch(workspaceId: string, input: WatchInput): Promise<ThreadWatchResult | null> {
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(
       `INSERT INTO thread_watches
-         (thread_id, kind, target_id, target_label, target_url, conditions, once, waiting_for, subscribed_for_actor_id, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10)
+         (thread_id, workspace_id, kind, target_id, target_label, target_url, conditions, once, waiting_for, subscribed_for_actor_id, expires_at)
+       SELECT t.id, t.workspace_id, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10
+         FROM threads t WHERE t.id = $1 AND t.workspace_id = $11
        ON CONFLICT (thread_id, kind, target_id) DO UPDATE SET
          target_label = EXCLUDED.target_label,
          target_url = EXCLUDED.target_url,
@@ -83,22 +89,28 @@ export class ThreadWatchesService {
         input.waitingFor?.trim() || null,
         input.forActorId,
         input.expiresAt,
+        workspaceId,
       ],
     );
+    if (rows.length === 0) return null;
     await this.emitThreadUpdated(input.threadId, input.forActorId);
     return toResult(rows[0]);
   }
 
   /** Active watches of a thread, oldest first. */
-  async listForThread(threadId: string): Promise<ThreadWatchResult[]> {
+  async listForThread(workspaceId: string, threadId: string): Promise<ThreadWatchResult[]> {
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(
-      `SELECT * FROM thread_watches WHERE thread_id = $1 AND expires_at > now() ORDER BY created_at ASC, id ASC`,
-      [threadId],
+      `SELECT * FROM thread_watches WHERE workspace_id = $2 AND thread_id = $1 AND expires_at > now() ORDER BY created_at ASC, id ASC`,
+      [threadId, workspaceId],
     );
     return rows.map(toResult);
   }
 
-  /** Active watches on a target, across threads. */
+  /**
+   * Active watches on a target, across threads. Watch targets (pull requests)
+   * have no workspace until phase 3e, and only the default workspace can
+   * watch one (PullRequestsService.lookup), so this is not scoped yet.
+   */
   async listForTarget(kind: ThreadWatchKind, targetId: string): Promise<ThreadWatchResult[]> {
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(
       `SELECT * FROM thread_watches WHERE kind = $1 AND target_id = $2 AND expires_at > now() ORDER BY created_at ASC`,
@@ -117,12 +129,15 @@ export class ThreadWatchesService {
   }
 
   /** Removes a watch. Returns it, or null when the thread had no such watch. Idempotent. */
-  async cancel(input: { threadId: string; watchId: string; actorId: string }): Promise<ThreadWatchResult | null> {
+  async cancel(
+    workspaceId: string,
+    input: { threadId: string; watchId: string; actorId: string },
+  ): Promise<ThreadWatchResult | null> {
     if (!isUuid(input.watchId)) return null;
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(
-      `WITH removed AS (DELETE FROM thread_watches WHERE thread_id = $1 AND id = $2 RETURNING *)
+      `WITH removed AS (DELETE FROM thread_watches WHERE workspace_id = $3 AND thread_id = $1 AND id = $2 RETURNING *)
        SELECT * FROM removed`,
-      [input.threadId, input.watchId],
+      [input.threadId, input.watchId, workspaceId],
     );
     if (rows.length === 0) return null;
     await this.emitThreadUpdated(input.threadId, input.actorId);
@@ -168,6 +183,8 @@ export class ThreadWatchesService {
     await manager.getRepository(ThreadWatchDeliveryEntity).insert(
       notifications.map((n) => ({
         threadId: n.watch.threadId,
+        // A notification is in its watch's workspace, which is its thread's.
+        workspaceId: n.watch.workspaceId,
         watchId: n.watch.id,
         kind: n.watch.kind,
         message: n.message,
@@ -191,6 +208,7 @@ function toResult(row: Record<string, unknown>): ThreadWatchResult {
   return {
     id: row.id as string,
     threadId: row.thread_id as string,
+    workspaceId: row.workspace_id as string,
     kind: row.kind as ThreadWatchKind,
     targetId: row.target_id as string,
     targetLabel: row.target_label as string,

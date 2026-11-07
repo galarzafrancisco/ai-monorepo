@@ -217,8 +217,8 @@ describe('Thread agent E2E', () => {
 
     try {
       await transaction.query(
-        `INSERT INTO thread_messages (thread_id, created_by_actor_id, content, created_at)
-           VALUES ($1, $2, $3, now() - interval '1 minute')`,
+        `INSERT INTO thread_messages (thread_id, workspace_id, created_by_actor_id, content, created_at)
+           VALUES ($1, (SELECT workspace_id FROM threads WHERE id = $1), $2, $3, now() - interval '1 minute')`,
         [threadId, userActorId, 'Committed after the claim'],
       );
 
@@ -298,8 +298,8 @@ describe('Thread agent E2E', () => {
 
     try {
       await dataSource.query(
-        `INSERT INTO thread_messages (thread_id, created_by_actor_id, content)
-           VALUES ($1, $2, $3)`,
+        `INSERT INTO thread_messages (thread_id, workspace_id, created_by_actor_id, content)
+           VALUES ($1, (SELECT workspace_id FROM threads WHERE id = $1), $2, $3)`,
         [threadId, userActorId, 'Remote partially consumed message'],
       );
       const draining = app.get(ThreadAgentService).drain(threadId);
@@ -451,9 +451,12 @@ describe('Thread agent E2E', () => {
   it('imports the visible history of a thread that predates the agent log', async () => {
     const threadId = await createThread();
     await dataSource.query(
-      `INSERT INTO thread_messages (thread_id, content, created_by_actor_id, created_at) VALUES
-         ($1, 'old question', $2, now() - interval '2 hours'),
-         ($1, 'old answer', $3, now() - interval '1 hour')`,
+      `INSERT INTO thread_messages (thread_id, workspace_id, content, created_by_actor_id, created_at)
+       SELECT $1, t.workspace_id, v.content, v.actor_id::uuid, v.created_at
+         FROM threads t,
+              (VALUES ('old question', $2, now() - interval '2 hours'),
+                      ('old answer', $3, now() - interval '1 hour')) AS v(content, actor_id, created_at)
+        WHERE t.id = $1`,
       [threadId, userActorId, agentActorId],
     );
 

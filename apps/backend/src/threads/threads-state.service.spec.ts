@@ -95,6 +95,7 @@ describe('ThreadsService - State Context Block', () => {
 
   const mockThread: ThreadEntity = {
     id: 'thread-uuid',
+    workspaceId: 'workspace-uuid',
     title: 'Test Thread',
     headAgentMessageId: null,
     aiProviderId: null,
@@ -386,7 +387,7 @@ describe('ThreadsService - State Context Block', () => {
       it('should include stateContextBlockId in thread result', async () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.getThreadById('thread-uuid');
+        const result = await service.getThreadById('workspace-uuid', 'thread-uuid');
 
         expect(result.stateContextBlockId).toBe('state-block-uuid');
         expect(result.stateContextBlockId).toBeDefined();

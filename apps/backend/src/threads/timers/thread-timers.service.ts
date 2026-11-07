@@ -35,7 +35,8 @@ export class ThreadTimersService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create(input: {
+  /** Returns null when the thread is not in the workspace. */
+  async create(workspaceId: string, input: {
     threadId: string;
     kind: ThreadTimerKind;
     reason: string;
@@ -44,10 +45,11 @@ export class ThreadTimersService {
     maxIterations: number;
     firstFireAt: Date;
     forActorId: string;
-  }): Promise<ThreadTimerResult> {
+  }): Promise<ThreadTimerResult | null> {
     const rows: TimerRow[] = await this.dataSource.query(
-      `INSERT INTO thread_timers (id, thread_id, kind, reason, period_seconds, max_iterations, next_fire_at, created_for_actor_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO thread_timers (id, thread_id, workspace_id, kind, reason, period_seconds, max_iterations, next_fire_at, created_for_actor_id)
+       SELECT $1, t.id, t.workspace_id, $3, $4, $5, $6, $7, $8
+         FROM threads t WHERE t.id = $2 AND t.workspace_id = $9
        RETURNING id, kind, reason, period_seconds, max_iterations, fired_count, next_fire_at, created_at`,
       [
         randomUUID(),
@@ -58,8 +60,12 @@ export class ThreadTimersService {
         input.maxIterations,
         input.firstFireAt,
         input.forActorId,
+        workspaceId,
       ],
     );
+    if (rows.length === 0) {
+      return null;
+    }
     await this.emitThreadUpdated(input.threadId, input.forActorId);
     return toResult(rows[0]);
   }
@@ -68,7 +74,10 @@ export class ThreadTimersService {
    * Cancelling a timer that is gone (finished, cancelled, or never existed) is
    * harmless. Returns false in that case.
    */
-  async cancel(input: { threadId: string; timerId: string; actorId: string }): Promise<boolean> {
+  async cancel(
+    workspaceId: string,
+    input: { threadId: string; timerId: string; actorId: string },
+  ): Promise<boolean> {
     if (!isUuid(input.timerId)) {
       return false;
     }
@@ -78,15 +87,15 @@ export class ThreadTimersService {
     // so a cancel racing a delivery waits instead of deadlocking.
     const removed: unknown[] = await this.dataSource.transaction(async (manager) => {
       await manager.query(
-        `DELETE FROM thread_timer_firings WHERE thread_id = $1 AND timer_id = $2`,
-        [input.threadId, input.timerId],
+        `DELETE FROM thread_timer_firings WHERE workspace_id = $3 AND thread_id = $1 AND timer_id = $2`,
+        [input.threadId, input.timerId, workspaceId],
       );
       return manager.query(
         `WITH removed AS (
-           DELETE FROM thread_timers WHERE thread_id = $1 AND id = $2 RETURNING id
+           DELETE FROM thread_timers WHERE workspace_id = $3 AND thread_id = $1 AND id = $2 RETURNING id
          )
          SELECT id FROM removed`,
-        [input.threadId, input.timerId],
+        [input.threadId, input.timerId, workspaceId],
       );
     });
     if (removed.length === 0) {
@@ -98,13 +107,13 @@ export class ThreadTimersService {
   }
 
   /** Timers that will still fire, soonest first. */
-  async listActive(threadId: string): Promise<ThreadTimerResult[]> {
+  async listActive(workspaceId: string, threadId: string): Promise<ThreadTimerResult[]> {
     const rows: TimerRow[] = await this.dataSource.query(
       `SELECT id, kind, reason, period_seconds, max_iterations, fired_count, next_fire_at, created_at
          FROM thread_timers
-        WHERE thread_id = $1 AND fired_count < max_iterations
+        WHERE workspace_id = $2 AND thread_id = $1 AND fired_count < max_iterations
         ORDER BY next_fire_at ASC, id ASC`,
-      [threadId],
+      [threadId, workspaceId],
     );
     return rows.map(toResult);
   }
@@ -125,6 +134,10 @@ export class ThreadTimersService {
    * After downtime a timer that missed several occurrences fires once. Missed
    * occurrences are skipped, not counted, and the next firing keeps the
    * original cadence: the first occurrence after now.
+   *
+   * Timers of every workspace fire in one sweep. Each firing is queued in its
+   * timer's workspace, and the turn that delivers it runs in its thread's
+   * (which is the same one).
    */
   async fireDue(): Promise<string[]> {
     const rows: Array<{ thread_id: string }> = await this.dataSource.query(
@@ -148,11 +161,11 @@ export class ThreadTimersService {
                 END
            FROM due
           WHERE tt.id = due.id
-          RETURNING tt.id, tt.thread_id, tt.fired_count
+          RETURNING tt.id, tt.thread_id, tt.workspace_id, tt.fired_count
        ),
        queued AS (
-         INSERT INTO thread_timer_firings (id, timer_id, thread_id, iteration)
-         SELECT gen_random_uuid(), fired.id, fired.thread_id, fired.fired_count FROM fired
+         INSERT INTO thread_timer_firings (id, timer_id, thread_id, workspace_id, iteration)
+         SELECT gen_random_uuid(), fired.id, fired.thread_id, fired.workspace_id, fired.fired_count FROM fired
          ON CONFLICT ON CONSTRAINT "UQ_thread_timer_firings_iteration" DO NOTHING
          RETURNING thread_id
        )

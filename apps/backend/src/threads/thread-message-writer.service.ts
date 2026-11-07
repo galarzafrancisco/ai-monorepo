@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { ThreadMessageEntity } from './thread-message.entity';
+import { ThreadEntity } from './thread.entity';
+import { ThreadNotFoundError } from './errors/threads.errors';
 
 export type WriteThreadMessageInput = {
+  /** The thread's workspace. A thread in another one is not written to. */
+  workspaceId: string;
   threadId: string;
   content: string;
   createdByActorId: string;
@@ -29,8 +33,15 @@ export class ThreadMessageWriterService {
     // One transaction: a listed thread is never ordered by a message that
     // does not exist, and a saved message always counts.
     return this.dataSource.transaction(async (manager) => {
+      const threadInWorkspace = await manager.exists(ThreadEntity, {
+        where: { workspaceId: input.workspaceId, id: input.threadId },
+      });
+      if (!threadInWorkspace) {
+        throw new ThreadNotFoundError(input.threadId);
+      }
       const saved = await manager.save(
         manager.create(ThreadMessageEntity, {
+          workspaceId: input.workspaceId,
           threadId: input.threadId,
           content: input.content,
           createdByActorId: input.createdByActorId,
@@ -50,7 +61,7 @@ export class ThreadMessageWriterService {
                   date_trunc('milliseconds', m.created_at)
                 )
            FROM thread_messages m
-          WHERE m.id = $1 AND t.id = m.thread_id`,
+          WHERE m.id = $1 AND t.id = m.thread_id AND t.workspace_id = m.workspace_id`,
         [saved.id],
       );
 

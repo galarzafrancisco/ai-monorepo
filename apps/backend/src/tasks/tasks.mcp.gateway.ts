@@ -100,7 +100,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ threadId }) => {
-        const thread = await this.threadsService.getThreadInWorkspace(
+        const thread = await this.threadsService.getThreadById(
           workspaceId,
           threadId,
         );

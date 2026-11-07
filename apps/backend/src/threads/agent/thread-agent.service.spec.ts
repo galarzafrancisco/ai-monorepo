@@ -157,7 +157,7 @@ function createHarness(steps: unknown[][]) {
   const turns = {
     tryClaim: jest
       .fn()
-      .mockResolvedValue({ id: 'turn-1', threadId: THREAD_ID }),
+      .mockResolvedValue({ id: 'turn-1', threadId: THREAD_ID, workspaceId: 'workspace-1' }),
     startHeartbeat: jest.fn().mockReturnValue(() => undefined),
     finish: jest.fn(
       async (_id: string, status: ThreadTurnStatus, error?: string) => {
@@ -220,7 +220,7 @@ function createHarness(steps: unknown[][]) {
           id: THREAD_ID,
           aiProviderId: null,
           modelId: null,
-          stateContextBlock: { workspaceId: 'workspace-1' },
+          workspaceId: 'workspace-1',
         }),
     } as never,
     messageWriter as never,
@@ -402,7 +402,7 @@ describe('ThreadAgentService', () => {
     h.turns.tryClaim.mockImplementation(async () => {
       if (held) return null;
       held = true;
-      return { id: `turn-${++claimNumber}`, threadId: THREAD_ID };
+      return { id: `turn-${++claimNumber}`, threadId: THREAD_ID, workspaceId: 'workspace-1' };
     });
     h.turns.finish.mockImplementation(async (_id, status, error) => {
       h.finished.push({ status, error });
@@ -550,7 +550,7 @@ describe('ThreadAgentService', () => {
       h.turns.tryClaim.mockImplementation(async () => {
         if (held) return null;
         held = true;
-        return { id: `turn-${++nextId}`, threadId: THREAD_ID };
+        return { id: `turn-${++nextId}`, threadId: THREAD_ID, workspaceId: 'workspace-1' };
       });
       h.turns.finish.mockImplementation(async (_id, status, error) => {
         h.finished.push({ status, error });
@@ -587,7 +587,7 @@ describe('ThreadAgentService', () => {
     h.turns.tryClaim.mockImplementation(async () => {
       if (held) return null;
       held = true;
-      return { id: `turn-${++nextId}`, threadId: THREAD_ID };
+      return { id: `turn-${++nextId}`, threadId: THREAD_ID, workspaceId: 'workspace-1' };
     });
     h.turns.finish.mockImplementation(async (_id, status, error) => {
       h.finished.push({ status, error });

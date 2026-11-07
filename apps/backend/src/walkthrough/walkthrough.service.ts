@@ -95,7 +95,7 @@ export class WalkthroughService {
         workspaceId,
         createdByActorId: actorId,
       }),
-      this.threadsRepository.existsBy({ createdByActorId: actorId }),
+      this.threadsRepository.existsBy({ workspaceId, createdByActorId: actorId }),
       this.tasksRepository
         .createQueryBuilder('task')
         .innerJoin('task.tags', 'tag')
