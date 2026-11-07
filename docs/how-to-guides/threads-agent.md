@@ -65,6 +65,8 @@ A Google Vertex AI provider is created by default. It uses the stored service ac
 
 Those server credentials, and a Google API key in `GOOGLE_API_KEY`, `GEMINI_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`, are the installation's, so only providers in the default workspace fall back to them. A provider in any other workspace must store its own key (Vertex AI: service account JSON, project and location). Without them it is not configured, and Taico never lets an AI SDK read a key from the environment for it. A workspace admin can point a provider at any URL, so a fallback would send the server's key to another company.
 
+The stored Vertex AI credential must be a service account key (`"type": "service_account"` with `client_email` and `private_key`), in every workspace. Taico passes on only its key fields. Other Google credential files (workload identity federation `external_account`, impersonation, authorized users) are refused: they tell Google's library to read credentials from the server's files, URLs or commands, which would hand them to whoever wrote the secret. To run the default workspace on the server's own identity, leave the secret empty and use application default credentials.
+
 ### Claude on Vertex AI
 
 A `google_vertex` provider also serves Anthropic's Claude models. There is no separate provider type:

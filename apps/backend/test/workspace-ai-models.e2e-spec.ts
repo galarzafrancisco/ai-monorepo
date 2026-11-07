@@ -2,7 +2,10 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import { randomBytes } from 'crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, Server } from 'node:http';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { AddressInfo } from 'node:net';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -57,6 +60,8 @@ describe('Workspace AI models and secrets (e2e)', () => {
   const seenKeys: string[] = [];
   /** The x-goog-api-key header of every Google request the fake server received. */
   const seenGoogleKeys: string[] = [];
+  /** Every request the fake server received: method, path and body. */
+  const seenRequests: string[] = [];
 
   let adminA: string;
   let adminB: string;
@@ -119,8 +124,10 @@ describe('Workspace AI models and secrets (e2e)', () => {
 
     // An OpenAI-compatible model that answers with a title naming the key it was called with.
     fake = createServer((req, res) => {
-      req.resume();
+      let body = '';
+      req.on('data', (chunk) => (body += chunk));
       req.on('end', () => {
+        seenRequests.push(`${req.method} ${req.url} ${body}`);
         const googleKey = req.headers['x-goog-api-key'];
         if (typeof googleKey === 'string') {
           // A Google model list, as a collector would answer it.
@@ -492,6 +499,49 @@ describe('Workspace AI models and secrets (e2e)', () => {
           modelId: 'gemini-canary',
         }),
       ).resolves.toMatchObject({ modelId: 'gemini-canary' });
+    });
+
+    it('never lets a stored Vertex credential fetch credentials from the server', async () => {
+      // A file only the server can read, and a credential telling GoogleAuth to
+      // send it to a URL B chose as the subject token of a token exchange.
+      const dir = mkdtempSync(join(tmpdir(), 'taico-canary-'));
+      const canary = `server-only-file-${suffix}`;
+      const file = join(dir, 'token');
+      writeFileSync(file, canary);
+      const origin = new URL(baseUrl).origin;
+      try {
+        for (const token of [adminB, adminA]) {
+          const provider = await createProvider(token, {
+            type: 'google_vertex',
+            project: `b-project-${suffix}`,
+            location: 'global',
+            apiKey: JSON.stringify({
+              type: 'external_account',
+              audience: '//iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/p/providers/p',
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              token_url: `${origin}/token`,
+              credential_source: { file },
+            }),
+          });
+          const workspaceId = token === adminB ? WORKSPACE_B_ID : DEFAULT_WORKSPACE_ID;
+
+          const before = seenRequests.length;
+          const listing = await call(token, 'get', `/ai-providers/${provider.id}/models`).expect(400);
+          expect(listing.body.code).toBe('AI_PROVIDER_NOT_CONFIGURED');
+          await expect(
+            app.get(ChatModelFactory).resolve({
+              workspaceId,
+              job: AiModelJob.CONVERSATION,
+              aiProviderId: provider.id,
+              modelId: 'gemini-canary',
+            }),
+          ).rejects.toMatchObject({ code: 'AI_PROVIDER_NOT_CONFIGURED' });
+          expect(seenRequests.slice(before)).toEqual([]);
+        }
+        expect(seenRequests.filter((r) => r.includes(canary))).toEqual([]);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
 
     it('still lets the default workspace fall back to them', async () => {

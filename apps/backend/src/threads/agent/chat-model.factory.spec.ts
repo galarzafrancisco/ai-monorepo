@@ -86,7 +86,11 @@ describe('ChatModelFactory', () => {
   });
 
   describe('a provider that may not use server credentials', () => {
-    const serviceAccount = JSON.stringify({ client_email: 'sa@example.com', private_key: 'key' });
+    const serviceAccount = JSON.stringify({
+      type: 'service_account',
+      client_email: 'sa@example.com',
+      private_key: 'key',
+    });
 
     it('refuses Vertex AI without its own service account, project and location', async () => {
       for (const overrides of [
@@ -97,6 +101,25 @@ describe('ChatModelFactory', () => {
         const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash', {
           serverCredentials: false,
           ...overrides,
+        });
+        await expect(
+          factory.resolve({ workspaceId: 'workspace-b', job: AiModelJob.CONVERSATION }),
+        ).rejects.toBeInstanceOf(AiProviderNotConfiguredError);
+      }
+    });
+
+    it('refuses a stored Vertex credential that is not a self-contained service account', async () => {
+      const externalAccount = JSON.stringify({
+        type: 'external_account',
+        audience: '//iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/p/providers/p',
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        token_url: 'http://127.0.0.1:1/token',
+        credential_source: { file: '/etc/hostname' },
+      });
+      for (const serverCredentials of [false, true]) {
+        const { factory } = factoryFor(AiProviderType.GOOGLE_VERTEX, 'gemini-3.6-flash', {
+          serverCredentials,
+          apiKey: externalAccount,
         });
         await expect(
           factory.resolve({ workspaceId: 'workspace-b', job: AiModelJob.CONVERSATION }),
