@@ -41,13 +41,18 @@ export function ConsentPage() {
   }, [isLoading, error, consentMetadata]);
 
 
+  // A workspace switch reloads this page; until it does, no decision may be
+  // sent, since it would still carry the workspace being left.
+  const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
+  const decisionLocked = isApproving || isSwitchingWorkspace;
+
   const handleApprove = () => {
-    if (!consentMetadata) return;
+    if (!consentMetadata || decisionLocked) return;
     submitConsent(flowId, server.providedId, true, consentMetadata.workspace.id);
   };
 
   const handleDeny = () => {
-    if (!consentMetadata) return;
+    if (!consentMetadata || decisionLocked) return;
     submitConsent(flowId, server.providedId, false, consentMetadata.workspace.id);
   };
 
@@ -95,7 +100,13 @@ export function ConsentPage() {
           : null}
 
         <div className="consent-details">
-          <ConsentWorkspaceCard workspace={workspace} followsSession={workspaceFollowsSession} />
+          <ConsentWorkspaceCard
+            workspace={workspace}
+            followsSession={workspaceFollowsSession}
+            isSwitching={isSwitchingWorkspace}
+            setIsSwitching={setIsSwitchingWorkspace}
+            isSubmitting={isApproving}
+          />
 
           <Card className="detail-section">
             <h2>WHO is requesting access</h2>
@@ -184,8 +195,8 @@ export function ConsentPage() {
 
 
       <div className="consent-actions">
-        <Button variant="danger" onClick={handleDeny} disabled={isApproving}>Deny</Button>
-        <Button variant="primary" onClick={handleApprove} disabled={isApproving}>{isApproving ? 'Approving...' : 'Approve'}</Button>
+        <Button variant="danger" onClick={handleDeny} disabled={decisionLocked}>Deny</Button>
+        <Button variant="primary" onClick={handleApprove} disabled={decisionLocked}>{isApproving ? 'Approving...' : 'Approve'}</Button>
       </div>
 
       <div className="consent-footer">

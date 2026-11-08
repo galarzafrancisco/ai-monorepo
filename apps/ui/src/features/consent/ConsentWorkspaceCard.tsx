@@ -13,26 +13,36 @@ type ConsentWorkspace = { id: string; slug: string; name: string };
  * one here: picking switches the session and reloads this same consent page,
  * which then shows (and approves in) the new workspace. Any other server only
  * works in its own workspace, so there is nothing to pick.
+ *
+ * The page owns `isSwitching` so it can hold Approve/Deny while a switch is
+ * on its way: approving then would grant the workspace being left. Likewise
+ * `isSubmitting` holds the picker once a decision has been sent.
  */
 export function ConsentWorkspaceCard({
   workspace,
   followsSession,
+  isSwitching,
+  setIsSwitching,
+  isSubmitting,
 }: {
   workspace: ConsentWorkspace;
   followsSession: boolean;
+  isSwitching: boolean;
+  setIsSwitching: (isSwitching: boolean) => void;
+  isSubmitting: boolean;
 }) {
   const { workspaces } = useWorkspacesCtx();
-  const [isSwitching, setIsSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
 
   const canPick = followsSession && workspaces.length > 1;
 
   const onPick = async (workspaceId: string) => {
-    if (workspaceId === workspace.id) return;
+    if (workspaceId === workspace.id || isSwitching || isSubmitting) return;
     setIsSwitching(true);
     setSwitchError(null);
     try {
-      // Same page, same flow: only the session's workspace changes.
+      // Same page, same flow: only the session's workspace changes. On
+      // success the page reloads, so isSwitching stays true until then.
       await switchWorkspaceAndReload(workspaceId, window.location.pathname + window.location.search);
     } catch (error) {
       console.error('Failed to switch workspace:', error);
@@ -50,7 +60,7 @@ export function ConsentWorkspaceCard({
           <select
             className="consent-workspace__select"
             value={workspace.id}
-            disabled={isSwitching}
+            disabled={isSwitching || isSubmitting}
             onChange={(event) => void onPick(event.target.value)}
           >
             {workspaces.map((option) => (
