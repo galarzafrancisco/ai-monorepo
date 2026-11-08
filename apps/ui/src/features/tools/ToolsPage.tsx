@@ -7,12 +7,15 @@ import { Tool } from "./types";
 import { RelativeTime } from "../../shared/components/RelativeTime";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { NewToolPop } from "./NewToolPop";
+import { useWorkspacesCtx } from "../workspaces";
 import "./ToolsPage.css";
 
 export function ToolsPage() {
   const { tools, setSectionTitle, isLoading, error, createTool } = useToolsCtx();
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
+  // Adding tools changes the workspace's MCP registry: admins only.
+  const { isWorkspaceAdmin } = useWorkspacesCtx();
   const [showNewToolPop, setShowNewToolPop] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -91,6 +94,7 @@ export function ToolsPage() {
         )}
       </DataRowContainer>
 
+{isWorkspaceAdmin ? (
       <button
         className={`tools-fab ${isDesktop ? 'tools-fab--desktop' : ''}`}
         type="button"
@@ -106,6 +110,7 @@ export function ToolsPage() {
           '+'
         )}
       </button>
+      ) : null}
 
       {showNewToolPop ? (
         <NewToolPop onCancel={handleNewToolCancel} onSave={handleNewToolSave} error={formError} />

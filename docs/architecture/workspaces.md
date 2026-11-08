@@ -174,7 +174,7 @@ Migration `WorkspaceScopeIntegrationsMcpSearch1764000000000` adds `workspace_id`
 - Every projection outputs its item's workspace. Keyword, fuzzy and semantic search all filter on `workspace_id` before the limit. The embedder works per workspace, with that workspace's embeddings model, and a query is embedded with the caller's.
 - Search settings stay installation-wide. Since phase 4, only the installation operator writes them and rebuilds the index (`installation` mode, `installation:admin` as well as `search:configure`), from any workspace. Reading the settings and the index status is `scoped`, and the status is per workspace.
 
-**Not changed (still open after phase 4):** GitHub and MCP registry writes need only the module scopes, which every web session has, not workspace admin.
+**Admin only since [Entitlements](#entitlements):** GitHub and MCP registry writes need `integration:write`/`delete` and `mcp-registry:write`, which only workspace admins hold.
 
 ### Entry points: the two rules
 
@@ -257,11 +257,39 @@ Migration `WorkspaceScopeAiModelsSecrets1763900000000` adds `workspace_id` to `a
 - **Seeding.** At startup the default OpenAI and Google Vertex AI providers are created in the default workspace only. A new workspace gets the same two, with no credentials (see [Creating a workspace](#creating-a-workspace)).
 - **Not changed:** no composite foreign keys (as in 3b). Same-workspace references are enforced by the services. Nothing in these modules is realtime.
 
+## Entitlements
+
+**`EntitlementsService`** (`apps/backend/src/entitlements/`) is the one place that decides what an actor may do in a workspace. Every path that mints a token asks it, and asks again on refresh, so a removed or demoted member loses access at their next token. `WorkspacesService` only stores memberships; it decides nothing.
+
+### Which scopes a role holds
+
+`entitlements.scopes.ts` defines them:
+
+| Who | Holds |
+|---|---|
+| Member | Every API scope except the ones below, plus `user:standard` |
+| Workspace admin | A member's scopes, with `user:admin` in place of `user:standard`, plus the workspace-settings writes: `mcp-registry:write`, `integration:write`, `integration:delete`, `secret:write`, `secret:delete`, `ai_provider:write`, `ai_provider:delete`, `ai_provider:configure` (`WORKSPACE_ADMIN_SCOPES`) |
+| Installation operator | `installation:admin` and `search:configure` (`INSTALLATION_SCOPES`), in web sessions only, on top of their workspace role |
+| Nobody's session | `workers:connect` and `run:impersonate` (`CLIENT_ONLY_SCOPES`): they belong to one kind of client |
+
+### Per token kind
+
+| Token | Workspace | Scopes | Once the person leaves the workspace |
+|---|---|---|---|
+| Web session (login, refresh, switch) | `sessionEntitlement`: the one asked for while still a member, else the oldest | `webSessionScopes`: by role, plus installation scopes for operators | Refresh lands in another of their workspaces; none left means no session |
+| MCP OAuth and workers | `mcpTokenEntitlement`: Taico's own servers use the consent workspace (legacy journeys: oldest membership); a registry server uses its own | `mcpTokenScopes`: what was authorized, less admin scopes for a member and installation scopes for anyone. A server's own client scopes (`workers:connect`) and a registry server's own scopes stay | Code exchange and refresh are refused (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403). A worker never moves |
+| Agent and execution tokens, the threads agent's token | The caller's | `assertCanIssue`: no Taico scope that the subject or the issuer does not hold. Agents are always members, so an agent token never carries admin or installation scopes. A registry server's own scopes are left to the agent's tool permissions | Refused at issue (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403) |
+| Token exchange | The MCP token's | Downstream scopes from the connection's mappings | Refused (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403) |
+
+A request for scopes that aren't held is refused rather than trimmed (`TOKEN_SCOPE_NOT_ENTITLED`, 403, listing them), so the caller sees what it didn't get.
+
+The tests are in `test/entitlements.e2e-spec.ts` and `src/entitlements/entitlements.service.spec.ts`.
+
 ## Admin roles
 
 Two roles, and they are independent:
 
-- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope comes from the membership role in the token's workspace (`WebAuthService.generateWebAccessToken`). A person can be admin in one workspace and member in another.
+- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope and the workspace-settings write scopes come from the membership role in the token's workspace (see [Entitlements](#entitlements)). A person can be admin in one workspace and member in another.
 - **Installation operator**: whoever runs the installation, i.e. people with `users.role = 'admin'`. Their web sessions also carry `installation:admin` (`auth/core/scopes/installation.scopes.ts`, a sensitive web scope that no session gets just for signing in). It creates workspaces, manages logins (`/auth/users`, which checks `users.role`), reviews access requests, and writes search settings. These routes are `installation` mode, so an operator uses them from any workspace.
 
 Since phase 4, `users.role` never changes a workspace role (`updateUserRole` only sets the installation role). The first person (onboarding) is both: operator and admin of the default workspace. A person created from `/auth/users` joins the operator's current workspace, as its admin if they are made an operator too, a member otherwise.
@@ -327,7 +355,6 @@ The tests are in `test/workspace-membership.e2e-spec.ts`:
 **Still open after phase 4:**
 - Removal does not revoke tokens already minted or disconnect sockets.
 - The legacy fallback for tokens with no `workspace_id` claim remains (see the [launch checklist](https://taico.app/context/block/64d3ec50-6657-4cc3-98ca-25f5a4303c1f)).
-- GitHub and MCP registry writes still need only module scopes, not workspace admin.
 
 ## The UI (phase 5)
 

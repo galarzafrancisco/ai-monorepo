@@ -14,7 +14,8 @@ import { ActiveTaskExecutionEntity } from '../src/executions/active/active-task-
 import { TaskStatus } from '../src/tasks/enums';
 import { AccessTokenValidationService } from '../src/auth/guards/validation/access-token-validation.service';
 import { WorkersScopes } from '../src/executions/workers.scopes';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 import { FakeGithub, patUsers } from './helpers/fake-github';
 
 describe('Worker GitHub credentials E2E', () => {
@@ -52,6 +53,8 @@ describe('Worker GitHub credentials E2E', () => {
     http = app.getHttpServer();
     ds = app.get(DataSource);
     await ensureTestUser(app);
+    // Settings writes (MCP registry, integrations) are a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     cookies = await getAuthCookies(http);
     // Connections left by other suites hold secrets encrypted with their own key
     // (each suite gets its own SECRETS_ENCRYPTION_KEY) and would match these owners first.
@@ -85,6 +88,7 @@ describe('Worker GitHub credentials E2E', () => {
 
   afterAll(async () => {
     tokenSpy?.mockRestore();
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
     await github.stop();
     delete process.env.GITHUB_API_URL;

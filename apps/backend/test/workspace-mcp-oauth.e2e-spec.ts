@@ -29,7 +29,7 @@ import {
 import { ConnectionAuthorizationFlowStatus } from '../src/auth-journeys/enums/connection-authorization-flow-status.enum';
 import { TokenEndpointAuthMethod } from '../src/authorization-server/enums/token-endpoint-auth-method.enum';
 import { GrantType } from '../src/authorization-server/enums/grant-type.enum';
-import { ensureTestUser, TEST_USER_SLUG } from './helpers/auth.helper';
+import { ensureAgentActor, ensureTestUser, TEST_USER_SLUG } from './helpers/auth.helper';
 
 const WORKSPACE_B_ID = '44444444-4444-4444-8444-444444444444';
 const VERSION = '0.0.0';
@@ -280,8 +280,9 @@ describe('Workspace isolation: MCP OAuth token exchange and journeys (e2e)', () 
       expect(JSON.stringify(res.body)).not.toContain(A_DOWNSTREAM_TOKEN);
     });
 
-    it("never gives another person the journey's downstream token", async () => {
-      const otherActor = '55555555-5555-4555-8555-555555555555';
+    it("never gives another member the journey's downstream token", async () => {
+      // A member of the same workspace, so the journey check is what refuses.
+      const otherActor = await ensureAgentActor(app, `other-member-${suffix}`, 'Other member');
       const res = await exchange(
         await tasksToken(DEFAULT_WORKSPACE_ID, {
           sub: otherActor,
@@ -289,6 +290,19 @@ describe('Workspace isolation: MCP OAuth token exchange and journeys (e2e)', () 
         }),
         connectionA.id,
       ).expect(401);
+      expect(JSON.stringify(res.body)).not.toContain(A_DOWNSTREAM_TOKEN);
+    });
+
+    it('refuses a token whose person is no longer in the workspace', async () => {
+      const notAMember = '55555555-5555-4555-8555-555555555555';
+      const res = await exchange(
+        await tasksToken(DEFAULT_WORKSPACE_ID, {
+          sub: notAMember,
+          actor_id: notAMember,
+        }),
+        connectionA.id,
+      ).expect(403);
+      expect(res.body.code).toBe('TOKEN_ACTOR_NOT_IN_WORKSPACE');
       expect(JSON.stringify(res.body)).not.toContain(A_DOWNSTREAM_TOKEN);
     });
   });

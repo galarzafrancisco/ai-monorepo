@@ -77,6 +77,8 @@ describe('Entitlements (e2e)', () => {
       slug: agentSlug,
       name: 'Entitlements agent',
       systemPrompt: 'Test agent for entitlements coverage.',
+      statusTriggers: [],
+      allowedTools: [],
     });
   });
 

@@ -10,7 +10,9 @@ import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import {
   ensureTestUser,
   getAuthCookies,
+  setTestUserRole,
 } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 describe('Agent Tool Permissions (e2e)', () => {
   let app: INestApplication<App>;
@@ -47,10 +49,13 @@ describe('Agent Tool Permissions (e2e)', () => {
     agentsService = app.get(AgentsService);
 
     await ensureTestUser(app);
+    // These tests set up MCP servers, which is a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     authCookies = await getAuthCookies(httpServer);
   });
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
   });
 

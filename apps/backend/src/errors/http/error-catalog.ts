@@ -419,6 +419,12 @@ export const ErrorCatalog: Record<
     type: '/errors/workspaces/token-actor-not-member',
     retryable: false,
   },
+  [ErrorCodes.TOKEN_SCOPE_NOT_ENTITLED]: {
+    status: 403,
+    title: 'Token scope not entitled',
+    type: '/errors/workspaces/token-scope-not-entitled',
+    retryable: false,
+  },
   [ErrorCodes.NO_WORKSPACE_MEMBERSHIP]: {
     status: 403,
     title: 'Not a member of any workspace',

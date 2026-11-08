@@ -7,8 +7,7 @@ import { TokenSignerService } from '../auth/crypto/token-signer.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { getConfig } from '../config/env.config';
-import { WorkspacesService } from '../workspaces/workspaces.service';
-import { TokenActorNotInWorkspaceError } from './errors/token.errors';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 
 /**
  * Input for issuing a new access token
@@ -121,7 +120,7 @@ export class IssuedAccessTokenService {
     @InjectRepository(IssuedAccessTokenEntity)
     private readonly tokenRepository: Repository<IssuedAccessTokenEntity>,
     private readonly tokenSignerService: TokenSignerService,
-    private readonly workspacesService: WorkspacesService,
+    private readonly entitlementsService: EntitlementsService,
   ) {}
 
   /**
@@ -231,14 +230,16 @@ export class IssuedAccessTokenService {
     const expSeconds = nowSeconds + safeLifetimeSeconds;
     const expiresAt = new Date(expSeconds * 1000);
 
-    // Every token Taico mints for itself is bound to one workspace, and only
-    // members act in it: an agent of workspace A never holds a token for B,
-    // and nobody outside a workspace can hand one out.
-    for (const actor of [input.subjectActor, input.issuedByActor]) {
-      if (!(await this.workspacesService.isMember(input.workspaceId, actor.id))) {
-        throw new TokenActorNotInWorkspaceError(actor.id, input.workspaceId);
-      }
-    }
+    // Every token Taico hands out is bound to one workspace, both actors
+    // must be its members, and it carries no Taico scope that either of them
+    // is not entitled to there: a member cannot mint `user:admin`, nobody
+    // can mint `installation:admin`, and an agent never holds admin scopes.
+    await this.entitlementsService.assertCanIssue({
+      workspaceId: input.workspaceId,
+      subjectActorId: input.subjectActor.id,
+      issuerActorId: input.issuedByActor.id,
+      scopes: input.scopes,
+    });
 
     const claims: AccessTokenClaims = {
       iss: config.issuerUrl,
