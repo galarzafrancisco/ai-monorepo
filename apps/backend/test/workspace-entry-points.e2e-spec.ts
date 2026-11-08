@@ -42,6 +42,9 @@ import { AgentsService } from '../src/agents/agents.service';
 import { RegisteredClientEntity } from '../src/authorization-server/entities/registered-client.entity';
 import { TokenEndpointAuthMethod } from '../src/authorization-server/enums';
 import { ensureTestUser, TEST_USER_SLUG } from './helpers/auth.helper';
+import { FakeGithub } from './helpers/fake-github';
+import { PullRequestEntity } from '../src/pull-requests/pull-request.entity';
+import { IssueEntity } from '../src/issues/issue.entity';
 
 const WORKSPACE_B_ID = '44444444-4444-4444-8444-444444444444';
 const WORKER_A = 'entry-points-worker-a';
@@ -95,6 +98,8 @@ describe('Workspace entry points (e2e)', () => {
   const agentSlugA = `entry-points-${randomBytes(4).toString('hex')}`;
   let tokenA: string;
   let tokenB: string;
+  /** GitHub for every connection the sweep touches: it knows no token, so nothing is ever verified. */
+  const github = new FakeGithub();
 
   const hex = randomBytes(4).toString('hex');
   /** Every text of A's rows contains this; nothing B receives may. */
@@ -209,6 +214,9 @@ describe('Workspace entry points (e2e)', () => {
       if (segment.endsWith('/executions/history')) return ids.history;
       if (segment.endsWith('/ai-providers')) return ids.aiProvider;
       if (segment.endsWith('/secrets')) return ids.secret;
+      if (segment.endsWith('/integrations/github/connections')) return ids.githubConnection;
+      if (segment.endsWith('/pull-requests')) return ids.pullRequest;
+      if (segment.endsWith('/issues')) return ids.issue;
       return ids.task;
     }
     if (n === 'slug' && path.startsWith('/agents')) return agentSlugA;
@@ -216,6 +224,15 @@ describe('Workspace entry points (e2e)', () => {
     if (n === 'job') return 'conversation';
     if (n === 'aiproviderid') return ids.aiProvider;
     if (n === 'secretid') return ids.secret;
+    if (n === 'serverid') return ids.mcpServer;
+    if (n === 'connectionid') return path.startsWith('/mcp') ? ids.mcpConnection : ids.githubConnection;
+    if (n === 'githubconnectionid') return ids.githubConnection;
+    if (n === 'mappingid') return ids.mcpMapping;
+    // An MCP scope id is free text, unique per server. It holds no canary:
+    // a 404 may echo the id the caller sent.
+    if (n === 'scopeid') return `scope-${hex}`;
+    // A server's providedId is a name the caller picks, not an A id.
+    if (n === 'providedid') return `probe-${hex}`;
     // Free text that only looks like an id (an agent's model choice).
     if (n === 'providerid' || n === 'modelid') return `probe-${hex}`;
     if (n.includes('execution')) return ids.execution;
@@ -254,7 +271,8 @@ describe('Workspace entry points (e2e)', () => {
       const out: Record<string, unknown> = {};
       for (const [key, prop] of Object.entries<any>(s.properties ?? {})) {
         const required = (s.required ?? []).includes(key);
-        if (required || /ids?$/i.test(key) || /names$/i.test(key)) {
+        // `url` is required only for HTTP MCP servers, which the schema cannot say.
+        if (required || /ids?$/i.test(key) || /names$/i.test(key) || key === 'url') {
           out[key] = sample(prop, key, path, depth + 1);
         }
       }
@@ -354,6 +372,8 @@ describe('Workspace entry points (e2e)', () => {
     // A's AI provider keeps its API key as a secret, which needs encrypted storage.
     process.env.SECRETS_ENABLED = 'true';
     process.env.SECRETS_ENCRYPTION_KEY ??= randomBytes(32).toString('hex');
+    await github.start();
+    process.env.GITHUB_API_URL = github.url;
     const mod: TestingModule = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = mod.createNestApplication();
     app.use(cookieParser());
@@ -451,6 +471,75 @@ describe('Workspace entry points (e2e)', () => {
       aiProviderId: ids.aiProvider,
       modelId: `model-${CANARY}`,
     });
+    // A's GitHub data: a connection (its token is a secret of A), a cached
+    // pull request and issue, and where they were linked.
+    const githubSecret = await created('POST', '/secrets', {
+      name: `GitHub token ${CANARY}`,
+      value: `ghp_${CANARY}`,
+    });
+    ids.githubConnection = (
+      await db.query(
+        `INSERT INTO github_connections (workspace_id, name, auth_type, secret_id, owners, account_login, row_version)
+         VALUES ($1, $2, 'pat', $3, $4, $5, 1) RETURNING id`,
+        [DEFAULT_WORKSPACE_ID, `Connection ${CANARY}`, githubSecret.id, [CANARY], `login-${CANARY}`],
+      )
+    )[0].id;
+    ids.pullRequest = (
+      await db.getRepository(PullRequestEntity).save({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        key: `${CANARY}/repo#1`,
+        owner: CANARY,
+        repo: 'repo',
+        number: 1,
+        title: `Pull request ${CANARY}`,
+        lastFetchedAt: new Date(),
+      })
+    ).id;
+    ids.issue = (
+      await db.getRepository(IssueEntity).save({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        key: `${CANARY}/repo#2`,
+        owner: CANARY,
+        repo: 'repo',
+        number: 2,
+        title: `Issue ${CANARY}`,
+        lastFetchedAt: new Date(),
+      })
+    ).id;
+    await db.query(
+      `INSERT INTO pull_request_references (workspace_id, pull_request_id, source_type, source_id, task_id)
+       VALUES ($1, $2, 'task_artefact', $3, $3)`,
+      [DEFAULT_WORKSPACE_ID, ids.pullRequest, task.id],
+    );
+    // A's MCP registry: a server, a scope, a downstream connection and a mapping.
+    ids.mcpServer = (
+      await created('POST', '/mcp/servers', {
+        providedId: `server-${CANARY}`,
+        name: `Server ${CANARY}`,
+        description: `Server ${CANARY}`,
+        type: 'http',
+        url: `https://example.com/${CANARY}/mcp`,
+      })
+    ).id;
+    await created('POST', `/mcp/servers/${ids.mcpServer}/scopes`, [
+      { id: `scope-${hex}`, description: `Scope ${CANARY}` },
+    ]);
+    ids.mcpConnection = (
+      await created('POST', `/mcp/servers/${ids.mcpServer}/connections`, {
+        friendlyName: `Connection ${CANARY}`,
+        clientId: `client-${CANARY}`,
+        clientSecret: `secret-${CANARY}`,
+        authorizeUrl: `https://example.com/${CANARY}/authorize`,
+        tokenUrl: `https://example.com/${CANARY}/token`,
+      })
+    ).id;
+    ids.mcpMapping = (
+      await created('POST', `/mcp/servers/${ids.mcpServer}/mappings`, {
+        scopeId: `scope-${hex}`,
+        connectionId: ids.mcpConnection,
+        downstreamScope: `downstream-${CANARY}`,
+      })
+    ).id;
     const execution = await db.getRepository(ActiveTaskExecutionEntity).save({
       workspaceId: DEFAULT_WORKSPACE_ID,
       taskId: task.id,
@@ -483,6 +572,8 @@ describe('Workspace entry points (e2e)', () => {
     // Later suites in the same database start with no conversation model.
     if (tokenA) await call(tokenA, 'DELETE', '/ai-model-selections/conversation');
     await app?.close();
+    await github.stop();
+    delete process.env.GITHUB_API_URL;
   });
 
   describe('every entry point declares how it keeps workspaces apart', () => {

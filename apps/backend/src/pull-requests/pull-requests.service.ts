@@ -116,6 +116,19 @@ export class PullRequestsService {
     return this.fetchAndStore(await this.getById(workspaceId, id));
   }
 
+  /** The workspace's pull requests linked from tasks (their links, descriptions and comments), oldest link first. */
+  async listForTasks(workspaceId: string, taskIds: string[]): Promise<PullRequestEntity[]> {
+    if (taskIds.length === 0) return [];
+    const ids: Array<{ pull_request_id: string }> = await this.dataSource.query(
+      `SELECT pull_request_id FROM pull_request_references
+        WHERE workspace_id = $2 AND task_id = ANY($1::uuid[])
+        GROUP BY pull_request_id
+        ORDER BY min(created_at) ASC`,
+      [taskIds, workspaceId],
+    );
+    return this.inOrder(workspaceId, ids.map((row) => row.pull_request_id));
+  }
+
   /**
    * Pull requests attached as links (artefacts) to these tasks, oldest link
    * first. Mentions in descriptions and comments are left out.

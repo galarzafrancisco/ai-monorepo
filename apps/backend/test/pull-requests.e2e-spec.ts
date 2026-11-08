@@ -13,6 +13,7 @@ import { PullRequestsService } from '../src/pull-requests/pull-requests.service'
 import { PullRequestUpdatedEvent } from '../src/pull-requests/events/pull-requests.events';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import { FakeGithub, FakePull, patUsers, pullRequestRoutes } from './helpers/fake-github';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 
 async function eventually<T>(check: () => Promise<T>, timeoutMs = 10_000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -135,7 +136,7 @@ describe('Pull requests E2E', () => {
     // Nothing changed: all four requests come back 304 and nothing is emitted.
     github.requests.length = 0;
     events.length = 0;
-    await app.get(PullRequestsService).refresh(first.id);
+    await app.get(PullRequestsService).refresh(DEFAULT_WORKSPACE_ID, first.id);
     const repoRequests = github.requests.filter((r) => r.path.startsWith('/repos'));
     expect(repoRequests).toHaveLength(4);
     expect(repoRequests.every((r) => r.ifNoneMatch)).toBe(true);
@@ -153,12 +154,12 @@ describe('Pull requests E2E', () => {
     pull.sha = 'sha2';
     pull.checkRuns = [{ name: 'build', status: 'queued', conclusion: null }];
     pull.statuses = [];
-    await app.get(PullRequestsService).refresh(first.id);
+    await app.get(PullRequestsService).refresh(DEFAULT_WORKSPACE_ID, first.id);
     expect(events.at(-1)!.changes).toEqual(['new_commits', 'checks_started']);
 
     pull.state = 'closed';
     pull.merged = true;
-    const merged = await app.get(PullRequestsService).refresh(first.id);
+    const merged = await app.get(PullRequestsService).refresh(DEFAULT_WORKSPACE_ID, first.id);
     expect(events.at(-1)!.changes).toEqual(['merged']);
     // Finished: never polled again on its own.
     expect(merged.nextFetchAt).toBeNull();
@@ -175,7 +176,7 @@ describe('Pull requests E2E', () => {
 
     // Links are recorded by event listeners, just after the writes return.
     await eventually(async () => {
-      const listed = await app.get(PullRequestsService).listForTasks([task.id]);
+      const listed = await app.get(PullRequestsService).listForTasks(DEFAULT_WORKSPACE_ID, [task.id]);
       expect(listed.map((pr) => pr.key)).toEqual(['acme/api#7', 'acme/api#8']);
     });
 
@@ -224,7 +225,7 @@ describe('Pull requests E2E', () => {
         .expect(201)
     ).body;
     await eventually(async () => {
-      const listed = await app.get(PullRequestsService).listForTasks([task.id]);
+      const listed = await app.get(PullRequestsService).listForTasks(DEFAULT_WORKSPACE_ID, [task.id]);
       expect(listed.map((pr) => pr.key)).toEqual([`${host}/acme/api#7`]);
     });
 
@@ -327,7 +328,7 @@ describe('Pull requests E2E', () => {
     /** Minutes until the next look, after a look by someone who has it on screen. */
     const minutesToNextLook = async (ref: string): Promise<number> => {
       const [pr] = (await api('post', '/pull-requests/lookup').send({ refs: [ref] }).expect(200)).body;
-      await app.get(PullRequestsService).refresh(pr.id);
+      await app.get(PullRequestsService).refresh(DEFAULT_WORKSPACE_ID, pr.id);
       const [{ next_fetch_at }] = await ds.query(`SELECT next_fetch_at FROM pull_requests WHERE id = $1`, [pr.id]);
       return Math.round((new Date(next_fetch_at).getTime() - Date.now()) / 60_000);
     };

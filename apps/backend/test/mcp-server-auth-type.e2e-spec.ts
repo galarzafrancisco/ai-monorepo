@@ -8,6 +8,7 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { AppInitRunner } from '../src/app-init/app-init.runner';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { McpServerAuthType1763200000000 } from '../src/migrations/1763200000000-McpServerAuthType';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
@@ -151,8 +152,8 @@ describe('MCP server auth type (e2e)', () => {
         await migration.down(queryRunner);
         // A server registered before auth types existed.
         await queryRunner.query(
-          `INSERT INTO "mcp_servers" ("providedId", "name", "description", "type", "url") VALUES ($1, $1, 'legacy', 'http', 'http://localhost:3000/legacy/mcp')`,
-          [providedId],
+          `INSERT INTO "mcp_servers" ("workspace_id", "providedId", "name", "description", "type", "url") VALUES ($2, $1, $1, 'legacy', 'http', 'http://localhost:3000/legacy/mcp')`,
+          [providedId, DEFAULT_WORKSPACE_ID],
         );
         await migration.up(queryRunner);
 
