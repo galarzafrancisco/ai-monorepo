@@ -19,6 +19,7 @@ import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type'
 import { TokenVerifierService } from 'src/auth/crypto/token-verifier.service';
 import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
+import { workspaceIdFromClaims } from 'src/auth/guards/context/auth-context.factory';
 
 interface DownstreamTokenInfo {
   accessToken: string;
@@ -70,8 +71,17 @@ export class TokenExchangeService {
     // Step 3: Extract MCP scopes from JWT
     const mcpScopes = mcpTokenPayload.scope;
 
+    // The token works in one workspace. Every row it reaches (connection,
+    // mappings, authorized flow) must be that workspace's: a baseline server
+    // (tasks, context) is shared, but its connections are not.
+    const workspaceId = workspaceIdFromClaims(mcpTokenPayload);
+
     // Step 4: Lookup connection by resource (providedId or UUID)
-    const connection = await this.findConnection(request.resource, serverId);
+    const connection = await this.findConnection(
+      workspaceId,
+      request.resource,
+      serverId,
+    );
     if (!connection) {
       this.logger.warn(`Connection not found: ${request.resource}`);
       throw new NotFoundException('Connection not found');
@@ -79,6 +89,7 @@ export class TokenExchangeService {
 
     // Step 5: Resolve downstream scope entitlements
     const entitledDownstreamScopes = await this.resolveDownstreamScopes(
+      workspaceId,
       mcpScopes,
       connection.id,
     );
@@ -92,8 +103,7 @@ export class TokenExchangeService {
     // Step 7: Get or refresh downstream token
     const downstreamToken = await this.getDownstreamToken(
       connection,
-      mcpTokenPayload.client_id,
-      requestedScopes,
+      mcpTokenPayload,
     );
 
     // Step 8: Return RFC 8693 response
@@ -133,23 +143,25 @@ export class TokenExchangeService {
   }
 
   /**
-   * Find connection by providedId or UUID
+   * Find one of the workspace's connections by providedId or UUID. Another
+   * workspace's connection is "not found", even by its UUID.
    */
   private async findConnection(
+    workspaceId: string,
     resource: string,
     serverId: string,
   ): Promise<McpConnectionEntity | null> {
     // Try UUID first (faster, indexed)
     if (this.isUuid(resource)) {
       const conn = await this.mcpConnectionRepository.findOne({
-        where: { id: resource, serverId: serverId },
+        where: { workspaceId, id: resource, serverId },
       });
       if (conn) return conn;
     }
 
     // Try providedId
     return await this.mcpConnectionRepository.findOne({
-      where: { providedId: resource, serverId: serverId },
+      where: { workspaceId, providedId: resource, serverId },
     });
   }
 
@@ -166,12 +178,14 @@ export class TokenExchangeService {
    * Resolve downstream scopes based on MCP scopes and connection mappings
    */
   private async resolveDownstreamScopes(
+    workspaceId: string,
     mcpScopes: string[],
     connectionId: string,
   ): Promise<string[]> {
     // Query: Get all scope mappings for this connection
     const mappings = await this.mcpScopeMappingRepository.find({
       where: {
+        workspaceId,
         connectionId: connectionId,
         scopeId: In(mcpScopes), // Only mappings for granted MCP scopes
       },
@@ -208,20 +222,28 @@ export class TokenExchangeService {
   }
 
   /**
-   * Get downstream token, refreshing if necessary
+   * Get downstream token, refreshing if necessary. Only the token's own
+   * journey counts: the flow the same person authorized for the same client,
+   * never another person's or another client's flow on the same connection.
    */
   private async getDownstreamToken(
     connection: McpConnectionEntity,
-    clientId: string,
-    requestedScopes: string[],
+    claims: AccessTokenClaims,
   ): Promise<DownstreamTokenInfo> {
-    // Find the authorization flow for this connection + client
     const authFlow = await this.connectionAuthorizationFlowRepository.findOne({
       where: {
         mcpConnectionId: connection.id,
         status: ConnectionAuthorizationFlowStatus.AUTHORIZED,
+        authJourney: {
+          actorId: claims.sub,
+          mcpAuthorizationFlow: {
+            serverId: connection.serverId,
+            client: { clientId: claims.client_id },
+          },
+        },
       },
       relations: ['authJourney', 'authJourney.mcpAuthorizationFlow'],
+      order: { updatedAt: 'DESC' },
     });
 
     if (!authFlow || !authFlow.accessToken) {

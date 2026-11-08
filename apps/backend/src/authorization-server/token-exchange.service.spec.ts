@@ -156,6 +156,7 @@ describe('TokenExchangeService', () => {
         service,
       );
       const result = await resolveMethod(
+        'workspace-uuid',
         ['tasks:read', 'tasks:write'],
         'connection-uuid',
       );
@@ -190,6 +191,7 @@ describe('TokenExchangeService', () => {
         service,
       );
       const result = await resolveMethod(
+        'workspace-uuid',
         ['tasks:read', 'tasks:write'],
         'connection-uuid',
       );
@@ -242,11 +244,15 @@ describe('TokenExchangeService', () => {
       mcpConnectionRepository.findOne.mockResolvedValue(mockConnection);
 
       const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('connection-uuid', 'server-uuid');
+      const result = await findMethod('workspace-uuid', 'connection-uuid', 'server-uuid');
 
       expect(result).toEqual(mockConnection);
       expect(mcpConnectionRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'connection-uuid', serverId: 'server-uuid' },
+        where: {
+          workspaceId: 'workspace-uuid',
+          id: 'connection-uuid',
+          serverId: 'server-uuid',
+        },
       });
     });
 
@@ -256,7 +262,7 @@ describe('TokenExchangeService', () => {
         .mockResolvedValueOnce(mockConnection); // Second call with providedId succeeds
 
       const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('test-connection', 'server-uuid');
+      const result = await findMethod('workspace-uuid', 'test-connection', 'server-uuid');
 
       expect(result).toEqual(mockConnection);
       expect(mcpConnectionRepository.findOne).toHaveBeenCalledTimes(2);
@@ -266,7 +272,7 @@ describe('TokenExchangeService', () => {
       mcpConnectionRepository.findOne.mockResolvedValue(null);
 
       const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('non-existent', 'server-uuid');
+      const result = await findMethod('workspace-uuid', 'non-existent', 'server-uuid');
 
       expect(result).toBeNull();
     });

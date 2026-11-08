@@ -27,6 +27,7 @@ import {
   McpAuthorizationFlowResult,
 } from './dto/service/auth-journeys.service.types';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Authorization Journeys')
 @ApiCookieAuth('JWT-Cookie')
@@ -50,10 +51,13 @@ export class AuthJourneysController {
   })
   @ApiResponse({ status: 404, description: 'Server not found' })
   async getAuthJourneys(
+    @CurrentWorkspace() workspaceId: string,
     @Param('serverId', ParseUUIDPipe) serverId: string,
   ): Promise<AuthJourneyResponseDto[]> {
-    const journeys =
-      await this.authJourneysService.getJourneysForMcpServer(serverId);
+    const journeys = await this.authJourneysService.getJourneysForMcpServer(
+      workspaceId,
+      serverId,
+    );
     return journeys.map((journey) => this.mapAuthJourneyToResponse(journey));
   }
 

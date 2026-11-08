@@ -16,6 +16,7 @@ import {
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { McpAuthorizationFlowStatus } from './enums/mcp-authorization-flow-status.enum';
 import { RegisteredClientEntity } from '../authorization-server/entities/registered-client.entity';
+import { WorkspaceMemberEntity } from '../workspaces/workspace-member.entity';
 
 export type PruneStaleClientsResult = {
   cutoff: Date;
@@ -125,28 +126,49 @@ export class AuthJourneysService {
   }
 
   /*
-  Debug. Gets all journeys for an MCP Server
+  Debug. The journeys a workspace may see on one of its MCP servers, or on a
+  baseline server (which every workspace uses). Another workspace's server
+  answers "not found". Only journeys of the workspace's members are listed,
+  and only the connection flows of the workspace's own connections: a
+  baseline server's journeys include other workspaces' people.
   */
   async getJourneysForMcpServer(
+    workspaceId: string,
     mcpServerId: string,
   ): Promise<AuthJourneyResult[]> {
-    const authJourneys = await this.authJourneyRepository.find({
-      where: {
-        mcpAuthorizationFlow: {
-          serverId: mcpServerId,
-        },
-      },
-      relations: {
-        actor: true,
-        mcpAuthorizationFlow: {
-          client: {},
-        },
-        connectionAuthorizationFlows: {
-          mcpConnection: {},
-        },
-      },
-    });
-    return authJourneys.map((journey) => this.mapAuthJourneyToResult(journey));
+    await this.mcpRegistryService.getServerForWorkspace(
+      workspaceId,
+      mcpServerId,
+      true,
+    );
+
+    const authJourneys = await this.authJourneyRepository
+      .createQueryBuilder('journey')
+      .innerJoin(
+        WorkspaceMemberEntity,
+        'member',
+        'member.actor_id = journey.actor_id AND member.workspace_id = :workspaceId',
+        { workspaceId },
+      )
+      .leftJoinAndSelect('journey.actor', 'actor')
+      .innerJoinAndSelect('journey.mcpAuthorizationFlow', 'mcpFlow')
+      .leftJoinAndSelect('mcpFlow.client', 'client')
+      .leftJoinAndSelect(
+        'journey.connectionAuthorizationFlows',
+        'connectionFlow',
+      )
+      .leftJoinAndSelect('connectionFlow.mcpConnection', 'connection')
+      .where('mcpFlow.serverId = :mcpServerId', { mcpServerId })
+      .getMany();
+
+    return authJourneys.map((journey) =>
+      this.mapAuthJourneyToResult({
+        ...journey,
+        connectionAuthorizationFlows: (
+          journey.connectionAuthorizationFlows ?? []
+        ).filter((flow) => flow.mcpConnection?.workspaceId === workspaceId),
+      } as AuthJourneyEntity),
+    );
   }
 
   /*
