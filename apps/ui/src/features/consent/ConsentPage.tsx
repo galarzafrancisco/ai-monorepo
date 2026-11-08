@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Card, DataRow, Stack, Text, ErrorText, Row, ListRow, Button } from "../../ui/primitives";
 import { mcpServerRequiresTaicoAuth } from "@taico/shared";
+import { ConsentWorkspaceCard } from "./ConsentWorkspaceCard";
 import './ConsentPage.css';
 
 export function ConsentPage() {
@@ -94,6 +95,8 @@ export function ConsentPage() {
           : null}
 
         <div className="consent-details">
+          <ConsentWorkspaceCard workspace={workspace} followsSession={workspaceFollowsSession} />
+
           <Card className="detail-section">
             <h2>WHO is requesting access</h2>
             <div className="client-info">
@@ -144,16 +147,6 @@ export function ConsentPage() {
               <div className="server-name">{server.name}</div>
               <div className="server-id">Server ID: {server.providedId}</div>
             </div>
-            <div className="workspace-info" style={{ marginTop: '16px' }}>
-              <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Workspace:</div>
-              <div className="server-name">{workspace.name}</div>
-              <div className="server-id">@{workspace.slug}</div>
-              {workspaceFollowsSession ? (
-                <p style={{ marginTop: '8px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
-                  Access is granted in the workspace you are in now. To connect to another workspace, switch to it in Taico, then reload this page.
-                </p>
-              ) : null}
-            </div>
             <div className="resource-info" style={{ marginTop: '16px' }}>
               <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Resource:</div>
               <code>{resource}</code>
@@ -198,7 +191,7 @@ export function ConsentPage() {
       <div className="consent-footer">
         <p>
           By approving, you authorize <strong>{consentMetadata.client.clientName}</strong> to access the
-          specified resources with the requested permissions.
+          specified resources with the requested permissions in <strong>{consentMetadata.workspace.name}</strong>.
         </p>
         <Link
           to="/">
