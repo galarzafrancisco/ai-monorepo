@@ -35,29 +35,38 @@ export class WorkerGithubCredentialsService {
     private readonly credentials: GithubCredentialsService,
   ) {}
 
-  async issueForTask(taskId: string, audit: { executionId: string; workerClientId: string }): Promise<WorkerGithubCredential[]> {
+  /**
+   * The task's projects are looked up in the execution's workspace, and each
+   * repository resolves to a connection of that workspace only.
+   */
+  async issueForTask(
+    workspaceId: string,
+    taskId: string,
+    audit: { executionId: string; workerClientId: string },
+  ): Promise<WorkerGithubCredential[]> {
     const projects: Array<{ slug: string; repo_url: string | null; github_connection_id: string | null }> =
       await this.dataSource.query(
         `SELECT p.slug, p."repoUrl" AS repo_url, p.github_connection_id
            FROM task_tags tt
-           JOIN projects p ON p."tagId" = tt.tag_id AND p.deleted_at IS NULL
+           JOIN tasks t ON t.id = tt.task_id AND t.workspace_id = $2
+          JOIN projects p ON p."tagId" = tt.tag_id AND p.deleted_at IS NULL AND p.workspace_id = $2
           WHERE tt.task_id = $1 AND p.github_for_worker = true
           ORDER BY p.slug ASC`,
-        [taskId],
+        [taskId, workspaceId],
       );
 
     const issued: WorkerGithubCredential[] = [];
     for (const project of projects) {
-      const ref = await this.connections.parseRepoUrl(project.repo_url);
+      const ref = await this.connections.parseRepoUrl(workspaceId, project.repo_url);
       if (!ref) continue;
-      const resolved = await this.connections.resolveForRepository({
+      const resolved = await this.connections.resolveForRepository(workspaceId, {
         host: ref.host,
         owner: ref.owner,
         projectConnectionId: project.github_connection_id,
       });
       if (!resolved) continue;
 
-      const source = await this.connections.getCredentialSource(resolved.connection.id);
+      const source = await this.connections.getCredentialSource(workspaceId, resolved.connection.id);
       const token =
         source.authType === GithubAuthType.APP
           ? await this.credentials.mintScopedInstallationToken(source, [ref.repo])
@@ -76,6 +85,7 @@ export class WorkerGithubCredentialsService {
       });
       this.logger.log({
         message: 'Issued a GitHub token to a worker',
+        workspaceId,
         taskId,
         executionId: audit.executionId,
         workerClientId: audit.workerClientId,

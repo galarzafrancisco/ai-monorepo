@@ -14,8 +14,9 @@ export type SearchProjection = {
   entityType: SearchEntityType;
   resultType: `${SearchResultType}`;
   /**
-   * Must return: entity_id, result_id, title, search_title, body, keywords,
-   * body_weight, meta, source_updated_at. `{{SCOPE}}` is replaced with an
+   * Must return: entity_id, result_id, workspace_id, title, search_title,
+   * body, keywords, body_weight, meta, source_updated_at. `workspace_id` is
+   * the workspace of the item the row opens, so every search can filter on it. `{{SCOPE}}` is replaced with an
    * extra condition, or with nothing.
    */
   select: string;
@@ -48,7 +49,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'task',
     resultIdExpression: `t."id"`,
     select: `
-      SELECT t."id" AS entity_id, t."id" AS result_id,
+      SELECT t."id" AS entity_id, t."id" AS result_id, t."workspace_id" AS workspace_id,
              t."name"::text AS title, t."name"::text AS search_title,
              coalesce(t."description", '') AS body,
              coalesce(${TASK_TAGS}, '') AS keywords,
@@ -65,7 +66,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'task',
     resultIdExpression: `t."id"`,
     select: `
-      SELECT c."id" AS entity_id, t."id" AS result_id,
+      SELECT c."id" AS entity_id, t."id" AS result_id, t."workspace_id" AS workspace_id,
              t."name"::text AS title, '' AS search_title,
              c."content" AS body,
              '' AS keywords,
@@ -73,7 +74,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
              jsonb_build_object('status', t."status", 'author', a."display_name") AS meta,
              greatest(c."updated_at", t."updated_at") AS source_updated_at
       FROM "comments" c
-      JOIN "tasks" t ON t."id" = c."task_id"
+      JOIN "tasks" t ON t."id" = c."task_id" AND t."workspace_id" = c."workspace_id"
       LEFT JOIN "actors" a ON a."id" = c."commenter_actor_id"
       WHERE c."deleted_at" IS NULL AND t."deleted_at" IS NULL {{SCOPE}}`,
   },
@@ -82,7 +83,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'context_block',
     resultIdExpression: `b."id"`,
     select: `
-      SELECT b."id" AS entity_id, b."id" AS result_id,
+      SELECT b."id" AS entity_id, b."id" AS result_id, b."workspace_id" AS workspace_id,
              b."title" AS title, b."title" AS search_title,
              coalesce(b."content", '') AS body,
              coalesce(${BLOCK_TAGS}, '') AS keywords,
@@ -102,7 +103,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'thread',
     resultIdExpression: `t."id"`,
     select: `
-      SELECT t."id" AS entity_id, t."id" AS result_id,
+      SELECT t."id" AS entity_id, t."id" AS result_id, t."workspace_id" AS workspace_id,
              t."title" AS title, t."title" AS search_title,
              coalesce(b."content", '') AS body,
              coalesce(${THREAD_TAGS}, '') AS keywords,
@@ -118,7 +119,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'tool',
     resultIdExpression: `s."id"`,
     select: `
-      SELECT s."id" AS entity_id, s."id" AS result_id,
+      SELECT s."id" AS entity_id, s."id" AS result_id, s."workspace_id" AS workspace_id,
              s."name"::text AS title, s."name"::text AS search_title,
              coalesce(s."description", '') AS body,
              s."providedId"::text AS keywords,
@@ -134,7 +135,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'agent',
     resultIdExpression: `g."id"`,
     select: `
-      SELECT g."id" AS entity_id, g."id" AS result_id,
+      SELECT g."id" AS entity_id, g."id" AS result_id, g."workspace_id" AS workspace_id,
              a."display_name" AS title, a."display_name" AS search_title,
              concat_ws(E'\\n\\n', nullif(g."description", ''), nullif(a."introduction", '')) AS body,
              a."slug" AS keywords,
@@ -150,7 +151,7 @@ export const SEARCH_PROJECTIONS: readonly SearchProjection[] = [
     resultType: 'project',
     resultIdExpression: `p."id"`,
     select: `
-      SELECT p."id" AS entity_id, p."id" AS result_id,
+      SELECT p."id" AS entity_id, p."id" AS result_id, p."workspace_id" AS workspace_id,
              p."slug" AS title, p."slug" AS search_title,
              coalesce(p."description", '') AS body,
              coalesce(p."repoUrl", '') AS keywords,

@@ -28,7 +28,10 @@ export type SearchIndexStatus = {
   byType: Array<{ type: SearchEntityType; documents: number; embedded: number }>;
 };
 
-/** What the settings page shows about the index, and the button that rebuilds it. */
+/**
+ * What the settings page shows about a workspace's part of the index, and the
+ * button that rebuilds the whole index.
+ */
 @Injectable()
 export class SearchIndexAdminService {
   private readonly logger = new Logger(SearchIndexAdminService.name);
@@ -42,10 +45,11 @@ export class SearchIndexAdminService {
     private readonly embedder: SearchEmbedderService,
   ) {}
 
-  async getStatus(): Promise<SearchIndexStatus> {
+  /** The workspace's index rows, embedded with the workspace's embeddings model. */
+  async getStatus(workspaceId: string): Promise<SearchIndexStatus> {
     const settings = await this.settingsService.get();
     const storageAvailable = await this.vectorStore.isAvailable();
-    const model = await this.embeddings.resolveModel();
+    const model = await this.embeddings.resolveModel(workspaceId);
 
     let semanticInactiveReason: string | null = null;
     if (!settings.semanticEnabled) {
@@ -75,17 +79,18 @@ export class SearchIndexAdminService {
                   AND "embedded_fingerprint" IS DISTINCT FROM md5("content_hash" || $1)
               ) AS failed
        FROM "search_documents"
+       WHERE "workspace_id" = $2
        GROUP BY "entity_type"
        ORDER BY "entity_type"`,
-      [configKey],
+      [configKey, workspaceId],
     );
     const lastError: Array<{ embed_error: string }> = configKey
       ? await this.dataSource.query(
           `SELECT "embed_error" FROM "search_documents"
-           WHERE "embed_error" IS NOT NULL
+           WHERE "workspace_id" = $2 AND "embed_error" IS NOT NULL
              AND "embedded_fingerprint" IS DISTINCT FROM md5("content_hash" || $1)
            ORDER BY "embed_retry_at" DESC NULLS LAST LIMIT 1`,
-          [configKey],
+          [configKey, workspaceId],
         )
       : [];
 
@@ -110,16 +115,16 @@ export class SearchIndexAdminService {
   }
 
   /**
-   * Throws the index away and builds it again from the source tables. Keyword
-   * search is complete again when this returns; embeddings follow in the
-   * background.
+   * Throws the whole index away (every workspace's) and builds it again from
+   * the source tables. Keyword search is complete again when this returns;
+   * embeddings follow in the background. Returns the workspace's status.
    */
-  async rebuild(): Promise<SearchIndexStatus> {
+  async rebuild(workspaceId: string): Promise<SearchIndexStatus> {
     this.logger.log({ message: 'Rebuilding the search index' });
     // Deleting the rows also deletes their embeddings (foreign key cascade).
     await this.dataSource.query(`DELETE FROM "search_documents"`);
     await this.indexer.syncAll();
     this.embedder.wake();
-    return this.getStatus();
+    return this.getStatus(workspaceId);
   }
 }

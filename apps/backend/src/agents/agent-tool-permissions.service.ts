@@ -19,13 +19,12 @@ import {
   InvalidAgentToolPermissionScopeError,
 } from './errors/agents.errors';
 import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS } from '@taico/shared';
-import { holdsUnscopedModuleData } from '../workspaces/unscoped-modules';
 
 /**
- * An agent's grants are in the agent's workspace. They point at MCP registry
- * servers, which are default-workspace rows until phase 3e, so only the
- * default workspace can grant them; other workspaces' agents get Taico's own
- * baseline tools only.
+ * An agent's grants are in the agent's workspace and point at MCP servers of
+ * that workspace only. Every agent also gets Taico's own baseline tools
+ * (`tasks`, `context`) with all their scopes, whatever workspace holds the
+ * baseline rows.
  */
 @Injectable()
 export class AgentToolPermissionsService {
@@ -46,17 +45,13 @@ export class AgentToolPermissionsService {
   ): Promise<AgentToolPermissionRecord[]> {
     await this.assertAgentExists(workspaceId, actorId);
 
-    // Grants can only be written in the default workspace (registry rows are
-    // default-workspace data until 3e); elsewhere only baseline servers apply.
-    const permissions = holdsUnscopedModuleData(workspaceId)
-      ? await this.permissionRepository.find({
-          where: { workspaceId, agentActorId: actorId },
-          relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
-          order: {
-            server: { name: 'ASC' },
-          },
-        })
-      : [];
+    const permissions = await this.permissionRepository.find({
+      where: { workspaceId, agentActorId: actorId, server: { workspaceId } },
+      relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
+      order: {
+        server: { name: 'ASC' },
+      },
+    });
 
     const explicitPermissions = permissions
       .filter(
@@ -96,7 +91,7 @@ export class AgentToolPermissionsService {
     await this.assertAgentExists(workspaceId, actorId);
 
     const permissions = await this.permissionRepository.find({
-      where: { workspaceId, agentActorId: actorId },
+      where: { workspaceId, agentActorId: actorId, server: { workspaceId } },
       relations: ['server', 'server.scopes', 'grantedScopes', 'grantedScopes.scope'],
       order: {
         server: { name: 'ASC' },
@@ -120,15 +115,9 @@ export class AgentToolPermissionsService {
     workspaceId: string,
     grants: { serverProvidedId: string; scopeIds: string[] }[],
   ): Promise<ResolvedAgentToolGrants> {
-    if (!holdsUnscopedModuleData(workspaceId)) {
-      return {
-        grants: [],
-        missingServers: grants.map((grant) => grant.serverProvidedId),
-        invalidScopes: [],
-      };
-    }
+    // Another workspace's server is missing here, like one that does not exist.
     const servers = await this.serverRepository.find({
-      where: { providedId: In(grants.map((grant) => grant.serverProvidedId)) },
+      where: { workspaceId, providedId: In(grants.map((grant) => grant.serverProvidedId)) },
       relations: ['scopes'],
     });
     const serverByProvidedId = new Map(
@@ -193,12 +182,10 @@ export class AgentToolPermissionsService {
   ): Promise<AgentToolPermissionRecord> {
     await this.assertAgentExists(workspaceId, actorId);
 
-    const server = holdsUnscopedModuleData(workspaceId)
-      ? await this.serverRepository.findOne({
-          where: { id: serverId },
-          relations: ['scopes'],
-        })
-      : null;
+    const server = await this.serverRepository.findOne({
+      where: { workspaceId, id: serverId },
+      relations: ['scopes'],
+    });
     if (!server) {
       throw new ServerNotFoundError(serverId);
     }

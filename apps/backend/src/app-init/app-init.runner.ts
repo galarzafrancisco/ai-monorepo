@@ -16,6 +16,7 @@ import { MCP_SERVER_AUTH_TYPE_TAICO } from '../mcp-registry/mcp-server.types';
 import { CreateServerInput, ServerRecord } from 'src/mcp-registry/dto';
 import {
   ServerAlreadyExistsError,
+  ServerNotFoundError,
 } from 'src/mcp-registry/errors/mcp-registry.errors';
 import {
   AgentResult,
@@ -415,12 +416,28 @@ export class AppInitRunner implements OnApplicationBootstrap {
     // Taico's own servers always use Taico auth.
     const expectedAuthType = serverConfig.authType ?? MCP_SERVER_AUTH_TYPE_TAICO;
     try {
-      server = await this.mcpRegistryService.createServer(serverConfig);
+      // Seeded servers belong to the default workspace.
+      server = await this.mcpRegistryService.createServer(
+        DEFAULT_WORKSPACE_ID,
+        serverConfig,
+      );
     } catch (error) {
       if (error instanceof ServerAlreadyExistsError) {
-        server = await this.mcpRegistryService.getServerByProvidedId(
-          serverConfig.providedId,
-        );
+        try {
+          server = await this.mcpRegistryService.getServerForWorkspace(
+            DEFAULT_WORKSPACE_ID,
+            serverConfig.providedId,
+            false,
+          );
+        } catch (lookupError) {
+          if (!(lookupError instanceof ServerNotFoundError)) throw lookupError;
+          // Another workspace registered a server with this provided id
+          // first; provided ids are unique across the installation.
+          this.logger.warn(
+            `MCP server ${serverConfig.providedId} belongs to another workspace; not seeding it in the default workspace`,
+          );
+          return null;
+        }
         if (
           server.name != serverConfig.name ||
           server.description != serverConfig.description ||
@@ -437,7 +454,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
               `MCP server ${server.providedId} had auth type '${server.authType}'; restoring '${expectedAuthType}'`,
             );
           }
-          server = await this.mcpRegistryService.updateServer(server.id, {
+          server = await this.mcpRegistryService.updateServer(DEFAULT_WORKSPACE_ID, server.id, {
             name: serverConfig.name,
             description: serverConfig.description,
             type: serverConfig.type,
@@ -464,6 +481,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     this.logger.log(`Ensuring scopes for MCP Server ${server.name}`);
 
     const existingScopes = await this.mcpRegistryService.listScopesByServer(
+      DEFAULT_WORKSPACE_ID,
       server.id,
     );
     const existingScopeIds = new Set(existingScopes.map((scope) => scope.id));
@@ -476,7 +494,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       return;
     }
 
-    await this.mcpRegistryService.createScopes(server.id, missingScopes);
+    await this.mcpRegistryService.createScopes(
+      DEFAULT_WORKSPACE_ID,
+      server.id,
+      missingScopes,
+    );
     this.logger.log(
       `Added ${missingScopes.length} missing scope(s) for MCP Server ${server.name}`,
     );

@@ -29,10 +29,11 @@ import {
 } from './dto/http/resolve-github-connection.dto';
 import { GithubConnectionResult, GithubWebhookSource } from './dto/service/github-connections.service.types';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Integrations - GitHub')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('integrations/github/connections')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class GithubConnectionsController {
@@ -45,8 +46,9 @@ export class GithubConnectionsController {
   async createConnection(
     @Body() dto: CreateGithubConnectionDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<GithubConnectionResponseDto> {
-    const result = await this.connections.createConnection({
+    const result = await this.connections.createConnection(workspaceId, {
       name: dto.name,
       baseUrl: dto.baseUrl,
       authType: dto.authType,
@@ -63,8 +65,8 @@ export class GithubConnectionsController {
   @RequireScopes(IntegrationsScopes.READ.id)
   @ApiOperation({ summary: 'List GitHub connections' })
   @ApiOkResponse({ type: [GithubConnectionResponseDto] })
-  async listConnections(): Promise<GithubConnectionResponseDto[]> {
-    const results = await this.connections.listConnections();
+  async listConnections(@CurrentWorkspace() workspaceId: string): Promise<GithubConnectionResponseDto[]> {
+    const results = await this.connections.listConnections(workspaceId);
     return results.map((result) => this.mapToResponse(result));
   }
 
@@ -74,10 +76,11 @@ export class GithubConnectionsController {
   @ApiOkResponse({ type: ResolvedGithubConnectionResponseDto })
   async resolveConnection(
     @Query() query: ResolveGithubConnectionQueryDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ResolvedGithubConnectionResponseDto> {
-    const repository = await this.connections.parseRepoUrl(query.repoUrl);
+    const repository = await this.connections.parseRepoUrl(workspaceId, query.repoUrl);
     if (!repository) return { repository: null, connection: null, match: null, webhook: null };
-    const resolved = await this.connections.resolveForRepository({
+    const resolved = await this.connections.resolveForRepository(workspaceId, {
       host: repository.host,
       owner: repository.owner,
       projectConnectionId: query.connectionId,
@@ -86,7 +89,7 @@ export class GithubConnectionsController {
       repository,
       connection: resolved ? this.mapToResponse(resolved.connection) : null,
       match: resolved?.match ?? null,
-      webhook: mapWebhookSource(await this.connections.findWebhookCoverage(repository)),
+      webhook: mapWebhookSource(await this.connections.findWebhookCoverage(workspaceId, repository)),
     };
   }
 
@@ -95,8 +98,11 @@ export class GithubConnectionsController {
   @ApiOperation({ summary: 'Get a GitHub connection' })
   @ApiOkResponse({ type: GithubConnectionResponseDto })
   @ApiNotFoundResponse({ description: 'GitHub connection not found' })
-  async getConnection(@Param() params: GithubConnectionParamsDto): Promise<GithubConnectionResponseDto> {
-    return this.mapToResponse(await this.connections.getConnection(params.id));
+  async getConnection(
+    @Param() params: GithubConnectionParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<GithubConnectionResponseDto> {
+    return this.mapToResponse(await this.connections.getConnection(workspaceId, params.id));
   }
 
   @Patch(':id')
@@ -107,8 +113,9 @@ export class GithubConnectionsController {
   async updateConnection(
     @Param() params: GithubConnectionParamsDto,
     @Body() dto: UpdateGithubConnectionDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<GithubConnectionResponseDto> {
-    const result = await this.connections.updateConnection(params.id, {
+    const result = await this.connections.updateConnection(workspaceId, params.id, {
       name: dto.name,
       baseUrl: dto.baseUrl,
       secret: dto.secret,
@@ -125,8 +132,11 @@ export class GithubConnectionsController {
   @ApiOperation({ summary: 'Check the stored credential with GitHub again' })
   @ApiOkResponse({ type: GithubConnectionResponseDto })
   @ApiNotFoundResponse({ description: 'GitHub connection not found' })
-  async verifyConnection(@Param() params: GithubConnectionParamsDto): Promise<GithubConnectionResponseDto> {
-    return this.mapToResponse(await this.connections.verifyConnection(params.id));
+  async verifyConnection(
+    @Param() params: GithubConnectionParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<GithubConnectionResponseDto> {
+    return this.mapToResponse(await this.connections.verifyConnection(workspaceId, params.id));
   }
 
   @Get(':id/webhook')
@@ -139,8 +149,9 @@ export class GithubConnectionsController {
   async getWebhookSettings(
     @Param() params: GithubConnectionParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<GithubWebhookSettingsResponseDto> {
-    const settings = await this.connections.getWebhookSettings(params.id, user.actorId);
+    const settings = await this.connections.getWebhookSettings(workspaceId, params.id, user.actorId);
     return {
       url: settings.url,
       secret: settings.secret,
@@ -155,8 +166,11 @@ export class GithubConnectionsController {
   @ApiOperation({ summary: 'Delete a GitHub connection and its stored credential' })
   @ApiNoContentResponse({ description: 'Deleted' })
   @ApiNotFoundResponse({ description: 'GitHub connection not found' })
-  async deleteConnection(@Param() params: GithubConnectionParamsDto): Promise<void> {
-    await this.connections.deleteConnection(params.id);
+  async deleteConnection(
+    @Param() params: GithubConnectionParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<void> {
+    await this.connections.deleteConnection(workspaceId, params.id);
   }
 
   private mapToResponse(result: GithubConnectionResult): GithubConnectionResponseDto {

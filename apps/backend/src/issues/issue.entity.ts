@@ -14,10 +14,14 @@ export type IssueEtags = {
  * successful fetch.
  */
 @Entity({ name: 'issues' })
-@Index('UQ_issues_key', ['key'], { unique: true })
+@Index('UQ_issues_workspace_key', ['workspaceId', 'key'], { unique: true })
 export class IssueEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   /**
    * `owner/repo#number` on github.com, `host/owner/repo#number` on a GitHub

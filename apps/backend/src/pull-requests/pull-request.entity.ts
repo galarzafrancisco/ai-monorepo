@@ -17,10 +17,14 @@ export type PullRequestEtags = {
  * seen; the snapshot columns stay null until the first successful fetch.
  */
 @Entity({ name: 'pull_requests' })
-@Index('UQ_pull_requests_key', ['key'], { unique: true })
+@Index('UQ_pull_requests_workspace_key', ['workspaceId', 'key'], { unique: true })
 export class PullRequestEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   /**
    * `owner/repo#number` on github.com, `host/owner/repo#number` on a GitHub

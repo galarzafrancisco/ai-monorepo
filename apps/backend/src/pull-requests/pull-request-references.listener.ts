@@ -7,7 +7,9 @@ import {
   TaskUpdatedEvent,
 } from '../tasks/events/tasks.events';
 import { MessageCreatedEvent } from '../threads/events/threads.events';
+import { DataSource } from 'typeorm';
 import { PullRequestsService } from './pull-requests.service';
+import { workspaceOfSource } from '../workspaces/source-workspace';
 import { PullRequestReferenceSource } from './enums';
 import { PullRequestReferenceInput } from './dto/service/pull-requests.service.types';
 
@@ -20,7 +22,10 @@ import { PullRequestReferenceInput } from './dto/service/pull-requests.service.t
 export class PullRequestReferencesListener {
   private readonly logger = new Logger(PullRequestReferencesListener.name);
 
-  constructor(private readonly pullRequests: PullRequestsService) {}
+  constructor(
+    private readonly pullRequests: PullRequestsService,
+    private readonly dataSource: DataSource,
+  ) {}
 
   @OnEvent(TaskCreatedEvent.INTERNAL)
   @OnEvent(TaskUpdatedEvent.INTERNAL)
@@ -72,7 +77,13 @@ export class PullRequestReferencesListener {
     ...source
   }: Omit<PullRequestReferenceInput, 'refs'> & { text: string | null | undefined }): Promise<void> {
     try {
-      const input: PullRequestReferenceInput = { ...source, refs: await this.pullRequests.extractRefs(text) };
+      const workspaceId = await workspaceOfSource(this.dataSource, source);
+      if (!workspaceId) return;
+      // Hosts are the Enterprises the source's own workspace has connections to.
+      const input: PullRequestReferenceInput = {
+        ...source,
+        refs: await this.pullRequests.extractRefs(workspaceId, text),
+      };
       // A new task or comment without links has nothing to replace: skip the write.
       if (input.refs.length === 0 && input.sourceType !== PullRequestReferenceSource.TASK_DESCRIPTION) return;
       await this.pullRequests.replaceReferences(input);

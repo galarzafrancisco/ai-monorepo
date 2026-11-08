@@ -652,12 +652,13 @@ export class ContextService {
     input: SearchBlocksInput,
   ): Promise<BlockSearchResult[]> {
     const results = await this.indexSearchService.search({
+      workspaceId,
       query: input.query,
       limit: input.limit,
       types: [SearchResultType.CONTEXT_BLOCK],
     });
-    // The search index is not scoped by workspace yet (phase 3e): drop hits
-    // from other workspaces.
+    // The index only searches the workspace; checking the rows as well drops
+    // a hit whose block was deleted since it was indexed.
     const inWorkspace = await this.blockIdsInWorkspace(
       workspaceId,
       results.map((result) => result.id),

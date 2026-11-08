@@ -13,6 +13,10 @@ export class GithubWebhookSourceEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @Column({ type: 'uuid', name: 'connection_id' })
   connectionId!: string;
 

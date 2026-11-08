@@ -328,7 +328,7 @@ export class ThreadAgentToolsFactory {
         }),
         execute: async (args) => {
           const { pullRequest, for: conditions, waitingFor, once, hours } = args;
-          const ref = await this.pullRequests.parseRef(pullRequest);
+          const ref = await this.pullRequests.parseRef(workspaceId, pullRequest);
           if (!ref) {
             return { error: `"${pullRequest}" is not a pull request link on GitHub (or a GitHub Enterprise Taico is connected to), or owner/repo#number.` };
           }
@@ -374,7 +374,7 @@ export class ThreadAgentToolsFactory {
             ),
         }),
         execute: async ({ pullRequest }) => {
-          const ref = await this.pullRequests.parseRef(pullRequest);
+          const ref = await this.pullRequests.parseRef(workspaceId, pullRequest);
           if (!ref) {
             return { error: `"${pullRequest}" is not a pull request link on GitHub (or a GitHub Enterprise Taico is connected to), or owner/repo#number.` };
           }

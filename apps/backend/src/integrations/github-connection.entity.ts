@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   VersionColumn,
+  Index,
 } from 'typeorm';
 import { SecretEntity } from '../secrets/secret.entity';
 import { GithubAuthType } from './enums';
@@ -22,6 +23,10 @@ import { GithubAuthType } from './enums';
 export class GithubConnectionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text' })
   name!: string;

@@ -56,6 +56,18 @@ export const LEXICAL_SCHEMA_STATEMENTS: readonly string[] = [
 ];
 
 /**
+ * Every index row carries the workspace of the item it describes, so every
+ * search filters on it (workspaces phase 3e). Kept apart from the statements
+ * above because the migration that first created the table runs before
+ * workspaces exist. Existing rows were all default-workspace items.
+ */
+export const SEARCH_WORKSPACE_SCHEMA_STATEMENTS: readonly string[] = [
+  `ALTER TABLE "search_documents" ADD COLUMN IF NOT EXISTS "workspace_id" uuid NOT NULL DEFAULT '00000000-0000-4000-8000-000000000001'`,
+  `ALTER TABLE "search_documents" ALTER COLUMN "workspace_id" DROP DEFAULT`,
+  `CREATE INDEX IF NOT EXISTS "IDX_search_documents_workspace_result" ON "search_documents" ("workspace_id", "result_type")`,
+];
+
+/**
  * The embedding column has no fixed dimension, so changing the embedding
  * model never needs a schema change. Each row records its own model and
  * dimension, and nearest-neighbour indexes are created per dimension.

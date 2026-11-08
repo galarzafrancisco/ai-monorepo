@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SecretsService } from '../../secrets/secrets.service';
-import { UNSCOPED_MODULE_WORKSPACE_ID } from '../../workspaces/workspaces.constants';
 import { GithubAuthType } from '../enums';
 import { GithubConnectionInvalidError, GithubRequestFailedError } from '../errors/integrations.errors';
 import { createAppJwt, GithubApi, githubRequest } from './github-api';
@@ -9,6 +8,8 @@ import { githubApiUrlFor } from './github-host';
 /** What a connection needs to authenticate. Mirrors the columns of github_connections. */
 export type GithubCredentialSource = {
   id: string;
+  /** The connection's workspace, which holds its secret. */
+  workspaceId: string;
   authType: GithubAuthType;
   /** `https://github.com`, or the address of a GitHub Enterprise. */
   baseUrl: string;
@@ -40,7 +41,7 @@ export class GithubCredentialsService {
 
   /** A token for Taico's own calls (reading pull requests). */
   async getAccessToken(connection: GithubCredentialSource): Promise<GithubAccessToken> {
-    const secret = await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
+    const secret = await this.secretsService.getSecretValue(connection.workspaceId, connection.secretId);
     if (connection.authType === GithubAuthType.PAT) {
       return { token: secret.value, expiresAt: null };
     }
@@ -62,7 +63,7 @@ export class GithubCredentialsService {
     connection: GithubCredentialSource,
     repositories: string[],
   ): Promise<GithubAccessToken> {
-    const secret = await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
+    const secret = await this.secretsService.getSecretValue(connection.workspaceId, connection.secretId);
     return this.mintInstallationToken(connection, secret.value, repositories);
   }
 

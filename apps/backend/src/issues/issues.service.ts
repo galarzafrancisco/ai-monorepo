@@ -19,17 +19,14 @@ import { fetchIssue } from './github/issue-fetcher';
 import { diffIssue } from './github/issue-changes';
 import { FETCH_LEASE_MS, nextIssueFetchDelayMs, retryDelayMs, VIEW_STALE_MS } from './issue-schedule';
 import { IssueReferenceInput } from './dto/service/issues.service.types';
-import {
-  assertHoldsUnscopedModuleData,
-  holdsUnscopedModuleData,
-  workspaceOfSource,
-} from '../workspaces/unscoped-modules';
+import { workspaceOfSource } from '../workspaces/source-workspace';
 
 /** Issues looked at together when a page asks for ones Taico has never read. */
 const FIRST_FETCH_CONCURRENCY = 6;
 
 /**
- * Keeps one up-to-date copy of each linked GitHub issue. Reads are served from
+ * Keeps one up-to-date copy of each linked GitHub issue per workspace, read
+ * with that workspace's connections. Reads are served from
  * the stored copy; GitHub is asked again on a schedule that follows demand
  * (see issue-schedule.ts), when a webhook says something changed, or the first
  * time an issue is seen.
@@ -52,13 +49,9 @@ export class IssuesService {
    * The stored state of each issue, in the order asked, for someone looking
    * at them. Issues Taico has never read are read now; stale ones are queued
    * for a fresh look and arrive over the socket.
-   *
-   * GitHub data has no workspace yet (phase 3e): only the default workspace
-   * reaches it, whichever module asks (see unscoped-modules.ts).
    */
   async lookup(workspaceId: string, refs: IssueRef[]): Promise<IssueEntity[]> {
-    assertHoldsUnscopedModuleData(workspaceId);
-    const rows = await this.ensureRows(refs);
+    const rows = await this.ensureRows(workspaceId, refs);
     const now = new Date();
 
     const neverFetched = rows.filter((row) => !row.lastFetchedAt);
@@ -67,44 +60,49 @@ export class IssuesService {
     const stale = rows
       .filter((row) => row.lastFetchedAt && now.getTime() - row.lastFetchedAt.getTime() > VIEW_STALE_MS)
       .map((row) => row.id);
-    if (rows.length > 0) await this.issues.update({ id: In(rows.map((row) => row.id)) }, { lastViewedAt: now });
+    if (rows.length > 0) {
+      await this.issues.update({ workspaceId, id: In(rows.map((row) => row.id)) }, { lastViewedAt: now });
+    }
     if (stale.length > 0) {
       await this.dataSource.query(
         `UPDATE issues SET next_fetch_at = now()
-          WHERE id = ANY($1::uuid[]) AND (next_fetch_at IS NULL OR next_fetch_at > now())`,
-        [stale],
+          WHERE workspace_id = $2 AND id = ANY($1::uuid[]) AND (next_fetch_at IS NULL OR next_fetch_at > now())`,
+        [stale, workspaceId],
       );
     }
 
-    const byId = new Map((await this.issues.findBy({ id: In(rows.map((row) => row.id)) })).map((row) => [row.id, row]));
+    const byId = new Map(
+      (await this.issues.findBy({ workspaceId, id: In(rows.map((row) => row.id)) })).map((row) => [row.id, row]),
+    );
     return rows.map((row) => byId.get(row.id)!);
   }
 
-  /** Issue links in a text, on github.com and the GitHub Enterprises Taico has connections to. */
-  async extractRefs(text: string | null | undefined): Promise<IssueRef[]> {
+  /** Issue links in a text, on github.com and the GitHub Enterprises the workspace has connections to. */
+  async extractRefs(workspaceId: string, text: string | null | undefined): Promise<IssueRef[]> {
     if (!text) return [];
-    return extractIssueRefs(text, await this.connections.listEnterpriseHosts());
+    return extractIssueRefs(text, await this.connections.listEnterpriseHosts(workspaceId));
   }
 
   /** A link or short reference (`owner/repo#12`, `github.acme.com/owner/repo#12`); null if it is not one. */
-  async parseRef(value: string): Promise<IssueRef | null> {
-    return parseIssueRef(value, await this.listEnterpriseHosts());
+  async parseRef(workspaceId: string, value: string): Promise<IssueRef | null> {
+    return parseIssueRef(value, await this.listEnterpriseHosts(workspaceId));
   }
 
-  /** Hosts of the GitHub Enterprises Taico has connections to. */
-  listEnterpriseHosts(): Promise<string[]> {
-    return this.connections.listEnterpriseHosts();
+  /** Hosts of the GitHub Enterprises the workspace has connections to. */
+  listEnterpriseHosts(workspaceId: string): Promise<string[]> {
+    return this.connections.listEnterpriseHosts(workspaceId);
   }
 
-  async getById(id: string): Promise<IssueEntity> {
-    const row = await this.issues.findOne({ where: { id } });
+  /** An issue of another workspace is not found. */
+  async getById(workspaceId: string, id: string): Promise<IssueEntity> {
+    const row = await this.issues.findOne({ where: { workspaceId, id } });
     if (!row) throw new IssueNotFoundError(id);
     return row;
   }
 
   /** Reads the issue from GitHub now. */
-  async refresh(id: string): Promise<IssueEntity> {
-    return this.fetchAndStore(await this.getById(id));
+  async refresh(workspaceId: string, id: string): Promise<IssueEntity> {
+    return this.fetchAndStore(await this.getById(workspaceId, id));
   }
 
   /**
@@ -112,30 +110,30 @@ export class IssuesService {
    * Mentions in descriptions and comments are left out.
    */
   async listLinkedToTasks(workspaceId: string, taskIds: string[]): Promise<IssueEntity[]> {
-    if (!holdsUnscopedModuleData(workspaceId)) return [];
     if (taskIds.length === 0) return [];
     const ids: Array<{ issue_id: string }> = await this.dataSource.query(
       `SELECT issue_id FROM issue_references
-        WHERE source_type = $1 AND task_id = ANY($2::uuid[])
+        WHERE workspace_id = $3 AND source_type = $1 AND task_id = ANY($2::uuid[])
         GROUP BY issue_id
         ORDER BY min(created_at) ASC`,
-      [IssueReferenceSource.TASK_ARTEFACT, taskIds],
+      [IssueReferenceSource.TASK_ARTEFACT, taskIds, workspaceId],
     );
-    return this.inOrder(ids.map((row) => row.issue_id));
+    return this.inOrder(workspaceId, ids.map((row) => row.issue_id));
   }
 
   /**
    * Records where links to issues appear. The links a source holds now replace
    * the ones it held before, so an edited description drops the issues it no
    * longer mentions. New issues are read soon.
+   *
+   * The link is recorded in the workspace of the task or thread it was
+   * written in, against that workspace's copy of the issue, so it is read
+   * with that workspace's connections only. A source that is gone records
+   * nothing.
    */
   async replaceReferences(input: IssueReferenceInput): Promise<void> {
-    // A link written outside the default workspace is not recorded, so it
-    // is never read from GitHub with the default workspace's connections and
-    // never shows up next to the task or thread.
     const workspaceId = await workspaceOfSource(this.dataSource, input);
-    const refs = workspaceId && holdsUnscopedModuleData(workspaceId) ? input.refs : [];
-    const rows = await this.ensureRows(refs);
+    const rows = workspaceId ? await this.ensureRows(workspaceId, input.refs) : [];
     await this.dataSource.transaction(async (manager) => {
       await manager.delete(IssueReferenceEntity, {
         sourceType: input.sourceType,
@@ -148,6 +146,7 @@ export class IssuesService {
         .into(IssueReferenceEntity)
         .values(
           rows.map((row) => ({
+            workspaceId: row.workspaceId,
             issueId: row.id,
             sourceType: input.sourceType,
             sourceId: input.sourceId,
@@ -160,17 +159,24 @@ export class IssuesService {
     });
   }
 
-  /** Asks for a fresh look at issues of a repository that Taico already knows. Called when a webhook arrives. */
-  async markChanged(input: { host: string; owner: string; repo: string; numbers: number[] }): Promise<number> {
+  /**
+   * Asks for a fresh look at issues of a repository that Taico already knows.
+   * Called when a webhook arrives, for the workspace of the connection it
+   * came through.
+   */
+  async markChanged(
+    workspaceId: string,
+    input: { host: string; owner: string; repo: string; numbers: number[] },
+  ): Promise<number> {
     const keys = input.numbers.map((number) =>
       issueKey({ host: input.host, owner: input.owner, repo: input.repo, number }),
     );
     if (keys.length === 0) return 0;
     const result: [unknown[], number] = await this.dataSource.query(
       `UPDATE issues SET next_fetch_at = now()
-        WHERE key = ANY($1::text[])
+        WHERE workspace_id = $2 AND key = ANY($1::text[])
           AND (next_fetch_at IS NULL OR next_fetch_at > now())`,
-      [keys],
+      [keys, workspaceId],
     );
     return result[1];
   }
@@ -211,14 +217,17 @@ export class IssuesService {
     const ref = { host: row.host, owner: row.owner, repo: row.repo, number: row.number };
     let webhooksActive = false;
     try {
-      webhooksActive = await this.connections.hasActiveWebhook(ref);
-      const resolved = await this.connections.resolveForRepositoryOfAnyProject(ref);
+      // Only the issue's own workspace's connections read it.
+      webhooksActive = await this.connections.hasActiveWebhook(row.workspaceId, ref);
+      const resolved = await this.connections.resolveForRepositoryOfAnyProject(row.workspaceId, ref);
       if (!resolved && !isGithubCom(row.host)) {
         throw new GithubConnectionInvalidError(`No GitHub connection is set up for ${row.host}.`);
       }
       const api = {
         apiUrl: githubApiUrlFor(resolved?.connection.baseUrl ?? GITHUB_COM_URL),
-        credential: resolved ? (await this.connections.getAccessToken(resolved.connection.id)).token : null,
+        credential: resolved
+          ? (await this.connections.getAccessToken(row.workspaceId, resolved.connection.id)).token
+          : null,
       };
 
       const before = row.lastFetchedAt && row.state ? { ...row } : null;
@@ -287,28 +296,28 @@ export class IssuesService {
       state: row.state,
       now,
       lastViewedAt: row.lastViewedAt,
-      isReferencedByActiveWork: await this.isReferencedByActiveWork(row.id),
+      isReferencedByActiveWork: await this.isReferencedByActiveWork(row.workspaceId, row.id),
       webhooksActive,
     });
     return delay === null ? null : new Date(now.getTime() + delay);
   }
 
   /** Linked from a task that is not done, or from a thread in the last day. */
-  private async isReferencedByActiveWork(issueId: string): Promise<boolean> {
+  private async isReferencedByActiveWork(workspaceId: string, issueId: string): Promise<boolean> {
     const rows: unknown[] = await this.dataSource.query(
       `SELECT 1 FROM issue_references r
-         LEFT JOIN tasks t ON t.id = r.task_id AND t.deleted_at IS NULL
-        WHERE r.issue_id = $1
+         LEFT JOIN tasks t ON t.id = r.task_id AND t.deleted_at IS NULL AND t.workspace_id = r.workspace_id
+        WHERE r.workspace_id = $2 AND r.issue_id = $1
           AND ((r.task_id IS NOT NULL AND t.status <> 'DONE')
                OR (r.thread_id IS NOT NULL AND r.created_at > now() - interval '1 day'))
         LIMIT 1`,
-      [issueId],
+      [issueId, workspaceId],
     );
     return rows.length > 0;
   }
 
-  /** Finds or creates the rows for these issues, without duplicates, in the order given. */
-  private async ensureRows(refs: IssueRef[]): Promise<IssueEntity[]> {
+  /** Finds or creates the workspace's rows for these issues, without duplicates, in the order given. */
+  private async ensureRows(workspaceId: string, refs: IssueRef[]): Promise<IssueEntity[]> {
     const unique = new Map<string, IssueRef>();
     for (const ref of refs) unique.set(issueKey(ref), ref);
     if (unique.size === 0) return [];
@@ -319,6 +328,7 @@ export class IssuesService {
       .into(IssueEntity)
       .values(
         [...unique.entries()].map(([key, ref]) => ({
+          workspaceId,
           key,
           host: issueHost(ref),
           owner: ref.owner,
@@ -331,14 +341,14 @@ export class IssuesService {
       .orIgnore()
       .execute();
 
-    const rows = await this.issues.findBy({ key: In([...unique.keys()]) });
+    const rows = await this.issues.findBy({ workspaceId, key: In([...unique.keys()]) });
     const byKey = new Map(rows.map((row) => [row.key, row]));
     return [...unique.keys()].map((key) => byKey.get(key)!);
   }
 
-  private async inOrder(ids: string[]): Promise<IssueEntity[]> {
+  private async inOrder(workspaceId: string, ids: string[]): Promise<IssueEntity[]> {
     if (ids.length === 0) return [];
-    const byId = new Map((await this.issues.findBy({ id: In(ids) })).map((row) => [row.id, row]));
+    const byId = new Map((await this.issues.findBy({ workspaceId, id: In(ids) })).map((row) => [row.id, row]));
     return ids.map((id) => byId.get(id)).filter((row): row is IssueEntity => !!row);
   }
 }

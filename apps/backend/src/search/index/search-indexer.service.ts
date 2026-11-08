@@ -24,7 +24,7 @@ import {
 import { isTypeormSchemaSyncEnabled } from 'src/config/env.config';
 import { SearchResultType } from '../enums';
 import { SearchEmbedderService } from './search-embedder.service';
-import { LEXICAL_SCHEMA_STATEMENTS } from './search-schema';
+import { LEXICAL_SCHEMA_STATEMENTS, SEARCH_WORKSPACE_SCHEMA_STATEMENTS } from './search-schema';
 import { SEARCH_PROJECTIONS, SearchProjection, projectionSelect } from './search-projections';
 
 const SWEEP_INTERVAL_MS = 60_000;
@@ -51,7 +51,7 @@ export class SearchIndexerService implements OnApplicationBootstrap {
   async onApplicationBootstrap(): Promise<void> {
     if (isTypeormSchemaSyncEnabled()) {
       // Migrations do not run in sync mode, and these tables have no entities to sync from.
-      for (const statement of LEXICAL_SCHEMA_STATEMENTS) {
+      for (const statement of [...LEXICAL_SCHEMA_STATEMENTS, ...SEARCH_WORKSPACE_SCHEMA_STATEMENTS]) {
         await this.dataSource.query(statement);
       }
     }
@@ -126,15 +126,16 @@ export class SearchIndexerService implements OnApplicationBootstrap {
       ? 'TRUE'
       : `d."id" IS NULL
          OR d."source_updated_at" IS DISTINCT FROM src.source_updated_at
-         OR d."keywords" IS DISTINCT FROM src.keywords`;
+         OR d."keywords" IS DISTINCT FROM src.keywords
+         OR d."workspace_id" IS DISTINCT FROM src.workspace_id`;
 
     const upserted: Array<{ count: string }> = await this.dataSource.query(
       `WITH written AS (
          INSERT INTO "search_documents" (
-           "entity_type", "entity_id", "result_type", "result_id", "title", "search_title",
+           "entity_type", "entity_id", "result_type", "result_id", "workspace_id", "title", "search_title",
            "body", "keywords", "body_weight", "meta", "source_updated_at", "content_hash"
          )
-         SELECT ${entityType}, src.entity_id, '${projection.resultType}', src.result_id, src.title,
+         SELECT ${entityType}, src.entity_id, '${projection.resultType}', src.result_id, src.workspace_id, src.title,
                 src.search_title, src.body, src.keywords, src.body_weight, src.meta,
                 src.source_updated_at,
                 md5(src.title || chr(31) || src.search_title || chr(31) || src.body)
@@ -144,6 +145,7 @@ export class SearchIndexerService implements OnApplicationBootstrap {
          WHERE ${outdated}
          ON CONFLICT ("entity_type", "entity_id") DO UPDATE SET
            "result_id" = EXCLUDED."result_id",
+           "workspace_id" = EXCLUDED."workspace_id",
            "title" = EXCLUDED."title",
            "search_title" = EXCLUDED."search_title",
            "body" = EXCLUDED."body",
@@ -162,10 +164,12 @@ export class SearchIndexerService implements OnApplicationBootstrap {
              THEN "search_documents"."embed_retry_at" ELSE NULL END
          WHERE ("search_documents"."content_hash", "search_documents"."keywords",
                 "search_documents"."meta", "search_documents"."source_updated_at",
-                "search_documents"."title", "search_documents"."result_id")
+                "search_documents"."title", "search_documents"."result_id",
+                "search_documents"."workspace_id")
                IS DISTINCT FROM
                (EXCLUDED."content_hash", EXCLUDED."keywords", EXCLUDED."meta",
-                EXCLUDED."source_updated_at", EXCLUDED."title", EXCLUDED."result_id")
+                EXCLUDED."source_updated_at", EXCLUDED."title", EXCLUDED."result_id",
+                EXCLUDED."workspace_id")
          RETURNING 1
        )
        SELECT count(*) AS count FROM written`,

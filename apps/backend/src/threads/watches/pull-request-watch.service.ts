@@ -71,17 +71,19 @@ export class PullRequestWatchService {
       return { watching: false, reason: 'The thread was not found.', pullRequest };
     }
     await this.pullRequests.setWatchedUntil(
+      input.workspaceId,
       pullRequest.id,
-      await this.watches.latestExpiry(ThreadWatchKind.PULL_REQUEST, pullRequest.id),
+      await this.watches.latestExpiry(input.workspaceId, ThreadWatchKind.PULL_REQUEST, pullRequest.id),
     );
     return { watching: true, watch, pullRequest };
   }
 
   /** Keeps the pull request polled often for as long as any watch on it lasts. */
-  async syncPolling(pullRequestId: string): Promise<void> {
+  async syncPolling(workspaceId: string, pullRequestId: string): Promise<void> {
     await this.pullRequests.setWatchedUntil(
+      workspaceId,
       pullRequestId,
-      await this.watches.latestExpiry(ThreadWatchKind.PULL_REQUEST, pullRequestId),
+      await this.watches.latestExpiry(workspaceId, ThreadWatchKind.PULL_REQUEST, pullRequestId),
     );
   }
 
@@ -93,8 +95,9 @@ export class PullRequestWatchService {
     const removed = await this.watches.cancel(workspaceId, input);
     if (removed?.kind === ThreadWatchKind.PULL_REQUEST) {
       await this.pullRequests.setWatchedUntil(
+        workspaceId,
         removed.targetId,
-        await this.watches.latestExpiry(ThreadWatchKind.PULL_REQUEST, removed.targetId),
+        await this.watches.latestExpiry(workspaceId, ThreadWatchKind.PULL_REQUEST, removed.targetId),
       );
     }
     return removed;

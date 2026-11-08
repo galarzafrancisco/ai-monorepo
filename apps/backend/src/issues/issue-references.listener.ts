@@ -7,7 +7,9 @@ import {
   TaskUpdatedEvent,
 } from '../tasks/events/tasks.events';
 import { MessageCreatedEvent } from '../threads/events/threads.events';
+import { DataSource } from 'typeorm';
 import { IssuesService } from './issues.service';
+import { workspaceOfSource } from '../workspaces/source-workspace';
 import { IssueReferenceSource } from './enums';
 import { IssueReferenceInput } from './dto/service/issues.service.types';
 
@@ -20,7 +22,10 @@ import { IssueReferenceInput } from './dto/service/issues.service.types';
 export class IssueReferencesListener {
   private readonly logger = new Logger(IssueReferencesListener.name);
 
-  constructor(private readonly issues: IssuesService) {}
+  constructor(
+    private readonly issues: IssuesService,
+    private readonly dataSource: DataSource,
+  ) {}
 
   @OnEvent(TaskCreatedEvent.INTERNAL)
   @OnEvent(TaskUpdatedEvent.INTERNAL)
@@ -72,7 +77,10 @@ export class IssueReferencesListener {
     ...source
   }: Omit<IssueReferenceInput, 'refs'> & { text: string | null | undefined }): Promise<void> {
     try {
-      const input: IssueReferenceInput = { ...source, refs: await this.issues.extractRefs(text) };
+      const workspaceId = await workspaceOfSource(this.dataSource, source);
+      if (!workspaceId) return;
+      // Hosts are the Enterprises the source's own workspace has connections to.
+      const input: IssueReferenceInput = { ...source, refs: await this.issues.extractRefs(workspaceId, text) };
       // A new task or comment without links has nothing to replace: skip the write.
       if (input.refs.length === 0 && input.sourceType !== IssueReferenceSource.TASK_DESCRIPTION) return;
       await this.issues.replaceReferences(input);
