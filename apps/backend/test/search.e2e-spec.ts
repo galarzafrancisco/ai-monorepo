@@ -200,14 +200,21 @@ describe('Search E2E', () => {
         `Welcome to the office.\n\n${filler}The spare projector lives in the basement cupboard.\n\n${filler}`,
       );
 
+      // Misspelled, so only the title matches: no keyword hit in the content.
       const byTitle = await eventually(async () => {
-        const results = await search('office handbook');
+        const results = await search('ofice handbok');
         expect(results[0]?.id).toBe(id);
         return results[0];
       });
+      expect(byTitle.matchedBy).toEqual(['fuzzy_title']);
       expect(byTitle.matchedOn).toBe('title');
       expect(byTitle.excerpt.startsWith('Welcome to the office.')).toBe(true);
       expect(byTitle.excerptIsComplete).toBe(false);
+
+      // Title and content match equally well: the matching passage wins, every time.
+      const byBoth = (await search('office handbook'))[0];
+      expect(byBoth).toMatchObject({ id, matchedOn: 'content', excerptIsComplete: false });
+      expect(byBoth.matchedBy).toEqual(expect.arrayContaining(['fuzzy_title', 'keyword']));
 
       const byContent = (await search('projector basement'))[0];
       expect(byContent).toMatchObject({ id, matchedOn: 'content', excerptIsComplete: false });

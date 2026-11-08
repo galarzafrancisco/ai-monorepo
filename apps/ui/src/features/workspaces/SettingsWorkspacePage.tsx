@@ -161,7 +161,7 @@ export function SettingsWorkspacePage() {
               <div className="settings-users-page__badges">
                 {isWorkspaceAdmin ? (
                   <select
-                    className="login-input"
+                    className="login-input settings-users-page__role-select"
                     aria-label={`Role of ${member.displayName}`}
                     value={member.role}
                     onChange={(event) => void changeRole(member, event.target.value as WorkspaceRole)}

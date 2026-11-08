@@ -304,12 +304,16 @@ export class IndexSearchService {
         LIMIT ${bind(limit)}::int
       ),
       -- The single hit that did most to place the result decides what the excerpt shows.
+      -- On a tie, a hit with a passage (semantic, then keyword) beats a title-only one,
+      -- and the order is fixed so the same query always shows the same excerpt.
       best_hit AS (
         SELECT DISTINCT ON (d."result_type", d."result_id")
                d."result_type", d."result_id", h.strategy, h.doc_id, h.chunk_id
         FROM hits h JOIN "search_documents" d ON d."id" = h.doc_id
         ORDER BY d."result_type", d."result_id",
-                 h.weight / (${rrfK} + h.rank) DESC, (h.strategy = 'semantic') DESC
+                 h.weight / (${rrfK} + h.rank) DESC,
+                 CASE h.strategy WHEN 'semantic' THEN 0 WHEN 'keyword' THEN 1 ELSE 2 END,
+                 h.doc_id
       )
       SELECT r."result_type", r."result_id", r."title", r."meta", r.score, r.matched_by, r.ranks,
              b.strategy AS hit_strategy,
