@@ -749,6 +749,16 @@
             }
           },
           {
+            "name": "workspace",
+            "required": false,
+            "in": "query",
+            "description": "Taico extension: the slug of the workspace the client wants a token for (a worker started with --workspace). Only for Taico's own servers; consent from any other workspace is refused.",
+            "schema": {
+              "example": "acme",
+              "type": "string"
+            }
+          },
+          {
             "name": "serverIdentifier",
             "required": true,
             "in": "path",
@@ -10082,6 +10092,12 @@
               }
             ]
           },
+          "requestedWorkspaceSlug": {
+            "type": "string",
+            "description": "The slug of the workspace the client asked for (a worker started with --workspace), or null if it did not ask. Approval is refused unless the person is in that workspace.",
+            "example": "acme",
+            "nullable": true
+          },
           "redirectUri": {
             "type": "string",
             "description": "Redirect URI provided in the authorization request",
@@ -10099,6 +10115,7 @@
           "server",
           "client",
           "workspace",
+          "requestedWorkspaceSlug",
           "redirectUri",
           "createdAt"
         ]

@@ -494,8 +494,39 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
     const REDIRECT_URI = 'http://127.0.0.1:6275/callback';
     const tokenPath = `/api/v1/auth/token/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`;
 
+    /** The authorization request a worker sends, for its link. */
+    function authorizeQuery(clientId: string, codeVerifier: string, workspace?: string) {
+      return {
+        response_type: 'code',
+        client_id: clientId,
+        redirect_uri: REDIRECT_URI,
+        scope: 'workers:connect',
+        state: 'p4-state',
+        code_challenge: createHash('sha256').update(codeVerifier).digest('base64url'),
+        code_challenge_method: 'S256',
+        ...(workspace ? { workspace } : {}),
+      };
+    }
+
+    function openAuthorizeLink(query: Record<string, string>) {
+      return request(http)
+        .get(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
+        .query(query);
+    }
+
+    function flowIdFrom(res: { headers: Record<string, string> }): string {
+      return new URL(res.headers.location, 'http://x').searchParams.get('flow')!;
+    }
+
+    function approve(cookies: string, flowId: string, workspaceId: string) {
+      return request(http)
+        .post(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
+        .set('Cookie', cookies)
+        .send({ flow_id: flowId, approved: true, workspace_id: workspaceId });
+    }
+
     /** Registers a worker client and starts its OAuth flow; returns the consent flow. */
-    async function startWorkerFlow() {
+    async function startWorkerFlow(workspace?: string) {
       const registered = await request(http)
         .post(`/api/v1/auth/clients/register/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
         .send({
@@ -508,25 +539,14 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .expect(201);
       const clientId: string = registered.body.client_id;
       const codeVerifier = randomBytes(32).toString('base64url');
-      const authorize = await request(http)
-        .get(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
-        .query({
-          response_type: 'code',
-          client_id: clientId,
-          redirect_uri: REDIRECT_URI,
-          scope: 'workers:connect',
-          state: 'p4-state',
-          code_challenge: createHash('sha256').update(codeVerifier).digest('base64url'),
-          code_challenge_method: 'S256',
-        })
-        .expect(302);
-      const flowId = new URL(authorize.headers.location, 'http://x').searchParams.get('flow');
-      return { clientId, codeVerifier, flowId: flowId! };
+      const query = authorizeQuery(clientId, codeVerifier, workspace);
+      const authorize = await openAuthorizeLink(query).expect(302);
+      return { clientId, codeVerifier, flowId: flowIdFrom(authorize), query };
     }
 
     /** A worker's OAuth flow, consented with `cookies`. */
-    async function authorizeWorker(cookies: string) {
-      const { clientId, codeVerifier, flowId } = await startWorkerFlow();
+    async function authorizeWorker(cookies: string, workspace?: string) {
+      const { clientId, codeVerifier, flowId, query } = await startWorkerFlow(workspace);
       const consent = await request(http)
         .get(`/api/v1/auth/consent/${flowId}`)
         .set('Cookie', cookies)
@@ -550,6 +570,8 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .expect(201);
       return {
         clientId,
+        codeVerifier,
+        query,
         consentWorkspace: consent.body.workspace as { id: string; slug: string },
         refreshToken: tokens.body.refresh_token as string,
         workspaceId: (decodeJwt(tokens.body.access_token) as { workspace_id?: string })
@@ -597,6 +619,59 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .set('Cookie', switchedBack)
         .send({ flow_id: flowId, approved: true, workspace_id: workspace.id })
         .expect(400);
+    });
+
+    it('refuses an authorization link opened again after it was approved, in any workspace', async () => {
+      const workspace = await createWorkspace(operator);
+      const inWorkspace = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+      const worker = await authorizeWorker(inWorkspace);
+      expect(worker.workspaceId).toBe(workspace.id);
+
+      // The same link, opened from the default workspace: no second consent.
+      const reopened = await openAuthorizeLink(worker.query).expect(409);
+      expect(reopened.body.code).toBe('AUTHORIZATION_LINK_ALREADY_USED');
+
+      // A new link for the same worker client is refused too: a worker
+      // registers a new client every time it asks to be authorized.
+      const other = await openAuthorizeLink(
+        authorizeQuery(worker.clientId, randomBytes(32).toString('base64url')),
+      ).expect(409);
+      expect(other.body.code).toBe('WORKER_ALREADY_AUTHORIZED');
+    });
+
+    it('reopens the same consent when the link is opened again before deciding', async () => {
+      const { flowId, query } = await startWorkerFlow();
+      const again = await openAuthorizeLink(query).expect(302);
+      expect(flowIdFrom(again)).toBe(flowId);
+    });
+
+    it('only lets a worker started with --workspace be approved from that workspace', async () => {
+      const workspace = await createWorkspace(operator);
+      const { flowId } = await startWorkerFlow(workspace.slug);
+
+      // From the default workspace: the screen says what was asked for, and
+      // approval is refused.
+      const shown = await request(http)
+        .get(`/api/v1/auth/consent/${flowId}`)
+        .set('Cookie', operator)
+        .expect(200);
+      expect(shown.body.workspace.id).toBe(DEFAULT_WORKSPACE_ID);
+      expect(shown.body.requestedWorkspaceSlug).toBe(workspace.slug);
+      await approve(operator, flowId, DEFAULT_WORKSPACE_ID).expect(400);
+
+      // From the requested workspace it connects there.
+      const inWorkspace = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+      const worker = await authorizeWorker(inWorkspace, workspace.slug);
+      expect(worker.consentWorkspace.id).toBe(workspace.id);
+      expect(worker.workspaceId).toBe(workspace.id);
+
+      // Without --workspace, nothing is asked for.
+      const { flowId: plainFlow } = await startWorkerFlow();
+      const plain = await request(http)
+        .get(`/api/v1/auth/consent/${plainFlow}`)
+        .set('Cookie', operator)
+        .expect(200);
+      expect(plain.body.requestedWorkspaceSlug).toBeNull();
     });
 
     it('stops a removed member’s worker instead of moving it to another workspace', async () => {

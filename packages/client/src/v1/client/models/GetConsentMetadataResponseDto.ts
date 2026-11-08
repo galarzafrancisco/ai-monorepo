@@ -35,6 +35,10 @@ export type GetConsentMetadataResponseDto = {
      */
     workspace: FlowWorkspaceDto;
     /**
+     * The slug of the workspace the client asked for (a worker started with --workspace), or null if it did not ask. Approval is refused unless the person is in that workspace.
+     */
+    requestedWorkspaceSlug: string | null;
+    /**
      * Redirect URI provided in the authorization request
      */
     redirectUri: string;

@@ -22,8 +22,8 @@ export class AuthorizationServerResource extends BaseClient {
   }
 
   /** OAuth 2.0 Authorization Endpoint */
-  async AuthorizationController_authorize(params: { serverIdentifier: string; version: string; response_type: 'code'; scope?: string; client_id: string; code_challenge: string; code_challenge_method: string; redirect_uri: string; state: string; resource?: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('GET', `/api/v1/auth/authorize/mcp/${params.serverIdentifier}/${params.version}`, { params: { response_type: params.response_type, scope: params.scope, client_id: params.client_id, code_challenge: params.code_challenge, code_challenge_method: params.code_challenge_method, redirect_uri: params.redirect_uri, state: params.state, resource: params.resource }, responseType: 'void', signal: params?.signal });
+  async AuthorizationController_authorize(params: { serverIdentifier: string; version: string; response_type: 'code'; scope?: string; client_id: string; code_challenge: string; code_challenge_method: string; redirect_uri: string; state: string; resource?: string; workspace?: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('GET', `/api/v1/auth/authorize/mcp/${params.serverIdentifier}/${params.version}`, { params: { response_type: params.response_type, scope: params.scope, client_id: params.client_id, code_challenge: params.code_challenge, code_challenge_method: params.code_challenge_method, redirect_uri: params.redirect_uri, state: params.state, resource: params.resource, workspace: params.workspace }, responseType: 'void', signal: params?.signal });
   }
 
   /** OAuth 2.0 Authorization Consent Handler */
