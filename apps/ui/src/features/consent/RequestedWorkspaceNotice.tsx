@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
-import { WorkspacesService, type WorkspaceResponseDto } from '../workspaces/api';
+import { useWorkspacesCtx } from '../workspaces/WorkspacesProvider';
 import { switchWorkspaceAndReload } from '../workspaces/reloadInWorkspace';
 
 type RequestedWorkspaceNoticeProps = {
@@ -16,21 +16,10 @@ type RequestedWorkspaceNoticeProps = {
  */
 export function RequestedWorkspaceNotice({ requestedSlug }: RequestedWorkspaceNoticeProps) {
   const location = useLocation();
-  const [requested, setRequested] = useState<WorkspaceResponseDto | null>(null);
+  const { workspaces } = useWorkspacesCtx();
+  const requested = workspaces.find((workspace) => workspace.slug === requestedSlug);
   const [isSwitching, setIsSwitching] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    WorkspacesService.workspaceAdminControllerListMine()
-      .then((mine) => {
-        if (!cancelled) setRequested(mine.find((workspace) => workspace.slug === requestedSlug) ?? null);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [requestedSlug]);
 
   const onSwitch = async () => {
     if (!requested) return;
