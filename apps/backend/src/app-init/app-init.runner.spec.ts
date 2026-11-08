@@ -27,6 +27,7 @@ import { createDeveloper } from './agent/developer.agent';
 import { createCodexDev } from './agent/codex-dev.agent';
 import { createGrokDev } from './agent/grok-dev.agent';
 import { AgentNotFoundError } from 'src/agents/errors/agents.errors';
+import { DEFAULT_WORKSPACE_ID } from 'src/workspaces/workspaces.constants';
 import {
   ASSISTANT_PROMPT,
   DEV_PROMPT,
@@ -53,7 +54,7 @@ describe('AppInitRunner seeded prompt sync', () => {
 
   function buildRunner(stored: Record<string, string>) {
     const agentsService = {
-      getAgentBySlug: jest.fn(({ slug }: { slug: string }) =>
+      getAgentBySlug: jest.fn((_workspaceId: string, { slug }: { slug: string }) =>
         slug in stored
           ? Promise.resolve({
               actorId: `actor-${slug}`,
@@ -62,10 +63,11 @@ describe('AppInitRunner seeded prompt sync', () => {
             })
           : Promise.reject(new AgentNotFoundError(slug)),
       ),
-      createAgent: jest.fn((input: { slug: string; systemPrompt: string }) =>
+      createAgent: jest.fn(
+        (_workspaceId: string, input: { slug: string; systemPrompt: string }) =>
         Promise.resolve({ actorId: `actor-${input.slug}`, ...input }),
       ),
-      patchAgent: jest.fn<Promise<void>, [string, unknown]>(() =>
+      patchAgent: jest.fn<Promise<void>, [string, string, unknown]>(() =>
         Promise.resolve(),
       ),
     };
@@ -89,7 +91,7 @@ describe('AppInitRunner seeded prompt sync', () => {
   }
 
   function patchedSlugs(agentsService: { patchAgent: jest.Mock }) {
-    return agentsService.patchAgent.mock.calls.map(([actorId]) =>
+    return agentsService.patchAgent.mock.calls.map(([, actorId]) =>
       String(actorId).replace(/^actor-/, ''),
     );
   }
@@ -107,7 +109,7 @@ describe('AppInitRunner seeded prompt sync', () => {
 
     expect(patchedSlugs(agentsService).sort()).toEqual([...DEV_SLUGS].sort());
     for (const call of agentsService.patchAgent.mock.calls) {
-      expect(call[1]).toEqual({ systemPrompt: DEV_PROMPT });
+      expect(call[2]).toEqual({ systemPrompt: DEV_PROMPT });
     }
   });
 
@@ -120,6 +122,7 @@ describe('AppInitRunner seeded prompt sync', () => {
     await runner.ensureAgents();
 
     expect(agentsService.patchAgent).toHaveBeenCalledWith(
+      DEFAULT_WORKSPACE_ID,
       'actor-code-reviewer',
       { systemPrompt: REVIEWER_PROMPT },
     );
@@ -134,6 +137,7 @@ describe('AppInitRunner seeded prompt sync', () => {
     await runner.ensureAgents();
 
     expect(agentsService.patchAgent).toHaveBeenCalledWith(
+      DEFAULT_WORKSPACE_ID,
       'actor-gemini-assistant',
       { systemPrompt: ASSISTANT_PROMPT },
     );
