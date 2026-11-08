@@ -33,6 +33,7 @@ import { AccessTokenClaims } from '../../core/types/access-token-claims.type';
 import { getConfig } from 'src/config/env.config';
 import { isAudienceAcceptedForRequest } from '../../core/resource-audience';
 import {
+  enforceExpectedWorkspace,
   enforceWorkspaceAccess,
   entryPointName,
   workspaceAccessOf,
@@ -105,6 +106,7 @@ export class AccessTokenGuard implements CanActivate {
       authContext,
       entryPointName(context),
     );
+    enforceExpectedWorkspace(req.headers, authContext);
 
     res.locals.auth = authContext;
 

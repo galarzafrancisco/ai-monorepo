@@ -234,6 +234,43 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       await request(http).post('/api/v1/auth/refresh').set('Cookie', fresh).expect(401);
     });
 
+    it('refuses a page still showing the old workspace once another tab switched', async () => {
+      const workspace = await createWorkspace(operator);
+      const session = await getAuthCookies(http);
+      // Tab 2 loaded in the default workspace; tab 1 switches the shared cookies.
+      const switched = cookiesFrom(await switchTo(session, workspace.id).expect(200));
+
+      const name = `stale tab task ${unique()}`;
+      const stale = await request(http)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', switched)
+        .set('x-taico-workspace', DEFAULT_WORKSPACE_ID)
+        .send({ name, description: 'Typed while the page showed the default workspace' })
+        .expect(409);
+      expect(stale.body.code).toBe('WORKSPACE_CHANGED');
+      await request(http)
+        .get('/api/v1/workspaces/current')
+        .set('Cookie', switched)
+        .set('x-taico-workspace', DEFAULT_WORKSPACE_ID)
+        .expect(409);
+
+      // Nothing was written in the new workspace.
+      const tasks = await request(http)
+        .get('/api/v1/tasks/tasks')
+        .set('Cookie', switched)
+        .expect(200);
+      const items = (tasks.body.items ?? tasks.body) as { name: string }[];
+      expect(items.some((t) => t.name === name)).toBe(false);
+
+      // A page showing the session's workspace, or sending no header, works.
+      await request(http)
+        .get('/api/v1/workspaces/current')
+        .set('Cookie', switched)
+        .set('x-taico-workspace', workspace.id)
+        .expect(200);
+      await request(http).get('/api/v1/workspaces/current').set('Cookie', switched).expect(200);
+    });
+
     it('answers 404 for a workspace you are not in, or that does not exist', async () => {
       const workspace = await createWorkspace(operator);
       const person = await createPerson();

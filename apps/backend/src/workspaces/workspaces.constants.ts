@@ -16,3 +16,10 @@ export const DEFAULT_WORKSPACE_NAME = 'Default workspace';
  * it works on, and this constant goes away. Grep for it to find them.
  */
 export const UNSCOPED_MODULE_WORKSPACE_ID = DEFAULT_WORKSPACE_ID;
+
+/**
+ * Request header the web app sets to the workspace the page is showing. When
+ * present and the token is for another workspace, the request is refused with
+ * `WORKSPACE_CHANGED` (409). See `enforceExpectedWorkspace`.
+ */
+export const EXPECTED_WORKSPACE_HEADER = 'x-taico-workspace';
