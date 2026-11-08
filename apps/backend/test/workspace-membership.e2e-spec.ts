@@ -14,6 +14,8 @@ import { IdentityProviderService } from '../src/identity-provider/identity-provi
 import { UserRole } from '../src/identity-provider/enums';
 import { TagEntity } from '../src/meta/tag.entity';
 import { AiProviderEntity } from '../src/ai-providers/ai-provider.entity';
+import { AgentEntity } from '../src/agents/agent.entity';
+import { SEEDED_AGENTS } from '../src/app-init/agent/seeded-agents';
 import { WorkspaceMemberEntity } from '../src/workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../src/workspaces/enums';
 import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
@@ -138,7 +140,7 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .expect(403);
     });
 
-    it('makes the operator its admin and seeds tags, the taico agent and providers', async () => {
+    it('makes the operator its admin and seeds tags, the built-in agents and providers', async () => {
       const workspace = await createWorkspace(operator);
 
       const membership = await members.findOneBy({
@@ -168,6 +170,13 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         await members.findOneBy({ workspaceId: workspace.id, actorId: agent.body.actorId }),
       ).not.toBeNull();
       expect(await members.countBy({ actorId: agent.body.actorId })).toBe(1);
+
+      const agents = await app
+        .get<Repository<AgentEntity>>(getRepositoryToken(AgentEntity))
+        .find({ where: { workspaceId: workspace.id }, relations: { actor: true } });
+      expect(agents.map((a) => a.slug).sort()).toEqual(
+        SEEDED_AGENTS.map(({ seed }) => seed.slug).sort(),
+      );
     });
 
     it('refuses a slug that is taken', async () => {

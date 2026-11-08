@@ -3,7 +3,9 @@ import { AgentsService } from '../agents/agents.service';
 import { AgentSlugConflictError } from '../agents/errors/agents.errors';
 import { AiProvidersService } from '../ai-providers/ai-providers.service';
 import { AiProviderType } from '../ai-providers/enums';
-import { createTaico } from '../app-init/agent/taico.agent';
+import { SEEDED_AGENTS } from '../app-init/agent/seeded-agents';
+import { PROTECTED_AGENT_SLUGS } from '../agents/protected-agents';
+import { ActorService } from '../identity-provider/actor.service';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { UserRole } from '../identity-provider/enums';
 import { MetaService } from '../meta/meta.service';
@@ -29,6 +31,7 @@ export class WorkspaceAdminService {
     private readonly metaService: MetaService,
     private readonly agentsService: AgentsService,
     private readonly aiProvidersService: AiProvidersService,
+    private readonly actorService: ActorService,
   ) {}
 
   /**
@@ -51,7 +54,9 @@ export class WorkspaceAdminService {
   /**
    * What a new workspace starts with:
    * - the system tags
-   * - the `taico` agent, which runs its threads
+   * - the built-in agents (`SEEDED_AGENTS`): the `taico` agent, which runs
+   *   its threads, and the developer, reviewer, planner and other agents the
+   *   default workspace starts with
    * - the OpenAI and Google Vertex AI providers with no credentials: they are
    *   not configured until a workspace admin adds a key (installation
    *   credentials are the default workspace's only)
@@ -61,10 +66,20 @@ export class WorkspaceAdminService {
   async provision(workspaceId: string): Promise<void> {
     await this.metaService.ensureSystemTags(workspaceId);
 
-    try {
-      await this.agentsService.createAgent(workspaceId, createTaico);
-    } catch (error) {
-      if (!(error instanceof AgentSlugConflictError)) throw error;
+    for (const { seed } of SEEDED_AGENTS) {
+      // Run again on a part-seeded workspace, a built-in agent its admins
+      // deleted stays deleted. The threads agent cannot be deleted.
+      if (
+        !PROTECTED_AGENT_SLUGS.includes(seed.slug) &&
+        (await this.actorService.hasDeletedActorForSlug(workspaceId, seed.slug))
+      ) {
+        continue;
+      }
+      try {
+        await this.agentsService.createAgent(workspaceId, seed);
+      } catch (error) {
+        if (!(error instanceof AgentSlugConflictError)) throw error;
+      }
     }
 
     const providers = await this.aiProvidersService.listAiProviders(workspaceId);

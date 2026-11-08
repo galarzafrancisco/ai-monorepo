@@ -9,7 +9,7 @@ import { Repository, IsNull } from 'typeorm';
 import { AgentsService } from 'src/agents/agents.service';
 import { PROTECTED_AGENT_SLUGS } from 'src/agents/protected-agents';
 import { ActorService } from 'src/identity-provider/actor.service';
-import { createClaudeDev } from './agent/claude-dev.agent';
+import { SEEDED_AGENTS } from './agent/seeded-agents';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { createTasks, createTasksScopes } from './mcp/tasks.mcp';
 import { MCP_SERVER_AUTH_TYPE_TAICO } from '../mcp-registry/mcp-server.types';
@@ -37,17 +37,6 @@ import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { AgentEntity } from 'src/agents/agent.entity';
 import { IdentityProviderService } from 'src/identity-provider/identity-provider.service';
 import { Scope } from 'src/auth/core/types/scope.type';
-import { createCodexDev } from './agent/codex-dev.agent';
-import { createDeveloper } from './agent/developer.agent';
-import { createGeminiAssistant } from './agent/gemini-assistant.agent';
-import { createGrok } from './agent/grok.agent';
-import { createGrokDev } from './agent/grok-dev.agent';
-import { createCodeReviewer } from './agent/code-reviewer.agent';
-import { createLead } from './agent/lead.agent';
-import { createPlanner } from './agent/planner.agent';
-import { createPlanReviewer } from './agent/plan-reviewer.agent';
-import { createShipper } from './agent/shipper.agent';
-import { createTaskmaster } from './agent/taskmaster.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import {
@@ -55,11 +44,6 @@ import {
   DEV_PROMPT,
   REVIEWER_PROMPT,
 } from './prompts/prompts';
-import {
-  LEGACY_ASSISTANT_PROMPTS,
-  LEGACY_DEV_PROMPTS,
-  LEGACY_REVIEWER_PROMPTS,
-} from './prompts/legacy-prompts';
 import { normalizePrompt } from './seeded-follow-ups';
 import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
@@ -213,100 +197,22 @@ export class AppInitRunner implements OnApplicationBootstrap {
   }
 
   async ensureAgents() {
-    // Create agents
-    try {
-      const agent = await this.ensureAgentExists(createTaico);
-      if (agent && agent.systemPrompt !== createTaico.systemPrompt) {
-        await this.agentsService.patchAgent(DEFAULT_WORKSPACE_ID, agent.actorId, {
-          systemPrompt: createTaico.systemPrompt,
-        });
+    for (const { seed, legacyPrompts } of SEEDED_AGENTS) {
+      try {
+        const agent = await this.ensureAgentExists(seed);
+        if (seed.slug === createTaico.slug) {
+          // The threads agent always runs the current prompt.
+          if (agent && agent.systemPrompt !== seed.systemPrompt) {
+            await this.agentsService.patchAgent(DEFAULT_WORKSPACE_ID, agent.actorId, {
+              systemPrompt: seed.systemPrompt,
+            });
+          }
+        } else if (legacyPrompts) {
+          await this.syncSeededPrompt(agent, seed, legacyPrompts);
+        }
+      } catch (error) {
+        this.logger.error(`Error ensuring ${seed.slug} Agent exists`);
       }
-    } catch (error) {
-      this.logger.error('Error ensuring taico Agent exists');
-    }
-    try {
-      await this.syncSeededPrompt(
-        await this.ensureAgentExists(createClaudeDev),
-        createClaudeDev,
-        LEGACY_DEV_PROMPTS,
-      );
-    } catch (error) {
-      this.logger.error('Error ensuring claude-dev Agent exists');
-    }
-    try {
-      await this.syncSeededPrompt(
-        await this.ensureAgentExists(createDeveloper),
-        createDeveloper,
-        LEGACY_DEV_PROMPTS,
-      );
-    } catch (error) {
-      this.logger.error('Error ensuring developer Agent exists');
-    }
-    try {
-      await this.syncSeededPrompt(
-        await this.ensureAgentExists(createCodexDev),
-        createCodexDev,
-        LEGACY_DEV_PROMPTS,
-      );
-    } catch (error) {
-      this.logger.error('Error ensuring codex-dev Agent exists');
-    }
-    try {
-      await this.syncSeededPrompt(
-        await this.ensureAgentExists(createGeminiAssistant),
-        createGeminiAssistant,
-        LEGACY_ASSISTANT_PROMPTS,
-      );
-    } catch (error) {
-      this.logger.error('Error ensuring gemini-assistant Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createGrok);
-    } catch (error) {
-      this.logger.error('Error ensuring grok Agent exists');
-    }
-    try {
-      await this.syncSeededPrompt(
-        await this.ensureAgentExists(createGrokDev),
-        createGrokDev,
-        LEGACY_DEV_PROMPTS,
-      );
-    } catch (error) {
-      this.logger.error('Error ensuring grok-dev Agent exists');
-    }
-    try {
-      await this.syncSeededPrompt(
-        await this.ensureAgentExists(createCodeReviewer),
-        createCodeReviewer,
-        LEGACY_REVIEWER_PROMPTS,
-      );
-    } catch (error) {
-      this.logger.error('Error ensuring code-reviewer Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createShipper);
-    } catch (error) {
-      this.logger.error('Error ensuring shipper Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createLead);
-    } catch (error) {
-      this.logger.error('Error ensuring lead Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createPlanner);
-    } catch (error) {
-      this.logger.error('Error ensuring planner Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createPlanReviewer);
-    } catch (error) {
-      this.logger.error('Error ensuring plan-reviewer Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createTaskmaster);
-    } catch (error) {
-      this.logger.error('Error ensuring taskmaster Agent exists');
     }
   }
 
