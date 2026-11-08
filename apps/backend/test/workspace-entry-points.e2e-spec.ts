@@ -207,9 +207,15 @@ describe('Workspace entry points (e2e)', () => {
       if (segment.endsWith('/task-blueprints')) return ids.blueprint;
       if (segment.endsWith('/scheduled-tasks')) return ids.schedule;
       if (segment.endsWith('/executions/history')) return ids.history;
+      if (segment.endsWith('/ai-providers')) return ids.aiProvider;
+      if (segment.endsWith('/secrets')) return ids.secret;
       return ids.task;
     }
     if (n === 'slug' && path.startsWith('/agents')) return agentSlugA;
+    // A model selection's job is an enum value, not an id.
+    if (n === 'job') return 'conversation';
+    if (n === 'aiproviderid') return ids.aiProvider;
+    if (n === 'secretid') return ids.secret;
     // Free text that only looks like an id (an agent's model choice).
     if (n === 'providerid' || n === 'modelid') return `probe-${hex}`;
     if (n.includes('execution')) return ids.execution;
@@ -345,6 +351,9 @@ describe('Workspace entry points (e2e)', () => {
   }
 
   beforeAll(async () => {
+    // A's AI provider keeps its API key as a secret, which needs encrypted storage.
+    process.env.SECRETS_ENABLED = 'true';
+    process.env.SECRETS_ENCRYPTION_KEY ??= randomBytes(32).toString('hex');
     const mod: TestingModule = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = mod.createNestApplication();
     app.use(cookieParser());
@@ -422,6 +431,26 @@ describe('Workspace entry points (e2e)', () => {
       await created('POST', '/scheduled-tasks', { taskBlueprintId: ids.blueprint, cronExpression: '0 0 1 1 *', enabled: false })
     ).id;
     ids.run = (await created('POST', '/agent-runs', { parentTaskId: task.id })).id;
+    // A's AI models: a secret, a provider using it and the conversation model.
+    ids.secret = (
+      await created('POST', '/secrets', {
+        name: `Secret ${CANARY}`,
+        description: `Secret ${CANARY}`,
+        value: `value-${CANARY}`,
+      })
+    ).id;
+    ids.aiProvider = (
+      await created('POST', '/ai-providers', {
+        name: `Provider ${CANARY}`,
+        type: 'openai_compatible',
+        baseUrl: `http://127.0.0.1:9/${CANARY}`,
+        secretId: ids.secret,
+      })
+    ).id;
+    await created('PUT', '/ai-model-selections/conversation', {
+      aiProviderId: ids.aiProvider,
+      modelId: `model-${CANARY}`,
+    });
     const execution = await db.getRepository(ActiveTaskExecutionEntity).save({
       workspaceId: DEFAULT_WORKSPACE_ID,
       taskId: task.id,
@@ -451,6 +480,8 @@ describe('Workspace entry points (e2e)', () => {
   }, 60000);
 
   afterAll(async () => {
+    // Later suites in the same database start with no conversation model.
+    if (tokenA) await call(tokenA, 'DELETE', '/ai-model-selections/conversation');
     await app?.close();
   });
 

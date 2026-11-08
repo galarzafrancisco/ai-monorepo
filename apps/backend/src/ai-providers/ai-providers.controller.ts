@@ -33,10 +33,17 @@ import { AiProviderModelsService } from './ai-provider-models.service';
 import { AiProviderResult } from './dto/service/ai-providers.service.types';
 import { AiProvidersScopes } from './ai-providers.scopes';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { UserScopes } from '../auth/core/scopes/user.scopes';
 
 @ApiTags('AI Providers')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+/**
+ * The workspace's AI providers. Every member may read them (their threads use
+ * them); only a workspace admin (`user:admin`, from the membership role) may
+ * change them.
+ */
+@WorkspaceAccess('scoped')
 @Controller('ai-providers')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class AiProvidersController {
@@ -46,14 +53,17 @@ export class AiProvidersController {
   ) {}
 
   @Post()
-  @RequireScopes(AiProvidersScopes.WRITE.id)
+  @RequireScopes(AiProvidersScopes.WRITE.id, UserScopes.ADMIN.id)
   @ApiOperation({ summary: 'Create an AI provider' })
   @ApiCreatedResponse({
     type: AiProviderResponseDto,
     description: 'AI provider created successfully',
   })
-  async createAiProvider(@Body() dto: CreateAiProviderDto): Promise<AiProviderResponseDto> {
-    const result = await this.aiProvidersService.createAiProvider({
+  async createAiProvider(
+    @Body() dto: CreateAiProviderDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<AiProviderResponseDto> {
+    const result = await this.aiProvidersService.createAiProvider(workspaceId, {
       name: dto.name,
       type: dto.type,
       secretId: dto.secretId,
@@ -68,8 +78,10 @@ export class AiProvidersController {
   @RequireScopes(AiProvidersScopes.READ.id)
   @ApiOperation({ summary: 'List all AI providers' })
   @ApiOkResponse({ type: [AiProviderResponseDto], description: 'List of AI providers' })
-  async listAiProviders(): Promise<AiProviderResponseDto[]> {
-    const results = await this.aiProvidersService.listAiProviders();
+  async listAiProviders(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<AiProviderResponseDto[]> {
+    const results = await this.aiProvidersService.listAiProviders(workspaceId);
     return results.map((r) => this.mapToResponse(r));
   }
 
@@ -78,13 +90,16 @@ export class AiProvidersController {
   @ApiOperation({ summary: 'Get AI provider by ID' })
   @ApiOkResponse({ type: AiProviderResponseDto, description: 'AI provider details' })
   @ApiNotFoundResponse({ description: 'AI provider not found' })
-  async getAiProvider(@Param() params: AiProviderParamsDto): Promise<AiProviderResponseDto> {
-    const result = await this.aiProvidersService.getAiProviderById(params.id);
+  async getAiProvider(
+    @Param() params: AiProviderParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<AiProviderResponseDto> {
+    const result = await this.aiProvidersService.getAiProviderById(workspaceId, params.id);
     return this.mapToResponse(result);
   }
 
   @Patch(':id')
-  @RequireScopes(AiProvidersScopes.WRITE.id)
+  @RequireScopes(AiProvidersScopes.WRITE.id, UserScopes.ADMIN.id)
   @ApiOperation({ summary: 'Update an AI provider' })
   @ApiOkResponse({
     type: AiProviderResponseDto,
@@ -95,8 +110,9 @@ export class AiProvidersController {
     @Param() params: AiProviderParamsDto,
     @Body() dto: UpdateAiProviderDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AiProviderResponseDto> {
-    const result = await this.aiProvidersService.updateAiProvider(params.id, {
+    const result = await this.aiProvidersService.updateAiProvider(workspaceId, params.id, {
       name: dto.name,
       secretId: dto.secretId,
       apiKey: dto.apiKey,
@@ -110,12 +126,15 @@ export class AiProvidersController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequireScopes(AiProvidersScopes.DELETE.id)
+  @RequireScopes(AiProvidersScopes.DELETE.id, UserScopes.ADMIN.id)
   @ApiOperation({ summary: 'Delete an AI provider' })
   @ApiNoContentResponse({ description: 'AI provider deleted successfully' })
   @ApiNotFoundResponse({ description: 'AI provider not found' })
-  async deleteAiProvider(@Param() params: AiProviderParamsDto): Promise<void> {
-    await this.aiProvidersService.deleteAiProvider(params.id);
+  async deleteAiProvider(
+    @Param() params: AiProviderParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<void> {
+    await this.aiProvidersService.deleteAiProvider(workspaceId, params.id);
   }
 
   @Get(':id/models')
@@ -126,8 +145,13 @@ export class AiProvidersController {
   async listAiProviderModels(
     @Param() params: AiProviderParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AiProviderModelResponseDto[]> {
-    const models = await this.aiProviderModelsService.listModels(params.id, user.actorId);
+    const models = await this.aiProviderModelsService.listModels(
+      workspaceId,
+      params.id,
+      user.actorId,
+    );
     return models.map((model) => ({
       id: model.id,
       displayName: model.displayName,

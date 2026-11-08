@@ -10,7 +10,7 @@ import {
   AiProviderModelListingFailedError,
   AiProviderNotConfiguredError,
 } from './errors/ai-providers.errors';
-import { googleApiKeyFromEnv, vertexProjectFromEnv } from './google-environment';
+import { requireApiKey, vertexSettings } from './google-environment';
 import { ChatgptSubscriptionService } from './chatgpt-subscription/chatgpt-subscription.service';
 import { AiProvidersDomainError } from './errors/ai-providers.errors';
 
@@ -69,13 +69,17 @@ export class AiProviderModelsService {
    * `actorId` is who is asking. Providers that run on a person's own plan list
    * that person's models; the others ignore it.
    */
-  async listModels(providerId: string, actorId: string): Promise<AiProviderModelResult[]> {
-    const config = await this.aiProvidersService.getAiProviderConfigById(providerId);
+  async listModels(
+    workspaceId: string,
+    providerId: string,
+    actorId: string,
+  ): Promise<AiProviderModelResult[]> {
+    const config = await this.aiProvidersService.getAiProviderConfigById(workspaceId, providerId);
 
     if (config.type === AiProviderType.CHATGPT_SUBSCRIPTION) {
       try {
         // Kept in the order OpenAI returns them.
-        return await this.chatgptSubscription.listModels(providerId, actorId);
+        return await this.chatgptSubscription.listModels(workspaceId, providerId, actorId);
       } catch (error) {
         if (error instanceof AiProvidersDomainError) {
           throw error;
@@ -174,7 +178,7 @@ export class AiProviderModelsService {
 
   private async listGoogle(config: AiProviderConfigResult): Promise<AiProviderModelResult[]> {
     const baseUrl = trimSlash(config.baseUrl ?? GOOGLE_BASE_URL);
-    const headers = { 'x-goog-api-key': config.apiKey ?? googleApiKeyFromEnv() ?? '' };
+    const headers = { 'x-goog-api-key': requireApiKey(config) };
     const models: AiProviderModelResult[] = [];
     let pageToken: string | undefined;
 
@@ -209,21 +213,12 @@ export class AiProviderModelsService {
   }
 
   private async listVertex(config: AiProviderConfigResult): Promise<AiProviderModelResult[]> {
-    let credentials: Record<string, unknown> | undefined;
-    if (config.apiKey) {
-      try {
-        credentials = JSON.parse(config.apiKey);
-      } catch {
-        throw new AiProviderNotConfiguredError(config.id);
-      }
-    }
-
+    const { project, googleAuthOptions } = vertexSettings(config);
     const auth = new GoogleAuth({
-      credentials,
+      ...googleAuthOptions,
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
     const token = await auth.getAccessToken();
-    const project = config.project ?? vertexProjectFromEnv();
     const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
     if (project) {
       // User credentials are rejected without a project to bill the request to.

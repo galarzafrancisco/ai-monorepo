@@ -20,6 +20,11 @@ export class AiProviderAuthorizationAttemptEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  /** The workspace of its provider. */
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @Column({ type: 'uuid', name: 'ai_provider_id' })
   aiProviderId!: string;
 

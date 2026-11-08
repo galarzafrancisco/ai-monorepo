@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SecretsService } from '../../secrets/secrets.service';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../../workspaces/workspaces.constants';
 import { GithubAuthType } from '../enums';
 import { GithubConnectionInvalidError, GithubRequestFailedError } from '../errors/integrations.errors';
 import { createAppJwt, GithubApi, githubRequest } from './github-api';
@@ -39,7 +40,7 @@ export class GithubCredentialsService {
 
   /** A token for Taico's own calls (reading pull requests). */
   async getAccessToken(connection: GithubCredentialSource): Promise<GithubAccessToken> {
-    const secret = await this.secretsService.getSecretValue(connection.secretId);
+    const secret = await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
     if (connection.authType === GithubAuthType.PAT) {
       return { token: secret.value, expiresAt: null };
     }
@@ -61,7 +62,7 @@ export class GithubCredentialsService {
     connection: GithubCredentialSource,
     repositories: string[],
   ): Promise<GithubAccessToken> {
-    const secret = await this.secretsService.getSecretValue(connection.secretId);
+    const secret = await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
     return this.mintInstallationToken(connection, secret.value, repositories);
   }
 

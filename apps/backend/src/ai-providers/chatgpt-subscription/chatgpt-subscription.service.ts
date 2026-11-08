@@ -31,11 +31,14 @@ export class ChatgptSubscriptionService {
    * for. Throws when that person's connection cannot be used.
    */
   async modelForTurn(input: {
+    /** The workspace the turn runs in. Only its provider, and a member's connection, are used. */
+    workspaceId: string;
     providerId: string;
     modelId: string;
     onBehalfOf: OnBehalfOf;
   }): Promise<LanguageModel> {
     const { connectionId } = await this.connections.authorizeTurn(
+      input.workspaceId,
       input.providerId,
       input.onBehalfOf,
     );
@@ -56,10 +59,12 @@ export class ChatgptSubscriptionService {
    * person's connection.
    */
   async listModels(
+    workspaceId: string,
     providerId: string,
     actorId: string,
   ): Promise<AiProviderModelResult[]> {
     const { connectionId } = await this.connections.requireOwnConnection(
+      workspaceId,
       providerId,
       actorId,
     );

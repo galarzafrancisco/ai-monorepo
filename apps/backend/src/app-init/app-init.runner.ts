@@ -594,11 +594,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
     try {
       this.logger.log('Ensuring default AI providers exist');
 
-      const existingProviders = await this.aiProvidersService.listAiProviders();
+      const existingProviders = await this.aiProvidersService.listAiProviders(DEFAULT_WORKSPACE_ID);
 
       if (!existingProviders.some((p) => p.type === AiProviderType.OPENAI)) {
         this.logger.log('Creating default OpenAI AI provider');
-        await this.aiProvidersService.createAiProvider({
+        await this.aiProvidersService.createAiProvider(DEFAULT_WORKSPACE_ID, {
           name: 'OpenAI',
           type: AiProviderType.OPENAI,
           secretId: null,
@@ -608,7 +608,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
       // Works out of the box when the server has Google Cloud credentials in its environment.
       if (!existingProviders.some((p) => p.type === AiProviderType.GOOGLE_VERTEX)) {
         this.logger.log('Creating default Google Vertex AI AI provider');
-        await this.aiProvidersService.createAiProvider({
+        await this.aiProvidersService.createAiProvider(DEFAULT_WORKSPACE_ID, {
           name: 'Google Vertex AI',
           type: AiProviderType.GOOGLE_VERTEX,
           secretId: null,

@@ -9,7 +9,8 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { SearchIndexerService } from '../src/search/index/search-indexer.service';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 /**
  * Words the fake embedding model treats as the same idea. Everything else is
@@ -131,11 +132,14 @@ describe('Search E2E', () => {
     httpServer = app.getHttpServer();
 
     await ensureTestUser(app);
+    // Only a workspace admin may set up AI models; the scope is decided at login.
+    await setTestUserRole(app, UserRole.ADMIN);
     authCookies = await getAuthCookies(httpServer);
     embeddingServer = await startFakeEmbeddingServer(embeddingCalls);
   }, 30000);
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
     await new Promise((resolve) => embeddingServer.close(resolve));
   });

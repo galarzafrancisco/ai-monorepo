@@ -9,11 +9,8 @@ import { createXai } from '@ai-sdk/xai';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
 import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
-import {
-  googleApiKeyFromEnv,
-  vertexLocationFromEnv,
-  vertexProjectFromEnv,
-} from 'src/ai-providers/google-environment';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from 'src/workspaces/workspaces.constants';
+import { requireApiKey, vertexSettings } from 'src/ai-providers/google-environment';
 
 export type ResolvedEmbeddingModel = {
   model: EmbeddingModel;
@@ -36,7 +33,12 @@ export class SearchEmbeddingsService {
   /** The selected embedding model, or null when none is selected or its provider is not usable. */
   async resolveModel(): Promise<ResolvedEmbeddingModel | null> {
     try {
-      const selection = await this.aiModelSelectionsService.resolve(AiModelJob.EMBEDDINGS);
+      // The search index is installation-wide until phase 3e, so it embeds with
+      // the default workspace's embeddings model.
+      const selection = await this.aiModelSelectionsService.resolve(
+        UNSCOPED_MODULE_WORKSPACE_ID,
+        AiModelJob.EMBEDDINGS,
+      );
       const model = buildEmbeddingModel(selection.provider, selection.modelId);
       if (!model) {
         return null;
@@ -104,27 +106,19 @@ function buildEmbeddingModel(config: AiProviderConfigResult, modelId: string): E
 
   switch (config.type) {
     case AiProviderType.OPENAI:
-      return createOpenAI({ apiKey, baseURL }).textEmbeddingModel(modelId);
+      return createOpenAI({ apiKey: requireApiKey(config), baseURL }).textEmbeddingModel(modelId);
 
     case AiProviderType.GOOGLE:
-      return createGoogle({ apiKey: apiKey ?? googleApiKeyFromEnv(), baseURL }).textEmbeddingModel(
-        modelId,
-      );
+      return createGoogle({ apiKey: requireApiKey(config), baseURL }).textEmbeddingModel(modelId);
 
-    case AiProviderType.GOOGLE_VERTEX: {
-      const credentials = apiKey ? (JSON.parse(apiKey) as Record<string, unknown>) : undefined;
-      return createVertex({
-        project: config.project ?? vertexProjectFromEnv(),
-        location: config.location ?? vertexLocationFromEnv(),
-        googleAuthOptions: credentials ? { credentials } : undefined,
-      }).textEmbeddingModel(modelId);
-    }
+    case AiProviderType.GOOGLE_VERTEX:
+      return createVertex(vertexSettings(config)).textEmbeddingModel(modelId);
 
     case AiProviderType.XAI:
-      return createXai({ apiKey, baseURL }).textEmbeddingModel(modelId);
+      return createXai({ apiKey: requireApiKey(config), baseURL }).textEmbeddingModel(modelId);
 
     case AiProviderType.ANTHROPIC:
-      return createAnthropic({ apiKey, baseURL }).textEmbeddingModel(modelId);
+      return createAnthropic({ apiKey: requireApiKey(config), baseURL }).textEmbeddingModel(modelId);
 
     case AiProviderType.OPENAI_COMPATIBLE:
       if (!baseURL) {

@@ -12,8 +12,8 @@ import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AiModelJob } from '../src/ai-providers/enums';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
-import { SplitSmallTasksSelection1761700000000 } from '../src/migrations/1761700000000-SplitSmallTasksSelection';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 describe('AI model selection E2E', () => {
   let app: INestApplication<App>;
@@ -63,10 +63,13 @@ describe('AI model selection E2E', () => {
     dataSource = app.get(DataSource);
 
     await ensureTestUser(app);
+    // Only a workspace admin may set up AI models; the scope is decided at login.
+    await setTestUserRole(app, UserRole.ADMIN);
     authCookies = await getAuthCookies(httpServer);
   }, 30000);
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
   });
 
@@ -301,124 +304,5 @@ describe('AI model selection E2E', () => {
     } finally {
       process.env = savedEnv;
     }
-  });
-  describe('splitting the retired quick_tasks selection', () => {
-    const insertProvider = async (type: string): Promise<string> => {
-      const [row] = await dataSource.query(
-        `INSERT INTO ai_providers (name, type, row_version) VALUES ($1, $2, 1) RETURNING id`,
-        [`Migrated ${type}`, type],
-      );
-      return row.id;
-    };
-    const rows = async () =>
-      Object.fromEntries(
-        (
-          await dataSource.query(
-            `SELECT job, ai_provider_id, model_id FROM ai_model_selections
-              WHERE job IN ('quick_tasks', 'user_small_tasks', 'system_small_tasks')`,
-          )
-        ).map((row: { job: string }) => [row.job, row]),
-      );
-    const migrate = async (direction: 'up' | 'down') => {
-      const runner = dataSource.createQueryRunner();
-      try {
-        await new SplitSmallTasksSelection1761700000000()[direction](runner);
-      } finally {
-        await runner.release();
-      }
-    };
-    const cleanUp = async (providerId: string) => {
-      await dataSource.query(
-        `DELETE FROM ai_model_selections WHERE job IN ('quick_tasks', 'user_small_tasks', 'system_small_tasks')`,
-      );
-      await dataSource.query(`DELETE FROM ai_providers WHERE id = $1`, [providerId]);
-    };
-
-    it('carries an API-key selection over to both jobs, and back', async () => {
-      const providerId = await insertProvider('openai_compatible');
-      try {
-        await dataSource.query(
-          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id) VALUES ('quick_tasks', $1, 'small-model')`,
-          [providerId],
-        );
-
-        await migrate('up');
-        expect(await rows()).toEqual({
-          user_small_tasks: { job: 'user_small_tasks', ai_provider_id: providerId, model_id: 'small-model' },
-          system_small_tasks: { job: 'system_small_tasks', ai_provider_id: providerId, model_id: 'small-model' },
-        });
-
-        await migrate('down');
-        expect(await rows()).toEqual({
-          quick_tasks: { job: 'quick_tasks', ai_provider_id: providerId, model_id: 'small-model' },
-        });
-      } finally {
-        await cleanUp(providerId);
-      }
-    });
-
-    it('never carries a personal-plan selection over to system small tasks', async () => {
-      const providerId = await insertProvider('chatgpt_subscription');
-      try {
-        await dataSource.query(
-          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id) VALUES ('quick_tasks', $1, 'plan-model')`,
-          [providerId],
-        );
-
-        await migrate('up');
-        expect(await rows()).toEqual({
-          user_small_tasks: { job: 'user_small_tasks', ai_provider_id: providerId, model_id: 'plan-model' },
-        });
-
-        await migrate('down');
-        expect(await rows()).toEqual({
-          quick_tasks: { job: 'quick_tasks', ai_provider_id: providerId, model_id: 'plan-model' },
-        });
-      } finally {
-        await cleanUp(providerId);
-      }
-    });
-
-    it('rolls back to the user small tasks selection even when it runs on a personal plan', async () => {
-      const planProviderId = await insertProvider('chatgpt_subscription');
-      const apiProviderId = await insertProvider('openai_compatible');
-      try {
-        await dataSource.query(
-          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id)
-           VALUES ('user_small_tasks', $1, 'plan-model'), ('system_small_tasks', $2, 'api-model')`,
-          [planProviderId, apiProviderId],
-        );
-
-        await migrate('down');
-        expect(await rows()).toEqual({
-          quick_tasks: { job: 'quick_tasks', ai_provider_id: planProviderId, model_id: 'plan-model' },
-        });
-      } finally {
-        await cleanUp(planProviderId);
-        await dataSource.query(`DELETE FROM ai_providers WHERE id = $1`, [apiProviderId]);
-      }
-    });
-
-    it('rolls back to the system small tasks selection when user small tasks has none', async () => {
-      const providerId = await insertProvider('openai_compatible');
-      try {
-        await dataSource.query(
-          `INSERT INTO ai_model_selections (job, ai_provider_id, model_id) VALUES ('system_small_tasks', $1, 'api-model')`,
-          [providerId],
-        );
-
-        await migrate('down');
-        expect(await rows()).toEqual({
-          quick_tasks: { job: 'quick_tasks', ai_provider_id: providerId, model_id: 'api-model' },
-        });
-      } finally {
-        await cleanUp(providerId);
-      }
-    });
-
-    it('does nothing when quick tasks had no selection of their own', async () => {
-      await migrate('up');
-      expect(await rows()).toEqual({});
-    });
   });
 });

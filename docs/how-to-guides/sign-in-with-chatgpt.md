@@ -24,12 +24,21 @@ It also needs encrypted secret storage: `SECRETS_ENABLED=true` and a `SECRETS_EN
 
 ## What a person sees
 
-1. An admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model, and optionally as the User small tasks and Middle manager models. System small tasks need a provider with an API key. There is one such provider per installation and it holds no account.
+1. A workspace admin adds a provider of type **ChatGPT plan** and picks it as the Conversation model, and optionally as the User small tasks and Middle manager models. System small tasks need a provider with an API key. A workspace has at most one such provider, and it holds no account.
 2. Each person clicks **Continue with ChatGPT** on that provider. OpenAI opens in a new tab. They approve there; the tab then shows a "can't be reached" page at `http://127.0.0.1:1456/auth/callback?…`. They copy that whole address, paste it under **Finish signing in** in the Taico tab, and click **Finish**: "You're using your ChatGPT plan."
 3. Settings shows which account is connected, **Manage usage** (ChatGPT's usage page), **Reconnect** and **Disconnect**. Threads show "Using ChatGPT plan" next to the model.
 4. Disconnect revokes the grant at OpenAI and deletes everything stored about the account.
 
 The model list on this provider is the list of the signed-in person's own account, in OpenAI's order, without hidden models.
+
+## Workspaces
+
+AI providers and model choices belong to a workspace, and only a workspace admin changes them (see [Workspaces](../architecture/workspaces.md#ai-models-and-secrets-phase-3d)). The ChatGPT plan is different: it stays each person's own.
+
+- **Any member connects their own account.** No admin rights are needed, because it is that person's plan, not the workspace's.
+- **One connection per workspace.** A connection belongs to the person and to the workspace's ChatGPT plan provider. A person in two workspaces connects in each one separately.
+- **Only that workspace's turns.** A connection pays only for turns in its own workspace, and only while the person is still a member of it.
+- **Companies use an API key.** OpenAI's terms tie a plan to the person who owns it, so a workspace cannot share one admin's plan with its members. For shared use, a workspace admin adds an API-key provider, such as the organisation's own OpenAI key.
 
 ## Whose plan pays for a turn
 

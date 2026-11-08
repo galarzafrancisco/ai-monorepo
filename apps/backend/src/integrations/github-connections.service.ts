@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { getConfig } from '../config/env.config';
 import { SecretsService } from '../secrets/secrets.service';
+import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 import { GithubConnectionEntity } from './github-connection.entity';
 import { GithubWebhookSourceEntity } from './github-webhook-source.entity';
 import { webhookCoverageOf } from './github/webhook-coverage';
@@ -100,7 +101,7 @@ export class GithubConnectionsService {
     });
 
     const owners = normalizeOwners(input.owners);
-    const secret = await this.secretsService.createSecret({
+    const secret = await this.secretsService.createSecret(UNSCOPED_MODULE_WORKSPACE_ID, {
       // Secret names are unique; the timestamp keeps two connections with one name apart.
       name: `GitHub connection: ${input.name.trim()} (${Date.now()})`,
       description: `${input.authType === GithubAuthType.PAT ? 'Token' : 'GitHub App private key'} for the GitHub connection "${input.name.trim()}"`,
@@ -124,7 +125,7 @@ export class GithubConnectionsService {
         }),
       );
     } catch (error) {
-      await this.secretsService.deleteSecret(secret.id);
+      await this.secretsService.deleteSecret(UNSCOPED_MODULE_WORKSPACE_ID, secret.id);
       throw error;
     }
 
@@ -162,7 +163,7 @@ export class GithubConnectionsService {
         if (appId !== undefined) connection.appId = appId;
         if (installationId !== undefined) connection.installationId = installationId;
       }
-      const secretValue = newSecret ?? (await this.secretsService.getSecretValue(connection.secretId)).value;
+      const secretValue = newSecret ?? (await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId)).value;
       connection.accountLogin = await this.credentials.identify({
         authType: connection.authType,
         baseUrl: connection.baseUrl,
@@ -173,7 +174,7 @@ export class GithubConnectionsService {
       connection.lastVerifiedAt = new Date();
       connection.lastError = null;
       if (newSecret !== undefined) {
-        await this.secretsService.updateSecret(connection.secretId, { value: newSecret });
+        await this.secretsService.updateSecret(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId, { value: newSecret });
       }
       this.credentials.forget(connection.id);
     }
@@ -191,8 +192,8 @@ export class GithubConnectionsService {
   async deleteConnection(id: string): Promise<void> {
     const connection = await this.findEntity(id);
     await this.repository.delete(id);
-    await this.secretsService.deleteSecret(connection.secretId);
-    if (connection.webhookSecretId) await this.secretsService.deleteSecret(connection.webhookSecretId);
+    await this.secretsService.deleteSecret(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
+    if (connection.webhookSecretId) await this.secretsService.deleteSecret(UNSCOPED_MODULE_WORKSPACE_ID, connection.webhookSecretId);
     this.credentials.forget(id);
     this.logger.log({ message: 'GitHub connection deleted', connectionId: id });
   }
@@ -201,7 +202,7 @@ export class GithubConnectionsService {
   async verifyConnection(id: string): Promise<GithubConnectionResult> {
     const connection = await this.findEntity(id);
     try {
-      const secret = await this.secretsService.getSecretValue(connection.secretId);
+      const secret = await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
       connection.accountLogin = await this.credentials.identify({
         authType: connection.authType,
         baseUrl: connection.baseUrl,
@@ -296,10 +297,10 @@ export class GithubConnectionsService {
     const connection = await this.findEntity(id);
     let secret: string;
     if (connection.webhookSecretId) {
-      secret = (await this.secretsService.getSecretValue(connection.webhookSecretId)).value;
+      secret = (await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.webhookSecretId)).value;
     } else {
       secret = randomBytes(32).toString('hex');
-      const stored = await this.secretsService.createSecret({
+      const stored = await this.secretsService.createSecret(UNSCOPED_MODULE_WORKSPACE_ID, {
         name: `GitHub connection webhook: ${connection.name} (${Date.now()})`,
         description: `Webhook secret for the GitHub connection "${connection.name}"`,
         value: secret,
@@ -358,7 +359,7 @@ export class GithubConnectionsService {
   async acceptWebhookDelivery(id: string, delivery: GithubWebhookDelivery): Promise<boolean> {
     const connection = await this.repository.findOne({ where: { id } });
     if (!connection?.webhookSecretId || !delivery.signature?.startsWith('sha256=')) return false;
-    const secret = (await this.secretsService.getSecretValue(connection.webhookSecretId)).value;
+    const secret = (await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.webhookSecretId)).value;
     const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(delivery.rawBody).digest('hex')}`);
     const received = Buffer.from(delivery.signature);
     if (expected.length !== received.length || !timingSafeEqual(expected, received)) return false;

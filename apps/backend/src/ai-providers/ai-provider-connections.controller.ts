@@ -37,14 +37,17 @@ import {
 } from './dto/service/ai-providers.service.types';
 import { AiProviderAuthorizationFailedError } from './errors/ai-providers.errors';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 /**
  * The caller's own connection to an AI provider that runs on personal plans.
- * Every route acts on the signed-in user's connection and nobody else's.
+ * Every route acts on the signed-in user's connection to the provider of the
+ * token's workspace, and nobody else's. Any member may connect: it is their
+ * own plan, not the workspace's.
  */
 @ApiTags('AI Provider Connections')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('ai-providers/:id/connection')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class AiProviderConnectionsController {
@@ -58,9 +61,12 @@ export class AiProviderConnectionsController {
   async getConnection(
     @Param() params: AiProviderParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AiProviderConnectionResponseDto> {
     return this.mapToResponse(
-      await this.connections.getConnection(params.id, user.actorId),
+      await this.connections.getConnection(
+        workspaceId,
+        params.id, user.actorId),
     );
   }
 
@@ -73,9 +79,11 @@ export class AiProviderConnectionsController {
   async startAuthorization(
     @Param() params: AiProviderParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<StartAiProviderAuthorizationResponseDto> {
     const result = await this.connections.startAuthorization(
-      params.id,
+        workspaceId,
+        params.id,
       user.actorId,
     );
     return {
@@ -94,9 +102,11 @@ export class AiProviderConnectionsController {
     @Param() params: AiProviderParamsDto,
     @Body() dto: CompleteAiProviderAuthorizationDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AiProviderConnectionResponseDto> {
     const result = await this.connections.completeAuthorization(
-      params.id,
+        workspaceId,
+        params.id,
       user.actorId,
       this.toCallback(dto),
     );
@@ -111,9 +121,11 @@ export class AiProviderConnectionsController {
     @Param() params: AiProviderParamsDto,
     @Body() dto: UpdateAiProviderConnectionDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<AiProviderConnectionResponseDto> {
     const result = await this.connections.setAutomatedTurnsAllowed(
-      params.id,
+        workspaceId,
+        params.id,
       user.actorId,
       dto.automatedTurnsAllowed,
     );
@@ -129,8 +141,11 @@ export class AiProviderConnectionsController {
   async disconnect(
     @Param() params: AiProviderParamsDto,
     @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<DisconnectAiProviderResponseDto> {
-    return this.connections.disconnect(params.id, user.actorId);
+    return this.connections.disconnect(
+        workspaceId,
+        params.id, user.actorId);
   }
 
   /** Accepts the pasted redirect address or its separate query parameters. */

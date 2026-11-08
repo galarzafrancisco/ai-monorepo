@@ -31,13 +31,13 @@ Nothing is kept in memory between turns. A turn whose process died stops heartbe
 
 ## Providers and models
 
-Providers and models are separate, and both are set in Settings → AI models.
+Providers and models are separate, and both are set in Settings → AI models. They belong to the workspace: a workspace admin sets them up, and every member's threads use them. Members see the page read-only. A thread's own provider must be one of its workspace's (see [Workspaces](../architecture/workspaces.md#ai-models-and-secrets-phase-3d)).
 
 An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai`, `openai_compatible` or `chatgpt_subscription`), an optional stored secret, and an endpoint. It has no model.
 
 `chatgpt_subscription` is different from the rest: it has no shared credentials. Each person connects their own ChatGPT account, a thread turn runs on the plan of the person it is for, and the provider only runs jobs that say whose plan pays (conversation, user small tasks, middle manager). It never runs system small tasks. See [Sign in with ChatGPT](sign-in-with-chatgpt.md).
 
-A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
+A model is picked per job (`ai_model_selections`, one row per workspace and job, holding a provider and a model id):
 
 | Job | Used by | When nothing is selected |
 |---|---|---|
@@ -62,6 +62,10 @@ A resolved model can set `requiresStreaming`. Code that only wants the final tex
 Threads normally store no provider or model and follow the `conversation` selection. `threads.ai_provider_id` and `threads.model_id` exist for a per-thread override, which has no UI yet; both must be set for it to apply.
 
 A Google Vertex AI provider is created by default. It uses the stored service account JSON, project and location when present. Anything left empty falls back to application default credentials, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
+
+Those server credentials, and a Google API key in `GOOGLE_API_KEY`, `GEMINI_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`, are the installation's, so only providers in the default workspace fall back to them. A provider in any other workspace must store its own key (Vertex AI: service account JSON, project and location). Without them it is not configured, and Taico never lets an AI SDK read a key from the environment for it. A workspace admin can point a provider at any URL, so a fallback would send the server's key to another company.
+
+The stored Vertex AI credential must be a service account key (`"type": "service_account"` with `client_email` and `private_key`), in every workspace. Taico passes on only its key fields. Other Google credential files (workload identity federation `external_account`, impersonation, authorized users) are refused: they tell Google's library to read credentials from the server's files, URLs or commands, which would hand them to whoever wrote the secret. To run the default workspace on the server's own identity, leave the secret empty and use application default credentials.
 
 ### Claude on Vertex AI
 
