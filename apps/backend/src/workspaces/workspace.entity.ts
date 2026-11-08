@@ -27,6 +27,15 @@ export class WorkspaceEntity {
   @Column({ type: 'text' })
   name!: string;
 
+  /**
+   * When the one-time startup backfill of pre-workspace memberships finished.
+   * Only set on the default workspace. Once set the backfill never runs
+   * again, so a person removed from every workspace stays out after a
+   * restart. See `WorkspacesService.onModuleInit`.
+   */
+  @Column({ type: 'timestamptz', name: 'members_backfilled_at', nullable: true })
+  membersBackfilledAt?: Date | null;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

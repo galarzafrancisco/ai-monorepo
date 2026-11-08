@@ -113,21 +113,10 @@ describe('Workspaces (e2e)', () => {
     );
   });
 
-  it('does not put actors with no membership back in the default workspace at startup', async () => {
-    const identity = app.get(IdentityProviderService);
-    const user = await identity.createManagedUser({
-      email: `ws-removed-${Math.random().toString(36).slice(2, 10)}@example.com`,
-      role: UserRole.STANDARD,
-    });
-    await members.delete({ actorId: user.actorId });
-
-    await app.get(WorkspacesService).onModuleInit();
-
-    expect(await members.countBy({ actorId: user.actorId })).toBe(0);
-  });
-  it('adds actors older than workspaces that have no membership, at startup, in batches', async () => {
-    // A database whose app last ran before workspaces: its actors predate
-    // the default workspace and have no membership.
+  it('adds actors from before workspaces with no membership, once, at startup, in batches', async () => {
+    // A database whose app last ran before workspaces: the backfill has not
+    // run and its actors have no membership.
+    const dataSource = app.get(DataSource);
     const identity = app.get(IdentityProviderService);
     const admin = await identity.createManagedUser({
       email: `ws-old-${Math.random().toString(36).slice(2, 10)}@example.com`,
@@ -144,9 +133,9 @@ describe('Workspaces (e2e)', () => {
     for (const actorId of people) {
       await members.delete({ actorId });
     }
-    await app.get(DataSource).query(
-      `UPDATE actors SET created_at = (SELECT created_at FROM workspaces WHERE id = $1) - interval '1 day' WHERE id = ANY($2)`,
-      [DEFAULT_WORKSPACE_ID, people],
+    await dataSource.query(
+      `UPDATE workspaces SET members_backfilled_at = NULL WHERE id = $1`,
+      [DEFAULT_WORKSPACE_ID],
     );
 
     // Three missing actors with a batch size of two crosses a batch boundary.
@@ -166,5 +155,39 @@ describe('Workspaces (e2e)', () => {
         expect.objectContaining({ workspaceId: DEFAULT_WORKSPACE_ID }),
       ]);
     }
+    const [{ members_backfilled_at }] = await dataSource.query(
+      `SELECT members_backfilled_at FROM workspaces WHERE id = $1`,
+      [DEFAULT_WORKSPACE_ID],
+    );
+    expect(members_backfilled_at).not.toBeNull();
+  });
+
+  it('keeps a person removed from every workspace out across restarts, even one from before workspaces', async () => {
+    const unique = () => Math.random().toString(36).slice(2, 10);
+    const email = `ws-removed-${unique()}@example.com`;
+    const password = 'password-ws-removed';
+    const user = await app.get(IdentityProviderService).createUser({
+      email,
+      password,
+      slug: `ws-removed-${unique()}`,
+      displayName: 'Removed person',
+    });
+    // Older than the default workspace, like a person from before phase 1.
+    await app.get(DataSource).query(
+      `UPDATE actors SET created_at = (SELECT created_at FROM workspaces WHERE id = $1) - interval '1 day' WHERE id = $2`,
+      [DEFAULT_WORKSPACE_ID, user.actorId],
+    );
+    const workspaces = app.get(WorkspacesService);
+    await workspaces.removeMember(DEFAULT_WORKSPACE_ID, user.actorId);
+
+    const login = () =>
+      request(httpServer).post('/api/v1/auth/login').send({ email, password });
+    expect((await login().expect(403)).body.code).toBe('NO_WORKSPACE_MEMBERSHIP');
+
+    await workspaces.onModuleInit();
+    await workspaces.onModuleInit();
+
+    expect(await members.countBy({ actorId: user.actorId })).toBe(0);
+    expect((await login().expect(403)).body.code).toBe('NO_WORKSPACE_MEMBERSHIP');
   });
 });

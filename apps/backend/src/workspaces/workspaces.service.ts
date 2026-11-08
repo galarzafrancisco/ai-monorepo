@@ -78,7 +78,7 @@ export class WorkspacesService implements OnModuleInit {
   /**
    * Makes sure the default workspace exists (schema-sync databases skip the
    * migration that creates it), then backfills the memberships of actors
-   * older than workspaces. Runs on every startup and is idempotent.
+   * from before workspaces, once per installation. Runs on every startup.
    */
   async onModuleInit(): Promise<void> {
     await this.ensureDefaultWorkspace();
@@ -334,14 +334,16 @@ export class WorkspacesService implements OnModuleInit {
   }
 
   /**
-   * Puts actors created before the default workspace existed, and still with
-   * no membership, in the default workspace: people with `users.role =
-   * 'admin'` as admins, everyone else and every agent as members. This covers
-   * a database whose app last ran before workspaces.
+   * Puts every actor with no membership in the default workspace, once per
+   * installation: people with `users.role = 'admin'` as admins, everyone
+   * else and every agent as members. This covers a database whose app last
+   * ran before workspaces.
    *
-   * Only those actors: every actor created since gets its membership when it
-   * is created, so one with none was removed from every workspace and must
-   * stay out.
+   * When it finishes it sets `members_backfilled_at` on the default
+   * workspace, in the same transaction, and never runs again. From then on
+   * an actor with no membership was removed from every workspace and must
+   * stay out across restarts. The default workspace row is locked, so
+   * backends starting together run it once.
    *
    * Works in batches of `BACKFILL_BATCH_SIZE` so a large installation stays
    * under PostgreSQL's 65,535 bind-parameter limit per statement.
@@ -349,45 +351,61 @@ export class WorkspacesService implements OnModuleInit {
    * @returns how many memberships were added
    */
   private async backfillPreWorkspaceMemberships(): Promise<number> {
-    let added = 0;
-    for (;;) {
-      const actors: { actorId: string; userRole: string | null }[] =
-        await this.memberRepository.manager.query(
-          `
-          SELECT a."id" AS "actorId", u."role" AS "userRole"
-          FROM "actors" a
-          LEFT JOIN "users" u ON u."actor_id" = a."id"
-          WHERE a."created_at" < (
-            SELECT w."created_at" FROM "workspaces" w WHERE w."id" = $1
-          )
-          AND NOT EXISTS (
-            SELECT 1 FROM "workspace_members" m WHERE m."actor_id" = a."id"
-          )
-          ORDER BY a."id"
-          LIMIT $2
-          `,
-          [DEFAULT_WORKSPACE_ID, WorkspacesService.BACKFILL_BATCH_SIZE],
-        );
-      if (actors.length === 0) {
-        return added;
+    return this.memberRepository.manager.transaction(async (manager) => {
+      const workspace = await manager
+        .getRepository(WorkspaceEntity)
+        .createQueryBuilder('w')
+        .setLock('pessimistic_write')
+        .where('w.id = :id', { id: DEFAULT_WORKSPACE_ID })
+        .getOne();
+      if (!workspace || workspace.membersBackfilledAt) {
+        return 0;
       }
-      await this.memberRepository
+      let added = 0;
+      for (;;) {
+        const actors: { actorId: string; userRole: string | null }[] =
+          await manager.query(
+            `
+            SELECT a."id" AS "actorId", u."role" AS "userRole"
+            FROM "actors" a
+            LEFT JOIN "users" u ON u."actor_id" = a."id"
+            WHERE NOT EXISTS (
+              SELECT 1 FROM "workspace_members" m WHERE m."actor_id" = a."id"
+            )
+            ORDER BY a."id"
+            LIMIT $1
+            `,
+            [WorkspacesService.BACKFILL_BATCH_SIZE],
+          );
+        if (actors.length === 0) {
+          break;
+        }
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(WorkspaceMemberEntity)
+          .values(
+            actors.map(({ actorId, userRole }) => ({
+              workspaceId: DEFAULT_WORKSPACE_ID,
+              actorId,
+              role:
+                userRole === UserRole.ADMIN
+                  ? WorkspaceRole.ADMIN
+                  : WorkspaceRole.MEMBER,
+            })),
+          )
+          .orIgnore()
+          .execute();
+        added += actors.length;
+      }
+      await manager
         .createQueryBuilder()
-        .insert()
-        .values(
-          actors.map(({ actorId, userRole }) => ({
-            workspaceId: DEFAULT_WORKSPACE_ID,
-            actorId,
-            role:
-              userRole === UserRole.ADMIN
-                ? WorkspaceRole.ADMIN
-                : WorkspaceRole.MEMBER,
-          })),
-        )
-        .orIgnore()
+        .update(WorkspaceEntity)
+        .set({ membersBackfilledAt: () => 'now()' })
+        .where('id = :id', { id: DEFAULT_WORKSPACE_ID })
         .execute();
-      added += actors.length;
-    }
+      return added;
+    });
   }
 
   /** Memberships of workspaces that are not deleted, with their workspace. */

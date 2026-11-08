@@ -30,7 +30,9 @@ The `Workspaces1763500000000` migration creates the tables and the default works
 
 Phases 1 to 3 did this with `WorkspaceMembershipSubscriber`, and phase 4 removed it. `users.role` no longer decides any workspace role (see [Admin roles](#admin-roles)).
 
-The startup backfill (`WorkspacesService.onModuleInit`) only adds **actors older than the default workspace** (`actors.created_at` before `workspaces.created_at`) that have no membership. People with `users.role = 'admin'` become admins, everyone else and every agent a member. This covers a database whose app last ran before workspaces. Every newer actor got its membership when it was created. A newer actor with none was removed from every workspace, and must not be put back in the default one on restart.
+The startup backfill (`WorkspacesService.onModuleInit`) puts every actor with no membership in the default workspace: people with `users.role = 'admin'` as admins, everyone else and every agent as members. This covers a database whose app last ran before workspaces. **It runs once per installation.** When it finishes it sets `workspaces.members_backfilled_at` on the default workspace, in the same transaction, and it never runs again (migration `WorkspaceMembersBackfilled1764100000001`; schema-sync databases get the column from the entity). It locks the default workspace row while it runs, so backends that start together run it only once.
+
+After that, an actor with no membership was removed from every workspace on purpose. It stays out across restarts, however old the account is. The actor's age can't tell a never-backfilled account from a removed one, so the backfill doesn't check it.
 
 ## How a request knows its workspace
 
