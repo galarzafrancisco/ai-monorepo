@@ -69,6 +69,37 @@ const defaultWizardState: WizardState = {
   avatarTouched: false,
 };
 
+/** The wizard state after choosing `template`: its defaults replace the draft's. */
+function withTemplate(current: WizardState, template: AgentTemplateDto): WizardState {
+  return {
+    ...current,
+    draft: {
+      ...current.draft,
+      templateId: template.id,
+      type: template.type ?? current.draft.type ?? "other",
+      description: template.agentDescription || undefined,
+      systemPrompt: template.systemPrompt,
+      followUpPrompt: template.followUpPrompt,
+      providerId: template.providerId || undefined,
+      modelId: template.modelId || undefined,
+      statusTriggers: template.statusTriggers,
+      tagTriggers: template.tagTriggers,
+      avatarUrl: template.avatarUrl,
+      concurrencyLimit: template.concurrencyLimit,
+      allowedTools: [],
+      isActive: true,
+    },
+    tagText: template.tagTriggers.join(", "),
+    selectedModelOptionId:
+      template.providerId || template.modelId
+        ? `${template.providerId || "default-provider"}:${template.modelId}`
+        : "default",
+    customProviderId: "",
+    customModelId: "",
+    avatarTouched: false,
+  };
+}
+
 export function NewAgentWizardPage() {
   const navigate = useNavigate();
   const { setSectionTitle, createAgent } = useAgentsCtx();
@@ -109,8 +140,12 @@ export function NewAgentWizardPage() {
         setCatalog(response);
         const customTemplate =
           response.templates.find((template) => template.id === "custom") ?? response.templates[0];
-        if (customTemplate && !wizardState.draft.templateId) {
-          applyTemplate(customTemplate);
+        // Read the draft as it is now, not as it was on mount: a saved
+        // draft must never be replaced by template defaults.
+        if (customTemplate) {
+          setWizardState((current) =>
+            current.draft.templateId ? current : withTemplate(current, customTemplate),
+          );
         }
       } catch (error) {
         if (!isMounted) return;
@@ -144,33 +179,7 @@ export function NewAgentWizardPage() {
   const isLastStep = effectiveStepIndex === steps.length - 1;
 
   function applyTemplate(template: AgentTemplateDto) {
-    setWizardState((current) => ({
-      ...current,
-      draft: {
-        ...current.draft,
-        templateId: template.id,
-        type: template.type ?? current.draft.type ?? "other",
-        description: template.agentDescription || undefined,
-        systemPrompt: template.systemPrompt,
-        followUpPrompt: template.followUpPrompt,
-        providerId: template.providerId || undefined,
-        modelId: template.modelId || undefined,
-        statusTriggers: template.statusTriggers,
-        tagTriggers: template.tagTriggers,
-        avatarUrl: template.avatarUrl,
-        concurrencyLimit: template.concurrencyLimit,
-        allowedTools: [],
-        isActive: true,
-      },
-      tagText: template.tagTriggers.join(", "),
-      selectedModelOptionId:
-        template.providerId || template.modelId
-          ? `${template.providerId || "default-provider"}:${template.modelId}`
-          : "default",
-      customProviderId: "",
-      customModelId: "",
-      avatarTouched: false,
-    }));
+    setWizardState((current) => withTemplate(current, template));
   }
 
   function selectHarness(harness: AgentTemplateHarnessDto) {

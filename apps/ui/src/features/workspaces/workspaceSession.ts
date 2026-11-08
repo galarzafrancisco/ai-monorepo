@@ -28,7 +28,12 @@ export function setShownWorkspace(workspaceId: string | null): void {
   shownWorkspaceId = workspaceId;
 }
 
-function reloadPage(): void {
+/** The workspace this page shows, or null until it is pinned. */
+export function getShownWorkspace(): string | null {
+  return shownWorkspaceId;
+}
+
+export function reloadPage(): void {
   window.location.reload();
 }
 

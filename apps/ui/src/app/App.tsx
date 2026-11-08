@@ -118,35 +118,36 @@ function AuthenticatedApp() {
         <ToastProvider>
           <AuthProvider>
             <TaicoLinkIdentity />
-            <ActorsProvider>
-              <Routes>
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/login" element={
-                  <OnboardingChecker>
-                    <LoginPage />
-                  </OnboardingChecker>
-                } />
-                <Route
-                  path='*'
-                  element={
-                    <ProtectedRoute>
-                      <WorkspacesProvider>
-                      <CommandPaletteProvider>
-                        <WalkthroughGate>
-                          <ThreadsProvider>
-                            <BetaShell>
-                              <BetaAppRoutes />
-                            </BetaShell>
-                          </ThreadsProvider>
-                        </WalkthroughGate>
-                      </CommandPaletteProvider>
-                      </WorkspacesProvider>
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-              <ToastContainer />
-            </ActorsProvider>
+            <Routes>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/login" element={
+                <OnboardingChecker>
+                  <LoginPage />
+                </OnboardingChecker>
+              } />
+              <Route
+                path='*'
+                element={
+                  <ProtectedRoute>
+                    <WorkspacesProvider>
+                    {/* Everything workspace-bound lives inside the gate. */}
+                    <ActorsProvider>
+                    <CommandPaletteProvider>
+                      <WalkthroughGate>
+                        <ThreadsProvider>
+                          <BetaShell>
+                            <BetaAppRoutes />
+                          </BetaShell>
+                        </ThreadsProvider>
+                      </WalkthroughGate>
+                    </CommandPaletteProvider>
+                    </ActorsProvider>
+                    </WorkspacesProvider>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+            <ToastContainer />
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
