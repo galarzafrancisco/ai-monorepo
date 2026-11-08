@@ -110,13 +110,17 @@ describe('Worker Auth (e2e)', () => {
       .post(`/api/v1/agents/${agent.slug}/execution-token`)
       .set('Cookie', authCookies)
       .send({
-        scopes: [TasksScopes.READ.id],
+        // Creating a task needs tasks:write (POST /tasks/tasks no longer accepts tasks:read).
+        scopes: [TasksScopes.READ.id, TasksScopes.WRITE.id],
         expirationSeconds: 120,
       })
       .expect(201);
 
     expect(tokenResponse.body.token).toBeDefined();
-    expect(tokenResponse.body.scopes).toEqual([TasksScopes.READ.id]);
+    expect(tokenResponse.body.scopes).toEqual([
+      TasksScopes.READ.id,
+      TasksScopes.WRITE.id,
+    ]);
     expect(tokenResponse.body.agentSlug).toBe(agent.slug);
 
     const taskResponse = await request(httpServer)
