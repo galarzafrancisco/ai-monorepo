@@ -86,4 +86,15 @@ export class AuthorizationRequestDto {
   @IsString()
   @IsUrl({ require_tld: false, require_protocol: true })
   resource?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Taico extension: the slug of the workspace the client wants a token for (a worker started with --workspace). Only for Taico's own servers; consent from any other workspace is refused.",
+    example: 'acme',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  @Matches(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/)
+  workspace?: string;
 }

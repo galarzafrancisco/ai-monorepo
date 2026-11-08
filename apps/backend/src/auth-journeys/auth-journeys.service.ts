@@ -189,6 +189,22 @@ export class AuthJourneysService {
   }
 
   /*
+  Public API: Find the MCP authorization flow a client started on a server with
+  a given PKCE code challenge. Used by AuthorizationService to recognise an
+  authorization link opened again.
+  */
+  async findMcpAuthFlowByClientAndChallenge(
+    clientId: string,
+    serverId: string,
+    codeChallenge: string,
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: { clientId, serverId, codeChallenge },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /*
   Public API: Find MCP authorization flow by flow ID
   Used by AuthorizationService for consent flow
   */

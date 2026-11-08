@@ -26,11 +26,13 @@ export const DEFAULT_WORKER_WORKSPACES_PATH = join(
  *
  * @param credentialsPath - Path to the credentials file
  * @param serverUrl - Server URL to get credentials for
+ * @param workspace - Workspace slug the worker was started for, if any
  * @returns WorkerCredentials for the specified server, or null if not found or migration needed
  */
 export async function readWorkerCredentials(
   credentialsPath: string,
   serverUrl: string,
+  workspace?: string,
 ): Promise<WorkerCredentials | null> {
   try {
     const content = await readFile(credentialsPath, 'utf8');
@@ -39,8 +41,7 @@ export async function readWorkerCredentials(
     // Check if this is the new multi-server format
     if (isMultiServerConfig(parsed)) {
       const config = parsed as MultiServerConfig;
-      const normalizedUrl = normalizeServerUrl(serverUrl);
-      return config.servers[normalizedUrl] ?? null;
+      return config.servers[credentialsKey(serverUrl, workspace)] ?? null;
     }
 
     // Legacy format detected - delete file to trigger re-authentication
@@ -95,9 +96,9 @@ export async function writeWorkerCredentials(
     };
   }
 
-  // Update credentials for this server
-  const normalizedUrl = normalizeServerUrl(credentials.serverUrl);
-  config.servers[normalizedUrl] = credentials;
+  // Update credentials for this server (and workspace)
+  config.servers[credentialsKey(credentials.serverUrl, credentials.workspace)] =
+    credentials;
 
   await writeFile(
     credentialsPath,
@@ -160,6 +161,17 @@ function isLegacyCredentials(value: unknown): boolean {
     typeof obj.accessToken === 'string' &&
     typeof obj.refreshToken === 'string'
   );
+}
+
+/**
+ * Where a worker's credentials are kept in the file. A worker started with
+ * `--workspace` has its own entry per workspace, so several workers on one
+ * machine can each work in another workspace of the same server. Without
+ * it, the entry is the server URL, as before.
+ */
+export function credentialsKey(serverUrl: string, workspace?: string): string {
+  const normalizedUrl = normalizeServerUrl(serverUrl);
+  return workspace ? `${normalizedUrl}#workspace=${workspace}` : normalizedUrl;
 }
 
 function normalizeServerUrl(url: string): string {

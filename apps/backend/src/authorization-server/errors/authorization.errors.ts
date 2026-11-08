@@ -11,6 +11,9 @@ export const AuthorizationErrorCodes = {
   NO_PENDING_CONNECTION_FLOWS: ErrorCodes.NO_PENDING_CONNECTION_FLOWS,
   CONNECTION_FLOW_NOT_FOUND: ErrorCodes.CONNECTION_FLOW_NOT_FOUND,
   TOKEN_EXCHANGE_FAILED: ErrorCodes.TOKEN_EXCHANGE_FAILED,
+  AUTHORIZATION_LINK_ALREADY_USED: ErrorCodes.AUTHORIZATION_LINK_ALREADY_USED,
+  WORKER_ALREADY_AUTHORIZED: ErrorCodes.WORKER_ALREADY_AUTHORIZED,
+  CONSENT_WORKSPACE_NOT_REQUESTED: ErrorCodes.CONSENT_WORKSPACE_NOT_REQUESTED,
   SERVER_NOT_FOUND: ErrorCodes.SERVER_NOT_FOUND,
   CLIENT_NOT_FOUND: ErrorCodes.CLIENT_NOT_FOUND,
   INVALID_REDIRECT_URI: ErrorCodes.INVALID_REDIRECT_URI,
@@ -75,6 +78,51 @@ export class ConsentWorkspaceChangedError extends AuthorizationDomainError {
       'You switched workspace after this consent screen loaded. Reload it to review the request in your current workspace.',
       AuthorizationErrorCodes.INVALID_FLOW_STATE,
       { shownWorkspaceId, sessionWorkspaceId },
+    );
+  }
+}
+
+/**
+ * An authorization request repeats the PKCE challenge of a flow that was
+ * already approved or denied: someone opened an old authorization link again.
+ * A client makes a new challenge for every authorization (RFC 7636), so this
+ * is never a fresh request.
+ */
+export class AuthorizationLinkAlreadyUsedError extends AuthorizationDomainError {
+  constructor(clientId: string) {
+    super(
+      'This authorization link was already used. Start the authorization again from the app that asked for it.',
+      AuthorizationErrorCodes.AUTHORIZATION_LINK_ALREADY_USED,
+      { clientId },
+    );
+  }
+}
+
+/**
+ * A worker registers a new OAuth client every time it asks to be authorized,
+ * so a worker client authorizes once. Approving it again (say, from another
+ * workspace) would put the same worker in a second workspace.
+ */
+export class WorkerAlreadyAuthorizedError extends AuthorizationDomainError {
+  constructor(clientId: string) {
+    super(
+      'This worker was already authorized. To connect a worker to another workspace, start another worker with --workspace <slug>.',
+      AuthorizationErrorCodes.WORKER_ALREADY_AUTHORIZED,
+      { clientId },
+    );
+  }
+}
+
+/**
+ * The client asked for a token in one workspace (a worker started with
+ * `--workspace`), but the person is approving from another.
+ */
+export class ConsentWorkspaceNotRequestedError extends AuthorizationDomainError {
+  constructor(requestedWorkspaceSlug: string, sessionWorkspaceId: string | null) {
+    super(
+      `This request is for the workspace "${requestedWorkspaceSlug}". Switch to it to approve.`,
+      AuthorizationErrorCodes.CONSENT_WORKSPACE_NOT_REQUESTED,
+      { requestedWorkspaceSlug, sessionWorkspaceId },
     );
   }
 }

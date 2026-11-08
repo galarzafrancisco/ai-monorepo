@@ -15,6 +15,8 @@ const STARTUP_RETRY_DELAY_MS = 2_000;
 export type WorkerOptions = {
   serverUrl: string;
   credentialsPath?: string;
+  /** Slug of the workspace to connect to (`--workspace`). */
+  workspace?: string;
   workingDirectory: string;
 };
 
@@ -26,9 +28,12 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
   const auth = new WorkerAuth({
     serverUrl: options.serverUrl,
     credentialsPath: options.credentialsPath,
+    workspace: options.workspace,
   });
 
-  console.log(`[worker] Starting worker mode against ${auth.serverUrl}`);
+  console.log(
+    `[worker] Starting worker mode against ${auth.serverUrl}${auth.workspace ? ` (workspace "${auth.workspace}")` : ''}`,
+  );
   console.log(
     `[worker] Using working directory ${options.workingDirectory}`,
   );

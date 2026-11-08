@@ -281,6 +281,24 @@ export const ErrorCatalog: Record<
     type: '/errors/authz/flow-already-completed',
     retryable: false,
   },
+  [ErrorCodes.AUTHORIZATION_LINK_ALREADY_USED]: {
+    status: 409,
+    title: 'Authorization link already used',
+    type: '/errors/authz/authorization-link-already-used',
+    retryable: false,
+  },
+  [ErrorCodes.WORKER_ALREADY_AUTHORIZED]: {
+    status: 409,
+    title: 'Worker already authorized',
+    type: '/errors/authz/worker-already-authorized',
+    retryable: false,
+  },
+  [ErrorCodes.CONSENT_WORKSPACE_NOT_REQUESTED]: {
+    status: 400,
+    title: 'Not the requested workspace',
+    type: '/errors/authz/consent-workspace-not-requested',
+    retryable: false,
+  },
   [ErrorCodes.INVALID_FLOW_STATE]: {
     status: 400,
     title: 'Invalid flow state',

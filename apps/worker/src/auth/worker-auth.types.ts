@@ -1,5 +1,11 @@
 export type WorkerCredentials = {
   serverUrl: string;
+  /**
+   * Slug of the workspace the worker was started for (`--workspace`). Absent
+   * for a worker started without it: it works in the workspace it was
+   * approved in.
+   */
+  workspace?: string;
   clientId: string;
   redirectUri: string;
   scope: string;
@@ -10,8 +16,8 @@ export type WorkerCredentials = {
 
 /**
  * Multi-server worker configuration (kubeconfig-style).
- * Maps server URLs to their credentials.
- * Each worker uses --serverUrl CLI flag to determine which credentials to use.
+ * Maps a server URL, plus the workspace for a worker started with
+ * `--workspace` (see `credentialsKey`), to its credentials.
  */
 export type MultiServerConfig = {
   servers: {

@@ -63,6 +63,12 @@ export class McpAuthorizationFlowEntity {
   @Column({ type: 'text', name: 'resource', nullable: true })
   resource?: string;
 
+  // Workspace the client asked for (a worker started with `--workspace`).
+  // Consent is refused from any other workspace. Null: the token is for the
+  // workspace the person consents in.
+  @Column({ type: 'text', name: 'requested_workspace_slug', nullable: true })
+  requestedWorkspaceSlug?: string | null;
+
   // Authorization code generated after user consent
   @Column({ type: 'text', name: 'authorization_code', nullable: true })
   authorizationCode?: string;

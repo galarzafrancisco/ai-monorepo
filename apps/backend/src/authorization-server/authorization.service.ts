@@ -1,4 +1,7 @@
-import { mcpServerRequiresTaicoAuth } from '@taico/shared';
+import {
+  INTERNAL_WORKER_AUTH_TARGET_ID,
+  mcpServerRequiresTaicoAuth,
+} from '@taico/shared';
 import { WorkspacesService } from 'src/workspaces/workspaces.service';
 import { workspaceIdFromClaims } from 'src/auth/guards/context/auth-context.factory';
 import { Injectable, Logger } from '@nestjs/common';
@@ -37,6 +40,9 @@ import {
   ConnectionFlowNotFoundError,
   TokenExchangeFailedError,
   ResourceMismatchError,
+  AuthorizationLinkAlreadyUsedError,
+  WorkerAlreadyAuthorizedError,
+  ConsentWorkspaceNotRequestedError,
 } from './errors/authorization.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { ConsentMetadata } from './dto/service/authorization.service.types';
@@ -121,8 +127,8 @@ export class AuthorizationService {
 
     const mcpAuthFlow = await this.startMcpAuthFlow(
       client,
-      mcpServer.id,
-      serverIdentifier,
+      mcpServer,
+      authRequest.code_challenge,
     );
 
     // Change status
@@ -136,6 +142,13 @@ export class AuthorizationService {
     mcpAuthFlow.redirectUri = authRequest.redirect_uri;
     mcpAuthFlow.resource = serverResource;
     mcpAuthFlow.scopes = scopes;
+    // Only Taico's own servers serve several workspaces; any other server's
+    // tokens are for its own workspace whatever the client asks for.
+    mcpAuthFlow.requestedWorkspaceSlug = mcpServerRequiresTaicoAuth(
+      mcpServer.providedId,
+    )
+      ? (authRequest.workspace ?? null)
+      : null;
 
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
     await this.authJourneysService.updateAuthJourneyStatus(
@@ -175,12 +188,37 @@ export class AuthorizationService {
    * authorize again after its tokens expire and the users of one metadata
    * document client do not share state. The one exception is the flow created
    * when a client registers, which its first authorization request picks up.
+   *
+   * An authorization link opened again (same client and PKCE challenge) is
+   * not a new request: before the person decided, it reopens the same flow
+   * (a reload); after, it is refused, because the client has long stopped
+   * waiting for that answer. A worker client authorizes once (a worker
+   * registers a new client every time it asks), so it can never be approved
+   * into a second workspace.
    */
   private async startMcpAuthFlow(
     client: RegisteredClientEntity,
-    mcpServerId: string,
-    serverIdentifier: string,
+    mcpServer: { id: string; providedId: string },
+    codeChallenge: string,
   ): Promise<McpAuthorizationFlowEntity> {
+    const mcpServerId = mcpServer.id;
+    const sameLink =
+      await this.authJourneysService.findMcpAuthFlowByClientAndChallenge(
+        client.id,
+        mcpServerId,
+        codeChallenge,
+      );
+    if (sameLink) {
+      if (
+        sameLink.status ===
+          McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED &&
+        !sameLink.authorizationCode
+      ) {
+        return sameLink;
+      }
+      throw new AuthorizationLinkAlreadyUsedError(client.clientId);
+    }
+
     if (
       client.registrationMethod ===
       ClientRegistrationMethod.DYNAMIC_REGISTRATION
@@ -193,7 +231,7 @@ export class AuthorizationService {
       // A registered client belongs to the MCP server it registered with
       if (flows.length === 0) {
         throw new AuthFlowNotFoundError(
-          `client: ${client.clientId}, server: ${serverIdentifier}`,
+          `client: ${client.clientId}, server: ${mcpServer.providedId}`,
         );
       }
       const unusedFlow = flows.find(
@@ -201,6 +239,9 @@ export class AuthorizationService {
       );
       if (unusedFlow) {
         return unusedFlow;
+      }
+      if (mcpServer.providedId === INTERNAL_WORKER_AUTH_TARGET_ID) {
+        throw new WorkerAlreadyAuthorizedError(client.clientId);
       }
     }
 
@@ -251,6 +292,7 @@ export class AuthorizationService {
         mcpAuthFlow.server,
         sessionWorkspaceId,
       ),
+      requestedWorkspaceSlug: mcpAuthFlow.requestedWorkspaceSlug ?? null,
       redirectUri: mcpAuthFlow.redirectUri!,
       createdAt: mcpAuthFlow.createdAt,
     };
@@ -372,6 +414,22 @@ export class AuthorizationService {
         consentDecision.workspace_id,
         sessionWorkspaceId,
       );
+    }
+    // The client asked for one workspace (a worker started with
+    // `--workspace`): approving from another would connect it to the wrong one.
+    if (
+      mcpAuthFlow.requestedWorkspaceSlug &&
+      mcpServerRequiresTaicoAuth(mcpAuthFlow.server.providedId)
+    ) {
+      const sessionWorkspace = sessionWorkspaceId
+        ? await this.workspacesService.findWorkspace(sessionWorkspaceId)
+        : null;
+      if (sessionWorkspace?.slug !== mcpAuthFlow.requestedWorkspaceSlug) {
+        throw new ConsentWorkspaceNotRequestedError(
+          mcpAuthFlow.requestedWorkspaceSlug,
+          sessionWorkspaceId,
+        );
+      }
     }
     if (mcpAuthFlow.authJourney?.actorId) {
       await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
