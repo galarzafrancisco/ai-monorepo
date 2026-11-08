@@ -14,7 +14,7 @@ import {
 } from './workspaceSession';
 
 const reload = vi.fn();
-let backendFetch: ReturnType<typeof vi.fn>;
+let backendFetch: ReturnType<typeof vi.fn<Parameters<typeof fetch>, Promise<Response>>>;
 let stop: () => void;
 
 function changedResponse() {
@@ -30,7 +30,7 @@ beforeEach(() => {
     configurable: true,
     value: { ...window.location, href: 'http://localhost/tasks', origin: 'http://localhost', reload },
   });
-  backendFetch = vi.fn(async () => new Response('{}', { status: 200 }));
+  backendFetch = vi.fn<Parameters<typeof fetch>, Promise<Response>>(async () => new Response("{}", { status: 200 }));
   window.fetch = backendFetch as unknown as typeof window.fetch;
   setShownWorkspace(null);
   stop = startWorkspaceSessionGuard();
