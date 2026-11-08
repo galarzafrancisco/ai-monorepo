@@ -435,6 +435,7 @@ export class TokenService {
     const workspaceId = await this.workspaceForServerToken(
       mcpAuthFlow.server,
       mcpAuthFlow.authJourney.actor.id,
+      mcpAuthFlow.authJourney.workspaceId ?? null,
     );
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
@@ -464,19 +465,27 @@ export class TokenService {
 
   /**
    * The workspace an MCP token works in. Taico's own servers (tasks, context
-   * and the auth targets) serve every workspace, so their tokens are for the
-   * person's workspace (their oldest membership; there is no picker yet).
-   * Any other server belongs to one workspace: its token is for that
-   * workspace, and only its members get one. Checked again on every refresh,
-   * so a person removed from the workspace stops getting tokens for it, and
-   * a person in no workspace gets none (a token without `workspace_id` would
-   * be read as the default workspace).
+   * and the auth targets, which workers use) serve every workspace, so their
+   * tokens are for the workspace the person consented in. Journeys from
+   * before that was recorded use the person's oldest membership. Any other
+   * server belongs to one workspace: its token is for that workspace, and
+   * only its members get one. Checked again on every refresh, so a person
+   * removed from the workspace stops getting tokens for it (a worker is never
+   * moved to another workspace), and a person in no workspace gets none (a
+   * token without `workspace_id` would be read as the default workspace).
    */
   private async workspaceForServerToken(
     server: { providedId: string; workspaceId: string },
     actorId: string,
+    consentWorkspaceId: string | null,
   ): Promise<string> {
     if (mcpServerRequiresTaicoAuth(server.providedId)) {
+      if (consentWorkspaceId) {
+        if (!(await this.workspacesService.isMember(consentWorkspaceId, actorId))) {
+          throw new TokenActorNotInWorkspaceError(actorId, consentWorkspaceId);
+        }
+        return consentWorkspaceId;
+      }
       const workspaceId =
         await this.workspacesService.findWorkspaceIdForActor(actorId);
       if (!workspaceId) {

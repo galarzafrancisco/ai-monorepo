@@ -19,6 +19,12 @@ export type ConsentMetadata = {
     clientName: string;
     registrationMethod: ClientRegistrationMethod;
   };
+  /** The workspace the token will work in. */
+  workspace: {
+    id: string;
+    slug: string;
+    name: string;
+  };
   redirectUri: string;
   createdAt: Date;
 };

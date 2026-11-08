@@ -1,3 +1,6 @@
+import { mcpServerRequiresTaicoAuth } from '@taico/shared';
+import { WorkspacesService } from 'src/workspaces/workspaces.service';
+import { workspaceIdFromClaims } from 'src/auth/guards/context/auth-context.factory';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -56,6 +59,7 @@ export class AuthorizationService {
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   async getAllAPIScopes(): Promise<Scope[]> {
@@ -208,9 +212,16 @@ export class AuthorizationService {
   }
 
   /**
-   * Get authorization flow details for the consent screen
+   * Get authorization flow details for the consent screen.
+   *
+   * @param sessionWorkspaceId The workspace of the person's web session.
+   *   Tokens for Taico's own servers are minted for it (it is recorded at
+   *   consent); any other server's tokens are for the server's workspace.
    */
-  async getConsentMetadataFromFlowId(flowId: string): Promise<ConsentMetadata> {
+  async getConsentMetadataFromFlowId(
+    flowId: string,
+    sessionWorkspaceId: string,
+  ): Promise<ConsentMetadata> {
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
       flowId,
       ['server', 'client', 'authJourney'],
@@ -235,10 +246,30 @@ export class AuthorizationService {
         clientName: mcpAuthFlow.client.clientName,
         registrationMethod: mcpAuthFlow.client.registrationMethod,
       },
+      workspace: await this.consentWorkspace(
+        mcpAuthFlow.server,
+        sessionWorkspaceId,
+      ),
       redirectUri: mcpAuthFlow.redirectUri!,
       createdAt: mcpAuthFlow.createdAt,
     };
     return consentMetadata;
+  }
+
+  /** The workspace a token from this consent will work in, for display. */
+  private async consentWorkspace(
+    server: { providedId: string; workspaceId: string },
+    sessionWorkspaceId: string,
+  ): Promise<ConsentMetadata['workspace']> {
+    const workspaceId = mcpServerRequiresTaicoAuth(server.providedId)
+      ? sessionWorkspaceId
+      : server.workspaceId;
+    const workspace = await this.workspacesService.findWorkspace(workspaceId);
+    if (!workspace) {
+      // Session tokens and registry rows always name an existing workspace.
+      throw new Error(`Workspace ${workspaceId} not found`);
+    }
+    return { id: workspace.id, slug: workspace.slug, name: workspace.name };
   }
 
   /**
@@ -316,6 +347,9 @@ export class AuthorizationService {
         const payload =
           await this.tokenVerifierService.verifySessionToken(accessToken);
         mcpAuthFlow.authJourney.actorId = payload.sub;
+        // Tokens for Taico's own servers are for the workspace the person
+        // consented in, so a worker connects to the workspace they are in.
+        mcpAuthFlow.authJourney.workspaceId = workspaceIdFromClaims(payload);
         await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
       } catch (error) {
         this.logger.warn(

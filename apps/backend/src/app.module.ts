@@ -79,6 +79,7 @@ import { WorkspaceScopeAiModelsSecrets1763900000000 } from './migrations/1763900
 import { WorkspaceScopeIntegrationsMcpSearch1764000000000 } from './migrations/1764000000000-WorkspaceScopeIntegrationsMcpSearch';
 import { RefreshTokenWorkspace1764100000000 } from './migrations/1764100000000-RefreshTokenWorkspace';
 import { WorkspaceMembersBackfilled1764100000001 } from './migrations/1764100000001-WorkspaceMembersBackfilled';
+import { AuthJourneyWorkspace1764200000000 } from './migrations/1764200000000-AuthJourneyWorkspace';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
@@ -141,6 +142,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
         WorkspaceScopeIntegrationsMcpSearch1764000000000,
         RefreshTokenWorkspace1764100000000,
         WorkspaceMembersBackfilled1764100000001,
+        AuthJourneyWorkspace1764200000000,
       ],
     }),
     EventEmitterModule.forRoot(),

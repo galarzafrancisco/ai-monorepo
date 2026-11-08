@@ -51,6 +51,20 @@ export class FlowClientDto {
 }
 
 /**
+ * DTO for the workspace a consent's token will work in.
+ */
+export class FlowWorkspaceDto {
+  @ApiProperty({ description: 'Workspace ID', format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ description: 'Workspace slug', example: 'acme' })
+  slug!: string;
+
+  @ApiProperty({ description: 'Workspace name', example: 'Acme' })
+  name!: string;
+}
+
+/**
  * DTO for authorization flow details returned to the consent screen.
  * Exposes only the information needed for user consent, excluding sensitive data
  * like PKCE parameters and authorization codes.
@@ -94,6 +108,13 @@ export class GetConsentMetadataResponseDto {
     type: FlowClientDto,
   })
   client!: FlowClientDto;
+
+  @ApiProperty({
+    description:
+      "The workspace the token will work in: for Taico's own servers (tasks, context, workers), the workspace the person is in now; for any other server, the server's workspace.",
+    type: FlowWorkspaceDto,
+  })
+  workspace!: FlowWorkspaceDto;
 
   @ApiProperty({
     description: 'Redirect URI provided in the authorization request',

@@ -96,6 +96,12 @@ export interface FlowClientDto {
   registrationMethod: 'dynamic_registration' | 'metadata_document';
 }
 
+export interface FlowWorkspaceDto {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface GetConsentMetadataResponseDto {
   id: string;
   status: 'CLIENT_NOT_REGISTERED' | 'CLIENT_REGISTERED' | 'AUTHORIZATION_REQUEST_STARTED' | 'USER_CONSENT_OK' | 'USER_CONSENT_REJECTED' | 'WAITING_ON_DOWNSTREAM_AUTH' | 'AUTHORIZATION_CODE_ISSUED' | 'AUTHORIZATION_CODE_EXCHANGED';
@@ -103,6 +109,7 @@ export interface GetConsentMetadataResponseDto {
   resource?: string;
   server: FlowServerDto;
   client: FlowClientDto;
+  workspace: FlowWorkspaceDto;
   redirectUri: string;
   createdAt: string;
 }

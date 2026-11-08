@@ -96,6 +96,7 @@ export { ExecutionTraceResponseDto } from './models/ExecutionTraceResponseDto.js
 export type { ExecutionTracesResponseDto } from './models/ExecutionTracesResponseDto.js';
 export { FlowClientDto } from './models/FlowClientDto.js';
 export type { FlowServerDto } from './models/FlowServerDto.js';
+export type { FlowWorkspaceDto } from './models/FlowWorkspaceDto.js';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto.js';
 export { GithubAuthType } from './models/GithubAuthType.js';
 export { GithubConnectionMatch } from './models/GithubConnectionMatch.js';

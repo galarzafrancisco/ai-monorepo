@@ -2,12 +2,13 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
-import { randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { decodeJwt } from 'jose';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { INTERNAL_WORKER_AUTH_TARGET_ID } from '../src/auth/core/constants/internal-auth-target.constant';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
@@ -476,6 +477,117 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       expect(
         await members.findOneBy({ workspaceId: workspace.id, actorId: person.actorId }),
       ).toBeNull();
+    });
+  });
+
+  describe('connecting a worker', () => {
+    const VERSION = '0.0.0';
+    const REDIRECT_URI = 'http://127.0.0.1:6275/callback';
+    const tokenPath = `/api/v1/auth/token/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`;
+
+    /** A worker's OAuth flow, consented with `cookies`. */
+    async function authorizeWorker(cookies: string) {
+      const registered = await request(http)
+        .post(`/api/v1/auth/clients/register/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
+        .send({
+          client_name: `p4 worker ${unique()}`,
+          redirect_uris: [REDIRECT_URI],
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'none',
+        })
+        .expect(201);
+      const clientId: string = registered.body.client_id;
+      const codeVerifier = randomBytes(32).toString('base64url');
+      const authorize = await request(http)
+        .get(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
+        .query({
+          response_type: 'code',
+          client_id: clientId,
+          redirect_uri: REDIRECT_URI,
+          scope: 'workers:connect',
+          state: 'p4-state',
+          code_challenge: createHash('sha256').update(codeVerifier).digest('base64url'),
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+      const flowId = new URL(authorize.headers.location, 'http://x').searchParams.get('flow');
+
+      const consent = await request(http)
+        .get(`/api/v1/auth/consent/${flowId}`)
+        .set('Cookie', cookies)
+        .expect(200);
+
+      const approved = await request(http)
+        .post(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
+        .set('Cookie', cookies)
+        .send({ flow_id: flowId, approved: true })
+        .expect(302);
+      const code = new URL(approved.headers.location).searchParams.get('code');
+      const tokens = await request(http)
+        .post(tokenPath)
+        .send({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          code,
+          redirect_uri: REDIRECT_URI,
+          code_verifier: codeVerifier,
+        })
+        .expect(201);
+      return {
+        clientId,
+        consentWorkspace: consent.body.workspace as { id: string; slug: string },
+        refreshToken: tokens.body.refresh_token as string,
+        workspaceId: (decodeJwt(tokens.body.access_token) as { workspace_id?: string })
+          .workspace_id,
+      };
+    }
+
+    function refreshWorker(clientId: string, refreshToken: string) {
+      return request(http)
+        .post(tokenPath)
+        .send({ grant_type: 'refresh_token', client_id: clientId, refresh_token: refreshToken });
+    }
+
+    it('connects to the workspace the person consented in, and refresh keeps it', async () => {
+      const workspace = await createWorkspace(operator);
+      const inWorkspace = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+
+      const worker = await authorizeWorker(inWorkspace);
+      expect(worker.consentWorkspace).toMatchObject({ id: workspace.id, slug: workspace.slug });
+      expect(worker.workspaceId).toBe(workspace.id);
+
+      const refreshed = await refreshWorker(worker.clientId, worker.refreshToken).expect(201);
+      expect(decodeJwt(refreshed.body.access_token).workspace_id).toBe(workspace.id);
+
+      // Consenting from the default workspace still connects there.
+      const inDefault = await authorizeWorker(operator);
+      expect(inDefault.consentWorkspace.id).toBe(DEFAULT_WORKSPACE_ID);
+      expect(inDefault.workspaceId).toBe(DEFAULT_WORKSPACE_ID);
+    });
+
+    it('stops a removed member’s worker instead of moving it to another workspace', async () => {
+      const workspace = await createWorkspace(operator);
+      const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+      const person = await createPerson();
+      await request(http)
+        .post('/api/v1/workspaces/current/members')
+        .set('Cookie', admin)
+        .send({ email: person.email, role: WorkspaceRole.MEMBER })
+        .expect(201);
+      const own = cookiesFrom(await login(person.email, person.password).expect(200));
+      const inWorkspace = cookiesFrom(await switchTo(own, workspace.id).expect(200));
+      const worker = await authorizeWorker(inWorkspace);
+      expect(worker.workspaceId).toBe(workspace.id);
+
+      await request(http)
+        .delete(`/api/v1/workspaces/current/members/${person.actorId}`)
+        .set('Cookie', admin)
+        .expect(204);
+
+      const refused = await refreshWorker(worker.clientId, worker.refreshToken);
+      expect(refused.status).toBe(403);
+      expect(refused.body.code).toBe('TOKEN_ACTOR_NOT_IN_WORKSPACE');
     });
   });
 
