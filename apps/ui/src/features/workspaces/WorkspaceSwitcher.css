@@ -1,0 +1,53 @@
+.workspace-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.workspace-switcher__label {
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+.workspace-switcher__name {
+  color: var(--text);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-switcher__select {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.workspace-switcher__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.workspace-switcher--compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-radius: var(--r-2);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+}

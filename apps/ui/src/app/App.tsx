@@ -24,6 +24,7 @@ import { PublicSite } from '../features/marketing/PublicSite';
 import { isPublicPath } from '../features/marketing/publicPaths';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
 import { taicoLinkStore } from '../features/taico-links';
+import { WorkspacesProvider } from '../features/workspaces';
 
 /**
  * Redirects to /walkthrough during render if the user's display mode is FULL_PAGE,
@@ -129,6 +130,7 @@ function AuthenticatedApp() {
                   path='*'
                   element={
                     <ProtectedRoute>
+                      <WorkspacesProvider>
                       <CommandPaletteProvider>
                         <WalkthroughGate>
                           <ThreadsProvider>
@@ -138,6 +140,7 @@ function AuthenticatedApp() {
                           </ThreadsProvider>
                         </WalkthroughGate>
                       </CommandPaletteProvider>
+                      </WorkspacesProvider>
                     </ProtectedRoute>
                   }
                 />

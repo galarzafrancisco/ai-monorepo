@@ -229,6 +229,10 @@ export interface SetupManagedUserRequestDto {
   password: string;
 }
 
+export interface SwitchWorkspaceRequestDto {
+  workspaceId: string;
+}
+
 export interface ChangePasswordRequestDto {
   currentPassword: string;
   newPassword: string;
@@ -1673,4 +1677,47 @@ export interface AccessRequestListResponseDto {
 
 export interface UpdateAccessRequestDto {
   status: AccessRequestStatus;
+}
+
+export type WorkspaceRole = 'admin' | 'member';
+
+export interface WorkspaceResponseDto {
+  id: string;
+  slug: string;
+  name: string;
+  role: WorkspaceRole;
+  current: boolean;
+}
+
+export type LocatableRowKind = 'task' | 'thread' | 'context_block';
+
+export interface CreateWorkspaceRequestDto {
+  name: string;
+  slug: string;
+}
+
+export type WorkspaceMemberActorType = 'human' | 'agent';
+
+export interface WorkspaceMemberResponseDto {
+  actorId: string;
+  type: WorkspaceMemberActorType;
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: WorkspaceRole;
+  joinedAt: string;
+}
+
+export interface InviteWorkspaceMemberRequestDto {
+  email: string;
+  role: WorkspaceRole;
+}
+
+export interface InviteWorkspaceMemberResponseDto {
+  member: WorkspaceMemberResponseDto;
+  accountCreated: boolean;
+}
+
+export interface UpdateWorkspaceMemberRequestDto {
+  role: WorkspaceRole;
 }

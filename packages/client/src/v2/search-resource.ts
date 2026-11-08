@@ -26,7 +26,7 @@ export class SearchResource extends BaseClient {
     return this.request('DELETE', '/api/v1/search/settings', { signal: params?.signal });
   }
 
-  /** Get the state of the search index */
+  /** Get the state of the workspace's part of the search index */
   async SearchAdminController_getSearchIndexStatus(params?: { signal?: AbortSignal }): Promise<SearchIndexStatusDto> {
     return this.request('GET', '/api/v1/search/index', { signal: params?.signal });
   }

@@ -14,6 +14,7 @@ import { SettingsAccessRequestsPage } from './SettingsAccessRequestsPage';
 import { SettingsSearchPage } from './SettingsSearchPage';
 import { SettingsIntegrationsPage } from './SettingsIntegrationsPage';
 import { WalkthroughPage } from '../walkthrough/WalkthroughPage';
+import { SettingsWorkspacePage, SettingsWorkspacesPage } from '../workspaces';
 
 export function HomeRoutes() {
   return (
@@ -34,6 +35,8 @@ export function HomeRoutes() {
           <Route path="/settings/workers" element={<SettingsWorkersPage />} />
           <Route path="/settings/ai-usage" element={<SettingsAIUsagePage />} />
           <Route path="/settings/data" element={<SettingsDataPage />} />
+          <Route path="/settings/workspace" element={<SettingsWorkspacePage />} />
+          <Route path="/settings/workspaces" element={<SettingsWorkspacesPage />} />
           <Route path="/settings/users" element={<SettingsUsersPage />} />
           <Route path="/settings/access-requests" element={<SettingsAccessRequestsPage />} />
           <Route path="/settings/search" element={<SettingsSearchPage />} />

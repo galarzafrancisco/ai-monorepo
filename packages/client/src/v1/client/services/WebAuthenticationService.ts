@@ -12,6 +12,7 @@ import type { ManagedUserResponseDto } from '../models/ManagedUserResponseDto.js
 import type { OnboardingRequestDto } from '../models/OnboardingRequestDto.js';
 import type { OnboardingStatusResponseDto } from '../models/OnboardingStatusResponseDto.js';
 import type { SetupManagedUserRequestDto } from '../models/SetupManagedUserRequestDto.js';
+import type { SwitchWorkspaceRequestDto } from '../models/SwitchWorkspaceRequestDto.js';
 import type { UserResponseDto } from '../models/UserResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
@@ -148,6 +149,24 @@ export class WebAuthenticationService {
             errors: {
                 401: `Invalid or expired refresh token`,
             },
+        });
+    }
+    /**
+     * Switch the web session to another workspace
+     * Mints a new session token (and refresh token) for a workspace the person is a member of, and revokes the current refresh token. A workspace they are not in answers 404.
+     * @param requestBody
+     * @returns LoginResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerSwitchWorkspace(
+        requestBody: SwitchWorkspaceRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<LoginResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/auth/web/switch-workspace',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

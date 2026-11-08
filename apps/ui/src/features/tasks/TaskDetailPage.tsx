@@ -34,6 +34,7 @@ import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { LinkifiedText, PullRequestChip, parsePullRequestUrl } from '../pull-requests';
 import { IssueChip, parseIssueUrl } from '../issues';
 import './TaskDetailPage.css';
+import { LocatableRowKind, WorkspaceSwitchPrompt } from '../workspaces';
 
 type TaskDetailHandlers = {
   addComment: (payload: { taskId: string; comment: string }) => Promise<unknown>;
@@ -1204,7 +1205,7 @@ export function TaskDetailPage() {
     },
   };
 
-  return (
+  const view = (
     <TaskDetailView
       task={task}
       backPath="/tasks"
@@ -1215,6 +1216,17 @@ export function TaskDetailPage() {
       allTasks={allCachedTasks}
     />
   );
+
+  // Not found here: it may be in another of the person's workspaces.
+  if (!task && !isLoadingTask) {
+    return (
+      <WorkspaceSwitchPrompt kind={LocatableRowKind.TASK} id={taskId}>
+        {view}
+      </WorkspaceSwitchPrompt>
+    );
+  }
+
+  return view;
 }
 
 function TaskDetailLoadingShell({ backPath }: { backPath: string }) {

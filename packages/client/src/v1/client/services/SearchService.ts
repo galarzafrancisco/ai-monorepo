@@ -78,7 +78,7 @@ export class SearchService {
         });
     }
     /**
-     * Get the state of the search index
+     * Get the state of the workspace's part of the search index
      * @returns SearchIndexStatusDto What is indexed and embedded
      * @throws ApiError
      */

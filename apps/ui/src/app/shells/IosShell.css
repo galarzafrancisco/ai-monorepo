@@ -232,6 +232,11 @@
   color: var(--text);
 }
 
+.ios-shell__drawer-workspace {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
 .ios-shell__drawer-nav {
   flex: 1;
   padding: var(--space-2);

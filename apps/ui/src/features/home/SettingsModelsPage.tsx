@@ -10,7 +10,7 @@ import { Stack, Text, Card, Button, Modal, Row } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useHomeCtx } from './HomeProvider';
-import { useAuth } from '../../auth/AuthContext';
+import { useWorkspacesCtx } from '../workspaces';
 import { ChatgptConnection } from '../ai-models/ChatgptConnection';
 import './SettingsPage.css';
 import './SettingsModelsPage.css';
@@ -164,9 +164,9 @@ const errorDetail = (err: unknown, fallback: string): string =>
 
 export function SettingsModelsPage() {
   const { setSectionTitle } = useHomeCtx();
-  const { user } = useAuth();
-  // The workspace's models are shared by every member; only a workspace admin changes them.
-  const canManage = user?.role === 'admin';
+  // The workspace's models are shared by every member; only a workspace admin
+  // changes them. That is the role in this workspace, not the installation role.
+  const { isWorkspaceAdmin: canManage } = useWorkspacesCtx();
   const [providers, setProviders] = useState<AiProviderResponseDto[]>([]);
   const [selections, setSelections] = useState<AiModelSelectionResponseDto[]>([]);
   const [modelsByProvider, setModelsByProvider] = useState<Record<string, ProviderModels>>({});

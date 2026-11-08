@@ -85,6 +85,7 @@ export type { CreateTaskBlueprintDto } from './models/CreateTaskBlueprintDto.js'
 export type { CreateTaskDto } from './models/CreateTaskDto.js';
 export type { CreateThreadDto } from './models/CreateThreadDto.js';
 export type { CreateThreadMessageDto } from './models/CreateThreadMessageDto.js';
+export type { CreateWorkspaceRequestDto } from './models/CreateWorkspaceRequestDto.js';
 export type { DeleteConnectionResponseDto } from './models/DeleteConnectionResponseDto.js';
 export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto.js';
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto.js';
@@ -109,6 +110,8 @@ export type { ImportBlocksResponseDto } from './models/ImportBlocksResponseDto.j
 export type { InputRequestResponseDto } from './models/InputRequestResponseDto.js';
 export { IntrospectTokenRequestDto } from './models/IntrospectTokenRequestDto.js';
 export { IntrospectTokenResponseDto } from './models/IntrospectTokenResponseDto.js';
+export type { InviteWorkspaceMemberRequestDto } from './models/InviteWorkspaceMemberRequestDto.js';
+export type { InviteWorkspaceMemberResponseDto } from './models/InviteWorkspaceMemberResponseDto.js';
 export type { IssueAccessTokenRequestDto } from './models/IssueAccessTokenRequestDto.js';
 export type { IssueAccessTokenResponseDto } from './models/IssueAccessTokenResponseDto.js';
 export type { IssuedAccessTokenResponseDto } from './models/IssuedAccessTokenResponseDto.js';
@@ -119,6 +122,7 @@ export { IssueStateReason } from './models/IssueStateReason.js';
 export type { JwkResponseDto } from './models/JwkResponseDto.js';
 export type { JwksResponseDto } from './models/JwksResponseDto.js';
 export type { ListThreadMessagesResponseDto } from './models/ListThreadMessagesResponseDto.js';
+export { LocatableRowKind } from './models/LocatableRowKind.js';
 export type { LoginRequestDto } from './models/LoginRequestDto.js';
 export type { LoginResponseDto } from './models/LoginResponseDto.js';
 export type { LookupIssuesDto } from './models/LookupIssuesDto.js';
@@ -161,6 +165,7 @@ export type { SetAiModelSelectionDto } from './models/SetAiModelSelectionDto.js'
 export type { SetupManagedUserRequestDto } from './models/SetupManagedUserRequestDto.js';
 export type { StartAiProviderAuthorizationResponseDto } from './models/StartAiProviderAuthorizationResponseDto.js';
 export { StopActiveTaskExecutionDto } from './models/StopActiveTaskExecutionDto.js';
+export type { SwitchWorkspaceRequestDto } from './models/SwitchWorkspaceRequestDto.js';
 export type { TagResponseDto } from './models/TagResponseDto.js';
 export type { TaskBlueprintListResponseDto } from './models/TaskBlueprintListResponseDto.js';
 export type { TaskBlueprintResponseDto } from './models/TaskBlueprintResponseDto.js';
@@ -205,6 +210,7 @@ export type { UpdateTaskBlueprintDto } from './models/UpdateTaskBlueprintDto.js'
 export type { UpdateTaskDto } from './models/UpdateTaskDto.js';
 export type { UpdateThreadDto } from './models/UpdateThreadDto.js';
 export type { UpdateThreadStateDto } from './models/UpdateThreadStateDto.js';
+export type { UpdateWorkspaceMemberRequestDto } from './models/UpdateWorkspaceMemberRequestDto.js';
 export type { UpsertAgentToolPermissionDto } from './models/UpsertAgentToolPermissionDto.js';
 export { UserResponseDto } from './models/UserResponseDto.js';
 export { UserWalkthroughStatusResponseDto } from './models/UserWalkthroughStatusResponseDto.js';
@@ -212,6 +218,10 @@ export type { VersionResponseDto } from './models/VersionResponseDto.js';
 export { WorkerGithubCredentialDto } from './models/WorkerGithubCredentialDto.js';
 export type { WorkerGithubCredentialsResponseDto } from './models/WorkerGithubCredentialsResponseDto.js';
 export type { WorkerResponseDto } from './models/WorkerResponseDto.js';
+export { WorkspaceMemberActorType } from './models/WorkspaceMemberActorType.js';
+export type { WorkspaceMemberResponseDto } from './models/WorkspaceMemberResponseDto.js';
+export type { WorkspaceResponseDto } from './models/WorkspaceResponseDto.js';
+export { WorkspaceRole } from './models/WorkspaceRole.js';
 
 export { AccessRequestsService } from './services/AccessRequestsService.js';
 export { AccessRequestsAdminService } from './services/AccessRequestsAdminService.js';
@@ -245,3 +255,4 @@ export { ToolsService } from './services/ToolsService.js';
 export { WalkthroughService } from './services/WalkthroughService.js';
 export { WebAuthenticationService } from './services/WebAuthenticationService.js';
 export { WorkersService } from './services/WorkersService.js';
+export { WorkspacesService } from './services/WorkspacesService.js';

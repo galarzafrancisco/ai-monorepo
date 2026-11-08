@@ -1,0 +1,11 @@
+.workspace-switch-prompt {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+}
+
+.workspace-switch-prompt__card {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
