@@ -91,76 +91,38 @@ describe('Workspaces (e2e)', () => {
     expect(membership?.role).toBe(WorkspaceRole.MEMBER);
   });
 
-  it('keeps a person’s workspace role in step with their role', async () => {
+  it('puts a new person in the workspace they are created in, and users.role no longer changes it', async () => {
     const identity = app.get(IdentityProviderService);
     const user = await identity.createManagedUser({
       email: `ws-${Math.random().toString(36).slice(2, 10)}@example.com`,
       role: UserRole.ADMIN,
     });
 
-    expect((await members.findOneBy({ actorId: user.actorId }))?.role).toBe(
-      WorkspaceRole.ADMIN,
-    );
+    // Created with no workspace given: the default one, as its admin.
+    expect(await members.findBy({ actorId: user.actorId })).toEqual([
+      expect.objectContaining({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        role: WorkspaceRole.ADMIN,
+      }),
+    ]);
 
+    // users.role is the installation role only.
     await identity.updateUserRole(user.id, { role: UserRole.STANDARD });
     expect((await members.findOneBy({ actorId: user.actorId }))?.role).toBe(
-      WorkspaceRole.MEMBER,
+      WorkspaceRole.ADMIN,
     );
   });
 
-  it('adds pre-existing actors with no membership at startup, as schema sync needs', async () => {
-    // Schema sync skips the migration's backfill, so actors that existed
-    // before workspaces have no membership. Recreate that state.
+  it('does not put actors with no membership back in the default workspace at startup', async () => {
     const identity = app.get(IdentityProviderService);
-    const admin = await identity.createManagedUser({
-      email: `ws-sync-${Math.random().toString(36).slice(2, 10)}@example.com`,
-      role: UserRole.ADMIN,
+    const user = await identity.createManagedUser({
+      email: `ws-removed-${Math.random().toString(36).slice(2, 10)}@example.com`,
+      role: UserRole.STANDARD,
     });
-    const agent = await request(httpServer)
-      .post('/api/v1/agents')
-      .set('Cookie', authCookies)
-      .send({
-        slug: `ws-sync-agent-${Math.random().toString(36).slice(2, 10)}`,
-        name: 'Pre-workspace agent',
-        systemPrompt: 'Existed before workspaces.',
-      })
-      .expect(201);
-    const actorIds = [admin.actorId, agent.body.actorId, testUserActorId];
-    for (const actorId of actorIds) {
-      await members.delete({ actorId });
-    }
+    await members.delete({ actorId: user.actorId });
 
-    // Three missing actors with a batch size of two crosses a batch boundary.
-    const batchSize = WorkspacesService.BACKFILL_BATCH_SIZE;
-    WorkspacesService.BACKFILL_BATCH_SIZE = 2;
-    try {
-      await app.get(WorkspacesService).onModuleInit();
-    } finally {
-      WorkspacesService.BACKFILL_BATCH_SIZE = batchSize;
-    }
-
-    expect((await members.findOneBy({ actorId: admin.actorId }))?.role).toBe(
-      WorkspaceRole.ADMIN,
-    );
-    expect(
-      (await members.findOneBy({ actorId: agent.body.actorId }))?.role,
-    ).toBe(WorkspaceRole.MEMBER);
-    for (const actorId of actorIds) {
-      expect(await members.countBy({ actorId })).toBe(1);
-    }
-
-    // A token minted afterwards carries the workspace again.
-    const cookies = await getAuthCookies(httpServer);
-    const accessToken = cookies
-      .split('; ')
-      .find((c) => c.startsWith('access_token='))
-      ?.slice('access_token='.length);
-    expect(decodeJwt(accessToken!).workspace_id).toBe(DEFAULT_WORKSPACE_ID);
-
-    // Running it again adds nothing.
     await app.get(WorkspacesService).onModuleInit();
-    for (const actorId of actorIds) {
-      expect(await members.countBy({ actorId })).toBe(1);
-    }
+
+    expect(await members.countBy({ actorId: user.actorId })).toBe(0);
   });
 });

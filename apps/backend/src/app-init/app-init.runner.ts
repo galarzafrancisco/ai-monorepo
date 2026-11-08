@@ -74,6 +74,8 @@ import {
   createDisplayAuthTarget,
 } from './mcp/internal-worker-auth.mcp';
 import { DEFAULT_WORKSPACE_ID } from '../workspaces/workspaces.constants';
+import { addWorkspaceMembership } from '../workspaces/workspaces.service';
+import { WorkspaceRole } from '../workspaces/enums';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -146,6 +148,16 @@ export class AppInitRunner implements OnApplicationBootstrap {
             actor = await this.actorRepository.save(actor);
             this.logger.log(`Created actor for user: ${user.email}`);
           }
+          // These people existed before workspaces: they belong to the
+          // default one.
+          await addWorkspaceMembership(this.actorRepository.manager, {
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            actorId: actor.id,
+            role:
+              user.role === UserRole.ADMIN
+                ? WorkspaceRole.ADMIN
+                : WorkspaceRole.MEMBER,
+          });
 
           user.actorId = actor.id;
           await this.userRepository.save(user);
@@ -182,6 +194,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
             actor = await this.actorRepository.save(actor);
             this.logger.log(`Created actor for agent: ${agent.slug}`);
           }
+          await addWorkspaceMembership(this.actorRepository.manager, {
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            actorId: actor.id,
+            role: WorkspaceRole.MEMBER,
+          });
 
           agent.actorId = actor.id;
           await this.agentRepository.save(agent);
@@ -510,7 +527,16 @@ export class AppInitRunner implements OnApplicationBootstrap {
   ): Promise<User | null> {
     let user: User | null = null;
     try {
-      user = await this.identityProviderService.createUser(userConfig);
+      user = await this.identityProviderService.createUser({
+        ...userConfig,
+        workspace: {
+          workspaceId: DEFAULT_WORKSPACE_ID,
+          role:
+            userRole === UserRole.ADMIN
+              ? WorkspaceRole.ADMIN
+              : WorkspaceRole.MEMBER,
+        },
+      });
     } catch (error) {
       // Maybe user already exists? Fetch
       try {

@@ -26,7 +26,7 @@ import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
-import { UserScopes } from '../auth/core/scopes/user.scopes';
+import { InstallationScopes } from '../auth/core/scopes/installation.scopes';
 import { AccessRequestsService } from './access-requests.service';
 import { AccessRequestResult } from './dto/service/access-requests.service.types';
 import { CreateAccessRequestDto, CreateAccessRequestResponseDto } from './dto/http/create-access-request.dto';
@@ -63,13 +63,17 @@ export class AccessRequestsController {
   }
 }
 
-/** Admin-only review. Authorization is enforced server side via the admin scope. */
+/**
+ * Review by the installation operator. Access requests are people asking to
+ * join the installation, not any one workspace, so this works from every
+ * workspace and needs `installation:admin`.
+ */
 @ApiTags('Access Requests Admin')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('installation')
 @Controller('admin/access-requests')
 @UseGuards(AccessTokenGuard, ScopesGuard)
-@RequireScopes(UserScopes.ADMIN.id)
+@RequireScopes(InstallationScopes.ADMIN.id)
 export class AccessRequestsAdminController {
   constructor(private readonly service: AccessRequestsService) {}
 

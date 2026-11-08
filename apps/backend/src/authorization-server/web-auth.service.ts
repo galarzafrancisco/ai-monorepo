@@ -4,15 +4,18 @@ import { createHash, randomBytes } from 'crypto';
 import { SignJWT, importPKCS8 } from 'jose';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { getConfig } from '../config/env.config';
 import { JwksService } from '../auth/crypto/jwks.service';
-import {
-  WorkspacesService,
-  workspaceRoleForUserRole,
-} from '../workspaces/workspaces.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 import { WorkspaceRole } from '../workspaces/enums';
+import {
+  NoWorkspaceMembershipError,
+  NotInWorkspaceError,
+} from '../workspaces/workspace.errors';
+import { InstallationScopes } from 'src/auth/core/scopes/installation.scopes';
+import { UserRole } from 'src/identity-provider/enums';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { UserScopes } from 'src/auth/core/scopes/user.scopes';
@@ -61,6 +64,9 @@ export class WebAuthService {
       password,
     );
 
+    // A session starts in the person's oldest workspace.
+    const workspace = await this.resolveSessionWorkspace(actor.id, null);
+
     // Generate access token using centralized config
     const config = getConfig();
     const durationMinutes = config.webAccessTokenDurationMinutes;
@@ -68,10 +74,14 @@ export class WebAuthService {
       durationMinutes,
       actor,
       user,
+      workspace,
     );
 
     // Generate refresh token (1 day expiration)
-    const refreshToken = await this.generateAndStoreRefreshToken(user.id);
+    const refreshToken = await this.generateAndStoreRefreshToken(
+      user.id,
+      workspace.workspaceId,
+    );
 
     this.logger.log(`User logged in successfully: ${email}`);
 
@@ -85,12 +95,44 @@ export class WebAuthService {
   }
 
   /**
-   * Generate a signed JWT access token for web authentication
+   * The workspace a session token is minted for: `preferredWorkspaceId` while
+   * the person is still a member of it, otherwise their oldest membership.
+   * Membership is checked here, every time a token is minted, so a removed
+   * member's next token is for another workspace.
+   *
+   * @throws {NoWorkspaceMembershipError} if the person is in no workspace. A
+   *   token with no `workspace_id` would be read as the default workspace.
+   */
+  private async resolveSessionWorkspace(
+    actorId: string,
+    preferredWorkspaceId: string | null,
+  ): Promise<{ workspaceId: string; role: WorkspaceRole }> {
+    if (preferredWorkspaceId) {
+      const role = await this.workspacesService.findRole(
+        preferredWorkspaceId,
+        actorId,
+      );
+      if (role) {
+        return { workspaceId: preferredWorkspaceId, role };
+      }
+    }
+    const membership =
+      await this.workspacesService.findMembershipForActor(actorId);
+    if (!membership) {
+      throw new NoWorkspaceMembershipError(actorId);
+    }
+    return membership;
+  }
+
+  /**
+   * Generate a signed JWT access token for web authentication, in one
+   * workspace the person is a member of.
    */
   private async generateWebAccessToken(
     durationMinutes: number,
     actor: ActorEntity,
     user: User,
+    workspace: { workspaceId: string; role: WorkspaceRole },
   ): Promise<string> {
     // Get active signing key
     const signingKey = await this.jwksService.getActiveSigningKey();
@@ -105,29 +147,22 @@ export class WebAuthService {
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
 
-    // The admin scope follows the membership role in the token's workspace,
-    // not the installation-wide users.role (docs/architecture/workspaces.md).
-    // An actor with no membership (only possible before the startup backfill
-    // has run) keeps the role from users.role, as before workspaces.
-    const membership = await this.workspacesService.findMembershipForActor(
-      actor.id,
-    );
-    const workspaceId = membership?.workspaceId;
-    const workspaceRole =
-      membership?.role ?? workspaceRoleForUserRole(user.role);
-
+    // `user:admin` follows the membership role in the token's workspace;
+    // `installation:admin` follows the installation-wide users.role
+    // (docs/architecture/workspaces.md, "Admin roles").
     const scopes: Scope[] = [
       ...ALL_WEB_SCOPES,
       ...ALL_MCP_REGISTRY_SCOPES,
-      workspaceRole === WorkspaceRole.ADMIN
+      workspace.role === WorkspaceRole.ADMIN
         ? UserScopes.ADMIN
         : UserScopes.STANDARD,
+      ...(user.role === UserRole.ADMIN ? [InstallationScopes.ADMIN] : []),
     ];
 
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
       sub: actor.id,
-      ...(workspaceId ? { workspace_id: workspaceId } : {}),
+      workspace_id: workspace.workspaceId,
       actor_id: actor.id,
       actor_slug: actor.slug,
       actor_type: actor.type,
@@ -160,7 +195,10 @@ export class WebAuthService {
    * Generate and store a refresh token in the database
    * Returns the unhashed token (to be sent to client)
    */
-  private async generateAndStoreRefreshToken(userId: string): Promise<string> {
+  private async generateAndStoreRefreshToken(
+    userId: string,
+    workspaceId: string,
+  ): Promise<string> {
     // Generate a cryptographically secure random token
     const token = randomBytes(32).toString('base64url');
 
@@ -178,6 +216,7 @@ export class WebAuthService {
       tokenHash,
       expiresAt,
       revokedAt: null,
+      workspaceId,
     });
 
     await this.refreshTokenRepository.save(refreshToken);
@@ -257,13 +296,22 @@ export class WebAuthService {
       throw new RefreshTokenActorMissingError(storedToken.id);
     }
 
+    // Stay in the session's workspace while still a member of it.
+    const workspace = await this.resolveSessionWorkspace(
+      actor.id,
+      storedToken.workspaceId,
+    );
     const refreshConfig = getConfig();
     const newAccessToken = await this.generateWebAccessToken(
       refreshConfig.webAccessTokenDurationMinutes,
       actor,
       user,
+      workspace,
     );
-    const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
+    const newRefreshToken = await this.generateAndStoreRefreshToken(
+      user.id,
+      workspace.workspaceId,
+    );
 
     this.logger.log(
       `Refresh token exchanged successfully for user: ${user.email}`,
@@ -273,6 +321,73 @@ export class WebAuthService {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       expiresIn: refreshConfig.webAccessTokenDurationMinutes * 60, // Convert minutes to seconds
+      actor,
+      user,
+    };
+  }
+
+  /**
+   * Mints a new session (access and refresh token) in another workspace the
+   * person is a member of, and revokes the refresh token of the session it
+   * replaces.
+   *
+   * @throws {NotInWorkspaceError} if they are not a member of it (404, so
+   *   workspace ids cannot be probed)
+   */
+  async switchWorkspace(
+    actorId: string,
+    workspaceId: string,
+    currentRefreshToken: string | undefined,
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresInSeconds: number;
+    actor: ActorEntity;
+    user: User;
+  }> {
+    const role = await this.workspacesService.findRole(workspaceId, actorId);
+    if (!role) {
+      throw new NotInWorkspaceError();
+    }
+    const actor = await this.actorService.getActorById(actorId, true);
+    const user = actor?.user;
+    if (
+      !actor ||
+      actor.deletedAt ||
+      !user ||
+      !user.isActive ||
+      this.identityProviderService.isPasswordSetupPending(user)
+    ) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    if (currentRefreshToken) {
+      const tokenHash = createHash('sha256')
+        .update(currentRefreshToken)
+        .digest('hex');
+      await this.refreshTokenRepository.update(
+        { tokenHash, userId: user.id, revokedAt: IsNull() },
+        { revokedAt: new Date() },
+      );
+    }
+
+    const config = getConfig();
+    const durationMinutes = config.webAccessTokenDurationMinutes;
+    const accessToken = await this.generateWebAccessToken(
+      durationMinutes,
+      actor,
+      user,
+      { workspaceId, role },
+    );
+    const refreshToken = await this.generateAndStoreRefreshToken(
+      user.id,
+      workspaceId,
+    );
+    this.logger.log(`User ${user.email} switched to workspace ${workspaceId}`);
+    return {
+      accessToken,
+      refreshToken,
+      expiresInSeconds: durationMinutes * 60,
       actor,
       user,
     };

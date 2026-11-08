@@ -48,6 +48,7 @@ import {
   getMcpServerResourceUrl,
   isSameResource,
 } from '../auth/core/resource-audience';
+import { NoWorkspaceMembershipError } from '../workspaces/workspace.errors';
 
 @Injectable()
 export class TokenService {
@@ -438,7 +439,7 @@ export class TokenService {
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
       sub: mcpAuthFlow.authJourney.actorId,
-      ...(workspaceId ? { workspace_id: workspaceId } : {}),
+      workspace_id: workspaceId,
       actor_id: mcpAuthFlow.authJourney.actor.id,
       actor_slug: mcpAuthFlow.authJourney.actor.slug,
       actor_type: mcpAuthFlow.authJourney.actor.type,
@@ -464,17 +465,24 @@ export class TokenService {
   /**
    * The workspace an MCP token works in. Taico's own servers (tasks, context
    * and the auth targets) serve every workspace, so their tokens are for the
-   * person's workspace. Any other server belongs to one workspace: its token
-   * is for that workspace, and only its members get one. Checked again on
-   * every refresh, so a person removed from the workspace stops getting
-   * tokens for its servers.
+   * person's workspace (their oldest membership; there is no picker yet).
+   * Any other server belongs to one workspace: its token is for that
+   * workspace, and only its members get one. Checked again on every refresh,
+   * so a person removed from the workspace stops getting tokens for it, and
+   * a person in no workspace gets none (a token without `workspace_id` would
+   * be read as the default workspace).
    */
   private async workspaceForServerToken(
     server: { providedId: string; workspaceId: string },
     actorId: string,
-  ): Promise<string | null> {
+  ): Promise<string> {
     if (mcpServerRequiresTaicoAuth(server.providedId)) {
-      return this.workspacesService.findWorkspaceIdForActor(actorId);
+      const workspaceId =
+        await this.workspacesService.findWorkspaceIdForActor(actorId);
+      if (!workspaceId) {
+        throw new NoWorkspaceMembershipError(actorId);
+      }
+      return workspaceId;
     }
     if (!(await this.workspacesService.isMember(server.workspaceId, actorId))) {
       throw new TokenActorNotInWorkspaceError(actorId, server.workspaceId);

@@ -7,6 +7,7 @@ import { SearchIndexAdminService, SearchIndexStatus } from '../search/index/sear
 import { SearchSettings } from '../search/index/search-settings';
 import { SearchSettingsService } from '../search/index/search-settings.service';
 import { SearchScopes } from '../search/search.scopes';
+import { InstallationScopes } from '../auth/core/scopes/installation.scopes';
 import { SearchIndexStatusDto } from './dto/search-index-status.dto';
 import { SearchSettingsDto } from './dto/search-settings.dto';
 import { UpdateSearchSettingsDto } from './dto/update-search-settings.dto';
@@ -15,10 +16,10 @@ import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.de
 
 @ApiTags('Search')
 @ApiCookieAuth('JWT-Cookie')
-// The settings and the index are the installation's: only the default
-// workspace changes them (phase 4 moves this to the installation operator).
-// Every workspace reads the settings and its own part of the index.
-@WorkspaceAccess('default-only')
+// The settings and the index are the installation's: only the installation
+// operator (`installation:admin`) changes them, from any workspace. Every
+// workspace reads the settings and its own part of the index.
+@WorkspaceAccess('installation')
 @Controller('search')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class SearchAdminController {
@@ -36,7 +37,7 @@ export class SearchAdminController {
   }
 
   @Patch('settings')
-  @RequireScopes(SearchScopes.CONFIGURE.id)
+  @RequireScopes(SearchScopes.CONFIGURE.id, InstallationScopes.ADMIN.id)
   @ApiOperation({
     summary: 'Change search settings',
     description: 'Changes the settings sent and leaves the others as they are.',
@@ -47,7 +48,7 @@ export class SearchAdminController {
   }
 
   @Delete('settings')
-  @RequireScopes(SearchScopes.CONFIGURE.id)
+  @RequireScopes(SearchScopes.CONFIGURE.id, InstallationScopes.ADMIN.id)
   @ApiOperation({ summary: 'Reset the search settings to their defaults' })
   @ApiOkResponse({ type: SearchSettingsDto, description: 'The default settings' })
   async resetSearchSettings(): Promise<SearchSettingsDto> {
@@ -63,7 +64,7 @@ export class SearchAdminController {
   }
 
   @Post('index/rebuild')
-  @RequireScopes(SearchScopes.CONFIGURE.id)
+  @RequireScopes(SearchScopes.CONFIGURE.id, InstallationScopes.ADMIN.id)
   @ApiOperation({
     summary: 'Rebuild the search index',
     description:

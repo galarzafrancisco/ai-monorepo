@@ -419,6 +419,42 @@ export const ErrorCatalog: Record<
     type: '/errors/workspaces/token-actor-not-member',
     retryable: false,
   },
+  [ErrorCodes.NO_WORKSPACE_MEMBERSHIP]: {
+    status: 403,
+    title: 'Not a member of any workspace',
+    type: '/errors/workspaces/no-membership',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_SLUG_CONFLICT]: {
+    status: 409,
+    title: 'Workspace slug already taken',
+    type: '/errors/workspaces/slug-conflict',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_MEMBER_NOT_FOUND]: {
+    status: 404,
+    title: 'Member not found',
+    type: '/errors/workspaces/member-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_MEMBER_ALREADY_EXISTS]: {
+    status: 409,
+    title: 'Already a member of the workspace',
+    type: '/errors/workspaces/member-already-exists',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_LAST_ADMIN]: {
+    status: 409,
+    title: 'The workspace needs at least one admin',
+    type: '/errors/workspaces/last-admin',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_MEMBER_IS_AGENT]: {
+    status: 400,
+    title: 'Agents are managed on the agents page',
+    type: '/errors/workspaces/member-is-agent',
+    retryable: false,
+  },
   [ErrorCodes.VALIDATION_FAILED]: {
     status: 400,
     title: 'Validation failed',
