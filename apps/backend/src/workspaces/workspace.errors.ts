@@ -8,3 +8,55 @@ export class NotInWorkspaceError extends Error {
     this.name = NotInWorkspaceError.name;
   }
 }
+
+/** The person is in no workspace, so no session token can be minted for them. */
+export class NoWorkspaceMembershipError extends Error {
+  readonly code = ErrorCodes.NO_WORKSPACE_MEMBERSHIP;
+  constructor(readonly actorId: string) {
+    super(`Actor ${actorId} is not a member of any workspace`);
+    this.name = NoWorkspaceMembershipError.name;
+  }
+}
+
+export class WorkspaceSlugConflictError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_SLUG_CONFLICT;
+  constructor(readonly slug: string) {
+    super(`A workspace with slug '${slug}' already exists`);
+    this.name = WorkspaceSlugConflictError.name;
+  }
+}
+
+/** The actor is not a member of the workspace (or does not exist). */
+export class WorkspaceMemberNotFoundError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_MEMBER_NOT_FOUND;
+  constructor(readonly actorId: string) {
+    super('Member not found');
+    this.name = WorkspaceMemberNotFoundError.name;
+  }
+}
+
+export class WorkspaceMemberAlreadyExistsError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_MEMBER_ALREADY_EXISTS;
+  constructor(readonly actorId: string) {
+    super('Already a member of the workspace');
+    this.name = WorkspaceMemberAlreadyExistsError.name;
+  }
+}
+
+/** Removing or demoting this member would leave the workspace with no admin. */
+export class WorkspaceLastAdminError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_LAST_ADMIN;
+  constructor() {
+    super('The workspace needs at least one admin');
+    this.name = WorkspaceLastAdminError.name;
+  }
+}
+
+/** Agents belong to one workspace for life: they are created and deleted, not invited or removed. */
+export class WorkspaceMemberIsAgentError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_MEMBER_IS_AGENT;
+  constructor(readonly actorId: string) {
+    super('Agents are managed on the agents page, not as members');
+    this.name = WorkspaceMemberIsAgentError.name;
+  }
+}

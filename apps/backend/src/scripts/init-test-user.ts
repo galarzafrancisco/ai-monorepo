@@ -16,6 +16,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { UserRole } from 'src/identity-provider/enums';
+import { WorkspaceRole } from '../workspaces/enums';
+import { DEFAULT_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -33,6 +35,10 @@ async function bootstrap() {
       slug: testEmail,
       displayName: testDisplayName,
       password: testPassword,
+      workspace: {
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        role: role === 'admin' ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER,
+      },
     });
 
     // Update role if admin

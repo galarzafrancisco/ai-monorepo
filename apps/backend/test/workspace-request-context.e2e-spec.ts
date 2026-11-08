@@ -204,11 +204,8 @@ describe('Workspace request context (e2e)', () => {
     });
   });
 
-  describe('user:admin follows the membership role', () => {
-    /**
-     * Sets users.role and the membership role independently. `update()`
-     * skips the subscriber that otherwise keeps them in step.
-     */
+  describe('user:admin follows the membership role, installation:admin users.role', () => {
+    /** Sets users.role and the membership role, which are independent. */
     async function setRoles(userRole: UserRole, memberRole: WorkspaceRole) {
       await users.update({ email: TEST_USER_EMAIL }, { role: userRole });
       await members.update(
@@ -223,10 +220,17 @@ describe('Workspace request context (e2e)', () => {
       const scopes = decodeJwt(accessTokenFrom(cookies)).scope as string[];
       expect(scopes).toContain('user:admin');
       expect(scopes).not.toContain('user:standard');
+      expect(scopes).not.toContain('installation:admin');
+      // A workspace admin route works; an installation operator route does not.
+      await request(http)
+        .patch(`/api/v1/workspaces/current/members/${actorId}`)
+        .set('Cookie', cookies)
+        .send({ role: WorkspaceRole.ADMIN })
+        .expect(200);
       await request(http)
         .get('/api/v1/admin/access-requests')
         .set('Cookie', cookies)
-        .expect(200);
+        .expect(403);
     });
 
     it('withholds user:admin from a workspace member who is an installation admin', async () => {
@@ -235,15 +239,20 @@ describe('Workspace request context (e2e)', () => {
       const scopes = decodeJwt(accessTokenFrom(cookies)).scope as string[];
       expect(scopes).not.toContain('user:admin');
       expect(scopes).toContain('user:standard');
+      expect(scopes).toContain('installation:admin');
+      await request(http)
+        .patch(`/api/v1/workspaces/current/members/${actorId}`)
+        .set('Cookie', cookies)
+        .send({ role: WorkspaceRole.MEMBER })
+        .expect(403);
       await request(http)
         .get('/api/v1/admin/access-requests')
         .set('Cookie', cookies)
-        .expect(403);
+        .expect(200);
     });
 
     it('keeps the same scopes as before for a single workspace', async () => {
-      // Role changes made through the app keep both roles in step, so an
-      // admin is still an admin and a standard user is still standard.
+      // The test helper sets both roles, as an admin script would.
       await setTestUserRole(app, UserRole.STANDARD);
       let scopes = decodeJwt(accessTokenFrom(await getAuthCookies(http)))
         .scope as string[];

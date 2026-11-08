@@ -2,7 +2,7 @@
 
 A workspace is one company or team's own space in Taico. Its people, agents, tasks, threads, context, AI models and settings are kept apart from every other workspace on the same installation.
 
-> **Status:** phases 1 and 2 of 5 are built (the workspace, its members, the `workspace_id` token claim, and the workspace on every request). Phase 3 is under way: tasks, context blocks, tags and projects (3a), threads with everything that hangs off them (3b), agents, agent runs, executions and workers (3c), AI models and secrets (3d), and GitHub integrations, the MCP registry and search (3e) are scoped by workspace. The few routes left `default-only` (search admin writes, auth journeys, OAuth client listing, access-request admin, user management) refuse every workspace but the default one until phase 4 (see [the two rules](#entry-points-the-two-rules)). Every installation still has exactly one workspace and everyone is in it. See [Phases](#phases).
+> **Status:** phases 1 to 4 of 5 are built. Every module's data is scoped by workspace (phase 3). An installation operator can create workspaces. Workspace admins invite, re-role and remove members. A person switches workspace with `POST /auth/web/switch-workspace` (phase 4, see [Many workspaces](#many-workspaces-phase-4)). Only auth journeys and OAuth client listing are still `default-only`. Phase 5 adds the UI. See [Phases](#phases).
 
 ## The model
 
@@ -20,9 +20,19 @@ A workspace is one company or team's own space in Taico. Its people, agents, tas
 
 Every installation has a workspace with the fixed id `00000000-0000-4000-8000-000000000001` (slug `default`, `DEFAULT_WORKSPACE_ID` in `apps/backend/src/workspaces/workspaces.constants.ts`). The id is fixed so later migrations can backfill `workspace_id` columns with a constant instead of a lookup.
 
-The `Workspaces1763500000000` migration creates the tables and the default workspace row. The row is created in the migration because later migrations backfill `workspace_id` columns with its id, and migrations run before the app starts. Memberships are added at startup: on every startup `WorkspacesService.onModuleInit` creates the default workspace if it is missing (databases run with schema sync, `TYPEORM_SCHEMA_MODE=sync`, skip migrations) and puts every actor with no membership in it. People with `users.role = 'admin'` become workspace admins (`workspaceRoleForUserRole`), everyone else and every agent a member. Existing memberships are left alone.
+The `Workspaces1763500000000` migration creates the tables and the default workspace row. The row is created in the migration because later migrations backfill `workspace_id` columns with its id, and migrations run before the app starts. On every startup `WorkspacesService.onModuleInit` also creates the default workspace if it is missing, because databases run with schema sync (`TYPEORM_SCHEMA_MODE=sync`) skip migrations.
 
-While there is only one workspace, `WorkspaceMembershipSubscriber` puts every new actor in it and keeps a person's workspace role in step with `users.role`. It hooks actor and user inserts (and `save()` updates of `users.role`) rather than each caller, because actors are created in several places (people, managed users, agents, seeds). A role change written with `update()` instead of `save()` is not seen. In phase 4, the workspace and role come from whoever creates the actor, and the subscriber goes away.
+**Every actor gets its membership when it is created**, in the same transaction (`addWorkspaceMembership` in `workspaces/workspaces.service.ts`):
+- An agent joins the workspace it is created in (`AgentsService.createAgent`).
+- The first person (onboarding) becomes the default workspace's admin.
+- `IdentityProviderService.createUser` and `createManagedUser` take the workspace and role. Without one they use the default workspace.
+- An invited person joins the inviting workspace (see [Members](#members)).
+
+Phases 1 to 3 did this with `WorkspaceMembershipSubscriber`, and phase 4 removed it. `users.role` no longer decides any workspace role (see [Admin roles](#admin-roles)).
+
+The startup backfill (`WorkspacesService.onModuleInit`) puts every actor with no membership in the default workspace: people with `users.role = 'admin'` as admins, everyone else and every agent as members. This covers a database whose app last ran before workspaces. **It runs once per installation.** When it finishes it sets `workspaces.members_backfilled_at` on the default workspace, in the same transaction, and it never runs again (migration `WorkspaceMembersBackfilled1764100000001`; schema-sync databases get the column from the entity). It locks the default workspace row while it runs, so backends that start together run it only once.
+
+After that, an actor with no membership was removed from every workspace on purpose. It stays out across restarts, however old the account is. The actor's age can't tell a never-backfilled account from a removed one, so the backfill doesn't check it.
 
 ## How a request knows its workspace
 
@@ -44,11 +54,11 @@ Every transport builds the same `AuthContext` with `createAuthContext` (`apps/ba
 - **WebSocket gateways:** the same decorator works in `@SubscribeMessage` handlers guarded by `WsAccessTokenGuard`. Outside a handler (connection hooks, room joins), read `(client.data.auth as AuthContext).workspaceId`. The worker gateway builds its context the same way.
 - **MCP:** MCP endpoints are HTTP routes behind `AccessTokenGuard`, so the `AuthContext` handed to each MCP server (`authContext.workspaceId`) carries it.
 
-The workspace is not checked against membership on each request: the authorization server checked it when it minted the token. Removing a member (phase 4) must also revoke or let expire their tokens for that workspace.
+The workspace is not checked against membership on each request: the authorization server checked it when it minted the token. A removed member keeps access until the token expires (see [Removing a member](#members)).
 
 What it costs:
 
-- **Switching workspace means a new token.** A person in several workspaces picks one; the web app asks for a new session token for it (phase 4: `POST /auth/web/switch-workspace`, which checks membership). MCP and issued tokens are minted for one workspace and stay in it.
+- **Switching workspace means a new token.** A person in several workspaces picks one, and the web app asks for a new session token for it (`POST /auth/web/switch-workspace`, which checks membership; see [Switching](#switching)). MCP and issued tokens are minted for one workspace and stay in it.
 - **Links.** Tasks, threads and blocks have UUIDs, so a link like `/tasks/task/<id>` keeps working. If it belongs to another workspace the person is a member of, the UI offers to switch instead of showing "not found". The UI may still show the workspace slug in its own routes for readability; that is a UI concern, not an API one.
 
 ## How data is kept apart
@@ -119,7 +129,7 @@ Migration `WorkspaceScopeThreads1763700000000` adds `workspace_id` to `threads` 
 - **A task changing only wakes threads in its own workspace** (`markTriggered` and `removeForDeletedTask` filter on the task's workspace).
 - Pull request watches are found by target within a workspace (`listForTarget` and `latestExpiry` take the workspace since 3e).
 
-**Tags and projects:** tag names are unique per workspace (`uq_tags_workspace_name_ci` on `workspace_id, lower(name)`) and so are project slugs (`UQ_projects_workspace_slug`). System tags are created in every workspace at startup (`MetaService.ensureSystemTags`; phase 4 calls it when it creates a workspace).
+**Tags and projects:** tag names are unique per workspace (`uq_tags_workspace_name_ci` on `workspace_id, lower(name)`) and so are project slugs (`UQ_projects_workspace_slug`). System tags are created in every workspace at startup (`MetaService.ensureSystemTags`, which is also called when a workspace is created).
 
 ### Agents, executions and workers (phase 3c)
 
@@ -131,7 +141,7 @@ Migration `WorkspaceScopeAgentsExecutions1763800000000` adds `workspace_id` to `
 - **A worker is an OAuth client in a workspace**, the workspace of the token it connected with: unique on (`workspace_id`, `oauth_client_id`). The same client connecting with another workspace's token is another worker. Worker tokens already carry `workspace_id` (minted from the membership of the person who authorized the worker). Registered OAuth clients stay installation-wide.
 - **Realtime.** The `executions`, `execution-traces-<id>` and `workers` rooms are workspace-prefixed. Every worker socket joins its workspace's `workers` room, and `task.execution.queued` goes only to that room. Before 3c it was broadcast to every worker. Interrupts go to the claiming worker's sockets in the execution's workspace.
 - **Tool permissions** have the column. Until 3e, granting and revoking were `default-only`; since 3e a grant can be written in any workspace, and it can only point at that workspace's servers. Agents of other workspaces get only Taico's baseline tools (tasks and context). A worker sets up any workspace's agent the same way, so two reads are `scoped`: listing an agent's tool permissions (outside the default workspace, just the baseline servers) and `GET /mcp/servers/:serverId` (outside the default workspace, only the baseline servers; any other server answers 404). The worker gets the baseline servers' config and an execution token, and the agent's tool calls run in its own workspace. Outside the default workspace, a baseline server's transport is Taico's built-in one: HTTP, Taico auth, and the issuer URL plus the fixed tasks or context path (`mcp-registry/baseline-servers.ts`). It is never the registry row's URL or command. The default workspace can still edit those rows, and the worker attaches the agent's execution token to whatever URL it is given. Serving the row would let one workspace collect another workspace's tokens. 3e keeps this (see [phase 3e](#github-mcp-registry-and-search-phase-3e)).
-- **The threads agent** is the `taico` agent of the thread's workspace. Workspaces other than the default have none until phase 4 seeds new workspaces, and their turns fail with "agent not found". Since 3d they use their own workspace's models, once its admin has set some up.
+- **The threads agent** is the `taico` agent of the thread's workspace. Every new workspace is seeded with one (see [Creating a workspace](#creating-a-workspace)); a workspace without one has its turns fail with "agent not found". Since 3d they use their own workspace's models, once its admin has set some up.
 
 #### Actor slugs
 
@@ -155,16 +165,16 @@ Migration `WorkspaceScopeIntegrationsMcpSearch1764000000000` adds `workspace_id`
 **MCP registry**
 - **A server's `providedId` stays unique across the installation**, because it names the OAuth resource in `/mcp/<providedId>/...` URLs, which carry no workspace. So a workspace creating a `providedId` another workspace already uses gets a 409, which tells it the name is taken. A connection's `providedId` is unique per workspace.
 - **Taico's baseline servers** (tasks, context) stay default-workspace rows. Every workspace lists and reads them, but outside the default workspace it gets Taico's built-in transport, never the row's URL or command (the 3c guarantee). Every write needs the workspace's own server.
-- **MCP OAuth tokens.** For Taico's own servers the token's workspace is the person's (phase 4 adds a choice). For any other server it is the server's workspace, and the person must be a member there (`TOKEN_ACTOR_NOT_IN_WORKSPACE` otherwise), checked on every code exchange and refresh. The authorization server, discovery and auth journeys still find servers across the installation, by OAuth resource.
+- **MCP OAuth tokens.** For Taico's own servers the token's workspace is the person's oldest membership (there is no picker yet; a person in no workspace gets no token). For any other server it is the server's workspace, and the person must be a member there (`TOKEN_ACTOR_NOT_IN_WORKSPACE` otherwise), checked on every code exchange and refresh. The authorization server, discovery and auth journeys still find servers across the installation, by OAuth resource.
 - **Downstream token exchange** (`/auth/token-exchange/mcp/...`) works in the token's workspace. The connection, its scope mappings and the authorized flow must all be that workspace's, so a B token for the shared `tasks` server never reaches A's connection, even by its UUID. The flow must also be the token's own journey: the same person (`sub`) and the same client. Another person's or another client's flow on the same connection does not count.
 - **The auth-journeys monitor** (`GET /auth-journeys/servers/:id`, still `default-only`) shows a server only if the caller's workspace can see it: its own server or a baseline server. Another workspace's server answers 404. It lists only journeys of the workspace's members, and only the connection flows of the workspace's own connections, because a baseline server's journeys include other workspaces' people.
 
 **Search**
 - `search_documents.workspace_id` is added by `SEARCH_WORKSPACE_SCHEMA_STATEMENTS`. It has no FK, because the original lexical search migration runs before `workspaces` exists, and the rows are derived data.
 - Every projection outputs its item's workspace. Keyword, fuzzy and semantic search all filter on `workspace_id` before the limit. The embedder works per workspace, with that workspace's embeddings model, and a query is embedded with the caller's.
-- Search settings stay installation-wide. Writing them and rebuilding the index stay `default-only` until phase 4's installation operator. Reading the settings and the index status is `scoped`, and the status is per workspace.
+- Search settings stay installation-wide. Since phase 4, only the installation operator writes them and rebuilds the index (`installation` mode, `installation:admin` as well as `search:configure`), from any workspace. Reading the settings and the index status is `scoped`, and the status is per workspace.
 
-**Not changed (for phases 4 and 5):** GitHub and MCP registry writes need only the module scopes, which every web session has, not workspace admin.
+**Not changed (still open after phase 4):** GitHub and MCP registry writes need only the module scopes, which every web session has, not workspace admin.
 
 ### Entry points: the two rules
 
@@ -179,10 +189,10 @@ Both rules use one shared mechanism each, not checks added endpoint by endpoint.
 
 | Mode | Meaning | Where |
 |---|---|---|
-| `scoped` | The handler passes `@CurrentWorkspace()` and the service scopes every query. A row in another workspace answers "not found". | Tasks, context, meta tags and projects, blueprints and schedules, threads, AI providers, model selections and ChatGPT plan connections, secrets, global search and search status, GitHub connections, pull requests and issues (REST and sockets), the MCP registry, agent tool permissions, actors (members of the workspace), walkthrough, agents (definitions, import/export, tokens, execution tokens), agent runs, the user-facing execution routes (queue list and claim, active list, interrupt, history, traces), workers, the tasks and context MCP endpoints, and the `/tasks`, `/context`, `/threads`, `/executions`, `/workers` and `/executions/worker` sockets. |
-| `default-only` | The module has no `workspace_id` yet, so all its rows belong to the default workspace. A token for any other workspace answers 404 (`NOT_IN_WORKSPACE`) before the handler runs. | Auth journeys, search settings writes and index rebuild (installation operator in phase 4), OAuth client listing, access-request admin, and `/auth/users` management. |
+| `scoped` | The handler passes `@CurrentWorkspace()` and the service scopes every query. A row in another workspace answers "not found". | The current workspace and its members (`/workspaces/current/...`), tasks, context, meta tags and projects, blueprints and schedules, threads, AI providers, model selections and ChatGPT plan connections, secrets, global search and search status, GitHub connections, pull requests and issues (REST and sockets), the MCP registry, agent tool permissions, actors (members of the workspace), walkthrough, agents (definitions, import/export, tokens, execution tokens), agent runs, the user-facing execution routes (queue list and claim, active list, interrupt, history, traces), workers, the tasks and context MCP endpoints, and the `/tasks`, `/context`, `/threads`, `/executions`, `/workers` and `/executions/worker` sockets. |
+| `default-only` | The module has no `workspace_id` yet, so all its rows belong to the default workspace. A token for any other workspace answers 404 (`NOT_IN_WORKSPACE`) before the handler runs. | Auth journeys and OAuth client listing. |
 | `worker` | A worker's call on one execution. The handler passes the caller to `findWorkerExecution`. | `/executions/active/:id/{stop,unclaim,session,tool-calls/increment,stats,github-credentials}` and the worker socket's trace, activity and execution heartbeat messages. |
-| `installation` | Not workspace data. | Sign-in, refresh, logout, `me`, password, onboarding, OAuth (authorize, token, consent, register, introspect, callback), JWKS, discovery, health, the tag palette and version, GitHub webhooks (checked by signature) and the public access-request form. Routes with no token are always this. |
+| `installation` | Not workspace data. | Sign-in, refresh, logout, `me`, switching workspace, listing your workspaces, and the installation operator's routes (creating a workspace, `/auth/users`, access-request admin, search settings writes and index rebuild). Also password, onboarding, OAuth (authorize, token, consent, register, introspect, callback), JWKS, discovery, health, the tag palette and version, GitHub webhooks (checked by signature) and the public access-request form. Routes with no token are always this. |
 
 When a phase migrates a module, its routes move from `default-only` to `scoped`.
 
@@ -244,16 +254,81 @@ Migration `WorkspaceScopeAiModelsSecrets1763900000000` adds `workspace_id` to `a
 - **Server credentials are the default workspace's only.** Google settings from the server environment (`GOOGLE_API_KEY` and the other Google key variables, `GOOGLE_CLOUD_PROJECT`/`LOCATION`, application default credentials, `GOOGLE_VERTEX_API_KEY`) belong to the installation, so they are only a fallback for providers in the default workspace (`mayUseServerCredentials` in `ai-providers/google-environment.ts`). A provider in another workspace must store its own key, and for Vertex AI its own service account, project and location. Otherwise it is not configured. A workspace admin can set a provider's base URL, so a fallback would hand the server's key to whatever URL they choose. `AiProvidersService` resolves the fallback in one place (`getAiProviderConfigById`). The model factory, model listing and embeddings always pass the AI SDKs an explicit key (`requireApiKey`, `vertexSettings`), so no SDK reads one from the environment by itself. A stored Vertex credential is accepted only as a self-contained service account key and rebuilt from its allowlisted fields (`parseServiceAccount`); `external_account`, impersonation and other configurations that make GoogleAuth fetch credentials from the host are refused in every workspace, so writing a secret never reaches the server's files or metadata.
 - **Only a workspace admin changes them.** Creating, editing or deleting a provider, setting or clearing a model selection, and every secret write, including reading a secret's value, need `user:admin` as well as the module scope. The web session gets `user:admin` from the membership role in its workspace. Members can read providers and selections, because their threads use them, and can list secret names. The UI shows Settings → AI models as read-only to them.
 - **ChatGPT plan connections stay per person.** A connection is (provider, person), and the provider is in one workspace. So a person in two workspaces connects in each one separately, and a connection only pays for turns in its own workspace. `ChatgptConnectionsService.authorizeTurn(workspaceId, …)` finds the provider in the turn's workspace, and uses a connection only if its person is still a member there. Connecting needs only `ai_provider:connect`, which any member has: it is the person's own plan, not the workspace's. The "whose plan pays" rules are unchanged (see [Sign in with ChatGPT](../how-to-guides/sign-in-with-chatgpt.md)).
-- **Seeding.** At startup the default OpenAI and Google Vertex AI providers are created in the default workspace only. Phase 4 decides what a new workspace starts with.
+- **Seeding.** At startup the default OpenAI and Google Vertex AI providers are created in the default workspace only. A new workspace gets the same two, with no credentials (see [Creating a workspace](#creating-a-workspace)).
 - **Not changed:** no composite foreign keys (as in 3b). Same-workspace references are enforced by the services. Nothing in these modules is realtime.
 
 ## Admin roles
 
-Today `user:admin` comes from `users.role` and is installation-wide. With workspaces there are two different things:
+Two roles, and they are independent:
 
-- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope comes from the membership role in the token's workspace, not from `users.role` (`WebAuthService.generateWebAccessToken`). While there is one workspace, `WorkspaceMembershipSubscriber` keeps the two in step, so nothing changes for anyone whose role is changed through the app. A role changed directly in the database (or with `update()` instead of `save()`) only reaches the session if the membership row is changed too. An actor with no membership (only before the startup backfill has run) still gets the scope from `users.role`.
-- Managing people (`/auth/users`) still checks `users.role`: logins are installation-wide, so this moves to the installation operator scope in phase 4.
-- **Installation operator**: whoever runs the installation. Creates workspaces and handles access requests. Proposed as a new scope (e.g. `installation:admin`) for people with `users.role = 'admin'`, introduced in phase 4.
+- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope comes from the membership role in the token's workspace (`WebAuthService.generateWebAccessToken`). A person can be admin in one workspace and member in another.
+- **Installation operator**: whoever runs the installation, i.e. people with `users.role = 'admin'`. Their web sessions also carry `installation:admin` (`auth/core/scopes/installation.scopes.ts`, a sensitive web scope that no session gets just for signing in). It creates workspaces, manages logins (`/auth/users`, which checks `users.role`), reviews access requests, and writes search settings. These routes are `installation` mode, so an operator uses them from any workspace.
+
+Since phase 4, `users.role` never changes a workspace role (`updateUserRole` only sets the installation role). The first person (onboarding) is both: operator and admin of the default workspace. A person created from `/auth/users` joins the operator's current workspace, as its admin if they are made an operator too, a member otherwise.
+
+Both scopes are decided when a token is minted, so a change applies at the next sign-in, refresh or switch.
+
+## Many workspaces (phase 4)
+
+### Creating a workspace
+
+`POST /workspaces` (`installation:admin`) takes a `name` and a `slug`, unique across the installation (`409` otherwise). The operator becomes its first admin. `WorkspaceAdminService.provision` seeds what every workspace starts with:
+- the system tags
+- the `taico` agent, which runs the workspace's threads
+- the OpenAI and Google Vertex AI providers, without credentials
+
+The providers stay unconfigured until a workspace admin adds a key, because installation credentials are the default workspace's only (see [phase 3d](#ai-models-and-secrets-phase-3d)). The other seeded agents, prompt blocks and MCP servers stay in the default workspace. Every workspace sees Taico's baseline servers (see [phase 3e](#github-mcp-registry-and-search-phase-3e)).
+
+There is no rename or delete yet.
+
+### Members
+
+Members are always the token's workspace's: the routes are `/workspaces/current/members`, with no workspace id in the URL.
+
+| Route | Who | What |
+|---|---|---|
+| `GET /workspaces` | anyone signed in | Your workspaces, your role in each, and which one the token is for (`current`). |
+| `GET /workspaces/current` | members | The token's workspace and your role. |
+| `GET /workspaces/current/members` | members | People and agents. |
+| `POST /workspaces/current/members` | workspace admin | Invite by email, with a role. |
+| `PATCH /workspaces/current/members/:actorId` | workspace admin | Change a person's role. |
+| `DELETE /workspaces/current/members/:actorId` | workspace admin | Remove a person. |
+
+- **Invite by email.** A person with an account is added (`accountCreated: false`), or `409` if already a member. Anyone else gets an invited account: installation role `standard`, member of this workspace only (`accountCreated: true`). They set a password through the usual account setup (`/auth/setup-account`) and then sign in. The response shows the person's name, so an invite tells a workspace admin whether an email already has an account.
+- **The last admin** can be neither demoted nor removed (`409 WORKSPACE_LAST_ADMIN`). Role changes and removals lock the workspace row, so two at once can't both pass the check.
+- **Agents** are not invited, re-roled or removed here (`400 WORKSPACE_MEMBER_IS_AGENT`). An agent is created in its workspace and leaves it by being deleted.
+- **An actor who is not a member** of the token's workspace answers `404`, whether they exist elsewhere or not.
+- **Removing a member** takes effect at their next token. Tokens already minted stay valid until they expire, and that includes open WebSocket connections:
+  - web sessions: `WEB_ACCESS_TOKEN_DURATION_MINUTES`
+  - MCP tokens: `mcpAccessTokenDurationSeconds`
+  - issued agent tokens: their own lifetime
+
+  After that, a refresh or switch lands in another of their workspaces. A person in no workspace gets no session at all (`403 NO_WORKSPACE_MEMBERSHIP` at sign-in and refresh). Refresh tokens, MCP refreshes and ChatGPT plan turns all check membership again.
+
+### Switching
+
+`POST /auth/web/switch-workspace { workspaceId }` needs a web session (the access-token cookie, verified as a session token). It checks that the person is a member of the workspace (`404 NOT_IN_WORKSPACE` otherwise, including for ids that don't exist). It then mints a new access token and refresh token for it, and revokes the refresh token in the request's cookie.
+
+- **Refresh keeps the workspace.** `refresh_tokens.workspace_id` (migration `RefreshTokenWorkspace1764100000000`) records the session's workspace. Each refresh checks membership again. If the person was removed, the new token is for their oldest remaining workspace.
+- **Sign-in** starts in the person's oldest membership. There is no "last used workspace" yet.
+- **No token without a workspace.** Web sessions and MCP tokens for Taico's own servers always carry `workspace_id`. Someone in no workspace is refused, because a token with no claim would be read as the default workspace.
+- MCP tokens for Taico's own servers are for the person's oldest membership. There is no workspace picker in the MCP OAuth flow yet.
+
+The tests are in `test/workspace-membership.e2e-spec.ts`:
+- creating a workspace and what it is seeded with
+- the operator scope
+- invites, new and existing
+- role changes and the last admin
+- removal and what the next token is for
+- switching, including refusal for non-members
+- refresh keeping the workspace
+- agents created in the caller's workspace
+
+**Still open after phase 4:**
+- Removal does not revoke tokens already minted or disconnect sockets.
+- The legacy fallback for tokens with no `workspace_id` claim remains (see the [launch checklist](https://taico.app/context/block/64d3ec50-6657-4cc3-98ca-25f5a4303c1f)).
+- GitHub and MCP registry writes still need only module scopes, not workspace admin.
+- The UI still checks `user.role` where it should check the workspace role (phase 5).
 
 ## Phases
 
@@ -261,6 +336,6 @@ Each phase ships on its own and leaves a working single-workspace installation. 
 
 1. **Workspace and membership** (done). `workspaces`, `workspace_members`, the default workspace, every actor a member, `workspace_id` in every minted token.
 2. **Request context** (done). `@CurrentWorkspace()` from the token (default workspace when the claim is missing), WebSocket and MCP context, `user:admin` from the membership role.
-3. **Scope the data**, module by module (3a, tasks, context and meta: done; 3b, threads: done; 3c, agents, executions and workers: done; 3d, AI models and secrets: done; 3e, integrations, MCP registry and search: built; see [How to scope a module](#how-to-scope-a-module-the-phase-3-pattern)): add `workspace_id`, backfill to the default workspace, make it `NOT NULL`, scope every query, make uniqueness per workspace, prefix realtime rooms. Suggested order: meta/context, tasks, threads, agents and agent runs, executions and workers, AI providers and secrets, integrations, MCP registry, search. Each module gets e2e tests that a second workspace cannot see or touch the first one's rows.
-4. **Many workspaces.** Create a workspace, invite and remove members, switch workspace (`POST /auth/web/switch-workspace`), installation operator scope, agents created in the caller's workspace, remove the membership subscriber.
+3. **Scope the data**, module by module (3a, tasks, context and meta: done; 3b, threads: done; 3c, agents, executions and workers: done; 3d, AI models and secrets: done; 3e, integrations, MCP registry and search: done; see [How to scope a module](#how-to-scope-a-module-the-phase-3-pattern)): add `workspace_id`, backfill to the default workspace, make it `NOT NULL`, scope every query, make uniqueness per workspace, prefix realtime rooms. Suggested order: meta/context, tasks, threads, agents and agent runs, executions and workers, AI providers and secrets, integrations, MCP registry, search. Each module gets e2e tests that a second workspace cannot see or touch the first one's rows.
+4. **Many workspaces** (done, see [Many workspaces](#many-workspaces-phase-4)). Create a workspace, invite and remove members, switch workspace (`POST /auth/web/switch-workspace`), installation operator scope, agents created in the caller's workspace, remove the membership subscriber.
 5. **UI.** Workspace switcher, workspace settings and members page, the "switch workspace?" prompt on links from another workspace.

@@ -40,6 +40,9 @@ import { SetupManagedUserRequestDto } from './dto/setup-managed-user-request.dto
 import { User } from 'src/identity-provider/user.entity';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
+import { SwitchWorkspaceRequestDto } from './dto/switch-workspace-request.dto';
+import { WorkspaceRole } from '../workspaces/enums';
 
 @ApiTags('Web Authentication')
 @WorkspaceAccess('installation')
@@ -93,9 +96,9 @@ export class WebAuthController {
     };
   }
 
-  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  // Logins are installation-wide: requireAdminUser checks that the caller is
+  // an installation operator (users.role = admin).
   @UseGuards(AccessTokenGuard)
-  @WorkspaceAccess('default-only')
   @Get('users')
   @ApiOperation({ summary: 'List human users for admin user management' })
   @ApiResponse({ status: 200, type: [ManagedUserResponseDto] })
@@ -105,9 +108,9 @@ export class WebAuthController {
     return users.map((user) => this.toManagedUserResponse(user));
   }
 
-  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  // Logins are installation-wide: requireAdminUser checks that the caller is
+  // an installation operator (users.role = admin).
   @UseGuards(AccessTokenGuard)
-  @WorkspaceAccess('default-only')
   @Post('users')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create an invited human user' })
@@ -115,16 +118,28 @@ export class WebAuthController {
   @ApiResponse({ status: 201, type: ManagedUserResponseDto })
   async createUser(
     @Req() request: Request,
+    @CurrentWorkspace() workspaceId: string,
     @Body() createUserDto: CreateManagedUserRequestDto,
   ): Promise<ManagedUserResponseDto> {
     await this.requireAdminUser(request);
-    const user = await this.identityProviderService.createManagedUser(createUserDto);
+    // The new person joins the operator's current workspace: as its admin
+    // if they are an operator too, a member otherwise.
+    const user = await this.identityProviderService.createManagedUser({
+      ...createUserDto,
+      workspace: {
+        workspaceId,
+        role:
+          createUserDto.role === UserRole.ADMIN
+            ? WorkspaceRole.ADMIN
+            : WorkspaceRole.MEMBER,
+      },
+    });
     return this.toManagedUserResponse(user);
   }
 
-  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  // Logins are installation-wide: requireAdminUser checks that the caller is
+  // an installation operator (users.role = admin).
   @UseGuards(AccessTokenGuard)
-  @WorkspaceAccess('default-only')
   @Post('users/:userId/reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset a managed user password so they can set a new one' })
@@ -138,9 +153,9 @@ export class WebAuthController {
     return this.toManagedUserResponse(user);
   }
 
-  // The guard enforces the workspace mode; requireAdminUser checks the role.
+  // Logins are installation-wide: requireAdminUser checks that the caller is
+  // an installation operator (users.role = admin).
   @UseGuards(AccessTokenGuard)
-  @WorkspaceAccess('default-only')
   @Delete('users/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate a managed user' })
@@ -242,6 +257,53 @@ export class WebAuthController {
         onboardingDisplayMode: user.onboardingDisplayMode,
       },
       expiresIn,
+    };
+  }
+
+  @Post('web/switch-workspace')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Switch the web session to another workspace',
+    description:
+      'Mints a new session token (and refresh token) for a workspace the person is a member of, and revokes the current refresh token. A workspace they are not in answers 404.',
+  })
+  @ApiBody({ type: SwitchWorkspaceRequestDto })
+  @ApiResponse({ status: 200, type: LoginResponseDto })
+  async switchWorkspace(
+    @Req() request: Request,
+    @Body() dto: SwitchWorkspaceRequestDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<LoginResponseDto> {
+    const accessToken = request.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+    if (!accessToken) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+    // Only a web session can switch: MCP and issued tokens stay in the
+    // workspace they were minted for.
+    const payload =
+      await this.tokenVerifierService.verifySessionToken(accessToken);
+
+    const session = await this.webAuthService.switchWorkspace(
+      payload.actor_id,
+      dto.workspaceId,
+      request.cookies?.[COOKIE_KEYS.REFRESH_TOKEN],
+    );
+    this.setAuthCookies(
+      response,
+      session.accessToken,
+      session.refreshToken,
+      session.expiresInSeconds,
+    );
+    return {
+      user: {
+        id: session.actor.id,
+        email: session.user.email,
+        displayName: session.actor.displayName,
+        role: session.user.role,
+        actorId: session.user.actorId,
+        onboardingDisplayMode: session.user.onboardingDisplayMode,
+      },
+      expiresIn: session.expiresInSeconds,
     };
   }
 

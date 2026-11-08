@@ -14,6 +14,8 @@ import { AppModule } from '../app.module';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import * as readline from 'readline';
 import { UserRole } from 'src/identity-provider/enums';
+import { WorkspaceRole } from '../workspaces/enums';
+import { DEFAULT_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 
 async function promptInput(question: string): Promise<string> {
   const rl = readline.createInterface({
@@ -72,6 +74,7 @@ async function bootstrap() {
       slug,
       displayName,
       password,
+      workspace: { workspaceId: DEFAULT_WORKSPACE_ID, role: WorkspaceRole.ADMIN },
     });
 
     // Update role to admin

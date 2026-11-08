@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EntityManager, In, Not, Repository } from 'typeorm';
-import { WorkspaceMemberEntity } from '../workspaces/workspace-member.entity';
+import { EntityManager, In, Repository } from 'typeorm';
+import { addWorkspaceMembership } from '../workspaces/workspaces.service';
 import { WorkspaceRole } from '../workspaces/enums';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -368,26 +368,19 @@ export class AgentsService {
   }
 
   /**
-   * An agent is a member of exactly its own workspace. Actor inserts put
-   * every new actor in the default workspace (`WorkspaceMembershipSubscriber`),
-   * so the agent's membership is set here, in the same transaction.
+   * An agent is a member of exactly its own workspace, set here in the
+   * transaction that creates it.
    */
   private async setAgentMembership(
     manager: EntityManager,
     workspaceId: string,
     actorId: string,
   ): Promise<void> {
-    await manager.delete(WorkspaceMemberEntity, {
+    await addWorkspaceMembership(manager, {
+      workspaceId,
       actorId,
-      workspaceId: Not(workspaceId),
+      role: WorkspaceRole.MEMBER,
     });
-    await manager
-      .createQueryBuilder()
-      .insert()
-      .into(WorkspaceMemberEntity)
-      .values({ workspaceId, actorId, role: WorkspaceRole.MEMBER })
-      .orIgnore()
-      .execute();
   }
 
   private mapAgentToResult(

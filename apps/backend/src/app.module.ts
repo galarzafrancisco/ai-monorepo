@@ -48,6 +48,7 @@ import { IssuesModule } from './issues/issues.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
+import { WorkspaceAdminModule } from './workspace-admin/workspace-admin.module';
 import { AccessRequestsModule } from './access-requests/access-requests.module';
 import { AccessRequests1762300000000 } from './migrations/1762300000000-AccessRequests';
 import { AccessRequestHeardFrom1762400000000 } from './migrations/1762400000000-AccessRequestHeardFrom';
@@ -76,6 +77,8 @@ import { WorkspaceScopeThreads1763700000000 } from './migrations/1763700000000-W
 import { WorkspaceScopeAgentsExecutions1763800000000 } from './migrations/1763800000000-WorkspaceScopeAgentsExecutions';
 import { WorkspaceScopeAiModelsSecrets1763900000000 } from './migrations/1763900000000-WorkspaceScopeAiModelsSecrets';
 import { WorkspaceScopeIntegrationsMcpSearch1764000000000 } from './migrations/1764000000000-WorkspaceScopeIntegrationsMcpSearch';
+import { RefreshTokenWorkspace1764100000000 } from './migrations/1764100000000-RefreshTokenWorkspace';
+import { WorkspaceMembersBackfilled1764100000001 } from './migrations/1764100000001-WorkspaceMembersBackfilled';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
@@ -136,6 +139,8 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
         WorkspaceScopeAgentsExecutions1763800000000,
         WorkspaceScopeAiModelsSecrets1763900000000,
         WorkspaceScopeIntegrationsMcpSearch1764000000000,
+        RefreshTokenWorkspace1764100000000,
+        WorkspaceMembersBackfilled1764100000001,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -164,6 +169,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     GlobalSearchModule,
     WalkthroughModule,
     AccessRequestsModule,
+    WorkspaceAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, ServerLifecycleService],

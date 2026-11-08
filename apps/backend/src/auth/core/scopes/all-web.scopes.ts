@@ -3,11 +3,15 @@ import { WorkersScopes } from 'src/executions/workers.scopes';
 import { Scope } from '../types/scope.type';
 import { ALL_API_SCOPES } from './all-api.scopes';
 import { UserScopes } from './user.scopes';
+import { InstallationScopes } from './installation.scopes';
 
 /**
  * Scopes a browser session must never get just for signing in.
  *
- * - `user:admin` is granted separately, and only to users whose role is admin.
+ * - `user:admin` is granted separately, and only to admins of the token's
+ *   workspace.
+ * - `installation:admin` is granted separately, and only to people whose
+ *   `users.role` is admin (installation operators).
  * - `run:impersonate` lets the holder get agent tokens.
  * - `workers:connect` lets the holder act as a worker: claim queued tasks,
  *   report on executions and get GitHub tokens for them. Only workers,
@@ -15,6 +19,7 @@ import { UserScopes } from './user.scopes';
  */
 export const SENSITIVE_WEB_SCOPES: readonly Scope[] = [
   UserScopes.ADMIN,
+  InstallationScopes.ADMIN,
   AgentRunsScopes.IMPERSONATE,
   WorkersScopes.CONNECT,
 ];

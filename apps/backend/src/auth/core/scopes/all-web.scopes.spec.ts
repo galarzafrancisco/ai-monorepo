@@ -4,7 +4,7 @@ import { ALL_WEB_SCOPES, SENSITIVE_WEB_SCOPES } from './all-web.scopes';
 describe('ALL_WEB_SCOPES', () => {
   const webScopeIds = ALL_WEB_SCOPES.map((s) => s.id);
 
-  it.each(['user:admin', 'run:impersonate', 'workers:connect'])(
+  it.each(['user:admin', 'installation:admin', 'run:impersonate', 'workers:connect'])(
     'leaves out %s',
     (scopeId) => {
       expect(webScopeIds).not.toContain(scopeId);

@@ -8,6 +8,10 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ActorEntity } from '../../src/identity-provider/actor.entity';
 import { ActorType, UserRole } from '../../src/identity-provider/enums';
+import { WorkspaceMemberEntity } from '../../src/workspaces/workspace-member.entity';
+import { WorkspaceRole } from '../../src/workspaces/enums';
+import { DEFAULT_WORKSPACE_ID } from '../../src/workspaces/workspaces.constants';
+import { addWorkspaceMembership } from '../../src/workspaces/workspaces.service';
 
 export const TEST_USER_EMAIL = 'test@example.com';
 export const TEST_USER_SLUG = 'test';
@@ -80,6 +84,11 @@ export async function ensureAgentActor(
   const actor = await actorRepository.save(
     actorRepository.create({ type: ActorType.AGENT, slug, displayName }),
   );
+  await addWorkspaceMembership(actorRepository.manager, {
+    workspaceId: DEFAULT_WORKSPACE_ID,
+    actorId: actor.id,
+    role: WorkspaceRole.MEMBER,
+  });
 
   return actor.id;
 }
@@ -124,9 +133,10 @@ export function authenticatedRequest(httpServer: App, cookies: string[]) {
 }
 
 /**
- * Sets the test user's role the way the app does (`updateUserRole`), so their
- * workspace membership role follows. The web session's `user:admin` scope
- * comes from that membership role, and is decided at login.
+ * Makes the test user an admin (or not) of the installation and of the
+ * default workspace: sets `users.role` (`installation:admin`) and their
+ * default-workspace membership role (`user:admin`). Both scopes are decided
+ * when a token is minted, so log in again afterwards.
  */
 export async function setTestUserRole(
   app: INestApplication,
@@ -138,4 +148,16 @@ export async function setTestUserRole(
     throw new Error('Test user not found; call ensureTestUser first');
   }
   await identityService.updateUserRole(user.id, { role });
+  await app
+    .get<Repository<WorkspaceMemberEntity>>(
+      getRepositoryToken(WorkspaceMemberEntity),
+    )
+    .upsert(
+      {
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        actorId: user.actorId,
+        role: role === UserRole.ADMIN ? WorkspaceRole.ADMIN : WorkspaceRole.MEMBER,
+      },
+      ['workspaceId', 'actorId'],
+    );
 }

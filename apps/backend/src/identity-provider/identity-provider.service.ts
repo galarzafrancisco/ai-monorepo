@@ -18,6 +18,9 @@ import { ActorService, buildDeletedActorSlug } from './actor.service';
 import { ActorEntity } from './actor.entity';
 import { claimActorSlug, lockLiveActor } from './actor-slug';
 import { ActorType, OnboardingDisplayMode, UserRole } from './enums';
+import { addWorkspaceMembership } from '../workspaces/workspaces.service';
+import { WorkspaceRole } from '../workspaces/enums';
+import { DEFAULT_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 import {
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
@@ -108,6 +111,16 @@ export class IdentityProviderService {
           isActive: true,
         }),
       );
+      await addWorkspaceMembership(manager, {
+        ...(input.workspace ?? {
+          workspaceId: DEFAULT_WORKSPACE_ID,
+          role:
+            input.role === UserRole.ADMIN
+              ? WorkspaceRole.ADMIN
+              : WorkspaceRole.MEMBER,
+        }),
+        actorId: actor.id,
+      });
       savedUser.actor = actor;
       return savedUser;
     });
@@ -239,6 +252,10 @@ export class IdentityProviderService {
     });
   }
 
+  /**
+   * Sets the installation role. `admin` makes the person an installation
+   * operator (`installation:admin`); it does not change any workspace role.
+   */
   async updateUserRole(
     userId: string,
     updateUserRoleInput: UpdateUserRoleInput,
@@ -267,6 +284,13 @@ export class IdentityProviderService {
         User,
         manager.create(User, { email, passwordHash, actorId: actor.id }),
       );
+      await addWorkspaceMembership(manager, {
+        ...(createUserInput.workspace ?? {
+          workspaceId: DEFAULT_WORKSPACE_ID,
+          role: WorkspaceRole.MEMBER,
+        }),
+        actorId: actor.id,
+      });
       savedUser.actor = actor;
       return savedUser;
     });
@@ -362,6 +386,12 @@ export class IdentityProviderService {
           });
 
           const savedUser = await transactionalEntityManager.save(User, user);
+          // The first person runs the installation and its default workspace.
+          await addWorkspaceMembership(transactionalEntityManager, {
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            actorId: savedActor.id,
+            role: WorkspaceRole.ADMIN,
+          });
           savedUser.actor = savedActor;
 
           return savedUser;
