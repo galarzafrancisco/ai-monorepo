@@ -14,6 +14,7 @@ import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
 import { UnreadBadge } from "../../features/threads/UnreadBadge";
 import { useActiveRunCount } from "../../features/executions/useActiveRunCount";
 import { modifierKeyLabel } from "../../shared/helpers/platform";
+import { WorkspaceSwitcher } from "../../features/workspaces";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
@@ -64,6 +65,9 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       {isDesktop && (
         <aside className={`beta-shell__desktop__sidebar ${isCollapsed ? 'beta-shell__desktop__sidebar--collapsed' : ''}`}>
+          <div className="beta-shell__desktop__workspace">
+            <WorkspaceSwitcher compact={isCollapsed} />
+          </div>
           <nav className='beta-shell__desktop__nav thin-scrollbar'>
             <div className="beta-shell__desktop__navInner">
               <Stack spacing="1">

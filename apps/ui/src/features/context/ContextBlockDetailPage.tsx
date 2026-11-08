@@ -14,6 +14,7 @@ import { pullRequestMarkdownRenderer } from '../pull-requests';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import { LocatableRowKind, WorkspaceSwitchPrompt } from '../workspaces';
 
 function normalizeParentId(parentId: { id?: string } | string | null | undefined): string | null {
   if (typeof parentId === 'string') {
@@ -155,19 +156,14 @@ export function ContextBlockDetailPage() {
     );
   }
 
-  if (error) {
+  if (error || !block) {
+    // Not found here: it may be in another of the person's workspaces.
     return (
-      <div className="context-block-detail__error">
-        <Text className="text--error">Error: {error}</Text>
-      </div>
-    );
-  }
-
-  if (!block) {
-    return (
-      <div className="context-block-detail__error">
-        <Text className="text--error">Context block not found</Text>
-      </div>
+      <WorkspaceSwitchPrompt kind={LocatableRowKind.CONTEXT_BLOCK} id={id}>
+        <div className="context-block-detail__error">
+          <Text className="text--error">{error ? `Error: ${error}` : 'Context block not found'}</Text>
+        </div>
+      </WorkspaceSwitchPrompt>
     );
   }
 

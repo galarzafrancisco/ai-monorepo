@@ -20,11 +20,11 @@ export type CreateAiProviderDto = {
      */
     baseUrl?: string | null;
     /**
-     * Google Cloud project for Vertex AI. Blank falls back to the environment.
+     * Google Cloud project for Vertex AI. Blank falls back to the server environment, in the default workspace only.
      */
     project?: string | null;
     /**
-     * Google Cloud location for Vertex AI. Blank falls back to the environment.
+     * Google Cloud location for Vertex AI. Blank falls back to the server environment, in the default workspace only.
      */
     location?: string | null;
 };

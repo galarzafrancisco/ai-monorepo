@@ -2,7 +2,12 @@ import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ErrorCodes } from '@taico/errors';
 import { holdsUnscopedModuleData } from '../../../workspaces/unscoped-modules';
-import { NotInWorkspaceError } from '../../../workspaces/workspace.errors';
+import {
+  NotInWorkspaceError,
+  WorkspaceChangedError,
+} from '../../../workspaces/workspace.errors';
+import { EXPECTED_WORKSPACE_HEADER } from '../../../workspaces/workspaces.constants';
+import type { IncomingHttpHeaders } from 'http';
 import type { AuthContext } from '../context/auth-context.types';
 import {
   WORKSPACE_ACCESS_KEY,
@@ -46,6 +51,24 @@ export function enforceWorkspaceAccess(
   }
   if (mode === 'default-only' && !holdsUnscopedModuleData(auth.workspaceId)) {
     throw new NotInWorkspaceError();
+  }
+}
+
+/**
+ * A page that loaded in one workspace sends that workspace's id in
+ * `x-taico-workspace`. Session cookies are shared by every tab, so after
+ * another tab switches workspace this page's requests would silently run in
+ * the new one. Refuse them instead; the web app reloads on this error.
+ * Requests without the header (API clients, MCP, workers) are unaffected.
+ */
+export function enforceExpectedWorkspace(
+  headers: IncomingHttpHeaders,
+  auth: AuthContext,
+): void {
+  const expected = headers[EXPECTED_WORKSPACE_HEADER];
+  if (expected === undefined) return;
+  if (expected !== auth.workspaceId) {
+    throw new WorkspaceChangedError();
   }
 }
 

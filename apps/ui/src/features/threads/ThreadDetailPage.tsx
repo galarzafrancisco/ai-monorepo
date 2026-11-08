@@ -49,6 +49,7 @@ import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPath";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import { actorHandle, isDeactivated } from "../actors";
+import { LocatableRowKind, WorkspaceSwitchPrompt } from "../workspaces";
 
 type ThreadTask = Thread["tasks"][number];
 type DisplayContextBlock = {
@@ -351,6 +352,7 @@ export function ThreadDetailPage() {
 
   if (error || !thread) {
     return (
+      <WorkspaceSwitchPrompt kind={LocatableRowKind.THREAD} id={threadId}>
       <div className="thread-detail-page">
         <Stack spacing="4" align="center">
           <Text size="3" tone="muted">
@@ -361,6 +363,7 @@ export function ThreadDetailPage() {
           </Button>
         </Stack>
       </div>
+      </WorkspaceSwitchPrompt>
     );
   }
 

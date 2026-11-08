@@ -11,10 +11,12 @@ import { useTheme } from '../../app/providers/ThemeProvider';
 import type { Theme } from '../../app/providers/ThemeProvider';
 import { useWorkers } from '../workers/useWorkers';
 import { SettingsThemeVisual } from './SettingsThemeVisual';
+import { useWorkspacesCtx } from '../workspaces';
 import { SETTINGS_THEME_OPTIONS } from './settingsThemes';
 import {
   Bot,
   Box,
+  Building2,
   CheckCircle2,
   ChevronRight,
   Database,
@@ -44,6 +46,7 @@ export function SettingsPage() {
   const { registerCommands } = useCommandPalette();
   const { theme, setTheme } = useTheme();
   const { workers, isLoading: areWorkersLoading } = useWorkers();
+  const { current: currentWorkspace, workspaces, isWorkspaceAdmin } = useWorkspacesCtx();
   const [version, setVersion] = useState<{ backend: string; ui: string } | null>(null);
   const [metrics, setMetrics] = useState<SettingsMetric>({
     conversationModel: null,
@@ -140,6 +143,20 @@ export function SettingsPage() {
         onSelect: () => navigate('/settings/data'),
       },
       {
+        id: 'settings-workspace',
+        label: 'Workspace members',
+        description: 'See who is in this workspace; admins invite and remove people',
+        aliases: ['workspace', 'members', 'invite', 'team', 'roles'],
+        onSelect: () => navigate('/settings/workspace'),
+      },
+      {
+        id: 'settings-workspaces',
+        label: 'Workspaces',
+        description: 'Switch workspace, or create one (installation operator)',
+        aliases: ['workspaces', 'switch workspace', 'create workspace', 'organisations', 'companies'],
+        onSelect: () => navigate('/settings/workspaces'),
+      },
+      {
         id: 'settings-users',
         label: 'User Management',
         description: 'Invite users and manage access',
@@ -230,13 +247,35 @@ export function SettingsPage() {
       detail: { label: 'Password', value: 'Change available', tone: 'default' },
     },
     {
+      title: 'Workspace',
+      description: 'Who is in this workspace and their role.',
+      icon: Building2,
+      iconTone: 'accent',
+      path: '/settings/workspace',
+      action: isWorkspaceAdmin ? 'Manage members' : 'View members',
+      detail: {
+        label: 'Current workspace',
+        value: currentWorkspace?.name ?? 'Loading',
+        tone: 'default',
+      },
+    },
+    {
+      title: 'Workspaces',
+      description: 'Switch between your workspaces, or create one.',
+      icon: Building2,
+      iconTone: 'neutral',
+      path: '/settings/workspaces',
+      action: 'Open workspaces',
+      detail: { label: 'Yours', value: String(workspaces.length), tone: 'default' },
+    },
+    {
       title: 'Users',
       description: 'Invite people, reset passwords, and disable access.',
       icon: Users,
       iconTone: 'accent',
       path: '/settings/users',
       action: 'Manage users',
-      detail: { label: 'Access', value: 'Admin only', tone: 'default' },
+      detail: { label: 'Access', value: 'Installation operator only', tone: 'default' },
     },
     {
       title: 'Access requests',
@@ -245,7 +284,7 @@ export function SettingsPage() {
       iconTone: 'accent',
       path: '/settings/access-requests',
       action: 'Review requests',
-      detail: { label: 'Access', value: 'Admin only', tone: 'default' },
+      detail: { label: 'Access', value: 'Installation operator only', tone: 'default' },
     },
     {
       title: 'Data',

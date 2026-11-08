@@ -519,6 +519,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/web/switch-workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch the web session to another workspace
+         * @description Mints a new session token (and refresh token) for a workspace the person is a member of, and revokes the current refresh token. A workspace they are not in answers 404.
+         */
+        post: operations["WebAuthController_switchWorkspace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -2734,7 +2754,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get the state of the search index */
+        /** Get the state of the workspace's part of the search index */
         get: operations["SearchAdminController_getSearchIndexStatus"];
         put?: never;
         post?: never;
@@ -2848,6 +2868,109 @@ export interface paths {
         head?: never;
         /** Admin: mark an access request new or reviewed */
         patch: operations["AccessRequestsAdminController_update"];
+        trace?: never;
+    };
+    "/api/v1/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the workspaces you are a member of */
+        get: operations["WorkspaceAdminController_listMine"];
+        put?: never;
+        /**
+         * Installation operator: create a workspace
+         * @description You become its admin. It starts with the system tags, the taico agent and unconfigured AI providers. Switch to it to work in it.
+         */
+        post: operations["WorkspaceAdminController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/locate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find which of your workspaces a task, thread or context block is in
+         * @description For links to a row of another workspace: the UI offers to switch instead of showing not found. A row that does not exist and one in a workspace you are not in both answer 404.
+         */
+        get: operations["WorkspaceAdminController_locate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The token's workspace, with your role in it */
+        get: operations["WorkspaceAdminController_getCurrent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/current/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the members (people and agents) of your workspace */
+        get: operations["WorkspaceAdminController_listMembers"];
+        put?: never;
+        /**
+         * Workspace admin: invite a person by email
+         * @description A person with an account is added. Anyone else gets an invited account, which they set up through account setup.
+         */
+        post: operations["WorkspaceAdminController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/current/members/{actorId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Workspace admin: remove a person from the workspace
+         * @description They lose access at their next token: tokens already minted stay valid until they expire. The last admin cannot be removed; agents are deleted, not removed.
+         */
+        delete: operations["WorkspaceAdminController_removeMember"];
+        options?: never;
+        head?: never;
+        /**
+         * Workspace admin: change a person's role
+         * @description Takes effect in their next token. The last admin cannot be demoted.
+         */
+        patch: operations["WorkspaceAdminController_updateMember"];
         trace?: never;
     };
 }
@@ -3614,6 +3737,13 @@ export interface components {
              */
             password: string;
         };
+        SwitchWorkspaceRequestDto: {
+            /**
+             * Format: uuid
+             * @description The workspace to switch to. The person must be a member of it.
+             */
+            workspaceId: string;
+        };
         ChangePasswordRequestDto: {
             /**
              * @description Current password
@@ -4303,12 +4433,12 @@ export interface components {
              */
             baseUrl?: string | null;
             /**
-             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
+             * @description Google Cloud project for Vertex AI. Blank falls back to the server environment, in the default workspace only.
              * @example my-gcp-project
              */
             project?: string | null;
             /**
-             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
+             * @description Google Cloud location for Vertex AI. Blank falls back to the server environment, in the default workspace only.
              * @example us-central1
              */
             location?: string | null;
@@ -4393,12 +4523,12 @@ export interface components {
              */
             baseUrl?: string | null;
             /**
-             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
+             * @description Google Cloud project for Vertex AI. Blank falls back to the server environment, in the default workspace only.
              * @example my-gcp-project
              */
             project?: string | null;
             /**
-             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
+             * @description Google Cloud location for Vertex AI. Blank falls back to the server environment, in the default workspace only.
              * @example us-central1
              */
             location?: string | null;
@@ -8188,6 +8318,62 @@ export interface components {
         UpdateAccessRequestDto: {
             status: components["schemas"]["AccessRequestStatus"];
         };
+        /**
+         * @description The caller's role in it
+         * @enum {string}
+         */
+        WorkspaceRole: "admin" | "member";
+        WorkspaceResponseDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            /** @description The caller's role in it */
+            role: components["schemas"]["WorkspaceRole"];
+            /** @description Whether the token the request was made with is for this workspace */
+            current: boolean;
+        };
+        /** @enum {string} */
+        LocatableRowKind: "task" | "thread" | "context_block";
+        CreateWorkspaceRequestDto: {
+            /** @example Acme */
+            name: string;
+            /**
+             * @description Unique across the installation: lowercase letters, digits and hyphens.
+             * @example acme
+             */
+            slug: string;
+        };
+        /** @enum {string} */
+        WorkspaceMemberActorType: "human" | "agent";
+        WorkspaceMemberResponseDto: {
+            /** Format: uuid */
+            actorId: string;
+            type: components["schemas"]["WorkspaceMemberActorType"];
+            slug: string;
+            displayName: string;
+            avatarUrl: string | null;
+            role: components["schemas"]["WorkspaceRole"];
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        InviteWorkspaceMemberRequestDto: {
+            /**
+             * Format: email
+             * @description A person with an account is added; anyone else gets an invited account, set up through account setup.
+             * @example someone@company.dev
+             */
+            email: string;
+            role: components["schemas"]["WorkspaceRole"];
+        };
+        InviteWorkspaceMemberResponseDto: {
+            member: components["schemas"]["WorkspaceMemberResponseDto"];
+            /** @description Whether an invited account was created for the email. They set a password through account setup before they can sign in. */
+            accountCreated: boolean;
+        };
+        UpdateWorkspaceMemberRequestDto: {
+            role: components["schemas"]["WorkspaceRole"];
+        };
     };
     responses: never;
     parameters: never;
@@ -9194,6 +9380,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    WebAuthController_switchWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchWorkspaceRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponseDto"];
+                };
             };
         };
     };
@@ -14429,6 +14638,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccessRequestResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"][];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkspaceRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_locate: {
+        parameters: {
+            query: {
+                kind: components["schemas"]["LocatableRowKind"];
+                id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_getCurrent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"][];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteWorkspaceMemberRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteWorkspaceMemberResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspaceAdminController_updateMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceMemberRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"];
                 };
             };
         };

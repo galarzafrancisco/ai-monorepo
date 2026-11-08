@@ -89,6 +89,17 @@
   /* critical: allows it to shrink and scroll */
 }
 
+.beta-shell__desktop__workspace {
+  padding: var(--space-4) var(--space-3) 0;
+}
+
+.beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__workspace {
+  display: flex;
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .beta-shell__desktop__navInner {
   padding: var(--space-4) var(--space-3);
 }

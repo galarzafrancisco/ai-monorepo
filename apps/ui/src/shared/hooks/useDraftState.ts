@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
+import { DraftScopeContext } from '../context/DraftScopeContext';
 
 interface UseDraftStateOptions<T> {
   key: string;
@@ -6,9 +7,10 @@ interface UseDraftStateOptions<T> {
   debounceMs?: number;
 }
 
-function loadDraftFromStorage<T>(key: string, fallback: T): T {
+function loadDraftFromStorage<T>(storageKey: string | null, fallback: T): T {
+  if (!storageKey) return fallback;
   try {
-    const stored = localStorage.getItem(key);
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
       return JSON.parse(stored) as T;
     }
@@ -19,7 +21,14 @@ function loadDraftFromStorage<T>(key: string, fallback: T): T {
   return fallback;
 }
 
+/**
+ * State kept as a draft in localStorage. Drafts belong to the person and
+ * workspace (see `DraftScopeContext`): `key` is stored under that scope, and
+ * until the scope is known nothing is loaded or saved.
+ */
 export function useDraftState<T>({ key, defaultValue, debounceMs = 500 }: UseDraftStateOptions<T>) {
+  const scope = useContext(DraftScopeContext);
+  const storageKey = scope ? `draft:${scope}:${key}` : null;
   const defaultValueRef = useRef(defaultValue);
 
   useEffect(() => {
@@ -27,24 +36,25 @@ export function useDraftState<T>({ key, defaultValue, debounceMs = 500 }: UseDra
   }, [defaultValue]);
 
   // Initialize state from localStorage or default
-  const [state, setState] = useState<T>(() => loadDraftFromStorage(key, defaultValue));
+  const [state, setState] = useState<T>(() => loadDraftFromStorage(storageKey, defaultValue));
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Reload when localStorage key changes (for entity-scoped drafts)
+  // Reload when the storage key changes (entity-scoped drafts, or the scope resolving)
   useEffect(() => {
-    setState(loadDraftFromStorage(key, defaultValueRef.current));
-  }, [key]);
+    setState(loadDraftFromStorage(storageKey, defaultValueRef.current));
+  }, [storageKey]);
 
   // Save to localStorage with debouncing
   useEffect(() => {
+    if (!storageKey) return;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(() => {
       try {
-        localStorage.setItem(key, JSON.stringify(state));
+        localStorage.setItem(storageKey, JSON.stringify(state));
       } catch (error) {
         console.error('Error saving draft to localStorage:', error);
       }
@@ -55,12 +65,12 @@ export function useDraftState<T>({ key, defaultValue, debounceMs = 500 }: UseDra
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [state, key, debounceMs]);
+  }, [state, storageKey, debounceMs]);
 
   // Function to clear the draft
   const clearDraft = () => {
     try {
-      localStorage.removeItem(key);
+      if (storageKey) localStorage.removeItem(storageKey);
       setState(defaultValueRef.current);
     } catch (error) {
       console.error('Error clearing draft from localStorage:', error);

@@ -1385,6 +1385,39 @@
         ]
       }
     },
+    "/api/v1/auth/web/switch-workspace": {
+      "post": {
+        "description": "Mints a new session token (and refresh token) for a workspace the person is a member of, and revokes the current refresh token. A workspace they are not in answers 404.",
+        "operationId": "WebAuthController_switchWorkspace",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchWorkspaceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Switch the web session to another workspace",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "operationId": "WebAuthController_logout",
@@ -8900,7 +8933,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Get the state of the search index",
+        "summary": "Get the state of the workspace's part of the search index",
         "tags": [
           "Search"
         ]
@@ -9153,6 +9186,286 @@
         "summary": "Admin: delete an access request",
         "tags": [
           "Access Requests Admin"
+        ]
+      }
+    },
+    "/api/v1/workspaces": {
+      "get": {
+        "operationId": "WorkspaceAdminController_listMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List the workspaces you are a member of",
+        "tags": [
+          "Workspaces"
+        ]
+      },
+      "post": {
+        "description": "You become its admin. It starts with the system tags, the taico agent and unconfigured AI providers. Switch to it to work in it.",
+        "operationId": "WorkspaceAdminController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkspaceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Installation operator: create a workspace",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/locate": {
+      "get": {
+        "description": "For links to a row of another workspace: the UI offers to switch instead of showing not found. A row that does not exist and one in a workspace you are not in both answer 404.",
+        "operationId": "WorkspaceAdminController_locate",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LocatableRowKind"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Find which of your workspaces a task, thread or context block is in",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/current": {
+      "get": {
+        "operationId": "WorkspaceAdminController_getCurrent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "The token's workspace, with your role in it",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/current/members": {
+      "get": {
+        "operationId": "WorkspaceAdminController_listMembers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceMemberResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List the members (people and agents) of your workspace",
+        "tags": [
+          "Workspaces"
+        ]
+      },
+      "post": {
+        "description": "A person with an account is added. Anyone else gets an invited account, which they set up through account setup.",
+        "operationId": "WorkspaceAdminController_invite",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteWorkspaceMemberRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteWorkspaceMemberResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Workspace admin: invite a person by email",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/current/members/{actorId}": {
+      "patch": {
+        "description": "Takes effect in their next token. The last admin cannot be demoted.",
+        "operationId": "WorkspaceAdminController_updateMember",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkspaceMemberRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceMemberResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Workspace admin: change a person's role",
+        "tags": [
+          "Workspaces"
+        ]
+      },
+      "delete": {
+        "description": "They lose access at their next token: tokens already minted stay valid until they expire. The last admin cannot be removed; agents are deleted, not removed.",
+        "operationId": "WorkspaceAdminController_removeMember",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Workspace admin: remove a person from the workspace",
+        "tags": [
+          "Workspaces"
         ]
       }
     }
@@ -10327,6 +10640,19 @@
           "password"
         ]
       },
+      "SwitchWorkspaceRequestDto": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "description": "The workspace to switch to. The person must be a member of it.",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "workspaceId"
+        ]
+      },
       "ChangePasswordRequestDto": {
         "type": "object",
         "properties": {
@@ -11323,13 +11649,13 @@
           },
           "project": {
             "type": "string",
-            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
+            "description": "Google Cloud project for Vertex AI. Blank falls back to the server environment, in the default workspace only.",
             "example": "my-gcp-project",
             "nullable": true
           },
           "location": {
             "type": "string",
-            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
+            "description": "Google Cloud location for Vertex AI. Blank falls back to the server environment, in the default workspace only.",
             "example": "us-central1",
             "nullable": true
           }
@@ -11447,13 +11773,13 @@
           },
           "project": {
             "type": "string",
-            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
+            "description": "Google Cloud project for Vertex AI. Blank falls back to the server environment, in the default workspace only.",
             "example": "my-gcp-project",
             "nullable": true
           },
           "location": {
             "type": "string",
-            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
+            "description": "Google Cloud location for Vertex AI. Blank falls back to the server environment, in the default workspace only.",
             "example": "us-central1",
             "nullable": true
           }
@@ -17808,6 +18134,182 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "WorkspaceRole": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "member"
+        ],
+        "description": "The caller's role in it"
+      },
+      "WorkspaceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "description": "The caller's role in it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          },
+          "current": {
+            "type": "boolean",
+            "description": "Whether the token the request was made with is for this workspace"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "role",
+          "current"
+        ]
+      },
+      "LocatableRowKind": {
+        "type": "string",
+        "enum": [
+          "task",
+          "thread",
+          "context_block"
+        ]
+      },
+      "CreateWorkspaceRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Acme",
+            "maxLength": 100
+          },
+          "slug": {
+            "type": "string",
+            "example": "acme",
+            "description": "Unique across the installation: lowercase letters, digits and hyphens.",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "WorkspaceMemberActorType": {
+        "type": "string",
+        "enum": [
+          "human",
+          "agent"
+        ]
+      },
+      "WorkspaceMemberResponseDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceMemberActorType"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "actorId",
+          "type",
+          "slug",
+          "displayName",
+          "avatarUrl",
+          "role",
+          "joinedAt"
+        ]
+      },
+      "InviteWorkspaceMemberRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "someone@company.dev",
+            "format": "email",
+            "description": "A person with an account is added; anyone else gets an invited account, set up through account setup."
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
+      "InviteWorkspaceMemberResponseDto": {
+        "type": "object",
+        "properties": {
+          "member": {
+            "$ref": "#/components/schemas/WorkspaceMemberResponseDto"
+          },
+          "accountCreated": {
+            "type": "boolean",
+            "description": "Whether an invited account was created for the email. They set a password through account setup before they can sign in."
+          }
+        },
+        "required": [
+          "member",
+          "accountCreated"
+        ]
+      },
+      "UpdateWorkspaceMemberRequestDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          }
+        },
+        "required": [
+          "role"
         ]
       }
     }

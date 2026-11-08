@@ -31,6 +31,7 @@ import { SearchResource } from './search-resource.js';
 import { WalkthroughResource } from './walkthrough-resource.js';
 import { AccessRequestsResource } from './access-requests-resource.js';
 import { AccessRequestsAdminResource } from './access-requests-admin-resource.js';
+import { WorkspacesResource } from './workspaces-resource.js';
 
 export class ApiClient {
   public readonly app: AppResource;
@@ -65,6 +66,7 @@ export class ApiClient {
   public readonly walkthrough: WalkthroughResource;
   public readonly accessRequests: AccessRequestsResource;
   public readonly accessRequestsAdmin: AccessRequestsAdminResource;
+  public readonly workspaces: WorkspacesResource;
 
   constructor(config: ClientConfig) {
     this.app = new AppResource(config);
@@ -99,5 +101,6 @@ export class ApiClient {
     this.walkthrough = new WalkthroughResource(config);
     this.accessRequests = new AccessRequestsResource(config);
     this.accessRequestsAdmin = new AccessRequestsAdminResource(config);
+    this.workspaces = new WorkspacesResource(config);
   }
 }

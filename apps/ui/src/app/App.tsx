@@ -24,6 +24,7 @@ import { PublicSite } from '../features/marketing/PublicSite';
 import { isPublicPath } from '../features/marketing/publicPaths';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
 import { taicoLinkStore } from '../features/taico-links';
+import { WorkspacesProvider } from '../features/workspaces';
 
 /**
  * Redirects to /walkthrough during render if the user's display mode is FULL_PAGE,
@@ -117,33 +118,36 @@ function AuthenticatedApp() {
         <ToastProvider>
           <AuthProvider>
             <TaicoLinkIdentity />
-            <ActorsProvider>
-              <Routes>
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/login" element={
-                  <OnboardingChecker>
-                    <LoginPage />
-                  </OnboardingChecker>
-                } />
-                <Route
-                  path='*'
-                  element={
-                    <ProtectedRoute>
-                      <CommandPaletteProvider>
-                        <WalkthroughGate>
-                          <ThreadsProvider>
-                            <BetaShell>
-                              <BetaAppRoutes />
-                            </BetaShell>
-                          </ThreadsProvider>
-                        </WalkthroughGate>
-                      </CommandPaletteProvider>
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-              <ToastContainer />
-            </ActorsProvider>
+            <Routes>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/login" element={
+                <OnboardingChecker>
+                  <LoginPage />
+                </OnboardingChecker>
+              } />
+              <Route
+                path='*'
+                element={
+                  <ProtectedRoute>
+                    <WorkspacesProvider>
+                    {/* Everything workspace-bound lives inside the gate. */}
+                    <ActorsProvider>
+                    <CommandPaletteProvider>
+                      <WalkthroughGate>
+                        <ThreadsProvider>
+                          <BetaShell>
+                            <BetaAppRoutes />
+                          </BetaShell>
+                        </ThreadsProvider>
+                      </WalkthroughGate>
+                    </CommandPaletteProvider>
+                    </ActorsProvider>
+                    </WorkspacesProvider>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+            <ToastContainer />
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

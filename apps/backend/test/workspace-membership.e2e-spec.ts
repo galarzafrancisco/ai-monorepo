@@ -234,6 +234,43 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       await request(http).post('/api/v1/auth/refresh').set('Cookie', fresh).expect(401);
     });
 
+    it('refuses a page still showing the old workspace once another tab switched', async () => {
+      const workspace = await createWorkspace(operator);
+      const session = await getAuthCookies(http);
+      // Tab 2 loaded in the default workspace; tab 1 switches the shared cookies.
+      const switched = cookiesFrom(await switchTo(session, workspace.id).expect(200));
+
+      const name = `stale tab task ${unique()}`;
+      const stale = await request(http)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', switched)
+        .set('x-taico-workspace', DEFAULT_WORKSPACE_ID)
+        .send({ name, description: 'Typed while the page showed the default workspace' })
+        .expect(409);
+      expect(stale.body.code).toBe('WORKSPACE_CHANGED');
+      await request(http)
+        .get('/api/v1/workspaces/current')
+        .set('Cookie', switched)
+        .set('x-taico-workspace', DEFAULT_WORKSPACE_ID)
+        .expect(409);
+
+      // Nothing was written in the new workspace.
+      const tasks = await request(http)
+        .get('/api/v1/tasks/tasks')
+        .set('Cookie', switched)
+        .expect(200);
+      const items = (tasks.body.items ?? tasks.body) as { name: string }[];
+      expect(items.some((t) => t.name === name)).toBe(false);
+
+      // A page showing the session's workspace, or sending no header, works.
+      await request(http)
+        .get('/api/v1/workspaces/current')
+        .set('Cookie', switched)
+        .set('x-taico-workspace', workspace.id)
+        .expect(200);
+      await request(http).get('/api/v1/workspaces/current').set('Cookie', switched).expect(200);
+    });
+
     it('answers 404 for a workspace you are not in, or that does not exist', async () => {
       const workspace = await createWorkspace(operator);
       const person = await createPerson();
@@ -439,6 +476,72 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       expect(
         await members.findOneBy({ workspaceId: workspace.id, actorId: person.actorId }),
       ).toBeNull();
+    });
+  });
+
+  describe('locating a linked row', () => {
+    it('says which of your workspaces a task, thread or block is in, and nothing to anyone else', async () => {
+      const workspace = await createWorkspace(operator);
+      const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+      const task = await request(http)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', admin)
+        .send({ name: 'Locate me', description: 'In B', assigneeActorId: operatorActorId })
+        .expect(201);
+      const thread = await request(http)
+        .post('/api/v1/threads')
+        .set('Cookie', admin)
+        .send({ title: 'Locate me' })
+        .expect(201);
+      const block = await request(http)
+        .post('/api/v1/context/blocks')
+        .set('Cookie', admin)
+        .send({ title: 'Locate me', content: 'In B' })
+        .expect(201);
+
+      const rows = [
+        ['task', task.body.id],
+        ['thread', thread.body.id],
+        ['context_block', block.body.id],
+      ];
+      for (const [kind, id] of rows) {
+        // From the default workspace, the operator is told where it is.
+        const located = await request(http)
+          .get('/api/v1/workspaces/locate')
+          .query({ kind, id })
+          .set('Cookie', operator)
+          .expect(200);
+        expect(located.body).toMatchObject({
+          id: workspace.id,
+          slug: workspace.slug,
+          role: WorkspaceRole.ADMIN,
+          current: false,
+        });
+        await request(http)
+          .get('/api/v1/workspaces/locate')
+          .query({ kind, id })
+          .set('Cookie', admin)
+          .expect(200)
+          .expect((res) => expect(res.body.current).toBe(true));
+      }
+
+      // Someone who is not in that workspace gets the same 404 as a row that does not exist.
+      const outsider = await createPerson();
+      const outsiderCookies = cookiesFrom(
+        await login(outsider.email, outsider.password).expect(200),
+      );
+      for (const [kind, id] of [...rows, ['task', randomUUID()]]) {
+        await request(http)
+          .get('/api/v1/workspaces/locate')
+          .query({ kind, id })
+          .set('Cookie', outsiderCookies)
+          .expect(404);
+      }
+      await request(http)
+        .get('/api/v1/workspaces/locate')
+        .query({ kind: 'users', id: task.body.id })
+        .set('Cookie', operator)
+        .expect(400);
     });
   });
 

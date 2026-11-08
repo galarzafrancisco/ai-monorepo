@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AccountSetupStatusRequestDto, AccountSetupStatusResponseDto, ChangePasswordRequestDto, CreateManagedUserRequestDto, LoginRequestDto, LoginResponseDto, ManagedUserResponseDto, OnboardingRequestDto, OnboardingStatusResponseDto, SetupManagedUserRequestDto, UserResponseDto } from './types.js';
+import type { AccountSetupStatusRequestDto, AccountSetupStatusResponseDto, ChangePasswordRequestDto, CreateManagedUserRequestDto, LoginRequestDto, LoginResponseDto, ManagedUserResponseDto, OnboardingRequestDto, OnboardingStatusResponseDto, SetupManagedUserRequestDto, SwitchWorkspaceRequestDto, UserResponseDto } from './types.js';
 
 export class WebAuthenticationResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -44,6 +44,11 @@ export class WebAuthenticationResource extends BaseClient {
   /** Refresh access token using refresh token */
   async WebAuthController_refresh(params?: { signal?: AbortSignal }): Promise<LoginResponseDto> {
     return this.request('POST', '/api/v1/auth/refresh', { signal: params?.signal });
+  }
+
+  /** Switch the web session to another workspace */
+  async WebAuthController_switchWorkspace(params: { body: SwitchWorkspaceRequestDto; signal?: AbortSignal }): Promise<LoginResponseDto> {
+    return this.request('POST', '/api/v1/auth/web/switch-workspace', { body: params.body, signal: params?.signal });
   }
 
   /** Logout and revoke refresh token */

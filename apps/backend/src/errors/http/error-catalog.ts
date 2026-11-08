@@ -425,6 +425,12 @@ export const ErrorCatalog: Record<
     type: '/errors/workspaces/no-membership',
     retryable: false,
   },
+  [ErrorCodes.WORKSPACE_CHANGED]: {
+    status: 409,
+    title: 'Your session moved to another workspace',
+    type: '/errors/workspaces/changed',
+    retryable: false,
+  },
   [ErrorCodes.WORKSPACE_SLUG_CONFLICT]: {
     status: 409,
     title: 'Workspace slug already taken',

@@ -18,6 +18,19 @@ export class NoWorkspaceMembershipError extends Error {
   }
 }
 
+/**
+ * The page sent the workspace it is showing (`x-taico-workspace`), but the
+ * session is now in another one: another tab switched workspace. Refused so a
+ * stale page can't read or write in a workspace it doesn't show.
+ */
+export class WorkspaceChangedError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_CHANGED;
+  constructor() {
+    super('Your session moved to another workspace. Reload the page.');
+    this.name = WorkspaceChangedError.name;
+  }
+}
+
 export class WorkspaceSlugConflictError extends Error {
   readonly code = ErrorCodes.WORKSPACE_SLUG_CONFLICT;
   constructor(readonly slug: string) {

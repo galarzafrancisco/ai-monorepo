@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -39,6 +40,7 @@ import {
   CreateWorkspaceRequestDto,
   InviteWorkspaceMemberRequestDto,
   InviteWorkspaceMemberResponseDto,
+  LocateRowQueryDto,
   UpdateWorkspaceMemberRequestDto,
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
@@ -78,6 +80,36 @@ export class WorkspaceAdminController {
       role: m.role,
       current: m.workspaceId === workspaceId,
     }));
+  }
+
+  @Get('locate')
+  @WorkspaceAccess('installation')
+  @ApiOperation({
+    summary: 'Find which of your workspaces a task, thread or context block is in',
+    description:
+      'For links to a row of another workspace: the UI offers to switch instead of showing not found. A row that does not exist and one in a workspace you are not in both answer 404.',
+  })
+  @ApiOkResponse({ type: WorkspaceResponseDto })
+  async locate(
+    @CurrentUser() user: UserContext,
+    @CurrentWorkspace() workspaceId: string,
+    @Query() query: LocateRowQueryDto,
+  ): Promise<WorkspaceResponseDto> {
+    const membership = await this.workspacesService.locateRowForActor(
+      user.actorId,
+      query.kind,
+      query.id,
+    );
+    if (!membership) {
+      throw new NotInWorkspaceError();
+    }
+    return {
+      id: membership.workspaceId,
+      slug: membership.slug,
+      name: membership.name,
+      role: membership.role,
+      current: membership.workspaceId === workspaceId,
+    };
   }
 
   @Post()

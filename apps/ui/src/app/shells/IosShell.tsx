@@ -9,6 +9,7 @@ import { getActiveNavigationPath } from "../../shared/helpers/activeNavigationPa
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import { useThreadsCtx } from "../../features/threads/ThreadsProvider";
 import { UnreadBadge } from "../../features/threads/UnreadBadge";
+import { WorkspaceSwitcher } from "../../features/workspaces";
 
 export interface NavItem {
   label: string;
@@ -204,6 +205,9 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
           >
             ✕
           </button>
+        </div>
+        <div className="ios-shell__drawer-workspace">
+          <WorkspaceSwitcher />
         </div>
         <nav className="ios-shell__drawer-nav">
           {MAIN_NAVEGATION_ITEMS.map((item) => {
