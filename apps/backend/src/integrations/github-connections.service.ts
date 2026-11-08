@@ -4,7 +4,6 @@ import { DataSource, Repository } from 'typeorm';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { getConfig } from '../config/env.config';
 import { SecretsService } from '../secrets/secrets.service';
-import { UNSCOPED_MODULE_WORKSPACE_ID } from '../workspaces/workspaces.constants';
 import { GithubConnectionEntity } from './github-connection.entity';
 import { GithubWebhookSourceEntity } from './github-webhook-source.entity';
 import { webhookCoverageOf } from './github/webhook-coverage';
@@ -23,6 +22,7 @@ import { GithubRepoRef, parseGithubRepoUrl } from './github/github-repo-ref';
 import { githubHostOf, isGithubCom, normalizeGithubUrl } from './github/github-host';
 import {
   CreateGithubConnectionInput,
+  AcceptedGithubWebhook,
   GithubConnectionResult,
   GithubWebhookDelivery,
   GithubWebhookSettings,
@@ -81,7 +81,7 @@ export class GithubConnectionsService {
   ) {}
 
   /** Checks the credential with GitHub first: a connection that does not work is never saved. */
-  async createConnection(input: CreateGithubConnectionInput): Promise<GithubConnectionResult> {
+  async createConnection(workspaceId: string, input: CreateGithubConnectionInput): Promise<GithubConnectionResult> {
     const secretValue = input.secret.trim();
     const baseUrl = normalizeBaseUrl(input.baseUrl);
     const appId = normalizeOptionalText(input.appId) ?? null;
@@ -101,7 +101,7 @@ export class GithubConnectionsService {
     });
 
     const owners = normalizeOwners(input.owners);
-    const secret = await this.secretsService.createSecret(UNSCOPED_MODULE_WORKSPACE_ID, {
+    const secret = await this.secretsService.createSecret(workspaceId, {
       // Secret names are unique; the timestamp keeps two connections with one name apart.
       name: `GitHub connection: ${input.name.trim()} (${Date.now()})`,
       description: `${input.authType === GithubAuthType.PAT ? 'Token' : 'GitHub App private key'} for the GitHub connection "${input.name.trim()}"`,
@@ -112,6 +112,7 @@ export class GithubConnectionsService {
     try {
       saved = await this.repository.save(
         this.repository.create({
+          workspaceId,
           name: input.name.trim(),
           baseUrl,
           authType: input.authType,
@@ -125,7 +126,7 @@ export class GithubConnectionsService {
         }),
       );
     } catch (error) {
-      await this.secretsService.deleteSecret(UNSCOPED_MODULE_WORKSPACE_ID, secret.id);
+      await this.secretsService.deleteSecret(workspaceId, secret.id);
       throw error;
     }
 
@@ -133,17 +134,21 @@ export class GithubConnectionsService {
     return this.mapToResult(saved);
   }
 
-  async listConnections(): Promise<GithubConnectionResult[]> {
-    const connections = await this.repository.find({ order: { createdAt: 'ASC' } });
+  async listConnections(workspaceId: string): Promise<GithubConnectionResult[]> {
+    const connections = await this.repository.find({ where: { workspaceId }, order: { createdAt: 'ASC' } });
     return connections.map((connection) => this.mapToResult(connection));
   }
 
-  async getConnection(id: string): Promise<GithubConnectionResult> {
-    return this.mapToResult(await this.findEntity(id));
+  async getConnection(workspaceId: string, id: string): Promise<GithubConnectionResult> {
+    return this.mapToResult(await this.findEntity(workspaceId, id));
   }
 
-  async updateConnection(id: string, input: UpdateGithubConnectionInput): Promise<GithubConnectionResult> {
-    const connection = await this.findEntity(id);
+  async updateConnection(
+    workspaceId: string,
+    id: string,
+    input: UpdateGithubConnectionInput,
+  ): Promise<GithubConnectionResult> {
+    const connection = await this.findEntity(workspaceId, id);
 
     if (input.name !== undefined) connection.name = input.name.trim();
     if (input.owners !== undefined) connection.owners = normalizeOwners(input.owners);
@@ -163,7 +168,7 @@ export class GithubConnectionsService {
         if (appId !== undefined) connection.appId = appId;
         if (installationId !== undefined) connection.installationId = installationId;
       }
-      const secretValue = newSecret ?? (await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId)).value;
+      const secretValue = newSecret ?? (await this.secretsService.getSecretValue(workspaceId, connection.secretId)).value;
       connection.accountLogin = await this.credentials.identify({
         authType: connection.authType,
         baseUrl: connection.baseUrl,
@@ -174,7 +179,7 @@ export class GithubConnectionsService {
       connection.lastVerifiedAt = new Date();
       connection.lastError = null;
       if (newSecret !== undefined) {
-        await this.secretsService.updateSecret(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId, { value: newSecret });
+        await this.secretsService.updateSecret(workspaceId, connection.secretId, { value: newSecret });
       }
       this.credentials.forget(connection.id);
     }
@@ -189,20 +194,20 @@ export class GithubConnectionsService {
   }
 
   /** Projects using the connection fall back to automatic matching (the foreign key sets them to null). */
-  async deleteConnection(id: string): Promise<void> {
-    const connection = await this.findEntity(id);
-    await this.repository.delete(id);
-    await this.secretsService.deleteSecret(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
-    if (connection.webhookSecretId) await this.secretsService.deleteSecret(UNSCOPED_MODULE_WORKSPACE_ID, connection.webhookSecretId);
+  async deleteConnection(workspaceId: string, id: string): Promise<void> {
+    const connection = await this.findEntity(workspaceId, id);
+    await this.repository.delete({ workspaceId, id });
+    await this.secretsService.deleteSecret(workspaceId, connection.secretId);
+    if (connection.webhookSecretId) await this.secretsService.deleteSecret(workspaceId, connection.webhookSecretId);
     this.credentials.forget(id);
     this.logger.log({ message: 'GitHub connection deleted', connectionId: id });
   }
 
   /** Checks the stored credential again and records the outcome. Never throws for a rejected credential. */
-  async verifyConnection(id: string): Promise<GithubConnectionResult> {
-    const connection = await this.findEntity(id);
+  async verifyConnection(workspaceId: string, id: string): Promise<GithubConnectionResult> {
+    const connection = await this.findEntity(workspaceId, id);
     try {
-      const secret = await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.secretId);
+      const secret = await this.secretsService.getSecretValue(workspaceId, connection.secretId);
       connection.accountLogin = await this.credentials.identify({
         authType: connection.authType,
         baseUrl: connection.baseUrl,
@@ -225,9 +230,9 @@ export class GithubConnectionsService {
    * one listing its owner, else the only connection there is. Only connections
    * to the repository's own GitHub (github.com or an Enterprise host) count.
    * Null when none fits; Taico then reads public github.com repositories
-   * anonymously.
+   * anonymously. Only the workspace's own connections count.
    */
-  async resolveForRepository(input: {
+  async resolveForRepository(workspaceId: string, input: {
     host: string;
     owner: string;
     projectConnectionId?: string | null;
@@ -236,11 +241,11 @@ export class GithubConnectionsService {
     const onHost = (connection: GithubConnectionEntity) => githubHostOf(connection.baseUrl) === host;
 
     if (input.projectConnectionId) {
-      const named = await this.repository.findOne({ where: { id: input.projectConnectionId } });
+      const named = await this.repository.findOne({ where: { workspaceId, id: input.projectConnectionId } });
       if (named && onHost(named)) return { connection: this.mapToResult(named), match: 'project' };
     }
 
-    const connections = (await this.repository.find({ order: { createdAt: 'ASC' } })).filter(onHost);
+    const connections = (await this.repository.find({ where: { workspaceId }, order: { createdAt: 'ASC' } })).filter(onHost);
     const owner = input.owner.toLowerCase();
     const byOwner = connections.find((connection) =>
       connection.owners.some((candidate) => candidate.toLowerCase() === owner),
@@ -252,16 +257,20 @@ export class GithubConnectionsService {
 
   /**
    * Like resolveForRepository, but for a repository Taico meets outside a
-   * project (a pull request link): the first project whose repository it is
-   * decides, if that project names a connection.
+   * project (a pull request link): the first project of the workspace whose
+   * repository it is decides, if that project names a connection.
    */
-  async resolveForRepositoryOfAnyProject(input: GithubRepoRef): Promise<ResolvedGithubConnection | null> {
+  async resolveForRepositoryOfAnyProject(
+    workspaceId: string,
+    input: GithubRepoRef,
+  ): Promise<ResolvedGithubConnection | null> {
     const projects: Array<{ repo_url: string; github_connection_id: string }> = await this.dataSource.query(
       `SELECT "repoUrl" AS repo_url, github_connection_id FROM projects
-        WHERE github_connection_id IS NOT NULL AND "repoUrl" IS NOT NULL AND deleted_at IS NULL
+        WHERE workspace_id = $1 AND github_connection_id IS NOT NULL AND "repoUrl" IS NOT NULL AND deleted_at IS NULL
         ORDER BY created_at ASC`,
+      [workspaceId],
     );
-    const hosts = await this.listEnterpriseHosts();
+    const hosts = await this.listEnterpriseHosts(workspaceId);
     const host = input.host.toLowerCase();
     const owner = input.owner.toLowerCase();
     const repo = input.repo.toLowerCase();
@@ -269,7 +278,7 @@ export class GithubConnectionsService {
       const ref = parseGithubRepoUrl(row.repo_url, hosts);
       return ref?.host === host && ref.owner.toLowerCase() === owner && ref.repo.toLowerCase() === repo;
     });
-    return this.resolveForRepository({
+    return this.resolveForRepository(workspaceId, {
       host: input.host,
       owner: input.owner,
       projectConnectionId: project?.github_connection_id,
@@ -277,30 +286,36 @@ export class GithubConnectionsService {
   }
 
   /**
-   * Hosts of the GitHub Enterprises Taico has connections to (github.com is
-   * always known). Links and repositories on other hosts are not GitHub's.
+   * Hosts of the GitHub Enterprises the workspace has connections to
+   * (github.com is always known). Links and repositories on other hosts are
+   * not GitHub's, for this workspace.
    */
-  async listEnterpriseHosts(): Promise<string[]> {
+  async listEnterpriseHosts(workspaceId: string): Promise<string[]> {
     const rows: Array<{ base_url: string }> = await this.dataSource.query(
-      `SELECT DISTINCT base_url FROM github_connections`,
+      `SELECT DISTINCT base_url FROM github_connections WHERE workspace_id = $1`,
+      [workspaceId],
     );
     return [...new Set(rows.map((row) => githubHostOf(row.base_url)))].filter((host) => !isGithubCom(host));
   }
 
-  /** Reads a repository URL, knowing the Enterprise hosts Taico has connections to. */
-  async parseRepoUrl(url: string | null | undefined): Promise<GithubRepoRef | null> {
-    return parseGithubRepoUrl(url, await this.listEnterpriseHosts());
+  /** Reads a repository URL, knowing the Enterprise hosts the workspace has connections to. */
+  async parseRepoUrl(workspaceId: string, url: string | null | undefined): Promise<GithubRepoRef | null> {
+    return parseGithubRepoUrl(url, await this.listEnterpriseHosts(workspaceId));
   }
 
   /** Webhook address and secret for this connection; the secret is created on first use. */
-  async getWebhookSettings(id: string, createdByActorId: string): Promise<GithubWebhookSettings> {
-    const connection = await this.findEntity(id);
+  async getWebhookSettings(
+    workspaceId: string,
+    id: string,
+    createdByActorId: string,
+  ): Promise<GithubWebhookSettings> {
+    const connection = await this.findEntity(workspaceId, id);
     let secret: string;
     if (connection.webhookSecretId) {
-      secret = (await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.webhookSecretId)).value;
+      secret = (await this.secretsService.getSecretValue(workspaceId, connection.webhookSecretId)).value;
     } else {
       secret = randomBytes(32).toString('hex');
-      const stored = await this.secretsService.createSecret(UNSCOPED_MODULE_WORKSPACE_ID, {
+      const stored = await this.secretsService.createSecret(workspaceId, {
         name: `GitHub connection webhook: ${connection.name} (${Date.now()})`,
         description: `Webhook secret for the GitHub connection "${connection.name}"`,
         value: secret,
@@ -313,30 +328,35 @@ export class GithubConnectionsService {
       url: `${getConfig().issuerUrl.replace(/\/+$/, '')}/api/v1/integrations/github/webhooks/${connection.id}`,
       secret,
       lastDeliveryAt: connection.lastWebhookAt,
-      sources: await this.listWebhookSources(connection.id),
+      sources: await this.listWebhookSources(workspaceId, connection.id),
     };
   }
 
   /** Repositories and owners this connection received webhooks for, most recent first. */
-  async listWebhookSources(connectionId: string): Promise<GithubWebhookSource[]> {
+  async listWebhookSources(workspaceId: string, connectionId: string): Promise<GithubWebhookSource[]> {
     const rows = await this.webhookSources.find({
-      where: { connectionId },
+      where: { workspaceId, connectionId },
       order: { lastDeliveryAt: 'DESC' },
     });
     return rows.map((row) => this.mapWebhookSource(row));
   }
 
   /**
-   * The most recent webhook that covers a repository, through any connection
-   * to the repository's GitHub (github.com or an Enterprise host): one set up
-   * on the repository itself, or on its whole owner. Null when GitHub never
-   * sent one.
+   * The most recent webhook that covers a repository, through any of the
+   * workspace's connections to the repository's GitHub (github.com or an
+   * Enterprise host): one set up on the repository itself, or on its whole
+   * owner. Null when GitHub never sent one.
    */
-  async findWebhookCoverage(ref: { host: string; owner: string; repo: string }): Promise<GithubWebhookSource | null> {
+  async findWebhookCoverage(
+    workspaceId: string,
+    ref: { host: string; owner: string; repo: string },
+  ): Promise<GithubWebhookSource | null> {
     const rows = await this.webhookSources
       .createQueryBuilder('source')
       .innerJoinAndSelect('source.connection', 'connection')
-      .where('source.ownerKey = :owner', { owner: ref.owner.toLowerCase() })
+      .where('source.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('connection.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('source.ownerKey = :owner', { owner: ref.owner.toLowerCase() })
       .andWhere(`source.repoKey IN (:repo, '')`, { repo: ref.repo.toLowerCase() })
       .orderBy('source.lastDeliveryAt', 'DESC')
       .getMany();
@@ -346,23 +366,31 @@ export class GithubConnectionsService {
   }
 
   /** Whether a recent webhook covers the repository, so polling can slow down. */
-  async hasActiveWebhook(ref: { host: string; owner: string; repo: string }): Promise<boolean> {
-    return (await this.findWebhookCoverage(ref))?.active ?? false;
+  async hasActiveWebhook(workspaceId: string, ref: { host: string; owner: string; repo: string }): Promise<boolean> {
+    return (await this.findWebhookCoverage(workspaceId, ref))?.active ?? false;
   }
 
   /**
    * Checks GitHub's `X-Hub-Signature-256` over the exact bytes received, and
    * records the delivery when it matches: when it arrived, and which
-   * repository (or whole owner) the webhook covers. False for an unknown
+   * repository (or whole owner) the webhook covers. Null for an unknown
    * connection, a connection without webhook secret, or a bad signature.
+   *
+   * The webhook URL names only the connection, so this is the one lookup by
+   * id alone: the signature proves the delivery is for that connection, and
+   * everything the delivery does then happens in the connection's workspace.
    */
-  async acceptWebhookDelivery(id: string, delivery: GithubWebhookDelivery): Promise<boolean> {
+  async acceptWebhookDelivery(
+    id: string,
+    delivery: GithubWebhookDelivery,
+  ): Promise<AcceptedGithubWebhook | null> {
     const connection = await this.repository.findOne({ where: { id } });
-    if (!connection?.webhookSecretId || !delivery.signature?.startsWith('sha256=')) return false;
-    const secret = (await this.secretsService.getSecretValue(UNSCOPED_MODULE_WORKSPACE_ID, connection.webhookSecretId)).value;
+    if (!connection?.webhookSecretId || !delivery.signature?.startsWith('sha256=')) return null;
+    const secret = (await this.secretsService.getSecretValue(connection.workspaceId, connection.webhookSecretId))
+      .value;
     const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(delivery.rawBody).digest('hex')}`);
     const received = Buffer.from(delivery.signature);
-    if (expected.length !== received.length || !timingSafeEqual(expected, received)) return false;
+    if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
 
     const now = new Date();
     await this.repository.update({ id }, { lastWebhookAt: now });
@@ -379,6 +407,7 @@ export class GithubConnectionsService {
         .insert()
         .into(GithubWebhookSourceEntity)
         .values({
+          workspaceId: connection.workspaceId,
           connectionId: id,
           owner: coverage.owner,
           repo: coverage.repo,
@@ -390,14 +419,15 @@ export class GithubConnectionsService {
         .orUpdate(['owner', 'repo', 'last_delivery_at', 'last_event'], ['connection_id', 'owner_key', 'repo_key'])
         .execute();
     }
-    return true;
+    return { workspaceId: connection.workspaceId, host: githubHostOf(connection.baseUrl) };
   }
 
   /** What it takes to mint tokens for this connection (never the credential itself). */
-  async getCredentialSource(id: string): Promise<GithubCredentialSource> {
-    const connection = await this.findEntity(id);
+  async getCredentialSource(workspaceId: string, id: string): Promise<GithubCredentialSource> {
+    const connection = await this.findEntity(workspaceId, id);
     return {
       id: connection.id,
+      workspaceId: connection.workspaceId,
       authType: connection.authType,
       baseUrl: connection.baseUrl,
       secretId: connection.secretId,
@@ -407,12 +437,13 @@ export class GithubConnectionsService {
   }
 
   /** A token for Taico's own calls to GitHub through this connection. */
-  async getAccessToken(id: string): Promise<GithubAccessToken> {
-    return this.credentials.getAccessToken(await this.findEntity(id));
+  async getAccessToken(workspaceId: string, id: string): Promise<GithubAccessToken> {
+    return this.credentials.getAccessToken(await this.findEntity(workspaceId, id));
   }
 
-  private async findEntity(id: string): Promise<GithubConnectionEntity> {
-    const connection = await this.repository.findOne({ where: { id } });
+  /** A connection of another workspace is not found. */
+  private async findEntity(workspaceId: string, id: string): Promise<GithubConnectionEntity> {
+    const connection = await this.repository.findOne({ where: { workspaceId, id } });
     if (!connection) throw new GithubConnectionNotFoundError(id);
     return connection;
   }

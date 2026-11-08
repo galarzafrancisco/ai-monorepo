@@ -31,6 +31,10 @@ export class PullRequestReferenceEntity {
   @Column({ type: 'uuid', nullable: true, name: 'thread_id' })
   threadId!: string | null;
 
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 }

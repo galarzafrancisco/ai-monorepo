@@ -32,6 +32,8 @@ type ExistingChunk = { id: string; text_hash: string; model: string };
 /**
  * Embeds index rows in the background. Rows are claimed with a lease, so
  * several backend processes share the work without embedding anything twice.
+ * Each workspace's rows are embedded with that workspace's embeddings model,
+ * and a workspace without one is skipped.
  */
 @Injectable()
 export class SearchEmbedderService implements OnModuleDestroy {
@@ -90,13 +92,27 @@ export class SearchEmbedderService implements OnModuleDestroy {
     }
   }
 
-  /** Embeds up to one batch of out-of-date rows. Returns how many rows were brought up to date. */
+  /**
+   * Embeds up to one batch of out-of-date rows in each workspace. Returns how
+   * many rows were brought up to date.
+   */
   private async processBatch(): Promise<number> {
     const settings = await this.settingsService.get();
     if (!settings.semanticEnabled || !(await this.vectorStore.isAvailable())) {
       return 0;
     }
-    const model = await this.embeddings.resolveModel();
+    const workspaces: Array<{ id: string }> = await this.dataSource.query(
+      `SELECT "id" FROM "workspaces" WHERE "deleted_at" IS NULL ORDER BY "created_at"`,
+    );
+    let embedded = 0;
+    for (const workspace of workspaces) {
+      embedded += await this.processWorkspaceBatch(workspace.id, settings);
+    }
+    return embedded;
+  }
+
+  private async processWorkspaceBatch(workspaceId: string, settings: SearchSettings): Promise<number> {
+    const model = await this.embeddings.resolveModel(workspaceId);
     if (!model) {
       return 0;
     }
@@ -107,7 +123,8 @@ export class SearchEmbedderService implements OnModuleDestroy {
          UPDATE "search_documents" SET "embed_claimed_until" = now() + interval '${CLAIM_MINUTES} minutes'
          WHERE "id" IN (
            SELECT "id" FROM "search_documents"
-           WHERE "embedded_fingerprint" IS DISTINCT FROM md5("content_hash" || $1)
+           WHERE "workspace_id" = $2
+             AND "embedded_fingerprint" IS DISTINCT FROM md5("content_hash" || $1)
              AND ("embed_retry_at" IS NULL OR "embed_retry_at" <= now())
              AND ("embed_claimed_until" IS NULL OR "embed_claimed_until" <= now())
            ORDER BY "indexed_at"
@@ -117,7 +134,7 @@ export class SearchEmbedderService implements OnModuleDestroy {
          RETURNING "id", "entity_type", "title", "search_title", "body", "content_hash"
        )
        SELECT * FROM claimed`,
-      [configKey],
+      [configKey, workspaceId],
     );
     if (documents.length === 0) {
       return 0;

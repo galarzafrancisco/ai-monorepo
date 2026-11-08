@@ -107,23 +107,22 @@ export class ThreadWatchesService {
   }
 
   /**
-   * Active watches on a target, across threads. Watch targets (pull requests)
-   * have no workspace until phase 3e, and only the default workspace can
-   * watch one (PullRequestsService.lookup), so this is not scoped yet.
+   * Active watches on a target, across the workspace's threads. A watch
+   * target (a pull request) is in one workspace, and only its threads watch it.
    */
-  async listForTarget(kind: ThreadWatchKind, targetId: string): Promise<ThreadWatchResult[]> {
+  async listForTarget(workspaceId: string, kind: ThreadWatchKind, targetId: string): Promise<ThreadWatchResult[]> {
     const rows: Array<Record<string, unknown>> = await this.dataSource.query(
-      `SELECT * FROM thread_watches WHERE kind = $1 AND target_id = $2 AND expires_at > now() ORDER BY created_at ASC`,
-      [kind, targetId],
+      `SELECT * FROM thread_watches WHERE workspace_id = $3 AND kind = $1 AND target_id = $2 AND expires_at > now() ORDER BY created_at ASC`,
+      [kind, targetId, workspaceId],
     );
     return rows.map(toResult);
   }
 
   /** The latest expiry of the watches left on a target, or null when none are. */
-  async latestExpiry(kind: ThreadWatchKind, targetId: string): Promise<Date | null> {
+  async latestExpiry(workspaceId: string, kind: ThreadWatchKind, targetId: string): Promise<Date | null> {
     const rows: Array<{ until: Date | null }> = await this.dataSource.query(
-      `SELECT max(expires_at) AS until FROM thread_watches WHERE kind = $1 AND target_id = $2 AND expires_at > now()`,
-      [kind, targetId],
+      `SELECT max(expires_at) AS until FROM thread_watches WHERE workspace_id = $3 AND kind = $1 AND target_id = $2 AND expires_at > now()`,
+      [kind, targetId, workspaceId],
     );
     return rows[0]?.until ? new Date(rows[0].until) : null;
   }

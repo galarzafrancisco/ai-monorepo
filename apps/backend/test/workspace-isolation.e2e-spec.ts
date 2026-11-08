@@ -964,6 +964,26 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       expect(hitsB.map((hit: any) => hit.id)).not.toContain(threadA.id);
     });
 
+    it("filters by workspace before the limit, so A's matches never crowd out B's", async () => {
+      const word = `crowd${suffix}`;
+      for (let i = 0; i < 3; i++) {
+        await as(tokenA).post('/tasks/tasks').send({ name: `A ${word} ${i}`, description: word }).expect(201);
+      }
+      const taskB = (
+        await as(tokenB).post('/tasks/tasks').send({ name: `B ${word}`, description: word }).expect(201)
+      ).body;
+      const path = `/search/query?query=${encodeURIComponent(word)}&types=task&limit=1`;
+      let hitsB: any[] = [];
+      for (let attempt = 0; attempt < 20 && hitsB.length === 0; attempt++) {
+        await settle();
+        hitsB = (await as(tokenB).get(path).expect(200)).body;
+      }
+      expect(hitsB.map((hit: any) => hit.id)).toEqual([taskB.id]);
+      const hitsA = (await as(tokenA).get(path).expect(200)).body;
+      expect(hitsA).toHaveLength(1);
+      expect(hitsA[0].id).not.toBe(taskB.id);
+    });
+
     it('leaves agents out of global search for another workspace, even when the query matches', async () => {
       const canary = `agentcanary${suffix}`;
       const agent = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
@@ -1302,6 +1322,7 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
     beforeAll(async () => {
       const now = new Date();
       await app.get<Repository<PullRequestEntity>>(getRepositoryToken(PullRequestEntity)).insert({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         key: `${owner}/private#7`,
         owner,
         repo: 'private',
@@ -1310,6 +1331,7 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
         lastFetchedAt: now,
       });
       await app.get<Repository<IssueEntity>>(getRepositoryToken(IssueEntity)).insert({
+        workspaceId: DEFAULT_WORKSPACE_ID,
         key: `${owner}/private#8`,
         owner,
         repo: 'private',
@@ -1360,16 +1382,22 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       const { threadId, taskId } = await threadLinking(tokenB);
       await settle();
       expect(await linked(tokenB, threadId)).not.toContain(canary);
-      // The links are not recorded at all, so B never has them read from
-      // GitHub with the default workspace's connections.
-      const rows = await app
+      // The links are recorded against B's own copy of each pull request and
+      // issue, never A's, so B only ever has them read with B's connections.
+      const rows: Array<{ ref_ws: string; row_ws: string }> = await app
         .get(DataSource)
         .query(
-          `SELECT 1 FROM pull_request_references WHERE task_id = $1
-           UNION ALL SELECT 1 FROM issue_references WHERE task_id = $1`,
+          `SELECT r.workspace_id AS ref_ws, p.workspace_id AS row_ws
+             FROM pull_request_references r JOIN pull_requests p ON p.id = r.pull_request_id
+            WHERE r.task_id = $1
+           UNION ALL
+           SELECT r.workspace_id, i.workspace_id
+             FROM issue_references r JOIN issues i ON i.id = r.issue_id
+            WHERE r.task_id = $1`,
           [taskId],
         );
-      expect(rows).toHaveLength(0);
+      expect(rows).toHaveLength(2);
+      expect(rows.every((r) => r.ref_ws === WORKSPACE_B_ID && r.row_ws === WORKSPACE_B_ID)).toBe(true);
     });
 
     it("does not let a thread's agent read or watch them from another workspace", async () => {
@@ -1383,15 +1411,20 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
         forActorId: actorId,
       });
       const options = { toolCallId: 'call', messages: [] } as never;
-      await expect(
-        tools[GET_PULL_REQUEST_TOOL].execute!({ pullRequest: prUrl }, options),
-      ).rejects.toMatchObject({ code: 'NOT_IN_WORKSPACE' });
-      await expect(
-        tools[WATCH_PULL_REQUEST_TOOL].execute!(
-          { pullRequest: prUrl, for: ['merged'], waitingFor: 'x' },
-          options,
-        ),
-      ).rejects.toMatchObject({ code: 'NOT_IN_WORKSPACE' });
+      // B reads its own copy, which B's connections cannot see: never A's title.
+      const read = await tools[GET_PULL_REQUEST_TOOL].execute!({ pullRequest: prUrl }, options);
+      expect(JSON.stringify(read)).not.toContain(canary);
+      await tools[WATCH_PULL_REQUEST_TOOL].execute!(
+        { pullRequest: prUrl, for: ['merged'], waitingFor: 'x' },
+        options,
+      ).catch(() => undefined);
+      // Whatever B watches is B's copy, in B.
+      const watched: Array<{ workspace_id: string }> = await app.get(DataSource).query(
+        `SELECT p.workspace_id FROM thread_watches w JOIN pull_requests p ON p.id = w.target_id
+          WHERE w.thread_id = $1`,
+        [threadB.id],
+      );
+      expect(watched.every((w) => w.workspace_id === WORKSPACE_B_ID)).toBe(true);
     });
   });
 

@@ -14,7 +14,8 @@ import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.deco
  * carry a valid `X-Hub-Signature-256` made with the connection's webhook
  * secret. Deliveries only say "look again": the pull request or issue is then read
  * through the API like any other refresh, so a forged or replayed payload
- * cannot plant state.
+ * cannot plant state. A delivery only touches the workspace of the
+ * connection it came through.
  */
 @ApiExcludeController()
 @WorkspaceAccess('installation')
@@ -40,7 +41,7 @@ export class GithubWebhooksController {
   ): Promise<{ accepted: true }> {
     const rawBody = request.rawBody;
     const accepted =
-      !!rawBody &&
+      rawBody &&
       (await this.connections.acceptWebhookDelivery(connectionId, {
         rawBody,
         signature,
@@ -52,15 +53,15 @@ export class GithubWebhooksController {
       throw new UnauthorizedException('Invalid webhook signature');
     }
 
-    const { host } = await this.connections.getConnection(connectionId);
+    const { workspaceId, host } = accepted;
     for (const target of pullRequestTargetsOf(event, request.body)) {
-      const marked = await this.pullRequests.markChanged({ host, ...target });
+      const marked = await this.pullRequests.markChanged(workspaceId, { host, ...target });
       if (marked > 0) {
         this.logger.log({ message: 'Webhook marked pull requests for a fresh look', event, ...target, marked });
       }
     }
     for (const target of issueTargetsOf(event, request.body)) {
-      const marked = await this.issues.markChanged({ host, ...target });
+      const marked = await this.issues.markChanged(workspaceId, { host, ...target });
       if (marked > 0) {
         this.logger.log({ message: 'Webhook marked issues for a fresh look', event, ...target, marked });
       }

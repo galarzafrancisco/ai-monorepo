@@ -63,7 +63,7 @@ export class IndexSearchService {
     const types = input.types?.length ? [...input.types] : Object.values(SearchResultType);
 
     const startedAt = Date.now();
-    const vector = await this.embedQuery(query, settings);
+    const vector = await this.embedQuery(input.workspaceId, query, settings);
     const embeddedAt = Date.now();
 
     const strategies: SearchStrategy[] = [];
@@ -74,7 +74,15 @@ export class IndexSearchService {
       return [];
     }
 
-    const rows = await this.runQuery({ query, types, limit, settings, strategies, vector });
+    const rows = await this.runQuery({
+      workspaceId: input.workspaceId,
+      query,
+      types,
+      limit,
+      settings,
+      strategies,
+      vector,
+    });
     const results = rows.map((row) => toResult(row, settings, strategies));
 
     this.logger.log({
@@ -89,8 +97,15 @@ export class IndexSearchService {
     return results;
   }
 
-  /** The query's embedding, or null when semantic search cannot contribute to this request. */
-  private async embedQuery(query: string, settings: SearchSettings): Promise<QueryVector | null> {
+  /**
+   * The query's embedding with the workspace's embeddings model, or null when
+   * semantic search cannot contribute to this request.
+   */
+  private async embedQuery(
+    workspaceId: string,
+    query: string,
+    settings: SearchSettings,
+  ): Promise<QueryVector | null> {
     if (!settings.semanticEnabled || settings.semanticWeight <= 0) {
       return null;
     }
@@ -98,7 +113,7 @@ export class IndexSearchService {
       if (!(await this.vectorStore.isAvailable())) {
         return null;
       }
-      const model = await this.embeddings.resolveModel();
+      const model = await this.embeddings.resolveModel(workspaceId);
       if (!model) {
         return null;
       }
@@ -122,6 +137,7 @@ export class IndexSearchService {
   }
 
   private async runQuery(input: {
+    workspaceId: string;
     query: string;
     types: SearchResultType[];
     limit: number;
@@ -129,7 +145,7 @@ export class IndexSearchService {
     strategies: SearchStrategy[];
     vector: QueryVector | null;
   }): Promise<ResultRow[]> {
-    const { query, types, limit, settings, strategies, vector } = input;
+    const { workspaceId, query, types, limit, settings, strategies, vector } = input;
     const parameters: unknown[] = [];
     const bind = (value: unknown): string => {
       parameters.push(value);
@@ -137,6 +153,8 @@ export class IndexSearchService {
     };
 
     const q = bind(query);
+    // Every strategy reads only the workspace's rows.
+    const workspace = `${bind(workspaceId)}::uuid`;
     const typeList = `${bind(types)}::text[]`;
     const candidates = `${bind(settings.candidatesPerStrategy)}::int`;
     const rrfK = `${bind(settings.rrfK)}::float8`;
@@ -157,6 +175,7 @@ export class IndexSearchService {
                  row_number() OVER (ORDER BY ts_rank_cd(d."tsv", ${tsquery}, 1) DESC, d."id") AS rank
           FROM "search_documents" d, tsq
           WHERE ${condition}
+            AND d."workspace_id" = ${workspace}
             AND d."tsv" @@ ${tsquery} AND d."result_type" = ANY(${typeList})
             AND ts_rank_cd(d."tsv", ${tsquery}) >= ${minDensity}
           ORDER BY rank LIMIT ${candidates}
@@ -177,7 +196,8 @@ export class IndexSearchService {
           SELECT d."id" AS doc_id,
                  row_number() OVER (ORDER BY word_similarity(${q}, d."search_title") DESC, d."id") AS rank
           FROM "search_documents" d
-          WHERE ${q} <% d."search_title" AND d."result_type" = ANY(${typeList})
+          WHERE d."workspace_id" = ${workspace}
+            AND ${q} <% d."search_title" AND d."result_type" = ANY(${typeList})
           ORDER BY rank LIMIT ${candidates}
         )`);
       hits.push(
@@ -196,7 +216,7 @@ export class IndexSearchService {
           FROM "search_chunks" c
           JOIN "search_documents" d ON d."id" = c."document_id"
           WHERE c."dimensions" = ${dimensions} AND c."model" = ${bind(vector.modelKey)}
-            AND d."result_type" = ANY(${typeList})
+            AND d."workspace_id" = ${workspace} AND d."result_type" = ANY(${typeList})
           ORDER BY distance
           LIMIT ${candidates} * ${PASSAGES_PER_CANDIDATE}
         ),
@@ -279,6 +299,7 @@ export class IndexSearchService {
         -- The result's own row: a comment's row has a different entity type.
         JOIN "search_documents" p
           ON p."entity_type" = f."result_type" AND p."entity_id" = f."result_id"
+         AND p."workspace_id" = ${workspace}
         ORDER BY score DESC, ${tieBreak('f')}, p."title", f."result_id"
         LIMIT ${bind(limit)}::int
       ),

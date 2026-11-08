@@ -15,6 +15,7 @@ import { PullRequestsService } from '../src/pull-requests/pull-requests.service'
 import { ThreadWatchExpiryService } from '../src/threads/watches/thread-watch-expiry.service';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import { FakeGithub, FakePull, openFakePull, pullRequestRoutes } from './helpers/fake-github';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 
 type PromptMessage = { role: string; content: unknown };
 type ToolCall = { toolName: string; input: Record<string, unknown> };
@@ -115,7 +116,7 @@ describe('Thread pull request watches E2E', () => {
 
   const refreshPullRequest = async () => {
     const row = await pullRequestRow();
-    await app.get(PullRequestsService).refresh(row.id);
+    await app.get(PullRequestsService).refresh(DEFAULT_WORKSPACE_ID, row.id);
   };
 
   /** A thread whose agent started watching the pull request while answering the user. */

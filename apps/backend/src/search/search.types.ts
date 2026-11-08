@@ -55,6 +55,8 @@ export type SearchableEntity = {
 export type SearchEntityType = `${SearchResultType}` | 'comment';
 
 export type IndexSearchInput = {
+  /** Only items of this workspace are searched, by every strategy. */
+  workspaceId: string;
   query: string;
   /** Only these kinds of result. Everything when omitted. */
   types?: readonly SearchResultType[];

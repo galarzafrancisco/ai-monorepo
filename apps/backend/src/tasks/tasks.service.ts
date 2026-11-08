@@ -1435,12 +1435,13 @@ export class TasksService {
     input: SearchTasksInput,
   ): Promise<TaskSearchResult[]> {
     const results = await this.indexSearchService.search({
+      workspaceId,
       query: input.query,
       limit: input.limit,
       types: [SearchResultType.TASK],
     });
-    // The search index is not scoped by workspace yet (phase 3e): drop hits
-    // from other workspaces.
+    // The index only searches the workspace; checking the rows as well drops
+    // a hit whose task was deleted since it was indexed.
     const ids = results.map((result) => result.id);
     const inWorkspace =
       ids.length === 0

@@ -127,7 +127,7 @@ describe('Issues E2E', () => {
     // Nothing changed: GitHub answers 304 and nothing is emitted.
     github.requests.length = 0;
     events.length = 0;
-    await app.get(IssuesService).refresh(first.id);
+    await app.get(IssuesService).refresh(DEFAULT_WORKSPACE_ID, first.id);
     const repoRequests = github.requests.filter((r) => r.path.startsWith('/repos'));
     expect(repoRequests).toHaveLength(1);
     expect(repoRequests[0].ifNoneMatch).toBeTruthy();
@@ -141,12 +141,12 @@ describe('Issues E2E', () => {
 
     issue.state = 'closed';
     issue.stateReason = 'not_planned';
-    const closed = await app.get(IssuesService).refresh(first.id);
+    const closed = await app.get(IssuesService).refresh(DEFAULT_WORKSPACE_ID, first.id);
     expect(events.at(-1)!.changes).toEqual(['closed']);
     expect(closed.stateReason).toBe('not_planned');
     // Closed and nobody looking: not polled again on its own.
     await ds.query(`UPDATE issues SET last_viewed_at = NULL WHERE id = $1`, [first.id]);
-    expect((await app.get(IssuesService).refresh(first.id)).nextFetchAt).toBeNull();
+    expect((await app.get(IssuesService).refresh(DEFAULT_WORKSPACE_ID, first.id)).nextFetchAt).toBeNull();
   });
 
   it('notices issue links in tasks, comments and threads and lists those attached to a thread', async () => {
@@ -202,7 +202,7 @@ describe('Issues E2E', () => {
     expect(found).toMatchObject({ key: 'acme/api#5', owner: 'acme', repo: 'api', number: 5, title: 'Search is slow' });
 
     github.requests.length = 0;
-    await app.get(IssuesService).refresh(found.id);
+    await app.get(IssuesService).refresh(DEFAULT_WORKSPACE_ID, found.id);
     expect(github.requests.filter((r) => r.path.startsWith('/repos')).map((r) => r.path)).toEqual(['/repos/acme/api/issues/5']);
   });
 

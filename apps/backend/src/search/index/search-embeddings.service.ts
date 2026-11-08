@@ -9,7 +9,6 @@ import { createXai } from '@ai-sdk/xai';
 import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
 import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
 import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
-import { UNSCOPED_MODULE_WORKSPACE_ID } from 'src/workspaces/workspaces.constants';
 import { requireApiKey, vertexSettings } from 'src/ai-providers/google-environment';
 
 export type ResolvedEmbeddingModel = {
@@ -21,7 +20,11 @@ export type ResolvedEmbeddingModel = {
 
 const QUERY_CACHE_SIZE = 200;
 
-/** Turns text into embeddings with the model selected for the embeddings job. */
+/**
+ * Turns text into embeddings with the model a workspace selected for the
+ * embeddings job. Each workspace's index rows and searches use its own model
+ * and provider key.
+ */
 @Injectable()
 export class SearchEmbeddingsService {
   private readonly logger = new Logger(SearchEmbeddingsService.name);
@@ -30,13 +33,14 @@ export class SearchEmbeddingsService {
 
   constructor(private readonly aiModelSelectionsService: AiModelSelectionsService) {}
 
-  /** The selected embedding model, or null when none is selected or its provider is not usable. */
-  async resolveModel(): Promise<ResolvedEmbeddingModel | null> {
+  /**
+   * The workspace's selected embedding model, or null when none is selected or
+   * its provider is not usable.
+   */
+  async resolveModel(workspaceId: string): Promise<ResolvedEmbeddingModel | null> {
     try {
-      // The search index is installation-wide until phase 3e, so it embeds with
-      // the default workspace's embeddings model.
       const selection = await this.aiModelSelectionsService.resolve(
-        UNSCOPED_MODULE_WORKSPACE_ID,
+        workspaceId,
         AiModelJob.EMBEDDINGS,
       );
       const model = buildEmbeddingModel(selection.provider, selection.modelId);

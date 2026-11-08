@@ -52,7 +52,7 @@ import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.de
 
 @ApiTags('Tools')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('mcp')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(McpRegistryScopes.READ.id)
@@ -73,8 +73,11 @@ export class McpRegistryController {
     status: 409,
     description: 'Server with providedId already exists',
   })
-  async createServer(@Body() dto: CreateServerDto): Promise<ServerResponseDto> {
-    const server = await this.mcpRegistryService.createServer({
+  async createServer(
+    @Body() dto: CreateServerDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<ServerResponseDto> {
+    const server = await this.mcpRegistryService.createServer(workspaceId, {
       providedId: dto.providedId,
       name: dto.name,
       description: dto.description,
@@ -97,10 +100,11 @@ export class McpRegistryController {
     type: ServerListResponseDto,
   })
   async listServers(
+    @CurrentWorkspace() workspaceId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ): Promise<ServerListResponseDto> {
-    const result = await this.mcpRegistryService.listServers(page, limit);
+    const result = await this.mcpRegistryService.listServers(workspaceId, page, limit);
     return {
       items: result.items.map((server) => this.mapServerToResponse(server)),
       total: result.total,
@@ -118,9 +122,8 @@ export class McpRegistryController {
     type: ServerResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Server not found' })
-  // Workers of any workspace read Taico's baseline servers here; the service
-  // hides every other server outside the default workspace.
-  @WorkspaceAccess('scoped')
+  // Workers of any workspace also read Taico's baseline servers here, with
+  // Taico's built-in transport outside the workspace that holds them.
   async getServer(
     @Param('serverId') serverId: string,
     @CurrentWorkspace() workspaceId: string,
@@ -146,8 +149,9 @@ export class McpRegistryController {
   async updateServer(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: UpdateServerDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ServerResponseDto> {
-    const server = await this.mcpRegistryService.updateServer(serverId, dto);
+    const server = await this.mcpRegistryService.updateServer(workspaceId, serverId, dto);
     return this.mapServerToResponse(server);
   }
 
@@ -164,8 +168,9 @@ export class McpRegistryController {
   @ApiResponse({ status: 409, description: 'Server has dependencies' })
   async deleteServer(
     @Param('serverId', ParseUUIDPipe) serverId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<DeleteServerResponseDto> {
-    await this.mcpRegistryService.deleteServer(serverId);
+    await this.mcpRegistryService.deleteServer(workspaceId, serverId);
     return { message: 'Server deleted successfully' };
   }
 
@@ -191,8 +196,9 @@ export class McpRegistryController {
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body(new ParseArrayPipe({ items: CreateScopeDto, whitelist: true }))
     dto: CreateScopeDto[],
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScopeResponseDto[]> {
-    const scopes = await this.mcpRegistryService.createScopes(serverId, dto);
+    const scopes = await this.mcpRegistryService.createScopes(workspaceId, serverId, dto);
     return scopes.map((scope) => this.mapScopeToResponse(scope));
   }
 
@@ -207,8 +213,9 @@ export class McpRegistryController {
   @ApiResponse({ status: 404, description: 'Server not found' })
   async listScopes(
     @Param('serverId', ParseUUIDPipe) serverId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScopeResponseDto[]> {
-    const scopes = await this.mcpRegistryService.listScopesByServer(serverId);
+    const scopes = await this.mcpRegistryService.listScopesByServer(workspaceId, serverId);
     return scopes.map((scope) => this.mapScopeToResponse(scope));
   }
 
@@ -225,8 +232,9 @@ export class McpRegistryController {
   async getScope(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Param('scopeId') scopeId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ScopeResponseDto> {
-    const scope = await this.mcpRegistryService.getScope(scopeId, serverId);
+    const scope = await this.mcpRegistryService.getScope(workspaceId, scopeId, serverId);
     return this.mapScopeToResponse(scope);
   }
 
@@ -245,8 +253,9 @@ export class McpRegistryController {
   async deleteScope(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Param('scopeId') scopeId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<DeleteScopeResponseDto> {
-    await this.mcpRegistryService.deleteScope(scopeId, serverId);
+    await this.mcpRegistryService.deleteScope(workspaceId, scopeId, serverId);
     return { message: 'Scope deleted successfully' };
   }
 
@@ -266,8 +275,10 @@ export class McpRegistryController {
   async createConnection(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: CreateConnectionDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ConnectionResponseDto> {
     const connection = await this.mcpRegistryService.createConnection(
+      workspaceId,
       serverId,
       dto,
     );
@@ -285,9 +296,10 @@ export class McpRegistryController {
   @ApiResponse({ status: 404, description: 'Server not found' })
   async listConnections(
     @Param('serverId', ParseUUIDPipe) serverId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ConnectionResponseDto[]> {
     const connections =
-      await this.mcpRegistryService.listConnectionsByServer(serverId);
+      await this.mcpRegistryService.listConnectionsByServer(workspaceId, serverId);
     return connections.map((conn) => this.mapConnectionToResponse(conn));
   }
 
@@ -302,9 +314,10 @@ export class McpRegistryController {
   @ApiResponse({ status: 404, description: 'Connection not found' })
   async getConnection(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ConnectionResponseDto> {
     const connection =
-      await this.mcpRegistryService.getConnection(connectionId);
+      await this.mcpRegistryService.getConnection(workspaceId, connectionId);
     return this.mapConnectionToResponse(connection);
   }
 
@@ -322,8 +335,10 @@ export class McpRegistryController {
   async updateConnection(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
     @Body() dto: UpdateConnectionDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<ConnectionResponseDto> {
     const connection = await this.mcpRegistryService.updateConnection(
+      workspaceId,
       connectionId,
       dto,
     );
@@ -343,8 +358,9 @@ export class McpRegistryController {
   @ApiResponse({ status: 409, description: 'Connection has mappings' })
   async deleteConnection(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<DeleteConnectionResponseDto> {
-    await this.mcpRegistryService.deleteConnection(connectionId);
+    await this.mcpRegistryService.deleteConnection(workspaceId, connectionId);
     return { message: 'Connection deleted successfully' };
   }
 
@@ -364,8 +380,9 @@ export class McpRegistryController {
   async createMapping(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: CreateMappingDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<MappingResponseDto> {
-    const mapping = await this.mcpRegistryService.createMapping(serverId, dto);
+    const mapping = await this.mcpRegistryService.createMapping(workspaceId, serverId, dto);
     return this.mapMappingToResponse(mapping);
   }
 
@@ -382,8 +399,10 @@ export class McpRegistryController {
   async listMappings(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Param('scopeId') scopeId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<MappingResponseDto[]> {
     const mappings = await this.mcpRegistryService.listMappingsByScope(
+      workspaceId,
       scopeId,
       serverId,
     );
@@ -402,8 +421,9 @@ export class McpRegistryController {
   @ApiResponse({ status: 404, description: 'Mapping not found' })
   async deleteMapping(
     @Param('mappingId', ParseUUIDPipe) mappingId: string,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<DeleteMappingResponseDto> {
-    await this.mcpRegistryService.deleteMapping(mappingId);
+    await this.mcpRegistryService.deleteMapping(workspaceId, mappingId);
     return { message: 'Mapping deleted successfully' };
   }
 

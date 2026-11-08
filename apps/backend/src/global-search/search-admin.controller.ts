@@ -11,9 +11,13 @@ import { SearchIndexStatusDto } from './dto/search-index-status.dto';
 import { SearchSettingsDto } from './dto/search-settings.dto';
 import { UpdateSearchSettingsDto } from './dto/update-search-settings.dto';
 import { WorkspaceAccess } from '../auth/guards/decorators/workspace-access.decorator';
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 
 @ApiTags('Search')
 @ApiCookieAuth('JWT-Cookie')
+// The settings and the index are the installation's: only the default
+// workspace changes them (phase 4 moves this to the installation operator).
+// Every workspace reads the settings and its own part of the index.
 @WorkspaceAccess('default-only')
 @Controller('search')
 @UseGuards(AccessTokenGuard, ScopesGuard)
@@ -24,6 +28,7 @@ export class SearchAdminController {
   ) {}
 
   @Get('settings')
+  @WorkspaceAccess('scoped')
   @ApiOperation({ summary: 'Get the search settings' })
   @ApiOkResponse({ type: SearchSettingsDto, description: 'Every setting with its current value' })
   async getSearchSettings(): Promise<SearchSettingsDto> {
@@ -50,10 +55,11 @@ export class SearchAdminController {
   }
 
   @Get('index')
-  @ApiOperation({ summary: 'Get the state of the search index' })
+  @WorkspaceAccess('scoped')
+  @ApiOperation({ summary: "Get the state of the workspace's part of the search index" })
   @ApiOkResponse({ type: SearchIndexStatusDto, description: 'What is indexed and embedded' })
-  async getSearchIndexStatus(): Promise<SearchIndexStatusDto> {
-    return this.mapStatus(await this.searchIndexAdminService.getStatus());
+  async getSearchIndexStatus(@CurrentWorkspace() workspaceId: string): Promise<SearchIndexStatusDto> {
+    return this.mapStatus(await this.searchIndexAdminService.getStatus(workspaceId));
   }
 
   @Post('index/rebuild')
@@ -64,8 +70,8 @@ export class SearchAdminController {
       'Discards the index and builds it again. Keyword search is complete when this returns; embeddings are rebuilt in the background.',
   })
   @ApiOkResponse({ type: SearchIndexStatusDto, description: 'The index right after the rebuild started' })
-  async rebuildSearchIndex(): Promise<SearchIndexStatusDto> {
-    return this.mapStatus(await this.searchIndexAdminService.rebuild());
+  async rebuildSearchIndex(@CurrentWorkspace() workspaceId: string): Promise<SearchIndexStatusDto> {
+    return this.mapStatus(await this.searchIndexAdminService.rebuild(workspaceId));
   }
 
   private mapSettings(settings: SearchSettings): SearchSettingsDto {

@@ -84,3 +84,9 @@ export type GithubWebhookDelivery = {
   targetType: string | undefined;
   body: unknown;
 };
+
+/** A correctly signed delivery: the connection's workspace and GitHub host. */
+export type AcceptedGithubWebhook = {
+  workspaceId: string;
+  host: string;
+};

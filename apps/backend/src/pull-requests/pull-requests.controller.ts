@@ -16,7 +16,7 @@ import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.de
 
 @ApiTags('Pull requests')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('pull-requests')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class PullRequestsController {
@@ -35,7 +35,7 @@ export class PullRequestsController {
     @Body() dto: LookupPullRequestsDto,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<PullRequestResponseDto[]> {
-    const hosts = await this.pullRequests.listEnterpriseHosts();
+    const hosts = await this.pullRequests.listEnterpriseHosts(workspaceId);
     const refs: PullRequestRef[] = [];
     for (const value of dto.refs) {
       const ref = parsePullRequestRef(value, hosts);
@@ -51,8 +51,11 @@ export class PullRequestsController {
   @ApiOperation({ summary: 'Stored status of one pull request' })
   @ApiOkResponse({ type: PullRequestResponseDto })
   @ApiNotFoundResponse({ description: 'Pull request not found' })
-  async get(@Param() params: PullRequestParamsDto): Promise<PullRequestResponseDto> {
-    return toPullRequestResponse(await this.pullRequests.getById(params.id));
+  async get(
+    @Param() params: PullRequestParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<PullRequestResponseDto> {
+    return toPullRequestResponse(await this.pullRequests.getById(workspaceId, params.id));
   }
 
   @Post(':id/refresh')
@@ -61,7 +64,10 @@ export class PullRequestsController {
   @ApiOperation({ summary: 'Read the pull request from GitHub now' })
   @ApiOkResponse({ type: PullRequestResponseDto })
   @ApiNotFoundResponse({ description: 'Pull request not found' })
-  async refresh(@Param() params: PullRequestParamsDto): Promise<PullRequestResponseDto> {
-    return toPullRequestResponse(await this.pullRequests.refresh(params.id));
+  async refresh(
+    @Param() params: PullRequestParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<PullRequestResponseDto> {
+    return toPullRequestResponse(await this.pullRequests.refresh(workspaceId, params.id));
   }
 }

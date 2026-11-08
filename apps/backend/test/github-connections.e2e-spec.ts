@@ -11,6 +11,7 @@ import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { GithubConnectionsService } from '../src/integrations/github-connections.service';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import { FakeGithub, patUsers } from './helpers/fake-github';
+import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 
 const MISSING_ID = '00000000-0000-4000-8000-000000000000';
 
@@ -77,7 +78,7 @@ describe('GitHub connections E2E', () => {
     expect(github.requests[0].authorization).toBe('Bearer good-token');
     expect(await liveSecrets()).toBe(secretsBefore + 1);
 
-    const token = await app.get(GithubConnectionsService).getAccessToken(created.body.id);
+    const token = await app.get(GithubConnectionsService).getAccessToken(DEFAULT_WORKSPACE_ID, created.body.id);
     expect(token).toEqual({ token: 'good-token', expiresAt: null });
   });
 
@@ -125,8 +126,8 @@ describe('GitHub connections E2E', () => {
     expect(created.body).toMatchObject({ authType: 'app', appId: '42', installationId: '7', accountLogin: 'acme', owners: ['acme'] });
 
     const service = app.get(GithubConnectionsService);
-    const first = await service.getAccessToken(created.body.id);
-    const second = await service.getAccessToken(created.body.id);
+    const first = await service.getAccessToken(DEFAULT_WORKSPACE_ID, created.body.id);
+    const second = await service.getAccessToken(DEFAULT_WORKSPACE_ID, created.body.id);
     expect(first.token).toBe('ghs_installation');
     expect(second).toBe(first);
     expect(github.requests.filter((r) => r.path.endsWith('/access_tokens'))).toHaveLength(1);
@@ -197,7 +198,7 @@ describe('GitHub connections E2E', () => {
     github.routes = [patUsers({ fresh: 'alice' })];
     const updated = (await api('patch', `/integrations/github/connections/${connection.id}`).send({ secret: 'fresh' }).expect(200)).body;
     expect(updated.lastError).toBeNull();
-    expect((await app.get(GithubConnectionsService).getAccessToken(connection.id)).token).toBe('fresh');
+    expect((await app.get(GithubConnectionsService).getAccessToken(DEFAULT_WORKSPACE_ID, connection.id)).token).toBe('fresh');
   });
 
   it('talks to a GitHub Enterprise Server at its own address and keeps it apart from github.com', async () => {

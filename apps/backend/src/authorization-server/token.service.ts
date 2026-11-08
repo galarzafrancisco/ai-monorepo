@@ -31,6 +31,7 @@ import {
   RefreshTokenRevokedError,
   TokenServerMismatchError,
   TokenResourceMismatchError,
+  TokenActorNotInWorkspaceError,
 } from './errors/token.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
@@ -40,6 +41,7 @@ import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
 import { MCP_SERVER_AUTH_TYPE_EXTERNAL } from '../mcp-registry/mcp-server.types';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
+import { mcpServerRequiresTaicoAuth } from '@taico/shared';
 import { ServerUsesExternalAuthError } from '../mcp-registry/errors/mcp-registry.errors';
 import {
   MCP_AUTH_SERVER_VERSION,
@@ -429,7 +431,8 @@ export class TokenService {
     // The audience is the server's canonical resource URI (RFC 8707), derived
     // from the server the grant is bound to, never from client input.
     const serverResource = getMcpServerResourceUrl(mcpAuthFlow.server);
-    const workspaceId = await this.workspacesService.findWorkspaceIdForActor(
+    const workspaceId = await this.workspaceForServerToken(
+      mcpAuthFlow.server,
       mcpAuthFlow.authJourney.actor.id,
     );
     const payload: AccessTokenClaims = {
@@ -456,6 +459,27 @@ export class TokenService {
     const jwt = await this.tokenSignerService.signToken(payload);
 
     return jwt;
+  }
+
+  /**
+   * The workspace an MCP token works in. Taico's own servers (tasks, context
+   * and the auth targets) serve every workspace, so their tokens are for the
+   * person's workspace. Any other server belongs to one workspace: its token
+   * is for that workspace, and only its members get one. Checked again on
+   * every refresh, so a person removed from the workspace stops getting
+   * tokens for its servers.
+   */
+  private async workspaceForServerToken(
+    server: { providedId: string; workspaceId: string },
+    actorId: string,
+  ): Promise<string | null> {
+    if (mcpServerRequiresTaicoAuth(server.providedId)) {
+      return this.workspacesService.findWorkspaceIdForActor(actorId);
+    }
+    if (!(await this.workspacesService.isMember(server.workspaceId, actorId))) {
+      throw new TokenActorNotInWorkspaceError(actorId, server.workspaceId);
+    }
+    return server.workspaceId;
   }
 
   /**

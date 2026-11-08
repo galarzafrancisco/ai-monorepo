@@ -16,7 +16,7 @@ import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.de
 
 @ApiTags('Issues')
 @ApiCookieAuth('JWT-Cookie')
-@WorkspaceAccess('default-only')
+@WorkspaceAccess('scoped')
 @Controller('issues')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 export class IssuesController {
@@ -35,7 +35,7 @@ export class IssuesController {
     @Body() dto: LookupIssuesDto,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<IssueResponseDto[]> {
-    const hosts = await this.issues.listEnterpriseHosts();
+    const hosts = await this.issues.listEnterpriseHosts(workspaceId);
     const refs: IssueRef[] = [];
     for (const value of dto.refs) {
       const ref = parseIssueRef(value, hosts);
@@ -51,8 +51,11 @@ export class IssuesController {
   @ApiOperation({ summary: 'Stored status of one issue' })
   @ApiOkResponse({ type: IssueResponseDto })
   @ApiNotFoundResponse({ description: 'Issue not found' })
-  async get(@Param() params: IssueParamsDto): Promise<IssueResponseDto> {
-    return toIssueResponse(await this.issues.getById(params.id));
+  async get(
+    @Param() params: IssueParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<IssueResponseDto> {
+    return toIssueResponse(await this.issues.getById(workspaceId, params.id));
   }
 
   @Post(':id/refresh')
@@ -61,7 +64,10 @@ export class IssuesController {
   @ApiOperation({ summary: 'Read the issue from GitHub now' })
   @ApiOkResponse({ type: IssueResponseDto })
   @ApiNotFoundResponse({ description: 'Issue not found' })
-  async refresh(@Param() params: IssueParamsDto): Promise<IssueResponseDto> {
-    return toIssueResponse(await this.issues.refresh(params.id));
+  async refresh(
+    @Param() params: IssueParamsDto,
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<IssueResponseDto> {
+    return toIssueResponse(await this.issues.refresh(workspaceId, params.id));
   }
 }

@@ -35,13 +35,15 @@ export class ProjectsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  /** A project can only name a GitHub connection of its own workspace. */
   private async assertGithubConnectionExists(
+    workspaceId: string,
     connectionId: string | null | undefined,
   ): Promise<void> {
     if (!connectionId) return;
     const rows: unknown[] = await this.dataSource.query(
-      'SELECT 1 FROM github_connections WHERE id = $1',
-      [connectionId],
+      'SELECT 1 FROM github_connections WHERE workspace_id = $1 AND id = $2',
+      [workspaceId, connectionId],
     );
     if (rows.length === 0)
       throw new GithubConnectionNotFoundError(connectionId);
@@ -59,7 +61,7 @@ export class ProjectsService {
       slug: input.slug,
     });
 
-    await this.assertGithubConnectionExists(input.githubConnectionId);
+    await this.assertGithubConnectionExists(workspaceId, input.githubConnectionId);
 
     // Create tag with project: prefix
     const tagName = `project:${input.slug}`;
@@ -229,7 +231,7 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    await this.assertGithubConnectionExists(input.githubConnectionId);
+    await this.assertGithubConnectionExists(workspaceId, input.githubConnectionId);
 
     // Update only provided fields
     if (input.description !== undefined) {

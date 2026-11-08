@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { McpScopeEntity } from './mcp-scope.entity';
 import { McpConnectionEntity } from './mcp-connection.entity';
@@ -20,6 +21,10 @@ import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.enti
 export class McpServerEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   providedId!: string;

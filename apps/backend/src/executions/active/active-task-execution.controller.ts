@@ -169,7 +169,8 @@ export class ActiveTaskExecutionController {
     try {
       const caller = workerCaller(auth);
       const taskId = await this.activeTaskExecutionService.getTaskIdForWorker(caller, executionId);
-      const credentials = await this.workerGithubCredentials.issueForTask(taskId, {
+      // The execution was found in the caller's workspace, so its task is there too.
+      const credentials = await this.workerGithubCredentials.issueForTask(caller.workspaceId, taskId, {
         executionId,
         workerClientId: caller.workerClientId,
       });

@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { Brackets, In, QueryFailedError, Repository } from 'typeorm';
 import { baselineServerUrl, isBaselineProvidedId } from './baseline-servers';
-import { holdsUnscopedModuleData } from '../workspaces/unscoped-modules';
 import {
   McpServerEntity,
   McpScopeEntity,
@@ -40,7 +39,7 @@ import {
   ServerUsesExternalAuthError,
   ServerRequiresTaicoAuthError,
 } from './errors/mcp-registry.errors';
-import { mcpServerRequiresTaicoAuth } from '@taico/shared';
+import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS, mcpServerRequiresTaicoAuth } from '@taico/shared';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.entity';
 import {
@@ -71,11 +70,19 @@ export class McpRegistryService {
 
   // Server CRUD operations
 
-  async createServer(input: CreateServerInput): Promise<ServerRecord> {
+  /**
+   * A server is created in the caller's workspace. Its `providedId` must be
+   * free across the installation, not just the workspace: it names the
+   * server's OAuth resource (`/mcp/<providedId>/...`), and those URLs carry
+   * no workspace.
+   */
+  async createServer(
+    workspaceId: string,
+    input: CreateServerInput,
+  ): Promise<ServerRecord> {
     this.validateServerConfiguration(input);
     this.assertAuthTypeAllowed(input.providedId, input.authType);
 
-    // Check for duplicate providedId
     const existing = await this.serverRepository.findOne({
       where: { providedId: input.providedId },
     });
@@ -86,6 +93,7 @@ export class McpRegistryService {
 
     const server = this.serverRepository.create({
       ...input,
+      workspaceId,
       authType: input.authType ?? MCP_SERVER_AUTH_TYPE_TAICO,
     });
     try {
@@ -102,7 +110,14 @@ export class McpRegistryService {
     }
   }
 
+  /**
+   * The workspace's servers, plus Taico's baseline servers (`tasks`,
+   * `context`), which every workspace uses. Outside the workspace that holds
+   * them, the baseline servers are shown with Taico's built-in transport
+   * (see getServerForWorkspace).
+   */
   async listServers(
+    workspaceId: string,
     page: number = 1,
     limit: number = 50,
   ): Promise<ListServersResult> {
@@ -111,6 +126,15 @@ export class McpRegistryService {
       .where('server.providedId != :internalTargetId', {
         internalTargetId: INTERNAL_WORKER_AUTH_TARGET_ID,
       })
+      .andWhere(
+        new Brackets((visible) =>
+          visible
+            .where('server.workspaceId = :workspaceId', { workspaceId })
+            .orWhere('server.providedId IN (:...baseline)', {
+              baseline: [...BASELINE_SYSTEM_TOOL_PROVIDED_IDS],
+            }),
+        ),
+      )
       .orderBy('server.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -118,7 +142,11 @@ export class McpRegistryService {
     const [items, total] = await query.getManyAndCount();
 
     return {
-      items: items.map((server) => this.mapServerEntityToRecord(server)),
+      items: items.map((server) =>
+        server.workspaceId === workspaceId
+          ? this.mapServerEntityToRecord(server)
+          : this.baselineServerView(server),
+      ),
       total,
       page,
       limit,
@@ -126,47 +154,51 @@ export class McpRegistryService {
   }
 
   /**
-   * A server by UUID or provided ID, as seen from a workspace. Registry rows
-   * are default-workspace data until phase 3e, so other workspaces see only
-   * Taico's own baseline servers (`tasks`, `context`): every agent gets them,
-   * and a worker needs their config to run an agent of any workspace.
+   * A server by UUID or provided ID, as seen from a workspace: one of its
+   * own servers, or one of Taico's baseline servers (`tasks`, `context`),
+   * which every agent gets and a worker needs to run an agent of any
+   * workspace. Any other workspace's server is not found.
    *
-   * Outside the default workspace the transport comes from Taico's built-in
-   * definition, not from the row. The default workspace can edit the row (URL,
-   * type, command), and the worker sends the agent's token to that transport.
-   * A row edited to point elsewhere must not receive another workspace's
-   * token, or make that workspace's worker run a command.
+   * Outside the workspace that holds them, the baseline servers' transport
+   * comes from Taico's built-in definition, not from the row. The workspace
+   * holding the row can edit it (URL, type, command), and the worker sends
+   * the agent's token to that transport. A row edited to point elsewhere must
+   * not receive another workspace's token, or make that workspace's worker
+   * run a command.
    */
   async getServerForWorkspace(
     workspaceId: string,
     idOrProvidedId: string,
     isUuid: boolean,
   ): Promise<ServerWithRelationsRecord> {
-    const server = isUuid
-      ? await this.getServerById(idOrProvidedId)
-      : await this.getServerByProvidedId(idOrProvidedId);
-    if (holdsUnscopedModuleData(workspaceId)) {
-      return server;
+    const server = await this.serverRepository.findOne({
+      where: isUuid ? { id: idOrProvidedId } : { providedId: idOrProvidedId },
+      relations: ['scopes', 'connections'],
+    });
+    if (!server) {
+      throw new ServerNotFoundError(idOrProvidedId);
+    }
+    if (server.workspaceId === workspaceId) {
+      return this.mapServerWithRelations(server);
     }
     if (!isBaselineProvidedId(server.providedId)) {
       throw new ServerNotFoundError(idOrProvidedId);
     }
     return {
-      id: server.id,
-      providedId: server.providedId,
-      name: server.name,
-      description: server.description,
-      authType: MCP_SERVER_AUTH_TYPE_TAICO,
-      requiresTaicoAuth: mcpServerRequiresTaicoAuth(server.providedId),
-      type: MCP_SERVER_TYPE_HTTP,
-      url: baselineServerUrl(server.providedId),
-      createdAt: server.createdAt,
-      updatedAt: server.updatedAt,
-      scopes: server.scopes,
+      ...this.baselineServerView(server),
+      scopes: (server.scopes ?? []).map((scope) =>
+        this.mapScopeEntityToRecord(scope),
+      ),
       connections: [],
     };
   }
 
+  /**
+   * A server by UUID, in whatever workspace it is. Only for the
+   * authorization server and auth journeys, which address MCP servers by
+   * their OAuth resource (installation-wide) and check the caller's
+   * membership of the server's workspace themselves.
+   */
   async getServerById(id: string): Promise<ServerWithRelationsRecord> {
     const server = await this.serverRepository.findOne({
       where: { id },
@@ -177,17 +209,10 @@ export class McpRegistryService {
       throw new ServerNotFoundError(id);
     }
 
-    return {
-      ...this.mapServerEntityToRecord(server),
-      scopes: (server.scopes ?? []).map((scope) =>
-        this.mapScopeEntityToRecord(scope),
-      ),
-      connections: (server.connections ?? []).map((connection) =>
-        this.mapConnectionEntityToRecord(connection),
-      ),
-    };
+    return this.mapServerWithRelations(server);
   }
 
+  /** A server by provided ID, in whatever workspace it is. Same rule as getServerById. */
   async getServerByProvidedId(
     providedId: string,
   ): Promise<ServerWithRelationsRecord> {
@@ -200,15 +225,7 @@ export class McpRegistryService {
       throw new ServerNotFoundError(providedId);
     }
 
-    return {
-      ...this.mapServerEntityToRecord(server),
-      scopes: (server.scopes ?? []).map((scope) =>
-        this.mapScopeEntityToRecord(scope),
-      ),
-      connections: (server.connections ?? []).map((connection) =>
-        this.mapConnectionEntityToRecord(connection),
-      ),
-    };
+    return this.mapServerWithRelations(server);
   }
 
   /**
@@ -291,16 +308,11 @@ export class McpRegistryService {
   }
 
   async updateServer(
+    workspaceId: string,
     serverId: string,
     input: UpdateServerInput,
   ): Promise<ServerRecord> {
-    const server = await this.serverRepository.findOne({
-      where: { id: serverId },
-    });
-
-    if (!server) {
-      throw new ServerNotFoundError(serverId);
-    }
+    const server = await this.findOwnServer(workspaceId, serverId);
 
     this.validateServerConfiguration({
       type: (input.type ?? server.type) as McpServerType,
@@ -314,24 +326,26 @@ export class McpRegistryService {
     // Skip undefined values — DTO class fields are initialized to undefined by
     // TypeScript (ES2023 target), so a plain Object.assign would overwrite valid
     // entity fields with undefined for any key not present in the request body.
+    // The workspace is never taken from the input.
     Object.assign(server, Object.fromEntries(
-      Object.entries(input).filter(([, v]) => v !== undefined),
+      Object.entries(input).filter(([key, v]) => v !== undefined && key !== 'workspaceId'),
     ));
 
     const updatedServer = await this.serverRepository.save(server);
     return this.mapServerEntityToRecord(updatedServer);
   }
 
-  async deleteServer(id: string): Promise<void> {
-    await this.assertServerExists(id);
+  async deleteServer(workspaceId: string, id: string): Promise<void> {
+    await this.findOwnServer(workspaceId, id);
 
     // Check for dependencies
     const scopeCount = await this.scopeRepository.count({
-      where: { serverId: id },
+      where: { workspaceId, serverId: id },
     });
     const connectionCount = await this.connectionRepository.count({
-      where: { serverId: id },
+      where: { workspaceId, serverId: id },
     });
+    // Grants from any workspace keep the server; only its own agents can hold one.
     const agentPermissionCount = await this.serverRepository.manager.count(
       AgentToolPermissionEntity,
       {
@@ -343,12 +357,13 @@ export class McpRegistryService {
       throw new ServerHasDependenciesError(id);
     }
 
-    await this.serverRepository.softDelete(id);
+    await this.serverRepository.softDelete({ workspaceId, id });
   }
 
   // Scope CRUD operations
 
   async createScopes(
+    workspaceId: string,
     serverId: string,
     scopes: Scope[],
   ): Promise<ScopeRecord[]> {
@@ -356,8 +371,8 @@ export class McpRegistryService {
       return [];
     }
 
-    await this.assertServerExists(serverId);
-    await this.assertHttpServer(serverId, 'Scopes are only supported for HTTP servers.');
+    const server = await this.findOwnServer(workspaceId, serverId);
+    this.assertHttpServer(server, 'Scopes are only supported for HTTP servers.');
 
     const scopeIds = scopes.map((input) => input.id);
     const duplicateScopeId = this.findDuplicate(scopeIds);
@@ -379,8 +394,10 @@ export class McpRegistryService {
 
     const scopeEntities = scopes.map((scope) =>
       this.scopeRepository.create({
-        ...scope,
+        id: scope.id,
+        description: scope.description,
         serverId,
+        workspaceId,
       }),
     );
 
@@ -388,9 +405,12 @@ export class McpRegistryService {
     return savedScopes.map((scope) => this.mapScopeEntityToRecord(scope));
   }
 
-  async listScopesByServer(serverId: string): Promise<ScopeRecord[]> {
-    // Verify server exists
-    await this.assertServerExists(serverId);
+  /** Scopes of one of the workspace's servers, or of a baseline server. */
+  async listScopesByServer(
+    workspaceId: string,
+    serverId: string,
+  ): Promise<ScopeRecord[]> {
+    await this.findVisibleServer(workspaceId, serverId);
 
     const scopes = await this.scopeRepository.find({
       where: { serverId },
@@ -400,10 +420,17 @@ export class McpRegistryService {
     return scopes.map((scope) => this.mapScopeEntityToRecord(scope));
   }
 
+  /**
+   * A scope of one of the workspace's servers, or of a baseline server. A
+   * baseline server's mappings belong to the workspace that holds it, so other
+   * workspaces see none.
+   */
   async getScope(
+    workspaceId: string,
     id: string,
     serverId: string,
   ): Promise<ScopeWithMappingsRecord> {
+    const server = await this.findVisibleServer(workspaceId, serverId);
     const scope = await this.scopeRepository.findOne({
       where: { id, serverId },
       relations: ['mappings', 'mappings.connection'],
@@ -413,45 +440,53 @@ export class McpRegistryService {
       throw new ScopeNotFoundError(id, serverId);
     }
 
+    const ownServer = server.workspaceId === workspaceId;
     return {
       ...this.mapScopeEntityToRecord(scope),
-      mappings: (scope.mappings ?? []).map((mapping) =>
-        this.mapMappingEntityToRecord(mapping),
-      ),
+      mappings: ownServer
+        ? (scope.mappings ?? []).map((mapping) =>
+            this.mapMappingEntityToRecord(mapping),
+          )
+        : [],
     };
   }
 
-  async deleteScope(id: string, serverId: string): Promise<void> {
+  async deleteScope(
+    workspaceId: string,
+    id: string,
+    serverId: string,
+  ): Promise<void> {
+    await this.findOwnServer(workspaceId, serverId);
     await this.assertScopeExists(id, serverId);
 
     // Check for mappings
     const mappingCount = await this.mappingRepository.count({
-      where: { id, serverId },
+      where: { scopeId: id, serverId },
     });
 
     if (mappingCount > 0) {
       throw new ScopeHasMappingsError(id);
     }
 
-    await this.scopeRepository.softDelete({ id, serverId });
+    await this.scopeRepository.softDelete({ workspaceId, id, serverId });
   }
 
   // Connection CRUD operations
 
   async createConnection(
+    workspaceId: string,
     serverId: string,
     input: CreateConnectionInput,
   ): Promise<ConnectionRecord> {
-    // Verify server exists
-    await this.assertServerExists(serverId);
-    await this.assertHttpServer(
-      serverId,
+    const server = await this.findOwnServer(workspaceId, serverId);
+    this.assertHttpServer(
+      server,
       'Connections are only supported for HTTP servers.',
     );
 
     // Check for duplicate friendly name per server
     const existing = await this.connectionRepository.findOne({
-      where: { serverId, friendlyName: input.friendlyName },
+      where: { workspaceId, serverId, friendlyName: input.friendlyName },
     });
 
     if (existing) {
@@ -460,6 +495,7 @@ export class McpRegistryService {
 
     const connection = this.connectionRepository.create({
       ...input,
+      workspaceId,
       serverId,
     });
 
@@ -467,12 +503,14 @@ export class McpRegistryService {
     return this.mapConnectionEntityToRecord(savedConnection);
   }
 
-  async listConnectionsByServer(serverId: string): Promise<ConnectionRecord[]> {
-    // Verify server exists
-    await this.assertServerExists(serverId);
+  async listConnectionsByServer(
+    workspaceId: string,
+    serverId: string,
+  ): Promise<ConnectionRecord[]> {
+    await this.findOwnServer(workspaceId, serverId);
 
     const connections = await this.connectionRepository.find({
-      where: { serverId },
+      where: { workspaceId, serverId },
       order: { friendlyName: 'ASC' },
     });
 
@@ -482,10 +520,11 @@ export class McpRegistryService {
   }
 
   async getConnection(
+    workspaceId: string,
     connectionId: string,
   ): Promise<ConnectionWithMappingsRecord> {
     const connection = await this.connectionRepository.findOne({
-      where: { id: connectionId },
+      where: { workspaceId, id: connectionId },
       relations: ['server', 'mappings'],
     });
 
@@ -502,11 +541,12 @@ export class McpRegistryService {
   }
 
   async updateConnection(
+    workspaceId: string,
     connectionId: string,
     input: UpdateConnectionInput,
   ): Promise<ConnectionRecord> {
     const connection = await this.connectionRepository.findOne({
-      where: { id: connectionId },
+      where: { workspaceId, id: connectionId },
     });
 
     if (!connection) {
@@ -517,6 +557,7 @@ export class McpRegistryService {
     if (input.friendlyName && input.friendlyName !== connection.friendlyName) {
       const existing = await this.connectionRepository.findOne({
         where: {
+          workspaceId,
           serverId: connection.serverId,
           friendlyName: input.friendlyName,
         },
@@ -530,16 +571,27 @@ export class McpRegistryService {
       }
     }
 
-    // Update only provided fields
-    Object.assign(connection, input);
+    // Update only provided fields; the workspace and server stay.
+    Object.assign(
+      connection,
+      Object.fromEntries(
+        Object.entries(input).filter(
+          ([key, value]) =>
+            value !== undefined && key !== 'workspaceId' && key !== 'serverId',
+        ),
+      ),
+    );
 
     const updatedConnection = await this.connectionRepository.save(connection);
     return this.mapConnectionEntityToRecord(updatedConnection);
   }
 
-  async deleteConnection(connectionId: string): Promise<void> {
+  async deleteConnection(
+    workspaceId: string,
+    connectionId: string,
+  ): Promise<void> {
     const connection = await this.connectionRepository.findOne({
-      where: { id: connectionId },
+      where: { workspaceId, id: connectionId },
     });
 
     if (!connection) {
@@ -555,17 +607,19 @@ export class McpRegistryService {
       throw new ConnectionHasMappingsError(connectionId);
     }
 
-    await this.connectionRepository.softDelete(connectionId);
+    await this.connectionRepository.softDelete({ workspaceId, id: connectionId });
   }
 
   // Mapping CRUD operations
 
   async createMapping(
+    workspaceId: string,
     serverId: string,
     input: CreateMappingInput,
   ): Promise<MappingRecord> {
-    await this.assertHttpServer(
-      serverId,
+    const server = await this.findOwnServer(workspaceId, serverId);
+    this.assertHttpServer(
+      server,
       'Scope mappings are only supported for HTTP servers.',
     );
 
@@ -574,7 +628,7 @@ export class McpRegistryService {
 
     // Verify connection exists and belongs to the same server
     const connection = await this.connectionRepository.findOne({
-      where: { id: input.connectionId },
+      where: { workspaceId, id: input.connectionId },
     });
 
     if (!connection) {
@@ -588,7 +642,10 @@ export class McpRegistryService {
     }
 
     const mapping = this.mappingRepository.create({
-      ...input,
+      scopeId: input.scopeId,
+      connectionId: input.connectionId,
+      downstreamScope: input.downstreamScope,
+      workspaceId,
       serverId,
     });
 
@@ -609,14 +666,15 @@ export class McpRegistryService {
   }
 
   async listMappingsByScope(
+    workspaceId: string,
     scopeId: string,
     serverId: string,
   ): Promise<MappingRecord[]> {
-    // Verify scope exists
+    await this.findOwnServer(workspaceId, serverId);
     await this.assertScopeExists(scopeId, serverId);
 
     const mappings = await this.mappingRepository.find({
-      where: { scopeId, serverId },
+      where: { workspaceId, scopeId, serverId },
       relations: ['connection'],
       order: { downstreamScope: 'ASC' },
     });
@@ -624,26 +682,47 @@ export class McpRegistryService {
     return mappings.map((mapping) => this.mapMappingEntityToRecord(mapping));
   }
 
-  async deleteMapping(mappingId: string): Promise<void> {
+  async deleteMapping(workspaceId: string, mappingId: string): Promise<void> {
     const mapping = await this.mappingRepository.findOne({
-      where: { id: mappingId },
+      where: { workspaceId, id: mappingId },
     });
 
     if (!mapping) {
       throw new MappingNotFoundError(mappingId);
     }
 
-    await this.mappingRepository.softDelete(mappingId);
+    await this.mappingRepository.softDelete({ workspaceId, id: mappingId });
   }
 
-  private async assertServerExists(serverId: string): Promise<void> {
-    const exists = await this.serverRepository.exist({
-      where: { id: serverId },
+  /** One of the workspace's own servers; any other answers "not found". */
+  private async findOwnServer(
+    workspaceId: string,
+    serverId: string,
+  ): Promise<McpServerEntity> {
+    const server = await this.serverRepository.findOne({
+      where: { workspaceId, id: serverId },
     });
-
-    if (!exists) {
+    if (!server) {
       throw new ServerNotFoundError(serverId);
     }
+    return server;
+  }
+
+  /** One of the workspace's servers, or a baseline server, which every workspace reads. */
+  private async findVisibleServer(
+    workspaceId: string,
+    serverId: string,
+  ): Promise<McpServerEntity> {
+    const server = await this.serverRepository.findOne({
+      where: { id: serverId },
+    });
+    if (
+      !server ||
+      (server.workspaceId !== workspaceId && !isBaselineProvidedId(server.providedId))
+    ) {
+      throw new ServerNotFoundError(serverId);
+    }
+    return server;
   }
 
   private async assertScopeExists(id: string, serverId: string): Promise<void> {
@@ -656,19 +735,47 @@ export class McpRegistryService {
     }
   }
 
-  private async assertHttpServer(serverId: string, message: string): Promise<void> {
-    const server = await this.serverRepository.findOne({
-      where: { id: serverId },
-      select: ['type'],
-    });
-
-    if (!server) {
-      throw new ServerNotFoundError(serverId);
-    }
-
+  private assertHttpServer(server: McpServerEntity, message: string): void {
     if (server.type !== MCP_SERVER_TYPE_HTTP) {
       throw new InvalidServerConfigurationError(message);
     }
+  }
+
+  /**
+   * A baseline server as other workspaces see it: Taico's built-in transport
+   * (HTTP, Taico auth, issuer URL plus the fixed path), never the row's.
+   */
+  private baselineServerView(server: McpServerEntity): ServerRecord {
+    const providedId = server.providedId;
+    if (!isBaselineProvidedId(providedId)) {
+      throw new ServerNotFoundError(server.id);
+    }
+    return {
+      id: server.id,
+      providedId,
+      name: server.name,
+      description: server.description,
+      authType: MCP_SERVER_AUTH_TYPE_TAICO,
+      requiresTaicoAuth: mcpServerRequiresTaicoAuth(providedId),
+      type: MCP_SERVER_TYPE_HTTP,
+      url: baselineServerUrl(providedId),
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+    };
+  }
+
+  private mapServerWithRelations(
+    server: McpServerEntity,
+  ): ServerWithRelationsRecord {
+    return {
+      ...this.mapServerEntityToRecord(server),
+      scopes: (server.scopes ?? []).map((scope) =>
+        this.mapScopeEntityToRecord(scope),
+      ),
+      connections: (server.connections ?? []).map((connection) =>
+        this.mapConnectionEntityToRecord(connection),
+      ),
+    };
   }
 
   private findDuplicate(values: string[]): string | undefined {

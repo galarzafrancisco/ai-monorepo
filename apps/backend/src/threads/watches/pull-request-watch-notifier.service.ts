@@ -23,7 +23,8 @@ export class PullRequestWatchNotifierService {
   async onPullRequestUpdated(event: PullRequestUpdatedEvent): Promise<void> {
     if (event.changes.length === 0) return;
     try {
-      const watches = await this.watches.listForTarget(ThreadWatchKind.PULL_REQUEST, event.pullRequest.id);
+      const { workspaceId } = event.pullRequest;
+      const watches = await this.watches.listForTarget(workspaceId, ThreadWatchKind.PULL_REQUEST, event.pullRequest.id);
       const notifications = watches.flatMap((watch) => {
         const changes = relevantChanges(watch.conditions, event.changes);
         if (changes.length === 0) return [];
@@ -39,7 +40,7 @@ export class PullRequestWatchNotifierService {
       const threadIds = await this.watches.notify(notifications);
       for (const threadId of threadIds) this.threadAgentService.requestTurn(threadId);
       if (notifications.some((n) => n.final)) {
-        await this.pullRequestWatches.syncPolling(event.pullRequest.id);
+        await this.pullRequestWatches.syncPolling(workspaceId, event.pullRequest.id);
       }
     } catch (error) {
       this.logger.warn({

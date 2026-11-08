@@ -8,6 +8,7 @@ import {
   JoinColumn,
   PrimaryColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { McpServerEntity } from './mcp-server.entity';
 import { McpScopeMappingEntity } from './mcp-scope-mapping.entity';
@@ -20,6 +21,10 @@ export class McpScopeEntity {
 
   @PrimaryColumn({ type: 'uuid' })
   serverId!: string;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'text' })
   description!: string;

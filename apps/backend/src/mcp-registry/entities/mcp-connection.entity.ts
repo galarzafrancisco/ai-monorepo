@@ -8,14 +8,20 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { McpServerEntity } from './mcp-server.entity';
 import { McpScopeMappingEntity } from './mcp-scope-mapping.entity';
 
 @Entity('mcp_connections')
+@Index('UQ_mcp_connections_workspace_provided_id', ['workspaceId', 'providedId'], { unique: true })
 export class McpConnectionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'workspace_id' })
+  workspaceId!: string;
 
   @Column({ type: 'uuid' })
   serverId!: string;
@@ -23,7 +29,7 @@ export class McpConnectionEntity {
   @Column({ type: 'varchar', length: 255 })
   friendlyName!: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   providedId?: string;
 
   @Column({ type: 'varchar', length: 500 })

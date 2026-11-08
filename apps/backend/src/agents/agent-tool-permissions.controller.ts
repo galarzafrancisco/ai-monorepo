@@ -30,8 +30,8 @@ import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.de
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
-// Grants point at MCP registry servers, which are default-only until phase 3e.
-@WorkspaceAccess('default-only')
+// Grants point at MCP servers of the agent's own workspace.
+@WorkspaceAccess('scoped')
 @Controller('agents/:actorId/tool-permissions')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(AgentsScopes.READ.id)
@@ -41,9 +41,7 @@ export class AgentToolPermissionsController {
   ) {}
 
   @Get()
-  // Workers read this to set up any workspace's agent. Outside the default
-  // workspace it lists only Taico's baseline servers (see the service).
-  @WorkspaceAccess('scoped')
+  // Workers read this to set up the agent: its grants plus Taico's baseline servers.
   @ApiOperation({ summary: 'List tool permissions for an agent' })
   @ApiOkResponse({ type: [AgentToolPermissionResponseDto] })
   async listAgentToolPermissions(
