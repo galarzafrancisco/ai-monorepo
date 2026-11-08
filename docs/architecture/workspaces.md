@@ -2,7 +2,7 @@
 
 A workspace is one company or team's own space in Taico. Its people, agents, tasks, threads, context, AI models and settings are kept apart from every other workspace on the same installation.
 
-> **Status:** phases 1 to 4 of 5 are built. Every module's data is scoped by workspace (phase 3). An installation operator can create workspaces. Workspace admins invite, re-role and remove members. A person switches workspace with `POST /auth/web/switch-workspace` (phase 4, see [Many workspaces](#many-workspaces-phase-4)). Only auth journeys and OAuth client listing are still `default-only`. Phase 5 adds the UI. See [Phases](#phases).
+> **Status:** all 5 phases are built. Every module's data is scoped by workspace (phase 3). An installation operator can create workspaces. Workspace admins invite, re-role and remove members. A person switches workspace with `POST /auth/web/switch-workspace` (phase 4, see [Many workspaces](#many-workspaces-phase-4)). Only auth journeys and OAuth client listing are still `default-only`. Phase 5 added the UI (see [The UI](#the-ui-phase-5)). See [Phases](#phases).
 
 ## The model
 
@@ -328,7 +328,18 @@ The tests are in `test/workspace-membership.e2e-spec.ts`:
 - Removal does not revoke tokens already minted or disconnect sockets.
 - The legacy fallback for tokens with no `workspace_id` claim remains (see the [launch checklist](https://taico.app/context/block/64d3ec50-6657-4cc3-98ca-25f5a4303c1f)).
 - GitHub and MCP registry writes still need only module scopes, not workspace admin.
-- The UI still checks `user.role` where it should check the workspace role (phase 5).
+
+## The UI (phase 5)
+
+The UI lives in `apps/ui/src/features/workspaces/`. `WorkspacesProvider` (inside `ProtectedRoute`) loads `GET /workspaces` once and gives every page the person's workspaces, the current one and `isWorkspaceAdmin`.
+
+- **Switcher.** At the top of the desktop sidebar and the mobile drawer. It shows the current workspace, and becomes a picker when the person is in more than one. Choosing one calls `POST /auth/web/switch-workspace` and then **reloads the page** (`switchWorkspaceAndReload`). Every provider, cache and socket was loaded with the old session's workspace, so a full reload is the one way to be sure nothing from it stays on screen.
+- **Settings > Workspace** (`/settings/workspace`). The current workspace's people and agents. Workspace admins invite by email, change roles and remove people. Agents are listed but managed on the Agents page.
+- **Settings > Workspaces** (`/settings/workspaces`). Your workspaces, each with Switch. Installation operators (`users.role = 'admin'`) also create workspaces here.
+- **Who edits what.** Pages about the workspace's shared settings decide from the workspace role (`isWorkspaceAdmin`), never from `user.role`. Settings > AI models is read-only for members, except their own ChatGPT plan connection and Test connection. `user.role` is still right for the installation operator's pages: Users, Access requests and creating workspaces.
+- **Links into another workspace.** A task, thread or context block that answers "not found" is looked up with `GET /workspaces/locate?kind=task|thread|context_block&id=` (`installation` mode). When it is in another of the person's workspaces, the page offers "Switch to <workspace>", which switches and reopens the same URL. The route answers the same `404` when the row does not exist, is deleted, or is in a workspace the person is not in, so ids cannot be probed. The kind maps to a fixed table name in `WorkspacesService.locateRowForActor`; it never reaches SQL as client input.
+
+Not yet: other link targets (agents, projects, runs), and a workspace picker in the MCP OAuth flow.
 
 ## Phases
 
@@ -338,4 +349,4 @@ Each phase ships on its own and leaves a working single-workspace installation. 
 2. **Request context** (done). `@CurrentWorkspace()` from the token (default workspace when the claim is missing), WebSocket and MCP context, `user:admin` from the membership role.
 3. **Scope the data**, module by module (3a, tasks, context and meta: done; 3b, threads: done; 3c, agents, executions and workers: done; 3d, AI models and secrets: done; 3e, integrations, MCP registry and search: done; see [How to scope a module](#how-to-scope-a-module-the-phase-3-pattern)): add `workspace_id`, backfill to the default workspace, make it `NOT NULL`, scope every query, make uniqueness per workspace, prefix realtime rooms. Suggested order: meta/context, tasks, threads, agents and agent runs, executions and workers, AI providers and secrets, integrations, MCP registry, search. Each module gets e2e tests that a second workspace cannot see or touch the first one's rows.
 4. **Many workspaces** (done, see [Many workspaces](#many-workspaces-phase-4)). Create a workspace, invite and remove members, switch workspace (`POST /auth/web/switch-workspace`), installation operator scope, agents created in the caller's workspace, remove the membership subscriber.
-5. **UI.** Workspace switcher, workspace settings and members page, the "switch workspace?" prompt on links from another workspace.
+5. **UI** (done, see [The UI](#the-ui-phase-5)). Workspace switcher, workspace settings and members page, operator page to create workspaces, workspace role on AI models, the "switch workspace?" prompt on links from another workspace.
