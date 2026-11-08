@@ -18,11 +18,11 @@ The email travels from step 2 to step 3 in React Router navigation state, not in
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/access-requests` | Public | Write-only. Body: `email` (≤254), optional `building` (≤280), optional `heardFrom` (enum, see below), optional `heardFromOther` (≤120), honeypot `website`. Always `201 { received: true }` on success. |
-| `GET` | `/api/v1/admin/access-requests` | `user:admin` scope | `status`, `search` (≤100, email, answer or "other" source text, case-insensitive), `limit` (≤200), `offset`. Most recently submitted first. |
-| `PATCH` | `/api/v1/admin/access-requests/:id` | `user:admin` scope | `{ status: 'new' \| 'reviewed' }` |
-| `DELETE` | `/api/v1/admin/access-requests/:id` | `user:admin` scope | Hard delete |
+| `GET` | `/api/v1/admin/access-requests` | `installation:admin` scope | `status`, `search` (≤100, email, answer or "other" source text, case-insensitive), `limit` (≤200), `offset`. Most recently submitted first. |
+| `PATCH` | `/api/v1/admin/access-requests/:id` | `installation:admin` scope | `{ status: 'new' \| 'reviewed' }` |
+| `DELETE` | `/api/v1/admin/access-requests/:id` | `installation:admin` scope | Hard delete |
 
-Admin routes use `AccessTokenGuard` + `ScopesGuard` + `@RequireScopes(UserScopes.ADMIN.id)`, the same pattern as client registration. Anonymous calls get `401`, signed-in non-admins `403`. The admin scope is set when the user signs in, so a role change applies at their next sign-in.
+Admin routes use `AccessTokenGuard` + `ScopesGuard` + `@RequireScopes(InstallationScopes.ADMIN.id)`. Access requests are people asking to join the installation, not a workspace, so they are reviewed by the installation operator (`users.role = 'admin'`), from whichever workspace they are signed in to (`@WorkspaceAccess('installation')`). A workspace admin who is not an operator gets `403`, as does any other signed-in person; anonymous calls get `401`. The scope is set when a session token is minted, so a role change applies at the next sign-in or refresh. See [Workspaces](../architecture/workspaces.md#admin-roles).
 
 ## Where did you hear about Taico?
 

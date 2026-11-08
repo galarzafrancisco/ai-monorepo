@@ -58,6 +58,7 @@ export class WorkspaceResponseDto {
 export class InviteWorkspaceMemberRequestDto {
   @ApiProperty({
     example: 'someone@company.dev',
+    format: 'email',
     description:
       'A person with an account is added; anyone else gets an invited account, set up through account setup.',
   })
