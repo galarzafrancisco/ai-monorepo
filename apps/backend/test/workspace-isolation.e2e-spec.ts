@@ -964,6 +964,26 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       expect(hitsB.map((hit: any) => hit.id)).not.toContain(threadA.id);
     });
 
+    it("filters by workspace before the limit, so A's matches never crowd out B's", async () => {
+      const word = `crowd${suffix}`;
+      for (let i = 0; i < 3; i++) {
+        await as(tokenA).post('/tasks/tasks').send({ name: `A ${word} ${i}`, description: word }).expect(201);
+      }
+      const taskB = (
+        await as(tokenB).post('/tasks/tasks').send({ name: `B ${word}`, description: word }).expect(201)
+      ).body;
+      const path = `/search/query?query=${encodeURIComponent(word)}&types=task&limit=1`;
+      let hitsB: any[] = [];
+      for (let attempt = 0; attempt < 20 && hitsB.length === 0; attempt++) {
+        await settle();
+        hitsB = (await as(tokenB).get(path).expect(200)).body;
+      }
+      expect(hitsB.map((hit: any) => hit.id)).toEqual([taskB.id]);
+      const hitsA = (await as(tokenA).get(path).expect(200)).body;
+      expect(hitsA).toHaveLength(1);
+      expect(hitsA[0].id).not.toBe(taskB.id);
+    });
+
     it('leaves agents out of global search for another workspace, even when the query matches', async () => {
       const canary = `agentcanary${suffix}`;
       const agent = await app.get(AgentsService).createAgent(DEFAULT_WORKSPACE_ID, {
