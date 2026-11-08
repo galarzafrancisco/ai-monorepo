@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -51,6 +51,31 @@ test('workers of different workspaces on one server keep their own credentials',
       'http://localhost:2008#workspace=acme',
       'http://localhost:2008#workspace=beta',
     ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('workers writing at the same time keep each other\'s credentials', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'worker-credentials-'));
+  const path = join(dir, 'credentials.json');
+  try {
+    const workspaces = Array.from({ length: 8 }, (_, i) => `ws-${i}`);
+    await Promise.all(
+      workspaces.map((workspace) =>
+        writeWorkerCredentials(path, credentials({ clientId: workspace, workspace })),
+      ),
+    );
+
+    const server = 'http://localhost:2008';
+    for (const workspace of workspaces) {
+      assert.equal(
+        (await readWorkerCredentials(path, server, workspace))?.clientId,
+        workspace,
+      );
+    }
+    // Only the credentials file is left: no lock, no temporary files.
+    assert.deepEqual(readdirSync(dir), ['credentials.json']);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

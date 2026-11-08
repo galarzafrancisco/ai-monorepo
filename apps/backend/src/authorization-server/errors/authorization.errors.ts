@@ -12,6 +12,7 @@ export const AuthorizationErrorCodes = {
   CONNECTION_FLOW_NOT_FOUND: ErrorCodes.CONNECTION_FLOW_NOT_FOUND,
   TOKEN_EXCHANGE_FAILED: ErrorCodes.TOKEN_EXCHANGE_FAILED,
   AUTHORIZATION_LINK_ALREADY_USED: ErrorCodes.AUTHORIZATION_LINK_ALREADY_USED,
+  AUTHORIZATION_REQUEST_CHANGED: ErrorCodes.AUTHORIZATION_REQUEST_CHANGED,
   WORKER_ALREADY_AUTHORIZED: ErrorCodes.WORKER_ALREADY_AUTHORIZED,
   CONSENT_WORKSPACE_NOT_REQUESTED: ErrorCodes.CONSENT_WORKSPACE_NOT_REQUESTED,
   SERVER_NOT_FOUND: ErrorCodes.SERVER_NOT_FOUND,
@@ -93,6 +94,22 @@ export class AuthorizationLinkAlreadyUsedError extends AuthorizationDomainError 
     super(
       'This authorization link was already used. Start the authorization again from the app that asked for it.',
       AuthorizationErrorCodes.AUTHORIZATION_LINK_ALREADY_USED,
+      { clientId },
+    );
+  }
+}
+
+/**
+ * An authorization request repeats the PKCE challenge of a pending flow but
+ * asks for something else (other scopes, workspace, redirect or state). The
+ * pending consent screen shows the first request, so approving it must not
+ * grant the second: the changed request is refused.
+ */
+export class AuthorizationRequestChangedError extends AuthorizationDomainError {
+  constructor(clientId: string) {
+    super(
+      'This authorization link was changed after it was opened. Start the authorization again from the app that asked for it.',
+      AuthorizationErrorCodes.AUTHORIZATION_REQUEST_CHANGED,
       { clientId },
     );
   }

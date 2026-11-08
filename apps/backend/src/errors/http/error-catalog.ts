@@ -287,6 +287,12 @@ export const ErrorCatalog: Record<
     type: '/errors/authz/authorization-link-already-used',
     retryable: false,
   },
+  [ErrorCodes.AUTHORIZATION_REQUEST_CHANGED]: {
+    status: 409,
+    title: 'Authorization request changed',
+    type: '/errors/authz/authorization-request-changed',
+    retryable: false,
+  },
   [ErrorCodes.WORKER_ALREADY_AUTHORIZED]: {
     status: 409,
     title: 'Worker already authorized',

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, unlink } from 'fs/promises';
+import { mkdir, open, readFile, rename, stat, unlink, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
 import type {
@@ -75,36 +75,65 @@ export async function writeWorkerCredentials(
 ): Promise<void> {
   await mkdir(dirname(credentialsPath), { recursive: true });
 
-  let config: MultiServerConfig;
-
-  try {
-    const content = await readFile(credentialsPath, 'utf8');
-    const parsed = JSON.parse(content) as unknown;
-
-    if (isMultiServerConfig(parsed)) {
-      config = parsed as MultiServerConfig;
-    } else {
-      // Create new config if existing file is not multi-server format
-      config = {
-        servers: {},
-      };
+  // Several workers (one per workspace, say) share this file. The lock makes
+  // each read/merge/write whole, so no worker writes back a stale copy over
+  // another's entry; the rename means readers never see a half-written file.
+  await withFileLock(`${credentialsPath}.lock`, async () => {
+    let config: MultiServerConfig = { servers: {} };
+    try {
+      const parsed = JSON.parse(await readFile(credentialsPath, 'utf8')) as unknown;
+      if (isMultiServerConfig(parsed)) {
+        config = parsed as MultiServerConfig;
+      }
+    } catch {
+      // No file yet (or unreadable): start a new one
     }
-  } catch {
-    // Create new config if file doesn't exist
-    config = {
-      servers: {},
-    };
+
+    // Update credentials for this server (and workspace)
+    config.servers[credentialsKey(credentials.serverUrl, credentials.workspace)] =
+      credentials;
+
+    const tempPath = `${credentialsPath}.${process.pid}.${Date.now()}.tmp`;
+    await writeFile(tempPath, JSON.stringify(config, null, 2), {
+      encoding: 'utf8',
+      mode: 0o600,
+    });
+    await rename(tempPath, credentialsPath);
+  });
+}
+
+/** A lock left by a process that died mid-write is taken over after this. */
+const STALE_LOCK_MS = 10_000;
+const LOCK_RETRY_MS = 20;
+
+/**
+ * Runs `fn` holding a lock file, across processes: creating the file with
+ * `wx` succeeds for exactly one of them.
+ */
+async function withFileLock<T>(lockPath: string, fn: () => Promise<T>): Promise<T> {
+  for (;;) {
+    try {
+      const handle = await open(lockPath, 'wx');
+      await handle.close();
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      const age = await stat(lockPath).then(
+        (s) => Date.now() - s.mtimeMs,
+        () => 0,
+      );
+      if (age > STALE_LOCK_MS) {
+        await unlink(lockPath).catch(() => undefined);
+        continue;
+      }
+      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
+    }
   }
-
-  // Update credentials for this server (and workspace)
-  config.servers[credentialsKey(credentials.serverUrl, credentials.workspace)] =
-    credentials;
-
-  await writeFile(
-    credentialsPath,
-    JSON.stringify(config, null, 2),
-    'utf8',
-  );
+  try {
+    return await fn();
+  } finally {
+    await unlink(lockPath).catch(() => undefined);
+  }
 }
 
 /**

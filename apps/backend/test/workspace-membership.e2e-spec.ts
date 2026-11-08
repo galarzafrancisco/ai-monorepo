@@ -645,6 +645,38 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       expect(flowIdFrom(again)).toBe(flowId);
     });
 
+    it('never changes a pending consent: a changed request with the same link is refused', async () => {
+      const workspace = await createWorkspace(operator);
+      const { flowId, query } = await startWorkerFlow(workspace.slug);
+      const before = await request(http)
+        .get(`/api/v1/auth/consent/${flowId}`)
+        .set('Cookie', operator)
+        .expect(200);
+
+      for (const changed of [
+        // Scopes are filtered to what the server offers, so a real change for
+        // the worker target is dropping its one scope.
+        { ...query, scope: undefined },
+        { ...query, workspace: undefined },
+        { ...query, state: 'other-state' },
+      ]) {
+        const res = await openAuthorizeLink(
+          Object.fromEntries(
+            Object.entries(changed).filter(([, v]) => v !== undefined),
+          ) as Record<string, string>,
+        ).expect(409);
+        expect(res.body.code).toBe('AUTHORIZATION_REQUEST_CHANGED');
+      }
+
+      // What the open consent screen shows is still what it grants.
+      const after = await request(http)
+        .get(`/api/v1/auth/consent/${flowId}`)
+        .set('Cookie', operator)
+        .expect(200);
+      expect(after.body.scopes).toEqual(before.body.scopes);
+      expect(after.body.requestedWorkspaceSlug).toBe(workspace.slug);
+    });
+
     it('only lets a worker started with --workspace be approved from that workspace', async () => {
       const workspace = await createWorkspace(operator);
       const { flowId } = await startWorkerFlow(workspace.slug);
