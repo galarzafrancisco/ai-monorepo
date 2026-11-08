@@ -9928,6 +9928,11 @@
             "type": "boolean",
             "description": "Whether the user approved the authorization request",
             "example": true
+          },
+          "workspace_id": {
+            "type": "string",
+            "description": "The workspace the consent screen showed. For Taico's own servers, approval is refused if the session has since switched to another workspace.",
+            "format": "uuid"
           }
         },
         "required": [
@@ -9989,6 +9994,31 @@
           "registrationMethod"
         ]
       },
+      "FlowWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Workspace ID",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Workspace slug",
+            "example": "acme"
+          },
+          "name": {
+            "type": "string",
+            "description": "Workspace name",
+            "example": "Acme"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name"
+        ]
+      },
       "GetConsentMetadataResponseDto": {
         "type": "object",
         "properties": {
@@ -10044,6 +10074,14 @@
               }
             ]
           },
+          "workspace": {
+            "description": "The workspace the token will work in: for Taico's own servers (tasks, context, workers), the workspace the person is in now; for any other server, the server's workspace.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlowWorkspaceDto"
+              }
+            ]
+          },
           "redirectUri": {
             "type": "string",
             "description": "Redirect URI provided in the authorization request",
@@ -10060,6 +10098,7 @@
           "status",
           "server",
           "client",
+          "workspace",
           "redirectUri",
           "createdAt"
         ]

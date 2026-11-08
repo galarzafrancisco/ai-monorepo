@@ -64,6 +64,21 @@ export class InvalidFlowStateError extends AuthorizationDomainError {
   }
 }
 
+/**
+ * The person approved a consent screen that showed one workspace, but their
+ * session is now in another (they switched in another tab). The token would
+ * work somewhere they did not see, so the approval is refused.
+ */
+export class ConsentWorkspaceChangedError extends AuthorizationDomainError {
+  constructor(shownWorkspaceId: string, sessionWorkspaceId: string | null) {
+    super(
+      'You switched workspace after this consent screen loaded. Reload it to review the request in your current workspace.',
+      AuthorizationErrorCodes.INVALID_FLOW_STATE,
+      { shownWorkspaceId, sessionWorkspaceId },
+    );
+  }
+}
+
 export class ServerIdentifierMismatchError extends AuthorizationDomainError {
   constructor(expected: string, actual: string) {
     super(

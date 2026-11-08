@@ -3,6 +3,7 @@ import { useConsentCtx } from "./ConsentProvider";
 import { Link, useSearchParams } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Card, DataRow, Stack, Text, ErrorText, Row, ListRow, Button } from "../../ui/primitives";
+import { mcpServerRequiresTaicoAuth } from "@taico/shared";
 import './ConsentPage.css';
 
 export function ConsentPage() {
@@ -41,12 +42,12 @@ export function ConsentPage() {
 
   const handleApprove = () => {
     if (!consentMetadata) return;
-    submitConsent(flowId, server.providedId, true);
+    submitConsent(flowId, server.providedId, true, consentMetadata.workspace.id);
   };
 
   const handleDeny = () => {
     if (!consentMetadata) return;
-    submitConsent(flowId, server.providedId, false);
+    submitConsent(flowId, server.providedId, false, consentMetadata.workspace.id);
   };
 
   if (isLoading) {
@@ -68,7 +69,10 @@ export function ConsentPage() {
     )
   }
 
-  const { client, scopes, redirectUri, server, resource, createdAt } = consentMetadata;
+  const { client, scopes, redirectUri, server, resource, createdAt, workspace } = consentMetadata;
+  // Taico's own servers (tasks, context, workers) work in the workspace the
+  // person is in now; any other server only works in its own workspace.
+  const workspaceFollowsSession = mcpServerRequiresTaicoAuth(server.providedId);
 
   // The client name is whatever the client says it is. What can be checked is
   // where its metadata document is published and where the user is sent next.
@@ -139,6 +143,16 @@ export function ConsentPage() {
             <div className="server-info">
               <div className="server-name">{server.name}</div>
               <div className="server-id">Server ID: {server.providedId}</div>
+            </div>
+            <div className="workspace-info" style={{ marginTop: '16px' }}>
+              <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Workspace:</div>
+              <div className="server-name">{workspace.name}</div>
+              <div className="server-id">@{workspace.slug}</div>
+              {workspaceFollowsSession ? (
+                <p style={{ marginTop: '8px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
+                  Access is granted in the workspace you are in now. To connect to another workspace, switch to it in Taico, then reload this page.
+                </p>
+              ) : null}
             </div>
             <div className="resource-info" style={{ marginTop: '16px' }}>
               <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Resource:</div>

@@ -1,3 +1,6 @@
+import { mcpServerRequiresTaicoAuth } from '@taico/shared';
+import { WorkspacesService } from 'src/workspaces/workspaces.service';
+import { workspaceIdFromClaims } from 'src/auth/guards/context/auth-context.factory';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -27,6 +30,7 @@ import {
   AuthFlowNotFoundError,
   AuthFlowAlreadyCompletedError,
   ServerIdentifierMismatchError,
+  ConsentWorkspaceChangedError,
   InvalidFlowStateError,
   DownstreamAuthFailedError,
   NoPendingConnectionFlowsError,
@@ -56,6 +60,7 @@ export class AuthorizationService {
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   async getAllAPIScopes(): Promise<Scope[]> {
@@ -208,9 +213,16 @@ export class AuthorizationService {
   }
 
   /**
-   * Get authorization flow details for the consent screen
+   * Get authorization flow details for the consent screen.
+   *
+   * @param sessionWorkspaceId The workspace of the person's web session.
+   *   Tokens for Taico's own servers are minted for it (it is recorded at
+   *   consent); any other server's tokens are for the server's workspace.
    */
-  async getConsentMetadataFromFlowId(flowId: string): Promise<ConsentMetadata> {
+  async getConsentMetadataFromFlowId(
+    flowId: string,
+    sessionWorkspaceId: string,
+  ): Promise<ConsentMetadata> {
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
       flowId,
       ['server', 'client', 'authJourney'],
@@ -235,10 +247,30 @@ export class AuthorizationService {
         clientName: mcpAuthFlow.client.clientName,
         registrationMethod: mcpAuthFlow.client.registrationMethod,
       },
+      workspace: await this.consentWorkspace(
+        mcpAuthFlow.server,
+        sessionWorkspaceId,
+      ),
       redirectUri: mcpAuthFlow.redirectUri!,
       createdAt: mcpAuthFlow.createdAt,
     };
     return consentMetadata;
+  }
+
+  /** The workspace a token from this consent will work in, for display. */
+  private async consentWorkspace(
+    server: { providedId: string; workspaceId: string },
+    sessionWorkspaceId: string,
+  ): Promise<ConsentMetadata['workspace']> {
+    const workspaceId = mcpServerRequiresTaicoAuth(server.providedId)
+      ? sessionWorkspaceId
+      : server.workspaceId;
+    const workspace = await this.workspacesService.findWorkspace(workspaceId);
+    if (!workspace) {
+      // Session tokens and registry rows always name an existing workspace.
+      throw new Error(`Workspace ${workspaceId} not found`);
+    }
+    return { id: workspace.id, slug: workspace.slug, name: workspace.name };
   }
 
   /**
@@ -311,18 +343,38 @@ export class AuthorizationService {
 
     // Extract user ID from access token cookie and update the auth journey
     const accessToken = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+    let sessionWorkspaceId: string | null = null;
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
         const payload =
           await this.tokenVerifierService.verifySessionToken(accessToken);
         mcpAuthFlow.authJourney.actorId = payload.sub;
-        await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
+        // Tokens for Taico's own servers are for the workspace the person
+        // consented in, so a worker connects to the workspace they are in.
+        sessionWorkspaceId = workspaceIdFromClaims(payload);
+        mcpAuthFlow.authJourney.workspaceId = sessionWorkspaceId;
       } catch (error) {
         this.logger.warn(
           `Failed to extract user ID from access token: ${error}`,
         );
         // Continue with the flow even if we couldn't extract the user ID
       }
+    }
+
+    // The consent screen showed a workspace. If the session switched since
+    // (another tab), the token would work somewhere the person did not see.
+    if (
+      consentDecision.workspace_id &&
+      mcpServerRequiresTaicoAuth(mcpAuthFlow.server.providedId) &&
+      consentDecision.workspace_id !== sessionWorkspaceId
+    ) {
+      throw new ConsentWorkspaceChangedError(
+        consentDecision.workspace_id,
+        sessionWorkspaceId,
+      );
+    }
+    if (mcpAuthFlow.authJourney?.actorId) {
+      await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
     }
 
     // Mark as consent

@@ -9,6 +9,7 @@ import { App } from 'supertest/types';
 import { Repository } from 'typeorm';
 import { TaskWireEvents, ThreadWireEvents } from '@taico/events';
 import { AppModule } from '../src/app.module';
+import { FakeGithub } from './helpers/fake-github';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { TokenSignerService } from '../src/auth/crypto/token-signer.service';
@@ -1318,8 +1319,18 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
     const canary = `Private A title ${suffix}`;
     const prUrl = `https://github.com/${owner}/private/pull/7`;
     const issueUrl = `https://github.com/${owner}/private/issues/8`;
+    // B has no connection, so reading B's copy asks GitHub without a token.
+    // A local fake answers 404, so the test never waits on github.com.
+    const github = new FakeGithub();
+
+    afterAll(async () => {
+      await github.stop();
+      delete process.env.GITHUB_API_URL;
+    });
 
     beforeAll(async () => {
+      await github.start();
+      process.env.GITHUB_API_URL = github.url;
       const now = new Date();
       await app.get<Repository<PullRequestEntity>>(getRepositoryToken(PullRequestEntity)).insert({
         workspaceId: DEFAULT_WORKSPACE_ID,

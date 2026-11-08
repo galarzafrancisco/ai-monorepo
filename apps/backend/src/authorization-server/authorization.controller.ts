@@ -1,3 +1,4 @@
+import { CurrentWorkspace } from '../auth/guards/decorators/current-workspace.decorator';
 import {
   Controller,
   Get,
@@ -204,10 +205,12 @@ export class AuthorizationController {
   })
   async getConsentMetadata(
     @Param() params: GetConsentMetadataParamsDto,
+    @CurrentWorkspace() workspaceId: string,
   ): Promise<GetConsentMetadataResponseDto> {
     const consentMetadata =
       await this.authorizationService.getConsentMetadataFromFlowId(
         params.flowId,
+        workspaceId,
       );
     return this.mapConsentMetadataToResponse(consentMetadata);
   }
@@ -394,6 +397,7 @@ export class AuthorizationController {
       resource: consentMetadata.resource,
       server: consentMetadata.server,
       client: consentMetadata.client,
+      workspace: consentMetadata.workspace,
       redirectUri: consentMetadata.redirectUri,
       createdAt: consentMetadata.createdAt.toISOString(),
     };

@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { FlowClientDto } from './FlowClientDto.js';
 import type { FlowServerDto } from './FlowServerDto.js';
+import type { FlowWorkspaceDto } from './FlowWorkspaceDto.js';
 export type GetConsentMetadataResponseDto = {
     /**
      * Unique identifier of the authorization flow
@@ -29,6 +30,10 @@ export type GetConsentMetadataResponseDto = {
      * Client application requesting authorization
      */
     client: FlowClientDto;
+    /**
+     * The workspace the token will work in: for Taico's own servers (tasks, context, workers), the workspace the person is in now; for any other server, the server's workspace.
+     */
+    workspace: FlowWorkspaceDto;
     /**
      * Redirect URI provided in the authorization request
      */

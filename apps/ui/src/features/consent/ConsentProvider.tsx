@@ -9,7 +9,7 @@ export type ConsentContextValue = {
   setSectionTitle: (title: string) => void;
   loadConsentMetadata: (flowId: string) => void;
   consentMetadata: GetConsentMetadataResponseDto | null;
-  submitConsent: (flowId: string, serverId: string, approve: boolean) => void;
+  submitConsent: (flowId: string, serverId: string, approve: boolean, workspaceId?: string) => void;
   error: string | null;
   isLoading: boolean;
   isApproving: boolean;

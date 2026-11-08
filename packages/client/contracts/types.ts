@@ -3288,6 +3288,11 @@ export interface components {
              * @example true
              */
             approved: boolean;
+            /**
+             * Format: uuid
+             * @description The workspace the consent screen showed. For Taico's own servers, approval is refused if the session has since switched to another workspace.
+             */
+            workspace_id?: string;
         };
         FlowServerDto: {
             /**
@@ -3324,6 +3329,23 @@ export interface components {
              */
             registrationMethod: "dynamic_registration" | "metadata_document";
         };
+        FlowWorkspaceDto: {
+            /**
+             * Format: uuid
+             * @description Workspace ID
+             */
+            id: string;
+            /**
+             * @description Workspace slug
+             * @example acme
+             */
+            slug: string;
+            /**
+             * @description Workspace name
+             * @example Acme
+             */
+            name: string;
+        };
         GetConsentMetadataResponseDto: {
             /**
              * @description Unique identifier of the authorization flow
@@ -3353,6 +3375,8 @@ export interface components {
             server: components["schemas"]["FlowServerDto"];
             /** @description Client application requesting authorization */
             client: components["schemas"]["FlowClientDto"];
+            /** @description The workspace the token will work in: for Taico's own servers (tasks, context, workers), the workspace the person is in now; for any other server, the server's workspace. */
+            workspace: components["schemas"]["FlowWorkspaceDto"];
             /**
              * @description Redirect URI provided in the authorization request
              * @example http://localhost:4001/callback

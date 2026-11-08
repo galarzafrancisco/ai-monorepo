@@ -14,6 +14,7 @@ import { AuthJourneyStatus } from '../enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowEntity } from './connection-authorization-flow.entity';
 import { McpAuthorizationFlowEntity } from './mcp-authorization-flow.entity';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
+import { WorkspaceEntity } from 'src/workspaces/workspace.entity';
 
 @Entity('authorization_journeys')
 export class AuthJourneyEntity {
@@ -32,6 +33,19 @@ export class AuthJourneyEntity {
   @ManyToOne(() => ActorEntity, { nullable: true })
   @JoinColumn({ name: 'actor_id' })
   actor?: ActorEntity | null;
+
+  /**
+   * The workspace the person was working in when they consented. Tokens for
+   * Taico's own servers (tasks, context, workers) are minted for it, so a
+   * worker connects to the workspace it was authorized in. Null for journeys
+   * from before this was recorded: those use the person's oldest membership.
+   */
+  @Column({ name: 'workspace_id', type: 'uuid', nullable: true })
+  workspaceId?: string | null;
+
+  @ManyToOne(() => WorkspaceEntity, { nullable: true })
+  @JoinColumn({ name: 'workspace_id' })
+  workspace?: WorkspaceEntity | null;
 
   // Many connection authorization flows can be linked to this one
   @OneToMany(
