@@ -442,6 +442,72 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
     });
   });
 
+  describe('locating a linked row', () => {
+    it('says which of your workspaces a task, thread or block is in, and nothing to anyone else', async () => {
+      const workspace = await createWorkspace(operator);
+      const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+      const task = await request(http)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', admin)
+        .send({ name: 'Locate me', description: 'In B', assigneeActorId: operatorActorId })
+        .expect(201);
+      const thread = await request(http)
+        .post('/api/v1/threads')
+        .set('Cookie', admin)
+        .send({ title: 'Locate me' })
+        .expect(201);
+      const block = await request(http)
+        .post('/api/v1/context/blocks')
+        .set('Cookie', admin)
+        .send({ title: 'Locate me', content: 'In B' })
+        .expect(201);
+
+      const rows = [
+        ['task', task.body.id],
+        ['thread', thread.body.id],
+        ['context_block', block.body.id],
+      ];
+      for (const [kind, id] of rows) {
+        // From the default workspace, the operator is told where it is.
+        const located = await request(http)
+          .get('/api/v1/workspaces/locate')
+          .query({ kind, id })
+          .set('Cookie', operator)
+          .expect(200);
+        expect(located.body).toMatchObject({
+          id: workspace.id,
+          slug: workspace.slug,
+          role: WorkspaceRole.ADMIN,
+          current: false,
+        });
+        await request(http)
+          .get('/api/v1/workspaces/locate')
+          .query({ kind, id })
+          .set('Cookie', admin)
+          .expect(200)
+          .expect((res) => expect(res.body.current).toBe(true));
+      }
+
+      // Someone who is not in that workspace gets the same 404 as a row that does not exist.
+      const outsider = await createPerson();
+      const outsiderCookies = cookiesFrom(
+        await login(outsider.email, outsider.password).expect(200),
+      );
+      for (const [kind, id] of [...rows, ['task', randomUUID()]]) {
+        await request(http)
+          .get('/api/v1/workspaces/locate')
+          .query({ kind, id })
+          .set('Cookie', outsiderCookies)
+          .expect(404);
+      }
+      await request(http)
+        .get('/api/v1/workspaces/locate')
+        .query({ kind: 'users', id: task.body.id })
+        .set('Cookie', operator)
+        .expect(400);
+    });
+  });
+
   it('creates agents in the caller’s workspace only', async () => {
     const workspace = await createWorkspace(operator);
     const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));

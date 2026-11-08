@@ -4,12 +4,13 @@ import {
   IsEmail,
   IsEnum,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { ActorType } from '../../../identity-provider/enums';
-import { WorkspaceRole } from '../../../workspaces/enums';
+import { LocatableRowKind, WorkspaceRole } from '../../../workspaces/enums';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -109,4 +110,14 @@ export class InviteWorkspaceMemberResponseDto {
       'Whether an invited account was created for the email. They set a password through account setup before they can sign in.',
   })
   accountCreated!: boolean;
+}
+
+export class LocateRowQueryDto {
+  @ApiProperty({ enum: LocatableRowKind, enumName: 'LocatableRowKind' })
+  @IsEnum(LocatableRowKind)
+  kind!: LocatableRowKind;
+
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  id!: string;
 }

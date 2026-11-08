@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { WorkspaceEntity } from './workspace.entity';
 import { WorkspaceMemberEntity } from './workspace-member.entity';
-import { WorkspaceRole } from './enums';
+import { LocatableRowKind, WorkspaceRole } from './enums';
 import {
   DEFAULT_WORKSPACE_ID,
   DEFAULT_WORKSPACE_NAME,
@@ -25,6 +25,16 @@ export type WorkspaceMembershipResult = {
   slug: string;
   name: string;
   role: WorkspaceRole;
+};
+
+/** Fixed table names only: the kind never reaches SQL as client input. */
+const LOCATABLE_ROW_TABLES: Record<
+  LocatableRowKind,
+  { table: string; softDeleted: boolean }
+> = {
+  [LocatableRowKind.TASK]: { table: 'tasks', softDeleted: true },
+  [LocatableRowKind.THREAD]: { table: 'threads', softDeleted: false },
+  [LocatableRowKind.CONTEXT_BLOCK]: { table: 'context_blocks', softDeleted: true },
 };
 
 /** A member of a workspace, with the actor's public details. */
@@ -203,6 +213,40 @@ export class WorkspacesService implements OnModuleInit {
       }
       throw error;
     }
+  }
+
+  /**
+   * Which of the actor's workspaces a linked row is in, so the UI can offer
+   * to switch instead of showing "not found". Null when the row does not
+   * exist, is deleted, or is in a workspace the actor is not a member of:
+   * the three are indistinguishable, so ids cannot be probed.
+   */
+  async locateRowForActor(
+    actorId: string,
+    kind: LocatableRowKind,
+    rowId: string,
+  ): Promise<WorkspaceMembershipResult | null> {
+    const { table, softDeleted } = LOCATABLE_ROW_TABLES[kind];
+    const rows: { workspace_id: string }[] = await this.memberRepository.query(
+      `SELECT workspace_id FROM "${table}" WHERE id = $1${
+        softDeleted ? ' AND deleted_at IS NULL' : ''
+      }`,
+      [rowId],
+    );
+    const workspaceId = rows[0]?.workspace_id;
+    if (!workspaceId) return null;
+    const membership = await this.liveMemberships()
+      .where('m.workspace_id = :workspaceId', { workspaceId })
+      .andWhere('m.actor_id = :actorId', { actorId })
+      .getOne();
+    return membership
+      ? {
+          workspaceId: membership.workspaceId,
+          slug: membership.workspace!.slug,
+          name: membership.workspace!.name,
+          role: membership.role,
+        }
+      : null;
   }
 
   /** The workspace, or null if it is deleted or does not exist. */
