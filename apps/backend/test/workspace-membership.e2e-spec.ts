@@ -485,8 +485,8 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
     const REDIRECT_URI = 'http://127.0.0.1:6275/callback';
     const tokenPath = `/api/v1/auth/token/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`;
 
-    /** A worker's OAuth flow, consented with `cookies`. */
-    async function authorizeWorker(cookies: string) {
+    /** Registers a worker client and starts its OAuth flow; returns the consent flow. */
+    async function startWorkerFlow() {
       const registered = await request(http)
         .post(`/api/v1/auth/clients/register/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
         .send({
@@ -512,7 +512,12 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         })
         .expect(302);
       const flowId = new URL(authorize.headers.location, 'http://x').searchParams.get('flow');
+      return { clientId, codeVerifier, flowId: flowId! };
+    }
 
+    /** A worker's OAuth flow, consented with `cookies`. */
+    async function authorizeWorker(cookies: string) {
+      const { clientId, codeVerifier, flowId } = await startWorkerFlow();
       const consent = await request(http)
         .get(`/api/v1/auth/consent/${flowId}`)
         .set('Cookie', cookies)
@@ -521,7 +526,7 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       const approved = await request(http)
         .post(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
         .set('Cookie', cookies)
-        .send({ flow_id: flowId, approved: true })
+        .send({ flow_id: flowId, approved: true, workspace_id: consent.body.workspace.id })
         .expect(302);
       const code = new URL(approved.headers.location).searchParams.get('code');
       const tokens = await request(http)
@@ -564,6 +569,25 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       const inDefault = await authorizeWorker(operator);
       expect(inDefault.consentWorkspace.id).toBe(DEFAULT_WORKSPACE_ID);
       expect(inDefault.workspaceId).toBe(DEFAULT_WORKSPACE_ID);
+    });
+
+    it('refuses approval once another tab switched away from the workspace the screen showed', async () => {
+      const workspace = await createWorkspace(operator);
+      const inWorkspace = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
+      const { flowId } = await startWorkerFlow();
+      const shown = await request(http)
+        .get(`/api/v1/auth/consent/${flowId}`)
+        .set('Cookie', inWorkspace)
+        .expect(200);
+      expect(shown.body.workspace.id).toBe(workspace.id);
+
+      // Another tab switches back to the default workspace.
+      const switchedBack = cookiesFrom(await switchTo(inWorkspace, DEFAULT_WORKSPACE_ID).expect(200));
+      await request(http)
+        .post(`/api/v1/auth/authorize/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
+        .set('Cookie', switchedBack)
+        .send({ flow_id: flowId, approved: true, workspace_id: workspace.id })
+        .expect(400);
     });
 
     it('stops a removed member’s worker instead of moving it to another workspace', async () => {

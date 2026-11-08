@@ -30,6 +30,7 @@ import {
   AuthFlowNotFoundError,
   AuthFlowAlreadyCompletedError,
   ServerIdentifierMismatchError,
+  ConsentWorkspaceChangedError,
   InvalidFlowStateError,
   DownstreamAuthFailedError,
   NoPendingConnectionFlowsError,
@@ -342,6 +343,7 @@ export class AuthorizationService {
 
     // Extract user ID from access token cookie and update the auth journey
     const accessToken = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+    let sessionWorkspaceId: string | null = null;
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
         const payload =
@@ -349,14 +351,30 @@ export class AuthorizationService {
         mcpAuthFlow.authJourney.actorId = payload.sub;
         // Tokens for Taico's own servers are for the workspace the person
         // consented in, so a worker connects to the workspace they are in.
-        mcpAuthFlow.authJourney.workspaceId = workspaceIdFromClaims(payload);
-        await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
+        sessionWorkspaceId = workspaceIdFromClaims(payload);
+        mcpAuthFlow.authJourney.workspaceId = sessionWorkspaceId;
       } catch (error) {
         this.logger.warn(
           `Failed to extract user ID from access token: ${error}`,
         );
         // Continue with the flow even if we couldn't extract the user ID
       }
+    }
+
+    // The consent screen showed a workspace. If the session switched since
+    // (another tab), the token would work somewhere the person did not see.
+    if (
+      consentDecision.workspace_id &&
+      mcpServerRequiresTaicoAuth(mcpAuthFlow.server.providedId) &&
+      consentDecision.workspace_id !== sessionWorkspaceId
+    ) {
+      throw new ConsentWorkspaceChangedError(
+        consentDecision.workspace_id,
+        sessionWorkspaceId,
+      );
+    }
+    if (mcpAuthFlow.authJourney?.actorId) {
+      await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
     }
 
     // Mark as consent

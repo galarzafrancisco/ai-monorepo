@@ -9928,6 +9928,11 @@
             "type": "boolean",
             "description": "Whether the user approved the authorization request",
             "example": true
+          },
+          "workspace_id": {
+            "type": "string",
+            "description": "The workspace the consent screen showed. For Taico's own servers, approval is refused if the session has since switched to another workspace.",
+            "format": "uuid"
           }
         },
         "required": [

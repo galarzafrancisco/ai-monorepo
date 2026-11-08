@@ -1,6 +1,6 @@
-import { IsString, IsNotEmpty, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean, IsOptional, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * User consent decision DTO for authorization flow
@@ -27,4 +27,13 @@ export class ConsentDecisionDto {
   })
   @IsBoolean()
   approved!: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      "The workspace the consent screen showed. For Taico's own servers, approval is refused if the session has since switched to another workspace.",
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID()
+  workspace_id?: string;
 }

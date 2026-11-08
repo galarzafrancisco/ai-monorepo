@@ -34,7 +34,7 @@ export const useConsent = () => {
     }
   };
 
-  const submitConsent = async (flowId: string, serverId: string, approved: boolean) => {
+  const submitConsent = async (flowId: string, serverId: string, approved: boolean, workspaceId?: string) => {
     setIsApproving(true);
     setError(null);
 
@@ -43,6 +43,9 @@ export const useConsent = () => {
       const consentData: ConsentDecisionDto = {
         flow_id: flowId,
         approved: approved,
+        // The workspace this page showed: approval is refused if the session
+        // switched workspace in another tab since.
+        ...(workspaceId ? { workspace_id: workspaceId } : {}),
       };
 
       const bffBaseUrl = BFF_BASE_URL || window.location.origin;

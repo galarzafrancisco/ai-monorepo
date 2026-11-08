@@ -42,12 +42,12 @@ export function ConsentPage() {
 
   const handleApprove = () => {
     if (!consentMetadata) return;
-    submitConsent(flowId, server.providedId, true);
+    submitConsent(flowId, server.providedId, true, consentMetadata.workspace.id);
   };
 
   const handleDeny = () => {
     if (!consentMetadata) return;
-    submitConsent(flowId, server.providedId, false);
+    submitConsent(flowId, server.providedId, false, consentMetadata.workspace.id);
   };
 
   if (isLoading) {

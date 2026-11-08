@@ -82,6 +82,7 @@ export interface ClientRegistrationResponseDto {
 export interface ConsentDecisionDto {
   flow_id: string;
   approved: boolean;
+  workspace_id?: string;
 }
 
 export interface FlowServerDto {

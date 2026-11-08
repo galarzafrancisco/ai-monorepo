@@ -3288,6 +3288,11 @@ export interface components {
              * @example true
              */
             approved: boolean;
+            /**
+             * Format: uuid
+             * @description The workspace the consent screen showed. For Taico's own servers, approval is refused if the session has since switched to another workspace.
+             */
+            workspace_id?: string;
         };
         FlowServerDto: {
             /**
