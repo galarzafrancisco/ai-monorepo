@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { WorkspaceEntity } from './workspace.entity';
@@ -10,7 +10,7 @@ import {
   DEFAULT_WORKSPACE_SLUG,
 } from './workspaces.constants';
 import { ActorEntity } from '../identity-provider/actor.entity';
-import { ActorType } from '../identity-provider/enums';
+import { ActorType, UserRole } from '../identity-provider/enums';
 import {
   WorkspaceLastAdminError,
   WorkspaceMemberAlreadyExistsError,
@@ -59,6 +59,15 @@ export async function addWorkspaceMembership(
 
 @Injectable()
 export class WorkspacesService implements OnModuleInit {
+  /**
+   * Actors added per INSERT by the startup backfill. Each row binds a few
+   * parameters, so this keeps every statement far below PostgreSQL's
+   * 65,535-parameter limit. Tests lower it to cross a batch boundary.
+   */
+  static BACKFILL_BATCH_SIZE = 1000;
+
+  private readonly logger = new Logger(WorkspacesService.name);
+
   constructor(
     @InjectRepository(WorkspaceEntity)
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
@@ -68,13 +77,18 @@ export class WorkspacesService implements OnModuleInit {
 
   /**
    * Makes sure the default workspace exists (schema-sync databases skip the
-   * migration that creates it). Runs on every startup and is idempotent.
-   *
-   * Memberships are not backfilled here any more: every actor is given one
-   * when it is created, and a person removed from every workspace must not
-   * be put back in the default one on restart.
+   * migration that creates it), then backfills the memberships of actors
+   * older than workspaces. Runs on every startup and is idempotent.
    */
   async onModuleInit(): Promise<void> {
+    await this.ensureDefaultWorkspace();
+    const added = await this.backfillPreWorkspaceMemberships();
+    if (added > 0) {
+      this.logger.log(`Added ${added} pre-workspace actor(s) to the default workspace`);
+    }
+  }
+
+  private async ensureDefaultWorkspace(): Promise<void> {
     await this.workspaceRepository
       .createQueryBuilder()
       .insert()
@@ -317,6 +331,63 @@ export class WorkspacesService implements OnModuleInit {
       }
       await manager.delete(WorkspaceMemberEntity, { id: member.id });
     });
+  }
+
+  /**
+   * Puts actors created before the default workspace existed, and still with
+   * no membership, in the default workspace: people with `users.role =
+   * 'admin'` as admins, everyone else and every agent as members. This covers
+   * a database whose app last ran before workspaces.
+   *
+   * Only those actors: every actor created since gets its membership when it
+   * is created, so one with none was removed from every workspace and must
+   * stay out.
+   *
+   * Works in batches of `BACKFILL_BATCH_SIZE` so a large installation stays
+   * under PostgreSQL's 65,535 bind-parameter limit per statement.
+   *
+   * @returns how many memberships were added
+   */
+  private async backfillPreWorkspaceMemberships(): Promise<number> {
+    let added = 0;
+    for (;;) {
+      const actors: { actorId: string; userRole: string | null }[] =
+        await this.memberRepository.manager.query(
+          `
+          SELECT a."id" AS "actorId", u."role" AS "userRole"
+          FROM "actors" a
+          LEFT JOIN "users" u ON u."actor_id" = a."id"
+          WHERE a."created_at" < (
+            SELECT w."created_at" FROM "workspaces" w WHERE w."id" = $1
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM "workspace_members" m WHERE m."actor_id" = a."id"
+          )
+          ORDER BY a."id"
+          LIMIT $2
+          `,
+          [DEFAULT_WORKSPACE_ID, WorkspacesService.BACKFILL_BATCH_SIZE],
+        );
+      if (actors.length === 0) {
+        return added;
+      }
+      await this.memberRepository
+        .createQueryBuilder()
+        .insert()
+        .values(
+          actors.map(({ actorId, userRole }) => ({
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            actorId,
+            role:
+              userRole === UserRole.ADMIN
+                ? WorkspaceRole.ADMIN
+                : WorkspaceRole.MEMBER,
+          })),
+        )
+        .orIgnore()
+        .execute();
+      added += actors.length;
+    }
   }
 
   /** Memberships of workspaces that are not deleted, with their workspace. */

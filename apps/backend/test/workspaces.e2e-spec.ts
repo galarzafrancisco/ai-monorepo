@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import { decodeJwt } from 'jose';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { IdentityProviderService } from '../src/identity-provider/identity-provider.service';
@@ -124,5 +124,47 @@ describe('Workspaces (e2e)', () => {
     await app.get(WorkspacesService).onModuleInit();
 
     expect(await members.countBy({ actorId: user.actorId })).toBe(0);
+  });
+  it('adds actors older than workspaces that have no membership, at startup, in batches', async () => {
+    // A database whose app last ran before workspaces: its actors predate
+    // the default workspace and have no membership.
+    const identity = app.get(IdentityProviderService);
+    const admin = await identity.createManagedUser({
+      email: `ws-old-${Math.random().toString(36).slice(2, 10)}@example.com`,
+      role: UserRole.ADMIN,
+    });
+    const people = [admin.actorId];
+    for (let i = 0; i < 2; i++) {
+      const user = await identity.createManagedUser({
+        email: `ws-old-${Math.random().toString(36).slice(2, 10)}@example.com`,
+        role: UserRole.STANDARD,
+      });
+      people.push(user.actorId);
+    }
+    for (const actorId of people) {
+      await members.delete({ actorId });
+    }
+    await app.get(DataSource).query(
+      `UPDATE actors SET created_at = (SELECT created_at FROM workspaces WHERE id = $1) - interval '1 day' WHERE id = ANY($2)`,
+      [DEFAULT_WORKSPACE_ID, people],
+    );
+
+    // Three missing actors with a batch size of two crosses a batch boundary.
+    const batchSize = WorkspacesService.BACKFILL_BATCH_SIZE;
+    WorkspacesService.BACKFILL_BATCH_SIZE = 2;
+    try {
+      await app.get(WorkspacesService).onModuleInit();
+    } finally {
+      WorkspacesService.BACKFILL_BATCH_SIZE = batchSize;
+    }
+
+    expect((await members.findOneBy({ actorId: admin.actorId }))?.role).toBe(
+      WorkspaceRole.ADMIN,
+    );
+    for (const actorId of people) {
+      expect(await members.findBy({ actorId })).toEqual([
+        expect.objectContaining({ workspaceId: DEFAULT_WORKSPACE_ID }),
+      ]);
+    }
   });
 });

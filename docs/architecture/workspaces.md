@@ -28,7 +28,9 @@ The `Workspaces1763500000000` migration creates the tables and the default works
 - `IdentityProviderService.createUser` and `createManagedUser` take the workspace and role. Without one they use the default workspace.
 - An invited person joins the inviting workspace (see [Members](#members)).
 
-Phases 1 to 3 did this with `WorkspaceMembershipSubscriber` and a startup backfill that put every actor with no membership in the default workspace. Phase 4 removed both. The backfill would put a person removed from every workspace back in the default one on restart, and `users.role` no longer decides any workspace role (see [Admin roles](#admin-roles)). Phase 1 ran the backfill on every existing installation.
+Phases 1 to 3 did this with `WorkspaceMembershipSubscriber`, and phase 4 removed it. `users.role` no longer decides any workspace role (see [Admin roles](#admin-roles)).
+
+The startup backfill (`WorkspacesService.onModuleInit`) only adds **actors older than the default workspace** (`actors.created_at` before `workspaces.created_at`) that have no membership. People with `users.role = 'admin'` become admins, everyone else and every agent a member. This covers a database whose app last ran before workspaces. Every newer actor got its membership when it was created. A newer actor with none was removed from every workspace, and must not be put back in the default one on restart.
 
 ## How a request knows its workspace
 
