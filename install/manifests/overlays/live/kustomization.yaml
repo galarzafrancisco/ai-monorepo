@@ -1,0 +1,149 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Copied to spark-ops/k8s/taico-live/overlays/main by prepare-deployment.sh.
+# This uses a separate copy of the base: main never changes production.
+namespace: taico-live
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: env
+    envs:
+      - env.env
+    options:
+      disableNameSuffixHash: true
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.SPARK_IP
+    targets:
+      - select:
+          kind: EndpointSlice
+          name: taico-postgres-host
+        fieldPaths:
+          - endpoints.0.addresses.0
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: taico-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: taico-config
+      data:
+        ISSUER_URL: https://live.taico.app
+        GOOGLE_GENAI_USE_VERTEXAI: null
+        GOOGLE_CLOUD_PROJECT: null
+        GOOGLE_CLOUD_LOCATION: null
+        GOOGLE_APPLICATION_CREDENTIALS: null
+  - target:
+      kind: Deployment
+      name: taico
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: taico
+      spec:
+        template:
+          spec:
+            containers:
+              - name: taico
+                volumeMounts:
+                  - name: data
+                    mountPath: /app/data
+                    $patch: delete
+            volumes:
+              - name: data
+                $patch: delete
+  - target:
+      kind: Namespace
+      name: taico
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: taico-live
+  - target:
+      kind: Certificate
+      name: taico
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: live.taico.app
+  - target:
+      kind: ListenerSet
+      name: taico
+    patch: |-
+      - op: replace
+        path: /spec/listeners/0/hostname
+        value: live.taico.app
+  - target:
+      kind: HTTPRoute
+      name: taico
+    patch: |-
+      - op: replace
+        path: /spec/hostnames/0
+        value: live.taico.app
+  - target:
+      kind: HTTPRoute
+      name: taico-https-redirect
+    patch: |-
+      - op: replace
+        path: /spec/hostnames/0
+        value: live.taico.app
+  - target:
+      kind: Service
+      name: taico-postgres
+    patch: |-
+      - op: replace
+        path: /spec/ports/0/targetPort
+        value: 15436
+  - target:
+      kind: EndpointSlice
+      name: taico-postgres-host
+    patch: |-
+      - op: replace
+        path: /ports/0/port
+        value: 15436
+  - target:
+      kind: Certificate
+      name: taico-aliases
+    patch: |-
+      $patch: delete
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: taico-aliases
+  - target:
+      kind: ListenerSet
+      name: taico-aliases
+    patch: |-
+      $patch: delete
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: ListenerSet
+      metadata:
+        name: taico-aliases
+  - target:
+      kind: HTTPRoute
+      name: taico-alias-join
+    patch: |-
+      $patch: delete
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: taico-alias-join
+  - target:
+      kind: HTTPRoute
+      name: taico-alias-marketing
+    patch: |-
+      $patch: delete
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: taico-alias-marketing

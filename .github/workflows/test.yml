@@ -8,9 +8,9 @@ on:
   push:
     branches:
       - main
-  release:
-    types:
-      - published
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*'
 
 jobs:
   test:
@@ -41,6 +41,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Verify deployment environment isolation
+        run: bash scripts/test-deployment.sh
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -174,7 +180,7 @@ jobs:
     name: Tag existing image with release tag
     runs-on: ubuntu-24.04-arm
     needs: test
-    if: github.event_name == 'release'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
       packages: write
@@ -183,7 +189,7 @@ jobs:
       - name: Checkout release commit
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -200,7 +206,7 @@ jobs:
         run: |
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           echo "source_tag=main-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Promote existing image to release tag
@@ -210,10 +216,13 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.source_tag }}
 
   deploy-pr:
-    name: Copy Manifests to spark-ops
+    name: Deploy main to live or release to production
     runs-on: ubuntu-24.04-arm
-    needs: docker
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [docker, docker-release-tag]
+    if: >-
+      always() && github.event_name == 'push' &&
+      ((github.ref == 'refs/heads/main' && needs.docker.result == 'success') ||
+       (startsWith(github.ref, 'refs/tags/') && needs.docker-release-tag.result == 'success'))
     # Serialize deploys so two runs never mutate spark-ops at the same time.
     concurrency:
       group: deploy-spark-ops
@@ -227,6 +236,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # If another PR merged while we were building, only the newest
           # commit's run should update spark-ops, so skip the stale ones.
           LATEST=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
@@ -259,26 +272,28 @@ jobs:
         if: steps.current.outputs.latest == 'true'
         id: image-tag
         run: |
-          SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-          TAG="main-${SHORT_SHA}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          SHORT_SHA=$(git -C ai-monorepo rev-parse --short=7 HEAD)
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            SERVICE=taico
+            ENVIRONMENT=production
+          else
+            TAG="main-${SHORT_SHA}"
+            SERVICE=taico-live
+            ENVIRONMENT=live
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "service=${SERVICE}" >> "$GITHUB_OUTPUT"
+          echo "environment=${ENVIRONMENT}" >> "$GITHUB_OUTPUT"
 
       - name: Copy manifests to spark-ops
         if: steps.current.outputs.latest == 'true'
         run: |
-          # Remove old manifests if they exist
-          rm -rf spark-ops/k8s/taico
-
-          # Copy entire manifests directory
-          mkdir -p spark-ops/k8s
-          cp -r ai-monorepo/install/manifests spark-ops/k8s/taico
-
-          # Update image tag in deployment.yaml
-          cd spark-ops/k8s/taico/base
-
-          # Use kustomize to set image tag
-          kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
+          bash ai-monorepo/scripts/prepare-deployment.sh \
+            '${{ steps.image-tag.outputs.environment }}' \
+            '${{ steps.image-tag.outputs.tag }}' spark-ops
 
       - name: Re-check this commit is still the latest on main (right before publishing)
         id: final
@@ -286,6 +301,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           LATEST=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
           if [ "$LATEST" = "$GITHUB_SHA" ]; then
             echo "latest=true" >> "$GITHUB_OUTPUT"
@@ -301,23 +320,25 @@ jobs:
           token: ${{ secrets.SPARK_OPS_TOKEN }}
           path: spark-ops
           commit-message: |
-            deploy: update taico manifests and image to ${{ steps.image-tag.outputs.tag }}
+            deploy: update ${{ steps.image-tag.outputs.service }} to ${{ steps.image-tag.outputs.tag }}
 
             Source: ${{ github.repository }}@${{ github.sha }}
             Build: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-          branch: deploy/taico-${{ steps.image-tag.outputs.sha }}
+          branch: deploy/${{ steps.image-tag.outputs.service }}-${{ steps.image-tag.outputs.tag }}
           delete-branch: true
-          title: "Deploy taico (${{ steps.image-tag.outputs.tag }})"
+          title: "Deploy ${{ steps.image-tag.outputs.service }} (${{ steps.image-tag.outputs.tag }})"
           body: |
             ## Deployment Update
 
-            **Service**: taico
+            **Service**: ${{ steps.image-tag.outputs.service }}
+            **Environment**: ${{ steps.image-tag.outputs.environment }}
             **Image Tag**: `${{ steps.image-tag.outputs.tag }}`
             **Source Commit**: ${{ github.sha }}
 
             ### Changes
-            - Copied latest manifests from `install/manifests/`
+            - Copied this commit's manifests into `k8s/${{ steps.image-tag.outputs.service }}/`
+            - Main builds update only live.taico.app; release tags update only taico.app
             - Updated image tag to `${{ steps.image-tag.outputs.tag }}`
 
             ### Build Information
