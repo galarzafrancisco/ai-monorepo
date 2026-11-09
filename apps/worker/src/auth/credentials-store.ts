@@ -1,4 +1,5 @@
-import { mkdir, open, readFile, rename, stat, unlink, writeFile } from 'fs/promises';
+import { mkdir, readFile, rename, unlink, writeFile } from 'fs/promises';
+import lockfile from 'proper-lockfile';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
 import type {
@@ -76,9 +77,22 @@ export async function writeWorkerCredentials(
   await mkdir(dirname(credentialsPath), { recursive: true });
 
   // Several workers (one per workspace, say) share this file. The lock makes
-  // each read/merge/write whole, so no worker writes back a stale copy over
-  // another's entry; the rename means readers never see a half-written file.
-  await withFileLock(`${credentialsPath}.lock`, async () => {
+  // each read/merge/write whole across processes, so no worker writes back a
+  // stale copy over another's entry; the rename means readers never see a
+  // half-written file.
+  let compromised: Error | undefined;
+  const release = await lockfile.lock(credentialsPath, {
+    // The file may not exist yet on the first authorization.
+    realpath: false,
+    // The lock is refreshed while held, so only a dead holder goes stale.
+    stale: 10_000,
+    retries: { retries: 100, minTimeout: 20, maxTimeout: 200 },
+    onCompromised: (error) => {
+      compromised = error;
+    },
+  });
+  const tempPath = `${credentialsPath}.${process.pid}.${Date.now()}.tmp`;
+  try {
     let config: MultiServerConfig = { servers: {} };
     try {
       const parsed = JSON.parse(await readFile(credentialsPath, 'utf8')) as unknown;
@@ -93,46 +107,18 @@ export async function writeWorkerCredentials(
     config.servers[credentialsKey(credentials.serverUrl, credentials.workspace)] =
       credentials;
 
-    const tempPath = `${credentialsPath}.${process.pid}.${Date.now()}.tmp`;
     await writeFile(tempPath, JSON.stringify(config, null, 2), {
       encoding: 'utf8',
       mode: 0o600,
     });
+    // Another process took the lock over while this one was stalled: writing
+    // now could overwrite its entry.
+    if (compromised) throw compromised;
     await rename(tempPath, credentialsPath);
-  });
-}
-
-/** A lock left by a process that died mid-write is taken over after this. */
-const STALE_LOCK_MS = 10_000;
-const LOCK_RETRY_MS = 20;
-
-/**
- * Runs `fn` holding a lock file, across processes: creating the file with
- * `wx` succeeds for exactly one of them.
- */
-async function withFileLock<T>(lockPath: string, fn: () => Promise<T>): Promise<T> {
-  for (;;) {
-    try {
-      const handle = await open(lockPath, 'wx');
-      await handle.close();
-      break;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-      const age = await stat(lockPath).then(
-        (s) => Date.now() - s.mtimeMs,
-        () => 0,
-      );
-      if (age > STALE_LOCK_MS) {
-        await unlink(lockPath).catch(() => undefined);
-        continue;
-      }
-      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
-    }
-  }
-  try {
-    return await fn();
   } finally {
-    await unlink(lockPath).catch(() => undefined);
+    await unlink(tempPath).catch(() => undefined);
+    // Releasing a lock that was taken over fails; the new holder keeps it.
+    await release().catch(() => undefined);
   }
 }
 
