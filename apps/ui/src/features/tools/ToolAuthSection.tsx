@@ -11,6 +11,8 @@ type ToolAuthSectionProps = {
   onSaved: (tool: Tool) => void;
   onError?: (error: unknown) => void;
   className?: string;
+  /** Shows the setting without letting it change (members can't edit tools). */
+  readOnly?: boolean;
 };
 
 /**
@@ -19,7 +21,7 @@ type ToolAuthSectionProps = {
  * whether agents send the server Taico credentials. Taico's own tools
  * (`requiresTaicoAuth`) show the switch locked on.
  */
-export function ToolAuthSection({ tool, onSave, onSaved, onError, className }: ToolAuthSectionProps) {
+export function ToolAuthSection({ tool, onSave, onSaved, onError, className, readOnly = false }: ToolAuthSectionProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const isTaicoAuth = usesTaicoAuth(tool);
@@ -47,7 +49,7 @@ export function ToolAuthSection({ tool, onSave, onSaved, onError, className }: T
             id="tool-taico-auth"
             label="Use Taico authentication"
             checked={isTaicoAuth}
-            disabled={isSaving || isLocked}
+            disabled={isSaving || isLocked || readOnly}
             onCheckedChange={(checked) => { void handleChange(checked); }}
           />
         }

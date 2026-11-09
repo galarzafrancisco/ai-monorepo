@@ -11,7 +11,8 @@ import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { McpServerAuthType1763200000000 } from '../src/migrations/1763200000000-McpServerAuthType';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 const VERSION = '0.0.0';
 const REDIRECT_URI = 'http://localhost:6274/oauth/callback';
@@ -40,10 +41,13 @@ describe('MCP server auth type (e2e)', () => {
     dataSource = app.get(DataSource);
 
     await ensureTestUser(app);
+    // Settings writes (MCP registry, integrations) are a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     authCookies = await getAuthCookies(httpServer);
   });
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
   });
 

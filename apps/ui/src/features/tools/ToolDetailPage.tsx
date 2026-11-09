@@ -14,6 +14,7 @@ import { EditToolUrlPop } from './EditToolUrlPop';
 import { EditToolCommandPop } from './EditToolCommandPop';
 import { EditToolScopesPop } from './EditToolScopesPop';
 import { ToolAuthSection } from './ToolAuthSection';
+import { useWorkspacesCtx } from '../workspaces';
 import './ToolDetailPage.css';
 
 type ProtectedResourceMetadata = {
@@ -49,6 +50,8 @@ export function ToolDetailPage() {
   const navigate = useNavigate();
   const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients, loadToolAuthorizations, updateTool, deleteTool } = useToolsCtx();
   const { showError } = useToast();
+  // Changing a tool changes the workspace's MCP registry: admins only.
+  const { isWorkspaceAdmin: canEdit } = useWorkspacesCtx();
 
   // Find tool from context first (for quick load)
   const toolFromList = tools.find(t => t.id === toolId);
@@ -400,17 +403,17 @@ export function ToolDetailPage() {
 
       {/* Name */}
       <DataRowContainer title="Name" className="tool-detail-page__section">
-        <DataRow onClick={() => setShowEditNamePop(true)}>
+        <DataRow onClick={canEdit ? () => setShowEditNamePop(true) : undefined}>
           <Text size="2">{tool.name}</Text>
-          <Text size="1" tone="muted">tap to edit</Text>
+          {canEdit ? <Text size="1" tone="muted">tap to edit</Text> : null}
         </DataRow>
       </DataRowContainer>
 
       {/* Description */}
       <DataRowContainer title="Description" className="tool-detail-page__section">
-        <DataRow onClick={() => setShowEditDescriptionPop(true)}>
+        <DataRow onClick={canEdit ? () => setShowEditDescriptionPop(true) : undefined}>
           <Text size="2">{tool.description}</Text>
-          <Text size="1" tone="muted">tap to edit</Text>
+          {canEdit ? <Text size="1" tone="muted">tap to edit</Text> : null}
         </DataRow>
       </DataRowContainer>
 
@@ -418,11 +421,11 @@ export function ToolDetailPage() {
       {/* URL */}
       {isHttpTool && tool.url ? (
         <DataRowContainer title="Server URL" className="tool-detail-page__section">
-          <DataRow onClick={() => setShowEditUrlPop(true)}>
+          <DataRow onClick={canEdit ? () => setShowEditUrlPop(true) : undefined}>
             <Text as="div" size="2" style="mono" className="tool-detail-page__url">
               {tool.url}
             </Text>
-            <Text size='1' tone='muted'>tap to edit</Text>
+            {canEdit ? <Text size='1' tone='muted'>tap to edit</Text> : null}
           </DataRow>
         </DataRowContainer >
       ) : null
@@ -436,20 +439,21 @@ export function ToolDetailPage() {
           onSave={(authType) => updateTool(tool.id, { authType })}
           onSaved={setTool}
           onError={showError}
+          readOnly={!canEdit}
         />
       ) : null}
 
       {/* Command (stdio tools) */}
       {isStdioTool && (
         <DataRowContainer title="Command" className="tool-detail-page__section">
-          <DataRow onClick={() => setShowEditCommandPop(true)}>
+          <DataRow onClick={canEdit ? () => setShowEditCommandPop(true) : undefined}>
             <Text size="2" style="mono">{tool.cmd}</Text>
             {tool.args && tool.args.length > 0 && (
               <Text size="2" tone="muted" style="mono">
                 Args: {tool.args.join(' ')}
               </Text>
             )}
-            <Text size="1" tone="muted">tap to edit</Text>
+            {canEdit ? <Text size="1" tone="muted">tap to edit</Text> : null}
           </DataRow>
         </DataRowContainer>
       )}
@@ -567,7 +571,7 @@ export function ToolDetailPage() {
       {/* Scopes (Permissions) */}
       {isHttpTool && (
         <DataRowContainer title="Scopes" className="tool-detail-page__section">
-          <DataRow onClick={() => setShowEditScopesPop(true)}>
+          <DataRow onClick={canEdit ? () => setShowEditScopesPop(true) : undefined}>
             {scopes.length > 0 ? (
               <Stack spacing="1">
                 {scopes.map(scope => (
@@ -582,7 +586,7 @@ export function ToolDetailPage() {
                 No scopes configured
               </Text>
             )}
-            <Text size="1" tone="muted">tap to edit</Text>
+            {canEdit ? <Text size="1" tone="muted">tap to edit</Text> : null}
           </DataRow>
         </DataRowContainer>
       )}
@@ -639,6 +643,7 @@ export function ToolDetailPage() {
       )}
 
       {/* Delete */}
+      {canEdit ? (
       <DeleteWithConfirmation
         className="tool-detail-page__actions"
         onDelete={async () => {
@@ -650,6 +655,7 @@ export function ToolDetailPage() {
           }
         }}
       />
+      ) : null}
 
       {/* Back button */}
       <DataRowContainer className="tool-detail-page__actions">

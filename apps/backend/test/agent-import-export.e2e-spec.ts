@@ -9,7 +9,9 @@ import { AGENT_DEFINITION_VERSION } from '../src/agents/dto/service/agent-import
 import {
   ensureTestUser,
   getAuthCookies,
+  setTestUserRole,
 } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 
 describe('Agent definition import/export (e2e)', () => {
   let app: INestApplication<App>;
@@ -44,10 +46,13 @@ describe('Agent definition import/export (e2e)', () => {
     httpServer = app.getHttpServer();
 
     await ensureTestUser(app);
+    // These tests set up MCP servers, which is a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     authCookies = await getAuthCookies(httpServer);
   });
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
   });
 

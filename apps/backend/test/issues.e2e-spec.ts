@@ -12,7 +12,8 @@ import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { IssuesService } from '../src/issues/issues.service';
 import { IssueUpdatedEvent } from '../src/issues/events/issues.events';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 import { FakeGithub, FakeIssue, issueRoutes, patUsers } from './helpers/fake-github';
 
 async function eventually<T>(check: () => Promise<T>, timeoutMs = 10_000): Promise<T> {
@@ -66,6 +67,8 @@ describe('Issues E2E', () => {
     http = app.getHttpServer();
     ds = app.get(DataSource);
     await ensureTestUser(app);
+    // Settings writes (MCP registry, integrations) are a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     cookies = await getAuthCookies(http);
     app.get(EventEmitter2).on(IssueUpdatedEvent.INTERNAL, (event: IssueUpdatedEvent) => events.push(event));
   }, 30000);
@@ -82,6 +85,7 @@ describe('Issues E2E', () => {
   });
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
     await github.stop();
     delete process.env.GITHUB_API_URL;

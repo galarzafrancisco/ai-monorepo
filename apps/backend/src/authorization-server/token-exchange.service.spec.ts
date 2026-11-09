@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TokenExchangeService } from './token-exchange.service';
+import { EntitlementsService } from 'src/entitlements/entitlements.service';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
@@ -69,6 +70,10 @@ describe('TokenExchangeService', () => {
             findOne: jest.fn(),
             save: jest.fn(),
           },
+        },
+        {
+          provide: EntitlementsService,
+          useValue: { requireMembership: jest.fn().mockResolvedValue(undefined) },
         },
         {
           provide: JwksService,
