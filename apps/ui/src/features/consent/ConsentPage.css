@@ -237,3 +237,44 @@
     margin-top: var(--space-1);
   }
 } 
+/* The workspace the client gets access to: shown first, it decides what every other section means. */
+.consent-workspace {
+  border-left: 3px solid var(--accent);
+}
+
+.consent-workspace__picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.consent-workspace__label {
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+.consent-workspace__select {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font: inherit;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.consent-workspace__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.consent-workspace__note {
+  margin: var(--space-2) 0 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+}
