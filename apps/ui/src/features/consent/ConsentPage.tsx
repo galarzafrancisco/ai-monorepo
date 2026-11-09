@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Card, DataRow, Stack, Text, ErrorText, Row, ListRow, Button } from "../../ui/primitives";
 import { mcpServerRequiresTaicoAuth } from "@taico/shared";
+import { ConsentWorkspaceCard } from "./ConsentWorkspaceCard";
 import { RequestedWorkspaceNotice } from './RequestedWorkspaceNotice';
 import './ConsentPage.css';
 
@@ -41,13 +42,18 @@ export function ConsentPage() {
   }, [isLoading, error, consentMetadata]);
 
 
+  // A workspace switch reloads this page; until it does, no decision may be
+  // sent, since it would still carry the workspace being left.
+  const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
+  const decisionLocked = isApproving || isSwitchingWorkspace;
+
   const handleApprove = () => {
-    if (!consentMetadata) return;
+    if (!consentMetadata || decisionLocked || inOtherWorkspace) return;
     submitConsent(flowId, server.providedId, true, consentMetadata.workspace.id);
   };
 
   const handleDeny = () => {
-    if (!consentMetadata) return;
+    if (!consentMetadata || decisionLocked) return;
     submitConsent(flowId, server.providedId, false, consentMetadata.workspace.id);
   };
 
@@ -98,6 +104,22 @@ export function ConsentPage() {
           : null}
 
         <div className="consent-details">
+          <ConsentWorkspaceCard
+            workspace={workspace}
+            followsSession={workspaceFollowsSession}
+            isSwitching={isSwitchingWorkspace}
+            setIsSwitching={setIsSwitchingWorkspace}
+            isSubmitting={isApproving}
+          />
+          {inOtherWorkspace && requestedSlug ? (
+            <RequestedWorkspaceNotice
+              requestedSlug={requestedSlug}
+              isSwitching={isSwitchingWorkspace}
+              setIsSwitching={setIsSwitchingWorkspace}
+              isSubmitting={isApproving}
+            />
+          ) : null}
+
           <Card className="detail-section">
             <h2>WHO is requesting access</h2>
             <div className="client-info">
@@ -148,18 +170,6 @@ export function ConsentPage() {
               <div className="server-name">{server.name}</div>
               <div className="server-id">Server ID: {server.providedId}</div>
             </div>
-            <div className="workspace-info" style={{ marginTop: '16px' }}>
-              <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Workspace:</div>
-              <div className="server-name">{workspace.name}</div>
-              <div className="server-id">@{workspace.slug}</div>
-              {inOtherWorkspace && requestedSlug ? (
-                <RequestedWorkspaceNotice requestedSlug={requestedSlug} />
-              ) : workspaceFollowsSession && requestedSlug === null ? (
-                <p style={{ marginTop: '8px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
-                  Access is granted in the workspace you are in now. To connect to another workspace, switch to it in Taico, then reload this page.
-                </p>
-              ) : null}
-            </div>
             <div className="resource-info" style={{ marginTop: '16px' }}>
               <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Resource:</div>
               <code>{resource}</code>
@@ -197,14 +207,14 @@ export function ConsentPage() {
 
 
       <div className="consent-actions">
-        <Button variant="danger" onClick={handleDeny} disabled={isApproving}>Deny</Button>
-        <Button variant="primary" onClick={handleApprove} disabled={isApproving || inOtherWorkspace}>{isApproving ? 'Approving...' : 'Approve'}</Button>
+        <Button variant="danger" onClick={handleDeny} disabled={decisionLocked}>Deny</Button>
+        <Button variant="primary" onClick={handleApprove} disabled={decisionLocked || inOtherWorkspace}>{isApproving ? 'Approving...' : 'Approve'}</Button>
       </div>
 
       <div className="consent-footer">
         <p>
           By approving, you authorize <strong>{consentMetadata.client.clientName}</strong> to access the
-          specified resources with the requested permissions.
+          specified resources with the requested permissions in <strong>{consentMetadata.workspace.name}</strong>.
         </p>
         <Link
           to="/">

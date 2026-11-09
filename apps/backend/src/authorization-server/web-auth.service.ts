@@ -1,29 +1,22 @@
 import { WEB_SESSION_AUDIENCE } from '../auth/core/resource-audience';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { SignJWT, importPKCS8 } from 'jose';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import { getConfig } from '../config/env.config';
-import { JwksService } from '../auth/crypto/jwks.service';
-import { WorkspacesService } from '../workspaces/workspaces.service';
-import { WorkspaceRole } from '../workspaces/enums';
+import { TokenSignerService } from '../auth/crypto/token-signer.service';
+import { NotInWorkspaceError } from '../workspaces/workspace.errors';
 import {
-  NoWorkspaceMembershipError,
-  NotInWorkspaceError,
-} from '../workspaces/workspace.errors';
-import { InstallationScopes } from 'src/auth/core/scopes/installation.scopes';
+  Entitlement,
+  EntitlementsService,
+} from '../entitlements/entitlements.service';
 import { UserRole } from 'src/identity-provider/enums';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
-import { Scope } from 'src/auth/core/types/scope.type';
-import { UserScopes } from 'src/auth/core/scopes/user.scopes';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { User } from 'src/identity-provider/user.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
-import { ALL_WEB_SCOPES } from 'src/auth/core/scopes/all-web.scopes';
-import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
 import {
   RefreshTokenActorMissingError,
   RefreshTokenUserMissingError,
@@ -36,8 +29,8 @@ export class WebAuthService {
   constructor(
     private readonly identityProviderService: IdentityProviderService,
     private readonly actorService: ActorService,
-    private readonly jwksService: JwksService,
-    private readonly workspacesService: WorkspacesService,
+    private readonly tokenSignerService: TokenSignerService,
+    private readonly entitlementsService: EntitlementsService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
@@ -65,7 +58,10 @@ export class WebAuthService {
     );
 
     // A session starts in the person's oldest workspace.
-    const workspace = await this.resolveSessionWorkspace(actor.id, null);
+    const workspace = await this.entitlementsService.sessionEntitlement(
+      actor.id,
+      null,
+    );
 
     // Generate access token using centralized config
     const config = getConfig();
@@ -95,36 +91,6 @@ export class WebAuthService {
   }
 
   /**
-   * The workspace a session token is minted for: `preferredWorkspaceId` while
-   * the person is still a member of it, otherwise their oldest membership.
-   * Membership is checked here, every time a token is minted, so a removed
-   * member's next token is for another workspace.
-   *
-   * @throws {NoWorkspaceMembershipError} if the person is in no workspace. A
-   *   token with no `workspace_id` would be read as the default workspace.
-   */
-  private async resolveSessionWorkspace(
-    actorId: string,
-    preferredWorkspaceId: string | null,
-  ): Promise<{ workspaceId: string; role: WorkspaceRole }> {
-    if (preferredWorkspaceId) {
-      const role = await this.workspacesService.findRole(
-        preferredWorkspaceId,
-        actorId,
-      );
-      if (role) {
-        return { workspaceId: preferredWorkspaceId, role };
-      }
-    }
-    const membership =
-      await this.workspacesService.findMembershipForActor(actorId);
-    if (!membership) {
-      throw new NoWorkspaceMembershipError(actorId);
-    }
-    return membership;
-  }
-
-  /**
    * Generate a signed JWT access token for web authentication, in one
    * workspace the person is a member of.
    */
@@ -132,32 +98,10 @@ export class WebAuthService {
     durationMinutes: number,
     actor: ActorEntity,
     user: User,
-    workspace: { workspaceId: string; role: WorkspaceRole },
+    workspace: Entitlement,
   ): Promise<string> {
-    // Get active signing key
-    const signingKey = await this.jwksService.getActiveSigningKey();
-
-    // Import private key from PEM
-    const privateKey = await importPKCS8(
-      signingKey.privateKeyPem,
-      signingKey.algorithm,
-    );
-
-    // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
-
-    // `user:admin` follows the membership role in the token's workspace;
-    // `installation:admin` follows the installation-wide users.role
-    // (docs/architecture/workspaces.md, "Admin roles").
-    const scopes: Scope[] = [
-      ...ALL_WEB_SCOPES,
-      ...ALL_MCP_REGISTRY_SCOPES,
-      workspace.role === WorkspaceRole.ADMIN
-        ? UserScopes.ADMIN
-        : UserScopes.STANDARD,
-      ...(user.role === UserRole.ADMIN ? [InstallationScopes.ADMIN] : []),
-    ];
 
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
@@ -168,27 +112,22 @@ export class WebAuthService {
       actor_type: actor.type,
       displayName: actor.displayName,
       email: user.email,
-      scope: scopes.map((s) => s.id),
+      // The workspace role decides `user:admin` and the workspace-settings
+      // scopes; the installation role decides `installation:admin`
+      // (docs/architecture/workspaces.md, "Entitlements").
+      scope: this.entitlementsService.webSessionScopes(workspace, {
+        operator: user.role === UserRole.ADMIN,
+      }),
       aud: WEB_SESSION_AUDIENCE,
       client_id: 'web-app',
-      // mcp_server_identifier: 'not needed for non-mcp',
       resource: `${config.issuerUrl}`,
       version: '0.0.0',
       iat: now,
-      exp: now + durationMinutes * 60, // duration passed in as a param
+      exp: now + durationMinutes * 60,
       jti: randomBytes(16).toString('hex'),
     };
 
-    // Sign and return JWT
-    const jwt = await new SignJWT(payload as any)
-      .setProtectedHeader({
-        alg: signingKey.algorithm,
-        kid: signingKey.kid,
-        typ: 'JWT',
-      })
-      .sign(privateKey);
-
-    return jwt;
+    return this.tokenSignerService.signToken(payload);
   }
 
   /**
@@ -297,7 +236,7 @@ export class WebAuthService {
     }
 
     // Stay in the session's workspace while still a member of it.
-    const workspace = await this.resolveSessionWorkspace(
+    const workspace = await this.entitlementsService.sessionEntitlement(
       actor.id,
       storedToken.workspaceId,
     );
@@ -345,7 +284,7 @@ export class WebAuthService {
     actor: ActorEntity;
     user: User;
   }> {
-    const role = await this.workspacesService.findRole(workspaceId, actorId);
+    const role = await this.entitlementsService.roleIn(workspaceId, actorId);
     if (!role) {
       throw new NotInWorkspaceError();
     }

@@ -76,6 +76,17 @@ describe('NewToolPop', () => {
 });
 
 describe('ToolAuthSection', () => {
+  it('cannot be changed when read-only (members cannot edit tools)', async () => {
+    const onSave = vi.fn();
+    render(<ToolAuthSection tool={makeTool()} onSave={onSave} onSaved={vi.fn()} readOnly />);
+
+    expect(taicoSwitch().hasAttribute('disabled')).toBe(true);
+    await act(async () => {
+      fireEvent.click(taicoSwitch());
+    });
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it('saves the new auth type and shows the saved tool', async () => {
     const saved = makeTool({ authType: 'external' });
     const onSave = vi.fn().mockResolvedValue(saved);

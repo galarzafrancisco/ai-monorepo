@@ -165,7 +165,7 @@ Migration `WorkspaceScopeIntegrationsMcpSearch1764000000000` adds `workspace_id`
 **MCP registry**
 - **A server's `providedId` stays unique across the installation**, because it names the OAuth resource in `/mcp/<providedId>/...` URLs, which carry no workspace. So a workspace creating a `providedId` another workspace already uses gets a 409, which tells it the name is taken. A connection's `providedId` is unique per workspace.
 - **Taico's baseline servers** (tasks, context) stay default-workspace rows. Every workspace lists and reads them, but outside the default workspace it gets Taico's built-in transport, never the row's URL or command (the 3c guarantee). Every write needs the workspace's own server.
-- **MCP OAuth tokens.** For Taico's own servers (tasks, context and the worker target) the token's workspace is the one the person was in when they approved the consent screen. Consent records the web session's workspace on the authorization journey (`authorization_journeys.workspace_id`), and the consent screen shows it, with a note to switch workspace first to connect elsewhere. Every code exchange and refresh checks the person is still a member; if not, the token is refused (`TOKEN_ACTOR_NOT_IN_WORKSPACE`), so a worker is never moved to another workspace. Journeys from before this was recorded use the person's oldest membership (a person in no workspace gets no token). A worker started with `--workspace <slug>` sends that slug on its authorization request (a Taico extension parameter, `workspace`, stored on `mcp_authorization_flows.requested_workspace_slug`); the consent screen names it, and approval from any other workspace is refused (`CONSENT_WORKSPACE_NOT_REQUESTED`). An authorization link works once: a request repeating the PKCE challenge of a flow already approved or denied is refused (`AUTHORIZATION_LINK_ALREADY_USED`; opening it again before deciding reopens the same flow), and a worker client, which a worker registers anew every time it asks, authorizes only once (`WORKER_ALREADY_AUTHORIZED`). So reopening an old worker link from another workspace can't put that worker in a second workspace. For any other server it is the server's workspace, and the person must be a member there (`TOKEN_ACTOR_NOT_IN_WORKSPACE` otherwise), checked on every code exchange and refresh. The authorization server, discovery and auth journeys still find servers across the installation, by OAuth resource.
+- **MCP OAuth tokens.** For Taico's own servers (tasks, context and the worker target) the token's workspace is the one the person was in when they approved the consent screen. Consent records the web session's workspace on the authorization journey (`authorization_journeys.workspace_id`), and the consent screen shows it first, in its own "WHICH workspace" section. A person in several workspaces can pick another one there: picking switches the web session (`switchWorkspaceAndReload`) and reloads the same consent page, so the screen and the approval follow the new workspace (`ConsentWorkspaceCard` in `apps/ui/src/features/consent`). While a switch is on its way, Approve and Deny are held (a decision then would still carry the workspace being left), and once a decision is sent the picker is held. A worker started with `--workspace <slug>` sends that slug on its authorization request (a Taico extension parameter, `workspace`, stored on `mcp_authorization_flows.requested_workspace_slug`); the consent screen names it, offers to switch to it, and approval from any other workspace is refused (`CONSENT_WORKSPACE_NOT_REQUESTED`). An authorization link works once: a request repeating the PKCE challenge of a flow already approved or denied is refused (`AUTHORIZATION_LINK_ALREADY_USED`); opening it again before deciding reopens the same flow untouched, and a changed request on the same challenge is refused (`AUTHORIZATION_REQUEST_CHANGED`). A client's registration flow is claimed with one conditional update, so of two first requests arriving together only one starts it. A worker client, which a worker registers anew every time it asks, authorizes only once (`WORKER_ALREADY_AUTHORIZED`). So reopening an old worker link from another workspace can't put that worker in a second workspace. Every code exchange and refresh checks the person is still a member; if not, the token is refused (`TOKEN_ACTOR_NOT_IN_WORKSPACE`), so a worker is never moved to another workspace. Journeys from before this was recorded use the person's oldest membership (a person in no workspace gets no token). For any other server it is the server's workspace, and the person must be a member there (`TOKEN_ACTOR_NOT_IN_WORKSPACE` otherwise), checked on every code exchange and refresh. The authorization server, discovery and auth journeys still find servers across the installation, by OAuth resource.
 - **Downstream token exchange** (`/auth/token-exchange/mcp/...`) works in the token's workspace. The connection, its scope mappings and the authorized flow must all be that workspace's, so a B token for the shared `tasks` server never reaches A's connection, even by its UUID. The flow must also be the token's own journey: the same person (`sub`) and the same client. Another person's or another client's flow on the same connection does not count.
 - **The auth-journeys monitor** (`GET /auth-journeys/servers/:id`, still `default-only`) shows a server only if the caller's workspace can see it: its own server or a baseline server. Another workspace's server answers 404. It lists only journeys of the workspace's members, and only the connection flows of the workspace's own connections, because a baseline server's journeys include other workspaces' people.
 
@@ -174,7 +174,7 @@ Migration `WorkspaceScopeIntegrationsMcpSearch1764000000000` adds `workspace_id`
 - Every projection outputs its item's workspace. Keyword, fuzzy and semantic search all filter on `workspace_id` before the limit. The embedder works per workspace, with that workspace's embeddings model, and a query is embedded with the caller's.
 - Search settings stay installation-wide. Since phase 4, only the installation operator writes them and rebuilds the index (`installation` mode, `installation:admin` as well as `search:configure`), from any workspace. Reading the settings and the index status is `scoped`, and the status is per workspace.
 
-**Not changed (still open after phase 4):** GitHub and MCP registry writes need only the module scopes, which every web session has, not workspace admin.
+**Admin only since [Entitlements](#entitlements):** GitHub and MCP registry writes need `integration:write`/`delete` and `mcp-registry:write`, which only workspace admins hold.
 
 ### Entry points: the two rules
 
@@ -257,11 +257,41 @@ Migration `WorkspaceScopeAiModelsSecrets1763900000000` adds `workspace_id` to `a
 - **Seeding.** At startup the default OpenAI and Google Vertex AI providers are created in the default workspace only. A new workspace gets the same two, with no credentials (see [Creating a workspace](#creating-a-workspace)).
 - **Not changed:** no composite foreign keys (as in 3b). Same-workspace references are enforced by the services. Nothing in these modules is realtime.
 
+## Entitlements
+
+**`EntitlementsService`** (`apps/backend/src/entitlements/`) is the one place that decides what an actor may do in a workspace. Every path that mints a token asks it, and asks again on refresh, so a removed or demoted member loses access at their next token. `WorkspacesService` only stores memberships; it decides nothing.
+
+### Which scopes a role holds
+
+`entitlements.scopes.ts` defines them:
+
+| Who | Holds |
+|---|---|
+| Member | Every API scope except the ones below, plus `user:standard` |
+| Workspace admin | A member's scopes, with `user:admin` in place of `user:standard`, plus the workspace-settings writes: `mcp-registry:write`, `integration:write`, `integration:delete`, `secret:write`, `secret:delete`, `ai_provider:write`, `ai_provider:delete`, `ai_provider:configure` (`WORKSPACE_ADMIN_SCOPES`) |
+| Installation operator | `installation:admin` and `search:configure` (`INSTALLATION_SCOPES`), in web sessions only, on top of their workspace role |
+| Nobody's session | `workers:connect` and `run:impersonate` (`CLIENT_ONLY_SCOPES`): they belong to one kind of client |
+
+### Per token kind
+
+| Token | Workspace | Scopes | Once the person leaves the workspace |
+|---|---|---|---|
+| Web session (login, refresh, switch) | `sessionEntitlement`: the one asked for while still a member, else the oldest | `webSessionScopes`: by role, plus installation scopes for operators | Refresh lands in another of their workspaces; none left means no session |
+| MCP OAuth and workers | `mcpTokenEntitlement`: Taico's own servers use the consent workspace (legacy journeys: oldest membership); a registry server uses its own | `mcpTokenScopes`: what was authorized, less admin scopes for a member and installation scopes for anyone. A server's own client scopes (`workers:connect`) and a registry server's own scopes stay | Code exchange and refresh are refused (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403). A worker never moves |
+| Agent and execution tokens, the threads agent's token | The caller's | `assertCanIssue`: no Taico scope that the subject or the issuer does not hold. Agents are always members, so an agent token never carries admin or installation scopes. A registry server's own scopes are left to the agent's tool permissions | Refused at issue (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403) |
+| Token exchange | The MCP token's | Downstream scopes from the connection's mappings | Refused (`TOKEN_ACTOR_NOT_IN_WORKSPACE`, 403) |
+
+A request for scopes that aren't held is refused rather than trimmed (`TOKEN_SCOPE_NOT_ENTITLED`, 403, listing them), so the caller sees what it didn't get.
+
+MCP and worker tokens are the exception: they're minted from a consent the person already gave, so their scopes are trimmed to the role at each code exchange and refresh. The token response's `scope` reports exactly the scopes in the token, so a client learns when its grant narrowed. The consent itself is kept unchanged, so a promotion restores what was authorized at the next refresh.
+
+The tests are in `test/entitlements.e2e-spec.ts` and `src/entitlements/entitlements.service.spec.ts`.
+
 ## Admin roles
 
 Two roles, and they are independent:
 
-- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope comes from the membership role in the token's workspace (`WebAuthService.generateWebAccessToken`). A person can be admin in one workspace and member in another.
+- **Workspace admin**: the `admin` membership role. Manages that workspace's members and settings. The web session's `user:admin` scope and the workspace-settings write scopes come from the membership role in the token's workspace (see [Entitlements](#entitlements)). A person can be admin in one workspace and member in another.
 - **Installation operator**: whoever runs the installation, i.e. people with `users.role = 'admin'`. Their web sessions also carry `installation:admin` (`auth/core/scopes/installation.scopes.ts`, a sensitive web scope that no session gets just for signing in). It creates workspaces, manages logins (`/auth/users`, which checks `users.role`), reviews access requests, and writes search settings. These routes are `installation` mode, so an operator uses them from any workspace.
 
 Since phase 4, `users.role` never changes a workspace role (`updateUserRole` only sets the installation role). The first person (onboarding) is both: operator and admin of the default workspace. A person created from `/auth/users` joins the operator's current workspace, as its admin if they are made an operator too, a member otherwise.
@@ -312,7 +342,7 @@ Members are always the token's workspace's: the routes are `/workspaces/current/
 - **Refresh keeps the workspace.** `refresh_tokens.workspace_id` (migration `RefreshTokenWorkspace1764100000000`) records the session's workspace. Each refresh checks membership again. If the person was removed, the new token is for their oldest remaining workspace.
 - **Sign-in** starts in the person's oldest membership. There is no "last used workspace" yet.
 - **No token without a workspace.** Web sessions and MCP tokens for Taico's own servers always carry `workspace_id`. Someone in no workspace is refused, because a token with no claim would be read as the default workspace.
-- MCP tokens for Taico's own servers (and so workers) are for the workspace the person was in when they approved. There is no picker on the consent screen: to connect to another workspace, switch to it first, then reload the consent screen. A worker started with `--workspace` offers the switch on the consent screen itself.
+- MCP tokens for Taico's own servers (and so workers) are for the workspace the person was in when they approved. The consent screen has a workspace picker for them. Picking a workspace there switches the session, the same as the sidebar switcher, so other tabs reload too. For any other server the workspace is the server's, and the consent screen shows it without a picker. A worker started with `--workspace` can only be approved from that workspace; the consent screen offers the switch.
 
 The tests are in `test/workspace-membership.e2e-spec.ts`:
 - creating a workspace and what it is seeded with
@@ -327,7 +357,6 @@ The tests are in `test/workspace-membership.e2e-spec.ts`:
 **Still open after phase 4:**
 - Removal does not revoke tokens already minted or disconnect sockets.
 - The legacy fallback for tokens with no `workspace_id` claim remains (see the [launch checklist](https://taico.app/context/block/64d3ec50-6657-4cc3-98ca-25f5a4303c1f)).
-- GitHub and MCP registry writes still need only module scopes, not workspace admin.
 
 ## The UI (phase 5)
 
@@ -342,7 +371,7 @@ The UI lives in `apps/ui/src/features/workspaces/`. `WorkspacesProvider` (inside
 - **Who edits what.** Pages about the workspace's shared settings decide from the workspace role (`isWorkspaceAdmin`), never from `user.role`. Settings > AI models is read-only for members, except their own ChatGPT plan connection and Test connection. `user.role` is still right for the installation operator's pages: Users, Access requests and creating workspaces.
 - **Links into another workspace.** A task, thread or context block that answers "not found" is looked up with `GET /workspaces/locate?kind=task|thread|context_block&id=` (`installation` mode). When it is in another of the person's workspaces, the page offers "Switch to <workspace>", which switches and reopens the same URL. The route answers the same `404` when the row does not exist, is deleted, or is in a workspace the person is not in, so ids cannot be probed. The kind maps to a fixed table name in `WorkspacesService.locateRowForActor`; it never reaches SQL as client input.
 
-Not yet: other link targets (agents, projects, runs), and a workspace picker in the MCP OAuth flow. A background tab's socket that reconnects after another tab switched can receive the new workspace's events until that tab is focused or makes a request. Socket messages are subscriptions only, so it can't write. The Tasks board's selected and recent projects (`tasks.selectedProjectId`, `tasks.recentProjectIds`) are not scoped by workspace. They hold ids only, and the other workspace can't resolve them.
+Not yet: other link targets (agents, projects, runs). A background tab's socket that reconnects after another tab switched can receive the new workspace's events until that tab is focused or makes a request. Socket messages are subscriptions only, so it can't write. The Tasks board's selected and recent projects (`tasks.selectedProjectId`, `tasks.recentProjectIds`) are not scoped by workspace. They hold ids only, and the other workspace can't resolve them.
 
 ## Phases
 

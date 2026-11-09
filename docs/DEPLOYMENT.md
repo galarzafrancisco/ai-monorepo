@@ -7,7 +7,7 @@ This document explains how Taico is deployed to production using Kubernetes and 
 Taico uses a two-repository GitOps approach for deployments:
 
 1. **Application Repository** (this repo) — Contains the application code and Kubernetes manifest templates
-2. **Deployment Repository** (separate, private repo) — Contains hydrated manifests with production secrets
+2. **Deployment Repository** (separate, private repo) — Contains environment-specific deployment configuration
 
 ## Deployment Architecture
 
@@ -20,12 +20,12 @@ Taico uses a two-repository GitOps approach for deployments:
 └─────────────────────────────────────────────────────────────────────┘
                                     │
                                     │ GitHub Actions CI
-                                    │ (on push to main)
+                                    │ (on main or version-tag pushes)
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        Deployment Repository                         │
 │  • Hydrated Kubernetes manifests                                    │
-│  • Production secrets (stored as repo secrets)                      │
+│  • Environment-specific configuration                               │
 │  • Automated CI to hydrate env.env                                  │
 │  • Auto-merge to main                                               │
 └─────────────────────────────────────────────────────────────────────┘
@@ -36,7 +36,7 @@ Taico uses a two-repository GitOps approach for deployments:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Kubernetes Cluster                           │
 │  • ArgoCD continuously syncs from deployment repo                   │
-│  • Deploys to taico namespace                                       │
+│  • Deploys to environment-specific namespaces                        │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -48,7 +48,7 @@ The manifests follow Kustomize's base/overlay pattern:
 install/manifests/
 ├── base/                          # Base Kubernetes resources
 │   ├── kustomization.yaml         # Base kustomization config
-│   ├── namespace.yaml             # Taico namespace
+│   ├── namespace.yaml             # Namespace template
 │   ├── configmap.yaml             # Non-sensitive environment variables
 │   ├── deployment.yaml            # Main application deployment
 │   ├── service.yaml               # Kubernetes service
@@ -57,7 +57,7 @@ install/manifests/
 │   ├── route.yaml                 # Gateway API HTTPS application route
 │   ├── https-redirect.yaml        # Gateway API HTTP-to-HTTPS redirect
 │   ├── rate-limit.yaml            # agentgateway rate limit for POST /api/v1/access-requests
-│   ├── aliases.yaml               # join./marketing.taico.app redirects (cert, listeners, routes)
+│   ├── aliases.yaml               # Optional hostname redirects
 │   └── certificate.yaml           # TLS certificate
 └── overlays/
     └── main/                      # Production overlay
@@ -67,18 +67,23 @@ install/manifests/
 
 ### Gateway rules
 
-The public Gateway (`gateways/public`, GatewayClass `agentgateway`) is managed in the gateways repo. It already sets a gateway-wide rate limit and normalises `x-forwarded-for`. Taico's manifests add:
+The manifests target a Gateway managed separately by the deployment operator.
+Configure its reference and any gateway-wide policies for your environment.
+Taico's manifest templates include:
 
 - **`POST /api/v1/access-requests` rate limit.** The `taico` HTTPRoute has a named rule, `access-requests-submit`, and `rate-limit.yaml` attaches an agentgateway `local` limit to it (10/min, burst 5). Clients past the limit get `429` with `x-ratelimit-*` headers. It's one bucket for all clients, not per IP. See [Access requests: Rate limiting](how-to-guides/access-requests.md#rate-limiting).
-- **Vanity hostnames.** `join.taico.app/*` redirects (`302`) to `https://taico.app/join`, and `marketing.taico.app/*` to `https://taico.app/marketing`, over both HTTP and HTTPS. They have their own Certificate (`taico-aliases-tls`) and ListenerSet, so a missing DNS record or failed issuance can't affect `taico.app`. **Prerequisite:** DNS records for both hostnames pointing at the public gateway. Until those exist, the `taico-aliases` Certificate stays pending, which is harmless.
+- **Optional hostname redirects.** Alias routes can redirect to application pages
+  over HTTP and HTTPS. Configure the hostnames, destinations, certificates and
+  DNS records in your deployment repository, or remove these resources if unused.
 
 Check the rules after a sync:
 
 ```bash
-kubectl get agentgatewaypolicy,listenerset,httproute,certificate -n taico
+NAMESPACE=example-namespace
+BASE_URL=https://app.example.com
+kubectl get agentgatewaypolicy,listenerset,httproute,certificate -n "$NAMESPACE"
 # Rate limit: once the bucket is empty, the remaining POSTs in that minute return 429
-for i in $(seq 1 20); do curl -s -o /dev/null -w '%{http_code}\n' -X POST https://taico.app/api/v1/access-requests -H 'content-type: application/json' -d '{}'; done
-curl -sI https://join.taico.app/ | grep -i location   # https://taico.app/join
+for i in $(seq 1 20); do curl -s -o /dev/null -w '%{http_code}\n' -X POST "$BASE_URL/api/v1/access-requests" -H 'content-type: application/json' -d '{}'; done
 ```
 
 The `-d '{}'` body fails validation (`400`) so the check doesn't store anything, but it still uses up tokens from the bucket.
@@ -92,7 +97,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: taico-config
-  namespace: taico
+  namespace: example-namespace
 data:
   # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
@@ -141,8 +146,8 @@ replacements:
 |----------|-------------|---------|
 | `BACKEND_PORT` | Backend server port | `3000` |
 | `ISSUER_URL` | OAuth issuer URL (must match public URL, defaults to localhost) | `https://taico.example.com` |
-| `DATABASE_URL` | PostgreSQL URL from the `taico-database` Secret | `postgresql://taico:...@taico-postgres:5432/taico` |
-| `DATABASE_SSL` | Require verified TLS to PostgreSQL | `false` for the private host endpoint |
+| `DATABASE_URL` | PostgreSQL connection URL supplied through a Secret | `postgresql://USER:PASSWORD@db.example.com:5432/DATABASE` |
+| `DATABASE_SSL` | Require verified TLS to PostgreSQL | Set according to your database's TLS configuration |
 | `TYPEORM_SCHEMA_MODE` | Schema management; production uses migrations | `migrate` |
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
@@ -166,13 +171,25 @@ The database needs the `pg_trgm` extension (it ships with PostgreSQL; the first 
 
 ### 1. Application Repository CI
 
-When code is pushed to the main branch:
+| Trigger | Image | Target environment |
+|---------|-------|--------------------|
+| Merge/push to `main` | `main-<short SHA>` | Development |
+| Push a version tag (`X.Y.Z` or `vX.Y.Z`) | Exact version tag | Production |
 
-1. GitHub Actions builds Docker images
-2. Pushes images to GitHub Container Registry (ghcr.io)
-3. Updates the image tag in `install/manifests/base/deployment.yaml`
-4. Copies all manifest files to the deployment repository
-5. Triggers deployment repository CI
+Main builds and tests the image, then updates only the development environment.
+Production changes only when a version tag is pushed. Creating a GitHub Release for an existing tag
+does not deploy again. Release tags must point to a commit whose main image has
+already been built successfully: CI promotes `main-<short SHA>` without rebuilding
+it, and fails if that image does not exist. Do not move published version tags.
+
+The copy commands are directly in `.github/workflows/test.yml`: copy the base
+and the selected overlay, set the image tag in the copied Deployment, and open
+a PR in the deployment repository. That repository hydrates the environment
+configuration. ArgoCD renders Kustomize when deploying.
+
+Each environment has its own copy of the base. Keep environment provisioning,
+database identities, network endpoints, hostnames and operational runbooks in
+the private deployment repository.
 
 ### 2. Deployment Repository CI
 
@@ -236,7 +253,7 @@ To add a new non-sensitive environment variable to production:
 
 1. Check that CI runs successfully in both repos
 2. Verify ArgoCD syncs the changes
-3. Inspect the deployed ConfigMap: `kubectl -n taico get configmap taico-config -o yaml`
+3. Inspect the deployed ConfigMap: `kubectl -n "$NAMESPACE" get configmap taico-config -o yaml`
 4. Verify the application can read the new environment variable
 
 ## Troubleshooting
@@ -252,14 +269,14 @@ If you added a new environment variable but it's not appearing:
 
 ### Application can't read environment variable
 
-1. Verify the ConfigMap has the correct value: `kubectl -n taico get configmap taico-config -o yaml`
+1. Verify the ConfigMap has the correct value: `kubectl -n "$NAMESPACE" get configmap taico-config -o yaml`
 2. Check that the deployment mounts the ConfigMap via `envFrom`
-3. Restart pods to pick up ConfigMap changes: `kubectl -n taico rollout restart deployment/taico`
+3. Restart pods to pick up ConfigMap changes: `kubectl -n "$NAMESPACE" rollout restart deployment/taico`
 
 ### ArgoCD out of sync
 
 1. Check ArgoCD UI for sync errors
-2. Compare deployed manifests with repository: `kubectl -n taico get deployment taico -o yaml`
+2. Compare deployed manifests with repository: `kubectl -n "$NAMESPACE" get deployment taico -o yaml`
 3. Manually sync in ArgoCD if needed
 
 ## Security Best Practices

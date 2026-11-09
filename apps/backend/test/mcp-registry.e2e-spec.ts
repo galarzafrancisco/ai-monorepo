@@ -8,7 +8,8 @@ import { CreateScopeDto } from '../src/mcp-registry/dto/create-scope.dto';
 import { CreateConnectionDto } from '../src/mcp-registry/dto/create-connection.dto';
 import { CreateMappingDto } from '../src/mcp-registry/dto/create-mapping.dto';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 import cookieParser from 'cookie-parser';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -44,10 +45,13 @@ describe('Tools (e2e)', () => {
 
     // Setup authentication
     testUserActorId = await ensureTestUser(app);
+    // Managing the MCP registry is a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     authCookies = await getAuthCookies(app.getHttpServer());
   });
 
   afterEach(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
   });
 

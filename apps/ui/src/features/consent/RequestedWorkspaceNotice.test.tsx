@@ -24,10 +24,17 @@ import { RequestedWorkspaceNotice } from './RequestedWorkspaceNotice';
 
 const consentUrl = '/consent?flow=abc';
 
-function renderNotice(slug: string) {
+const setIsSwitching = vi.fn();
+
+function renderNotice(slug: string, submitting = false) {
   return render(
     <MemoryRouter initialEntries={[consentUrl]}>
-      <RequestedWorkspaceNotice requestedSlug={slug} />
+      <RequestedWorkspaceNotice
+        requestedSlug={slug}
+        isSwitching={false}
+        setIsSwitching={setIsSwitching}
+        isSubmitting={submitting}
+      />
     </MemoryRouter>,
   );
 }
@@ -40,8 +47,18 @@ describe('RequestedWorkspaceNotice', () => {
     const button = screen.getByRole('button', { name: 'Switch to Acme' });
     expect(screen.queryByText(/not a member/)).toBeNull();
     fireEvent.click(button);
+    expect(setIsSwitching).toHaveBeenCalledWith(true);
     expect(switchWorkspaceAndReload).toHaveBeenCalledWith('ws-acme', consentUrl);
     expect(listMine).not.toHaveBeenCalled();
+  });
+
+  it('holds the switch once a decision has been sent', () => {
+    vi.mocked(switchWorkspaceAndReload).mockClear();
+    renderNotice('acme', true);
+    const button = screen.getByRole('button', { name: 'Switch to Acme' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+    expect(switchWorkspaceAndReload).not.toHaveBeenCalled();
   });
 
   it('says the person is not a member of an unknown workspace', () => {

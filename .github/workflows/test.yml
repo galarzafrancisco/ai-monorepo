@@ -8,9 +8,9 @@ on:
   push:
     branches:
       - main
-  release:
-    types:
-      - published
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*'
 
 jobs:
   test:
@@ -174,7 +174,7 @@ jobs:
     name: Tag existing image with release tag
     runs-on: ubuntu-24.04-arm
     needs: test
-    if: github.event_name == 'release'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
       packages: write
@@ -183,7 +183,7 @@ jobs:
       - name: Checkout release commit
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -199,8 +199,7 @@ jobs:
         id: vars
         run: |
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
-          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           echo "source_tag=main-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Promote existing image to release tag
@@ -210,10 +209,13 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.source_tag }}
 
   deploy-pr:
-    name: Copy Manifests to spark-ops
+    name: Deploy main to live or release to production
     runs-on: ubuntu-24.04-arm
-    needs: docker
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [docker, docker-release-tag]
+    if: >-
+      always() && github.event_name == 'push' &&
+      ((github.ref == 'refs/heads/main' && needs.docker.result == 'success') ||
+       (startsWith(github.ref, 'refs/tags/') && needs.docker-release-tag.result == 'success'))
     # Serialize deploys so two runs never mutate spark-ops at the same time.
     concurrency:
       group: deploy-spark-ops
@@ -222,67 +224,60 @@ jobs:
       contents: read
 
     steps:
-      - name: Check this commit is still the latest on main
-        id: current
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # If another PR merged while we were building, only the newest
-          # commit's run should update spark-ops, so skip the stale ones.
-          LATEST=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
-          if [ "$LATEST" = "$GITHUB_SHA" ]; then
-            echo "latest=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "latest=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping deploy: main moved to ${LATEST} (this run is ${GITHUB_SHA})"
-          fi
-
       - name: Checkout ai-monorepo
-        if: steps.current.outputs.latest == 'true'
         uses: actions/checkout@v5
         with:
           path: ai-monorepo
 
       - name: Checkout spark-ops
-        if: steps.current.outputs.latest == 'true'
         uses: actions/checkout@v5
         with:
           repository: galarzafrancisco/spark-ops
           token: ${{ secrets.SPARK_OPS_TOKEN }}
           path: spark-ops
 
-      - name: Setup Kustomize
-        if: steps.current.outputs.latest == 'true'
-        uses: imranismail/setup-kustomize@v2
-
-      - name: Extract image tag
-        if: steps.current.outputs.latest == 'true'
+      - name: Select deployment target and image
         id: image-tag
         run: |
-          SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-          TAG="main-${SHORT_SHA}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          SHORT_SHA=$(git -C ai-monorepo rev-parse --short=7 HEAD)
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            SERVICE=taico
+          else
+            TAG="main-${SHORT_SHA}"
+            SERVICE=taico-live
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "service=${SERVICE}" >> "$GITHUB_OUTPUT"
 
-      - name: Copy manifests to spark-ops
-        if: steps.current.outputs.latest == 'true'
+      - name: Copy main manifests to live
+        if: github.ref == 'refs/heads/main'
         run: |
-          # Remove old manifests if they exist
+          rm -rf spark-ops/k8s/taico-live
+          mkdir -p spark-ops/k8s/taico-live/overlays
+          cp -R ai-monorepo/install/manifests/base spark-ops/k8s/taico-live/base
+          cp -R ai-monorepo/install/manifests/overlays/live spark-ops/k8s/taico-live/overlays/main
+
+      - name: Copy release manifests to production
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
           rm -rf spark-ops/k8s/taico
+          mkdir -p spark-ops/k8s/taico/overlays
+          cp -R ai-monorepo/install/manifests/base spark-ops/k8s/taico/base
+          cp -R ai-monorepo/install/manifests/overlays/main spark-ops/k8s/taico/overlays/main
 
-          # Copy entire manifests directory
-          mkdir -p spark-ops/k8s
-          cp -r ai-monorepo/install/manifests spark-ops/k8s/taico
+      - name: Set image in copied deployment
+        env:
+          SERVICE: ${{ steps.image-tag.outputs.service }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+        run: |
+          sed -i "s|image: ghcr.io/galarzafrancisco/ai-monorepo:.*|image: ghcr.io/galarzafrancisco/ai-monorepo:${IMAGE_TAG}|" \
+            "spark-ops/k8s/${SERVICE}/base/deployment.yaml"
 
-          # Update image tag in deployment.yaml
-          cd spark-ops/k8s/taico/base
-
-          # Use kustomize to set image tag
-          kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
-
-      - name: Re-check this commit is still the latest on main (right before publishing)
-        id: final
-        if: steps.current.outputs.latest == 'true'
+      - name: Skip superseded main builds
+        id: current
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -295,29 +290,30 @@ jobs:
           fi
 
       - name: Create Pull Request
-        if: steps.current.outputs.latest == 'true' && steps.final.outputs.latest == 'true'
+        if: startsWith(github.ref, 'refs/tags/') || steps.current.outputs.latest == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.SPARK_OPS_TOKEN }}
           path: spark-ops
           commit-message: |
-            deploy: update taico manifests and image to ${{ steps.image-tag.outputs.tag }}
+            deploy: update ${{ steps.image-tag.outputs.service }} to ${{ steps.image-tag.outputs.tag }}
 
             Source: ${{ github.repository }}@${{ github.sha }}
             Build: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-          branch: deploy/taico-${{ steps.image-tag.outputs.sha }}
+          branch: deploy/${{ steps.image-tag.outputs.service }}-${{ steps.image-tag.outputs.tag }}
           delete-branch: true
-          title: "Deploy taico (${{ steps.image-tag.outputs.tag }})"
+          title: "Deploy ${{ steps.image-tag.outputs.service }} (${{ steps.image-tag.outputs.tag }})"
           body: |
             ## Deployment Update
 
-            **Service**: taico
+            **Service**: ${{ steps.image-tag.outputs.service }}
             **Image Tag**: `${{ steps.image-tag.outputs.tag }}`
             **Source Commit**: ${{ github.sha }}
 
             ### Changes
-            - Copied latest manifests from `install/manifests/`
+            - Copied this commit's manifests into `k8s/${{ steps.image-tag.outputs.service }}/`
+            - Main builds update development; release tags update production
             - Updated image tag to `${{ steps.image-tag.outputs.tag }}`
 
             ### Build Information
@@ -325,7 +321,7 @@ jobs:
             - **Image**: `ghcr.io/${{ github.repository }}:${{ steps.image-tag.outputs.tag }}`
 
             ---
-            *This PR will be automatically validated and merged by spark-ops workflow.*
+            *spark-ops hydrates the environment configuration and merges this PR.*
 
           labels: |
             automated-deployment

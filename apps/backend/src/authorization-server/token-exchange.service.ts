@@ -20,6 +20,7 @@ import { TokenVerifierService } from 'src/auth/crypto/token-verifier.service';
 import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 import { workspaceIdFromClaims } from 'src/auth/guards/context/auth-context.factory';
+import { EntitlementsService } from 'src/entitlements/entitlements.service';
 
 interface DownstreamTokenInfo {
   accessToken: string;
@@ -39,6 +40,7 @@ export class TokenExchangeService {
     private readonly connectionAuthorizationFlowRepository: Repository<ConnectionAuthorizationFlowEntity>,
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenVerifierService: TokenVerifierService,
+    private readonly entitlementsService: EntitlementsService,
   ) {}
 
   /**
@@ -75,6 +77,12 @@ export class TokenExchangeService {
     // mappings, authorized flow) must be that workspace's: a baseline server
     // (tasks, context) is shared, but its connections are not.
     const workspaceId = workspaceIdFromClaims(mcpTokenPayload);
+    // The MCP token was minted while its person was a member; check they
+    // still are before handing out downstream credentials for the workspace.
+    await this.entitlementsService.requireMembership(
+      workspaceId,
+      mcpTokenPayload.sub,
+    );
 
     // Step 4: Lookup connection by resource (providedId or UUID)
     const connection = await this.findConnection(

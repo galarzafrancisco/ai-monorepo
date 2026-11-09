@@ -31,7 +31,6 @@ import {
   RefreshTokenRevokedError,
   TokenServerMismatchError,
   TokenResourceMismatchError,
-  TokenActorNotInWorkspaceError,
 } from './errors/token.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
@@ -40,15 +39,13 @@ import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.e
 import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
 import { MCP_SERVER_AUTH_TYPE_EXTERNAL } from '../mcp-registry/mcp-server.types';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
-import { WorkspacesService } from '../workspaces/workspaces.service';
-import { mcpServerRequiresTaicoAuth } from '@taico/shared';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import { ServerUsesExternalAuthError } from '../mcp-registry/errors/mcp-registry.errors';
 import {
   MCP_AUTH_SERVER_VERSION,
   getMcpServerResourceUrl,
   isSameResource,
 } from '../auth/core/resource-audience';
-import { NoWorkspaceMembershipError } from '../workspaces/workspace.errors';
 
 @Injectable()
 export class TokenService {
@@ -62,7 +59,7 @@ export class TokenService {
     @InjectRepository(McpRefreshTokenEntity)
     private readonly mcpRefreshTokenRepository: Repository<McpRefreshTokenEntity>,
     private readonly mcpRegistryService: McpRegistryService,
-    private readonly workspacesService: WorkspacesService,
+    private readonly entitlementsService: EntitlementsService,
   ) {}
 
   /**
@@ -190,7 +187,7 @@ export class TokenService {
 
     // Generate tokens
     const config = getConfig();
-    const accessToken = await this.generateAccessToken(mcpAuthFlow);
+    const { accessToken, scopes } = await this.generateAccessToken(mcpAuthFlow);
     const refreshToken = await this.generateAndStoreRefreshToken(
       mcpAuthFlow,
       clientId,
@@ -202,9 +199,8 @@ export class TokenService {
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
       refresh_token: refreshToken,
-      scope: mcpAuthFlow.client.scopes
-        ? mcpAuthFlow.client.scopes.join(' ')
-        : undefined,
+      // What this token was actually granted (RFC 6749 §5.1).
+      scope: scopes.join(' '),
     };
 
     this.logger.log(`Issued access token for client: ${clientId}`);
@@ -283,7 +279,7 @@ export class TokenService {
 
     // Generate new tokens
     const config = getConfig();
-    const accessToken = await this.generateAccessToken(mcpAuthFlow);
+    const { accessToken, scopes } = await this.generateAccessToken(mcpAuthFlow);
     const newRefreshToken = await this.generateAndStoreRefreshToken(
       mcpAuthFlow,
       clientId,
@@ -295,9 +291,8 @@ export class TokenService {
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
       refresh_token: newRefreshToken,
-      scope: mcpAuthFlow.client.scopes
-        ? mcpAuthFlow.client.scopes.join(' ')
-        : undefined,
+      // What this token was actually granted (RFC 6749 §5.1).
+      scope: scopes.join(' '),
     };
 
     this.logger.log(`Refreshed access token for client: ${clientId}`);
@@ -412,11 +407,16 @@ export class TokenService {
   }
 
   /**
-   * Generate a signed JWT access token
+   * Generate a signed JWT access token, and the scopes it was granted.
+   *
+   * The scopes are the consent's (`mcpAuthFlow.scopes`, kept unchanged so a
+   * later promotion restores them) capped by the person's role at this mint.
+   * The token response must report these same scopes, never the client's
+   * registration scopes, so a client learns when its grant narrowed.
    */
   private async generateAccessToken(
     mcpAuthFlow: McpAuthorizationFlowEntity,
-  ): Promise<string> {
+  ): Promise<{ accessToken: string; scopes: string[] }> {
     if (
       !mcpAuthFlow.authJourney.actorId ||
       !mcpAuthFlow.authJourney.actor ||
@@ -432,10 +432,17 @@ export class TokenService {
     // The audience is the server's canonical resource URI (RFC 8707), derived
     // from the server the grant is bound to, never from client input.
     const serverResource = getMcpServerResourceUrl(mcpAuthFlow.server);
-    const workspaceId = await this.workspaceForServerToken(
-      mcpAuthFlow.server,
-      mcpAuthFlow.authJourney.actor.id,
-      mcpAuthFlow.authJourney.workspaceId ?? null,
+    // Which workspace, and what the person may hold there, is decided by
+    // the entitlements service on every code exchange and refresh.
+    const { workspaceId, role } =
+      await this.entitlementsService.mcpTokenEntitlement(
+        mcpAuthFlow.server,
+        mcpAuthFlow.authJourney.actor.id,
+        mcpAuthFlow.authJourney.workspaceId ?? null,
+      );
+    const scopes = this.entitlementsService.mcpTokenScopes(
+      mcpAuthFlow.scopes || [],
+      role,
     );
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
@@ -451,52 +458,14 @@ export class TokenService {
       iat: now,
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
-      scope: mcpAuthFlow.scopes || [], // Handle null scopes
+      scope: scopes,
       mcp_server_identifier: mcpAuthFlow.server.providedId,
       resource: serverResource,
       version: MCP_AUTH_SERVER_VERSION,
     };
 
-    // Sign the JWT
-    const jwt = await this.tokenSignerService.signToken(payload);
-
-    return jwt;
-  }
-
-  /**
-   * The workspace an MCP token works in. Taico's own servers (tasks, context
-   * and the auth targets, which workers use) serve every workspace, so their
-   * tokens are for the workspace the person consented in. Journeys from
-   * before that was recorded use the person's oldest membership. Any other
-   * server belongs to one workspace: its token is for that workspace, and
-   * only its members get one. Checked again on every refresh, so a person
-   * removed from the workspace stops getting tokens for it (a worker is never
-   * moved to another workspace), and a person in no workspace gets none (a
-   * token without `workspace_id` would be read as the default workspace).
-   */
-  private async workspaceForServerToken(
-    server: { providedId: string; workspaceId: string },
-    actorId: string,
-    consentWorkspaceId: string | null,
-  ): Promise<string> {
-    if (mcpServerRequiresTaicoAuth(server.providedId)) {
-      if (consentWorkspaceId) {
-        if (!(await this.workspacesService.isMember(consentWorkspaceId, actorId))) {
-          throw new TokenActorNotInWorkspaceError(actorId, consentWorkspaceId);
-        }
-        return consentWorkspaceId;
-      }
-      const workspaceId =
-        await this.workspacesService.findWorkspaceIdForActor(actorId);
-      if (!workspaceId) {
-        throw new NoWorkspaceMembershipError(actorId);
-      }
-      return workspaceId;
-    }
-    if (!(await this.workspacesService.isMember(server.workspaceId, actorId))) {
-      throw new TokenActorNotInWorkspaceError(actorId, server.workspaceId);
-    }
-    return server.workspaceId;
+    const accessToken = await this.tokenSignerService.signToken(payload);
+    return { accessToken, scopes };
   }
 
   /**

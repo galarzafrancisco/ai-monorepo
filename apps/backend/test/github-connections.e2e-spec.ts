@@ -9,7 +9,8 @@ import { AppModule } from '../src/app.module';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { GithubConnectionsService } from '../src/integrations/github-connections.service';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, setTestUserRole } from './helpers/auth.helper';
+import { UserRole } from '../src/identity-provider/enums';
 import { FakeGithub, patUsers } from './helpers/fake-github';
 import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
 
@@ -44,6 +45,8 @@ describe('GitHub connections E2E', () => {
     http = app.getHttpServer();
     ds = app.get(DataSource);
     await ensureTestUser(app);
+    // Settings writes (MCP registry, integrations) are a workspace admin's job.
+    await setTestUserRole(app, UserRole.ADMIN);
     cookies = await getAuthCookies(http);
   }, 30000);
 
@@ -54,6 +57,7 @@ describe('GitHub connections E2E', () => {
   });
 
   afterAll(async () => {
+    await setTestUserRole(app, UserRole.STANDARD);
     await app.close();
     await github.stop();
     delete process.env.GITHUB_API_URL;
