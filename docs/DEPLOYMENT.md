@@ -166,13 +166,28 @@ The database needs the `pg_trgm` extension (it ships with PostgreSQL; the first 
 
 ### 1. Application Repository CI
 
-When code is pushed to the main branch:
+| Trigger | Image | Deployment directory | URL |
+|---------|-------|----------------------|-----|
+| Merge/push to `main` | `main-<short SHA>` | `spark-ops/k8s/taico-live/` | `https://live.taico.app` |
+| Push a version tag (`0.11.5` or `v0.11.5`) | Exact version tag | `spark-ops/k8s/taico/` | `https://taico.app` |
 
-1. GitHub Actions builds Docker images
-2. Pushes images to GitHub Container Registry (ghcr.io)
-3. Updates the image tag in `install/manifests/base/deployment.yaml`
-4. Copies all manifest files to the deployment repository
-5. Triggers deployment repository CI
+Main builds and tests the image, then updates **only live**. Production changes
+only when a version tag is pushed. Creating a GitHub Release for an existing tag
+does not deploy again. Release tags must point to a commit whose main image has
+already been built successfully: CI promotes `main-<short SHA>` without rebuilding
+it, and fails if that image does not exist. Do not move published version tags.
+
+`scripts/prepare-deployment.sh` copies the tagged commit's base and production
+overlay for a release, or main's base and `overlays/live` for live. Both land in
+their own `overlays/main` directories to match spark-ops' ApplicationSet. Their
+bases are independent, so changes on main cannot alter production resources.
+
+Live uses namespace `taico-live`, database/role `taico_live` in the shared
+PostgreSQL instance (host port 15436), and its own encryption key and database
+Secret. Provision it with spark-ops' `bootstrap/taico-add-tenant.sh live`, then
+replace its generated manifests with the CI-managed live manifests. Production
+continues using namespace `taico` and its dedicated PostgreSQL instance (15432).
+DNS for `live.taico.app` must point at the same public gateway as production.
 
 ### 2. Deployment Repository CI
 
