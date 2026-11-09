@@ -140,38 +140,8 @@ export class AuthorizationService {
         : null,
     };
 
-    const { flow: mcpAuthFlow, reopened } = await this.startMcpAuthFlow(
-      client,
-      mcpServer,
-      requested,
-    );
-    // A reload of a pending request: the consent screen already shows it,
-    // so it is returned as it was, never rewritten.
-    if (reopened) {
-      return mcpAuthFlow.id;
-    }
-
-    // Change status
-    mcpAuthFlow.status =
-      McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED;
-
-    // Store the PKCE parameters and other OAuth request data
-    mcpAuthFlow.codeChallenge = requested.codeChallenge;
-    mcpAuthFlow.codeChallengeMethod = requested.codeChallengeMethod;
-    mcpAuthFlow.state = requested.state ?? undefined;
-    mcpAuthFlow.redirectUri = requested.redirectUri;
-    mcpAuthFlow.resource = requested.resource;
-    mcpAuthFlow.scopes = requested.scopes;
-    mcpAuthFlow.requestedWorkspaceSlug = requested.requestedWorkspaceSlug;
-
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-    await this.authJourneysService.updateAuthJourneyStatus(
-      mcpAuthFlow.authorizationJourneyId,
-      AuthJourneyStatus.MCP_AUTH_FLOW_STARTED,
-    );
-
     // Return the flow ID to be used in the consent screen
-    return mcpAuthFlow.id;
+    return this.startMcpAuthFlow(client, mcpServer, requested);
   }
 
   /**
@@ -212,13 +182,19 @@ export class AuthorizationService {
    * waiting for that answer. A worker client authorizes once (a worker
    * registers a new client every time it asks), so it can never be approved
    * into a second workspace.
+   *
+   * The registration flow is claimed atomically: of two first requests
+   * arriving together exactly one starts it, and the other is then treated
+   * like any later request (reopen if identical, else refused or, for clients
+   * that may authorize again, a flow of its own). Returns the flow ID.
    */
   private async startMcpAuthFlow(
     client: RegisteredClientEntity,
     mcpServer: { id: string; providedId: string },
     requested: RequestedAuthorization,
-  ): Promise<{ flow: McpAuthorizationFlowEntity; reopened: boolean }> {
+  ): Promise<string> {
     const mcpServerId = mcpServer.id;
+    const isWorker = mcpServer.providedId === INTERNAL_WORKER_AUTH_TARGET_ID;
     const sameLink =
       await this.authJourneysService.findMcpAuthFlowByClientAndChallenge(
         client.id,
@@ -226,17 +202,7 @@ export class AuthorizationService {
         requested.codeChallenge,
       );
     if (sameLink) {
-      const pending =
-        sameLink.status ===
-          McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED &&
-        !sameLink.authorizationCode;
-      if (!pending) {
-        throw new AuthorizationLinkAlreadyUsedError(client.clientId);
-      }
-      if (!isSameRequest(sameLink, requested)) {
-        throw new AuthorizationRequestChangedError(client.clientId);
-      }
-      return { flow: sameLink, reopened: true };
+      return this.reopenPendingFlow(sameLink, client, requested);
     }
 
     if (
@@ -257,10 +223,32 @@ export class AuthorizationService {
       const unusedFlow = flows.find(
         (flow) => flow.status === McpAuthorizationFlowStatus.CLIENT_REGISTERED,
       );
-      if (unusedFlow) {
-        return { flow: unusedFlow, reopened: false };
+      if (
+        unusedFlow &&
+        (await this.authJourneysService.claimRegisteredMcpAuthFlow(
+          unusedFlow.id,
+          toFlowFields(requested),
+        ))
+      ) {
+        await this.authJourneysService.updateAuthJourneyStatus(
+          unusedFlow.authorizationJourneyId,
+          AuthJourneyStatus.MCP_AUTH_FLOW_STARTED,
+        );
+        return unusedFlow.id;
       }
-      if (mcpServer.providedId === INTERNAL_WORKER_AUTH_TARGET_ID) {
+      // Another request may have started the registration flow since the
+      // lookup above. If that was this same link, it is a reopen (or refused
+      // if it differs).
+      const winner =
+        await this.authJourneysService.findMcpAuthFlowByClientAndChallenge(
+          client.id,
+          mcpServerId,
+          requested.codeChallenge,
+        );
+      if (winner) {
+        return this.reopenPendingFlow(winner, client, requested);
+      }
+      if (isWorker) {
         throw new WorkerAlreadyAuthorizedError(client.clientId);
       }
     }
@@ -270,7 +258,32 @@ export class AuthorizationService {
         mcpServerId,
         mcpClientId: client.id,
       });
-    return { flow: mcpAuthorizationFlow, reopened: false };
+    // The flow is brand new and its ID not yet known to anyone, so it is safe
+    // to fill in with a plain save.
+    Object.assign(mcpAuthorizationFlow, toFlowFields(requested));
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthorizationFlow);
+    return mcpAuthorizationFlow.id;
+  }
+
+  /**
+   * An authorization link opened again: the same pending request reopens its
+   * flow untouched; anything else is refused.
+   */
+  private reopenPendingFlow(
+    flow: McpAuthorizationFlowEntity,
+    client: RegisteredClientEntity,
+    requested: RequestedAuthorization,
+  ): string {
+    const pending =
+      flow.status === McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED &&
+      !flow.authorizationCode;
+    if (!pending) {
+      throw new AuthorizationLinkAlreadyUsedError(client.clientId);
+    }
+    if (!isSameRequest(flow, requested)) {
+      throw new AuthorizationRequestChangedError(client.clientId);
+    }
+    return flow.id;
   }
 
   /**
@@ -768,6 +781,19 @@ interface RequestedAuthorization {
   resource: string;
   scopes: string[];
   requestedWorkspaceSlug: string | null;
+}
+
+/** The flow columns an authorization request fills in. */
+function toFlowFields(requested: RequestedAuthorization) {
+  return {
+    codeChallenge: requested.codeChallenge,
+    codeChallengeMethod: requested.codeChallengeMethod,
+    state: requested.state ?? undefined,
+    redirectUri: requested.redirectUri,
+    resource: requested.resource,
+    scopes: requested.scopes,
+    requestedWorkspaceSlug: requested.requestedWorkspaceSlug,
+  };
 }
 
 /** Whether a pending flow was started by exactly this request. */

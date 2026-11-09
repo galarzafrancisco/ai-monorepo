@@ -525,8 +525,8 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .send({ flow_id: flowId, approved: true, workspace_id: workspaceId });
     }
 
-    /** Registers a worker client and starts its OAuth flow; returns the consent flow. */
-    async function startWorkerFlow(workspace?: string) {
+    /** Registers a worker client; returns its client_id. */
+    async function registerWorker(): Promise<string> {
       const registered = await request(http)
         .post(`/api/v1/auth/clients/register/mcp/${INTERNAL_WORKER_AUTH_TARGET_ID}/${VERSION}`)
         .send({
@@ -537,7 +537,12 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
           token_endpoint_auth_method: 'none',
         })
         .expect(201);
-      const clientId: string = registered.body.client_id;
+      return registered.body.client_id;
+    }
+
+    /** Registers a worker client and starts its OAuth flow; returns the consent flow. */
+    async function startWorkerFlow(workspace?: string) {
+      const clientId = await registerWorker();
       const codeVerifier = randomBytes(32).toString('base64url');
       const query = authorizeQuery(clientId, codeVerifier, workspace);
       const authorize = await openAuthorizeLink(query).expect(302);
@@ -675,6 +680,34 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .expect(200);
       expect(after.body.scopes).toEqual(before.body.scopes);
       expect(after.body.requestedWorkspaceSlug).toBe(workspace.slug);
+    });
+
+    it('lets only one of several first requests arriving together start the consent', async () => {
+      const clientId = await registerWorker();
+      const query = authorizeQuery(clientId, randomBytes(32).toString('base64url'));
+      // Same link (PKCE challenge), each asking for a different workspace.
+      const variants = Array.from({ length: 6 }, (_, i) => ({
+        ...query,
+        workspace: `race-${i}-${unique()}`,
+      }));
+      const responses = await Promise.all(variants.map((q) => openAuthorizeLink(q)));
+
+      const started = responses
+        .map((res, i) => ({ res, i }))
+        .filter(({ res }) => res.status === 302);
+      expect(started).toHaveLength(1);
+      for (const res of responses.filter((r) => r.status !== 302)) {
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe('AUTHORIZATION_REQUEST_CHANGED');
+      }
+
+      // The consent shows the winning request, and nothing overwrote it.
+      const [{ res: winner, i }] = started;
+      const consent = await request(http)
+        .get(`/api/v1/auth/consent/${flowIdFrom(winner)}`)
+        .set('Cookie', operator)
+        .expect(200);
+      expect(consent.body.requestedWorkspaceSlug).toBe(variants[i].workspace);
     });
 
     it('only lets a worker started with --workspace be approved from that workspace', async () => {

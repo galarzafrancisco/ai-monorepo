@@ -243,6 +243,36 @@ export class AuthJourneysService {
   }
 
   /*
+  Public API: Start the authorization request on the flow a client got when it
+  registered, only if no other request started it first. The check and the
+  write are one conditional UPDATE, so of two requests arriving together
+  exactly one wins, and the loser can never overwrite what the winner's
+  consent screen shows. Returns whether this request won.
+  */
+  async claimRegisteredMcpAuthFlow(
+    flowId: string,
+    request: Pick<
+      McpAuthorizationFlowEntity,
+      | 'codeChallenge'
+      | 'codeChallengeMethod'
+      | 'state'
+      | 'redirectUri'
+      | 'resource'
+      | 'scopes'
+      | 'requestedWorkspaceSlug'
+    >,
+  ): Promise<boolean> {
+    const result = await this.mcpAuthorizationFlowRepository.update(
+      { id: flowId, status: McpAuthorizationFlowStatus.CLIENT_REGISTERED },
+      {
+        ...request,
+        status: McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED,
+      },
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  /*
   Public API: Get connection authorization flows for an auth journey
   Used by downstream auth flow to process all connections
   */
