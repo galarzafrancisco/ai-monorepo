@@ -29,9 +29,9 @@ spec:
             - name: CHATGPT_SUBSCRIPTION_ENABLED
               value: "true"
             # Node sizes its heap from the container memory limit (~50%), so
-            # a 1Gi limit gave a ~512MB heap. Pin it to ~75% of the limit.
+            # a 1Gi limit gave a ~512MB heap. Pin it to ~2/3 of the limit, leaving room for non-heap memory.
             - name: NODE_OPTIONS
-              value: "--max-old-space-size=1536"
+              value: "--max-old-space-size=1024"
           envFrom:
             - configMapRef:
                 name: taico-config
@@ -50,7 +50,7 @@ spec:
               memory: "1Gi"
               cpu: "100m"
             limits:
-              memory: "2Gi"
+              memory: "1536Mi"
               cpu: "1000m"
           livenessProbe:
             httpGet:
