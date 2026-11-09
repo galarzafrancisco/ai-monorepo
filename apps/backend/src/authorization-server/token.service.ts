@@ -187,7 +187,7 @@ export class TokenService {
 
     // Generate tokens
     const config = getConfig();
-    const accessToken = await this.generateAccessToken(mcpAuthFlow);
+    const { accessToken, scopes } = await this.generateAccessToken(mcpAuthFlow);
     const refreshToken = await this.generateAndStoreRefreshToken(
       mcpAuthFlow,
       clientId,
@@ -199,9 +199,8 @@ export class TokenService {
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
       refresh_token: refreshToken,
-      scope: mcpAuthFlow.client.scopes
-        ? mcpAuthFlow.client.scopes.join(' ')
-        : undefined,
+      // What this token was actually granted (RFC 6749 §5.1).
+      scope: scopes.join(' '),
     };
 
     this.logger.log(`Issued access token for client: ${clientId}`);
@@ -280,7 +279,7 @@ export class TokenService {
 
     // Generate new tokens
     const config = getConfig();
-    const accessToken = await this.generateAccessToken(mcpAuthFlow);
+    const { accessToken, scopes } = await this.generateAccessToken(mcpAuthFlow);
     const newRefreshToken = await this.generateAndStoreRefreshToken(
       mcpAuthFlow,
       clientId,
@@ -292,9 +291,8 @@ export class TokenService {
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
       refresh_token: newRefreshToken,
-      scope: mcpAuthFlow.client.scopes
-        ? mcpAuthFlow.client.scopes.join(' ')
-        : undefined,
+      // What this token was actually granted (RFC 6749 §5.1).
+      scope: scopes.join(' '),
     };
 
     this.logger.log(`Refreshed access token for client: ${clientId}`);
@@ -409,11 +407,16 @@ export class TokenService {
   }
 
   /**
-   * Generate a signed JWT access token
+   * Generate a signed JWT access token, and the scopes it was granted.
+   *
+   * The scopes are the consent's (`mcpAuthFlow.scopes`, kept unchanged so a
+   * later promotion restores them) capped by the person's role at this mint.
+   * The token response must report these same scopes, never the client's
+   * registration scopes, so a client learns when its grant narrowed.
    */
   private async generateAccessToken(
     mcpAuthFlow: McpAuthorizationFlowEntity,
-  ): Promise<string> {
+  ): Promise<{ accessToken: string; scopes: string[] }> {
     if (
       !mcpAuthFlow.authJourney.actorId ||
       !mcpAuthFlow.authJourney.actor ||
@@ -437,6 +440,10 @@ export class TokenService {
         mcpAuthFlow.authJourney.actor.id,
         mcpAuthFlow.authJourney.workspaceId ?? null,
       );
+    const scopes = this.entitlementsService.mcpTokenScopes(
+      mcpAuthFlow.scopes || [],
+      role,
+    );
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
       sub: mcpAuthFlow.authJourney.actorId,
@@ -451,19 +458,14 @@ export class TokenService {
       iat: now,
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
-      scope: this.entitlementsService.mcpTokenScopes(
-        mcpAuthFlow.scopes || [],
-        role,
-      ),
+      scope: scopes,
       mcp_server_identifier: mcpAuthFlow.server.providedId,
       resource: serverResource,
       version: MCP_AUTH_SERVER_VERSION,
     };
 
-    // Sign the JWT
-    const jwt = await this.tokenSignerService.signToken(payload);
-
-    return jwt;
+    const accessToken = await this.tokenSignerService.signToken(payload);
+    return { accessToken, scopes };
   }
 
   /**

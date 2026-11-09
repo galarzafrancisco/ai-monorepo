@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
+import { createHash, randomBytes } from 'crypto';
 import { decodeJwt } from 'jose';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -159,6 +160,127 @@ describe('Entitlements (e2e)', () => {
         .send({ name: 'everyday', scopes: ['tasks:read', 'tasks:write'] })
         .expect(201);
       expect(decodeJwt(issued.body.token).scope).toEqual(['tasks:read', 'tasks:write']);
+    });
+  });
+  describe('MCP OAuth tokens', () => {
+    const VERSION = '0.0.0';
+    const REDIRECT_URI = 'http://127.0.0.1:6276/callback';
+    /** A Taico-auth registry server that offers an everyday and an admin-only scope. */
+    let serverId: string;
+
+    beforeAll(async () => {
+      serverId = `ent-oauth-${unique()}`;
+      const created = await request(http)
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', admin)
+        .send({
+          providedId: serverId,
+          name: 'Entitlements OAuth server',
+          description: 'Offers an admin-only scope',
+          type: 'http',
+          url: 'http://localhost:3000/test/mcp',
+        })
+        .expect(201);
+      await request(http)
+        .post(`/api/v1/mcp/servers/${created.body.id}/scopes`)
+        .set('Cookie', admin)
+        .send(['tasks:read', 'mcp-registry:write'].map((id) => ({ id, description: id })))
+        .expect(201);
+    });
+
+    /** Runs the OAuth code flow, consented with `cookies`, asking for both scopes. */
+    async function authorize(cookies: string) {
+      const registered = await request(http)
+        .post(`/api/v1/auth/clients/register/mcp/${serverId}/${VERSION}`)
+        .send({
+          client_name: `ent client ${unique()}`,
+          redirect_uris: [REDIRECT_URI],
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'none',
+        })
+        .expect(201);
+      const clientId: string = registered.body.client_id;
+      const codeVerifier = randomBytes(32).toString('base64url');
+      const started = await request(http)
+        .get(`/api/v1/auth/authorize/mcp/${serverId}/${VERSION}`)
+        .query({
+          response_type: 'code',
+          client_id: clientId,
+          redirect_uri: REDIRECT_URI,
+          scope: 'tasks:read mcp-registry:write',
+          state: 'ent-state',
+          code_challenge: createHash('sha256').update(codeVerifier).digest('base64url'),
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+      const flowId = new URL(started.headers.location, 'http://x').searchParams.get('flow');
+      const approved = await request(http)
+        .post(`/api/v1/auth/authorize/mcp/${serverId}/${VERSION}`)
+        .set('Cookie', cookies)
+        .send({ flow_id: flowId, approved: true })
+        .expect(302);
+      const code = new URL(approved.headers.location).searchParams.get('code');
+      const tokens = await request(http)
+        .post(`/api/v1/auth/token/mcp/${serverId}/${VERSION}`)
+        .send({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          code,
+          redirect_uri: REDIRECT_URI,
+          code_verifier: codeVerifier,
+        })
+        .expect(201);
+      return { clientId, body: tokens.body };
+    }
+
+    function refresh(clientId: string, refreshToken: string) {
+      return request(http)
+        .post(`/api/v1/auth/token/mcp/${serverId}/${VERSION}`)
+        .send({ grant_type: 'refresh_token', client_id: clientId, refresh_token: refreshToken })
+        .expect(201);
+    }
+
+    /** The token's scopes, as signed and as the response reports them; they must agree. */
+    function granted(body: { access_token: string; scope?: string }): string[] {
+      const signed = decodeJwt(body.access_token).scope as string[];
+      expect(body.scope?.split(' ').filter(Boolean)).toEqual(signed);
+      return signed;
+    }
+
+    it("grant a member only their role's scopes, and say so in the response", async () => {
+      const { body } = await authorize(member);
+      expect(granted(body)).toEqual(['tasks:read']);
+    });
+
+    it('grant an admin every consented scope', async () => {
+      const { body } = await authorize(admin);
+      expect(granted(body)).toEqual(['tasks:read', 'mcp-registry:write']);
+    });
+
+    it('narrow at refresh once an admin is demoted, and widen again on promotion', async () => {
+      const demotee = await signIn(WorkspaceRole.ADMIN);
+      const demoteeActorId = decodeJwt(
+        demotee.split('; ').find((c) => c.startsWith('access_token='))!.slice('access_token='.length),
+      ).actor_id as string;
+      const { clientId, body } = await authorize(demotee);
+      expect(granted(body)).toEqual(['tasks:read', 'mcp-registry:write']);
+
+      const setRole = (role: WorkspaceRole) =>
+        request(http)
+          .patch(`/api/v1/workspaces/current/members/${demoteeActorId}`)
+          .set('Cookie', admin)
+          .send({ role })
+          .expect(200);
+
+      await setRole(WorkspaceRole.MEMBER);
+      const demoted = (await refresh(clientId, body.refresh_token)).body;
+      expect(granted(demoted)).toEqual(['tasks:read']);
+
+      // The consent is kept, so promotion restores what was authorized.
+      await setRole(WorkspaceRole.ADMIN);
+      const promoted = (await refresh(clientId, demoted.refresh_token)).body;
+      expect(granted(promoted)).toEqual(['tasks:read', 'mcp-registry:write']);
     });
   });
 });

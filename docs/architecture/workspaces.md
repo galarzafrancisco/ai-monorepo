@@ -283,6 +283,8 @@ Migration `WorkspaceScopeAiModelsSecrets1763900000000` adds `workspace_id` to `a
 
 A request for scopes that aren't held is refused rather than trimmed (`TOKEN_SCOPE_NOT_ENTITLED`, 403, listing them), so the caller sees what it didn't get.
 
+MCP and worker tokens are the exception: they're minted from a consent the person already gave, so their scopes are trimmed to the role at each code exchange and refresh. The token response's `scope` reports exactly the scopes in the token, so a client learns when its grant narrowed. The consent itself is kept unchanged, so a promotion restores what was authorized at the next refresh.
+
 The tests are in `test/entitlements.e2e-spec.ts` and `src/entitlements/entitlements.service.spec.ts`.
 
 ## Admin roles
