@@ -29,6 +29,7 @@ import { ActiveTaskExecutionResponseDto } from '../active/dto/http/active-task-e
 import { ActiveTaskExecutionService } from '../active/active-task-execution.service';
 import {
   TaskAlreadyClaimedError,
+  AgentConcurrencyLimitReachedError,
   TaskExecutionQueueEntryNotFoundError,
 } from '../errors/executions.errors';
 import { TaskExecutionQueueService } from './task-execution-queue.service';
@@ -106,7 +107,7 @@ export class TaskExecutionQueueController {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof TaskAlreadyClaimedError) {
+      if (error instanceof TaskAlreadyClaimedError || error instanceof AgentConcurrencyLimitReachedError) {
         throw new ConflictException(error.message);
       }
 

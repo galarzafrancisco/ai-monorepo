@@ -73,4 +73,25 @@ export class ReadinessCandidateRepository {
       .andWhere('execution.agent_actor_id = :agentActorId', { agentActorId })
       .getCount();
   }
+
+  /**
+   * Tasks of the agent already in the queue, other than `excludingTaskId`.
+   * A queued task holds one of the agent's slots as surely as a running one.
+   */
+  async countQueuedTasksForAgent(
+    workspaceId: string,
+    agentActorId: string,
+    excludingTaskId: string,
+  ): Promise<number> {
+    const [{ count }] = await this.activeTaskExecutionRepository.manager.query(
+      `SELECT count(*)::int AS count
+         FROM task_execution_queue queue
+         JOIN tasks task ON task.id = queue.task_id
+        WHERE queue.workspace_id = $1
+          AND task.assignee_actor_id = $2
+          AND queue.task_id <> $3`,
+      [workspaceId, agentActorId, excludingTaskId],
+    );
+    return count;
+  }
 }

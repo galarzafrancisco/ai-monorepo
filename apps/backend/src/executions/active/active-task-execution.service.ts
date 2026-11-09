@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ActiveTaskExecutionEntity,
@@ -20,6 +20,7 @@ import {
   ActiveTaskExecutionWorkerMismatchError,
   ExecutionStatsNotFoundError,
   TaskAlreadyClaimedError,
+  AgentConcurrencyLimitReachedError,
   TaskExecutionQueueEntryNotFoundError,
 } from '../errors/executions.errors';
 import { ExecutionActivityService } from '../execution-activity.service';
@@ -132,6 +133,14 @@ export class ActiveTaskExecutionService {
         throw new TaskNotFoundError(input.taskId);
       }
 
+      // Enforce the agent's concurrency limit here, where it can't be raced:
+      // claims for one agent take turns on a transaction-scoped lock, then
+      // count what it already runs. Refusing rolls back, so the queue entry
+      // stays for a later claim.
+      if (task.assigneeActorId) {
+        await this.assertAgentHasSlot(manager, workspaceId, task.assigneeActorId);
+      }
+
       const deleteResult = await manager.delete(TaskExecutionQueueEntity, {
         workspaceId,
         taskId: input.taskId,
@@ -219,6 +228,31 @@ export class ActiveTaskExecutionService {
     );
 
     return this.mapActiveExecutionToResult(execution);
+  }
+
+  /** @throws {AgentConcurrencyLimitReachedError} */
+  private async assertAgentHasSlot(
+    manager: EntityManager,
+    workspaceId: string,
+    agentActorId: string,
+  ): Promise<void> {
+    await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+      `agent-concurrency:${agentActorId}`,
+    ]);
+    const [agent] = await manager.query(
+      'SELECT concurrency_limit FROM agents WHERE workspace_id = $1 AND actor_id = $2',
+      [workspaceId, agentActorId],
+    );
+    const limit: number | null = agent?.concurrency_limit ?? null;
+    if (limit === null) {
+      return;
+    }
+    const running = await manager.count(ActiveTaskExecutionEntity, {
+      where: { workspaceId, agentActorId },
+    });
+    if (running >= limit) {
+      throw new AgentConcurrencyLimitReachedError(agentActorId, limit);
+    }
   }
 
   /**

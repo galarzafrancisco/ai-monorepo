@@ -162,12 +162,30 @@ The current queue population logic uses these rules:
 4. task tags must match the agent's `tagTriggers`
 5. if the agent has no `tagTriggers`, it reacts to all tags
 6. all dependency tasks must already be `DONE`
-7. agent concurrency must not be exceeded based on current active executions
+7. agent concurrency must not be exceeded, counting the agent's active executions **and** its tasks already in the queue (counting only running ones let one sweep queue every waiting task at once)
+
+The limit is also enforced when a worker claims (`ActiveTaskExecutionService.claimTask`): claims for one agent take turns on a transaction-scoped advisory lock (`agent-concurrency:<actorId>`), count what the agent already runs, and refuse at the limit with `AgentConcurrencyLimitReachedError` (409). The refusal rolls back, so nothing is claimed. The queue alone can't guarantee the limit: two workers can race for two queued tasks.
+
+## When the queue is re-checked
+
+- **Task events** (created, updated, assigned, status changed, input request answered) re-check that one task.
+- **Execution changes** (`ActiveExecutionsChangedEvent`: claim, stop, unclaim, prune) re-check every candidate task, coalesced and never overlapping, so a waiting task is queued as soon as its agent has a free slot.
+- **Every minute**, a full sweep (`TaskEligibilitySchedulerService`).
+
+## Stale executions
+
+An active execution is stale when either:
+
+- it hasn't sent an execution heartbeat for `EXECUTIONS_STALENESS_THRESHOLD_MS` (default 10 min). Agents only heartbeat on activity, and a quiet tool call can legitimately run long; or
+- its worker stopped heartbeating for `EXECUTIONS_WORKER_GONE_MS` (default 2 min). Workers heartbeat every 30s whatever their agent is doing. This applies only to workers that have heartbeated since the claim, which proves they send worker heartbeats; older workers keep the first rule.
+
+The scan runs every minute (`EXECUTIONS_STALENESS_SCAN_CRON`, default `* * * * *`), so a worker that stops releases its agent's slots within about 3 minutes.
+
+Pruning records `STALE` in history and puts the task back as it was before the claim, so it runs again, **but only if the agent left it unfinished**: same assignee, and status unchanged or In progress. A task the agent finished (Done, For review) or handed to someone else is left as it is; rolling it back would run finished work a second time.
 
 Still pending:
 
 - open input request / open questions checks
-- stale execution handling
 
 ## Controllers
 

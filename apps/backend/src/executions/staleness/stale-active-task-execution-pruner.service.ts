@@ -1,3 +1,4 @@
+import { TaskStatus } from '../../tasks/enums/task-status.enum';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource, EntityManager, In, Raw } from 'typeorm';
@@ -52,15 +53,20 @@ export class StaleActiveTaskExecutionPrunerService {
         return activeExecution;
       }
 
-      task.status = activeExecution.taskStatusBeforeClaim;
-      task.assigneeActorId = activeExecution.taskAssigneeActorIdBeforeClaim;
-      task.tags = await this.resolveSnapshotTags(
-        manager,
-        task.workspaceId,
-        activeExecution.taskTagsBeforeClaim,
-      );
-
-      await manager.save(TaskEntity, task);
+      // Put the task back as it was before the claim, so it runs again, but
+      // only if the agent hadn't moved it on. A task it finished (Done, For
+      // review) or handed to someone else is left exactly as it is: rolling
+      // it back would run finished work a second time.
+      if (wasLeftUnfinished(task, activeExecution)) {
+        task.status = activeExecution.taskStatusBeforeClaim;
+        task.assigneeActorId = activeExecution.taskAssigneeActorIdBeforeClaim;
+        task.tags = await this.resolveSnapshotTags(
+          manager,
+          task.workspaceId,
+          activeExecution.taskTagsBeforeClaim,
+        );
+        await manager.save(TaskEntity, task);
+      }
       await manager.delete(ActiveTaskExecutionEntity, { id: activeExecution.id });
       await manager.save(
         TaskExecutionHistoryEntity,
@@ -166,4 +172,19 @@ export class StaleActiveTaskExecutionPrunerService {
       .map((snapshotTag) => resolvedTags.get(snapshotTag.id))
       .filter((tag): tag is TagEntity => Boolean(tag));
   }
+}
+
+/**
+ * Whether a stale execution's task is still where the claim left it: same
+ * assignee, and its status unchanged or only moved to In progress.
+ */
+function wasLeftUnfinished(
+  task: TaskEntity,
+  execution: ActiveTaskExecutionEntity,
+): boolean {
+  return (
+    task.assigneeActorId === execution.taskAssigneeActorIdBeforeClaim &&
+    (task.status === execution.taskStatusBeforeClaim ||
+      task.status === TaskStatus.IN_PROGRESS)
+  );
 }

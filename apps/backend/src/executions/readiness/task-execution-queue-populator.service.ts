@@ -117,15 +117,22 @@ export class TaskExecutionQueuePopulatorService {
       return false;
     }
 
-    const agentActiveExecutionCount =
-      await this.readinessCandidateRepository.countActiveExecutionsForAgent(
+    // Running and already-queued tasks both take a slot: counting only the
+    // running ones let one sweep queue every waiting task at once.
+    const agentSlotsTaken =
+      (await this.readinessCandidateRepository.countActiveExecutionsForAgent(
         task.workspaceId,
         agent.actorId,
-      );
+      )) +
+      (await this.readinessCandidateRepository.countQueuedTasksForAgent(
+        task.workspaceId,
+        agent.actorId,
+        task.id,
+      ));
 
     if (
       agent.concurrencyLimit !== null &&
-      agentActiveExecutionCount >= agent.concurrencyLimit
+      agentSlotsTaken >= agent.concurrencyLimit
     ) {
       this.logger.debug(
         `Task ${task.id} is not queueable: agent ${agent.slug} is at concurrency limit ${agent.concurrencyLimit}`,
