@@ -222,8 +222,25 @@ export interface CreateManagedUserRequestDto {
   role: 'admin' | 'standard';
 }
 
+export interface ManagedUserSetupResponseDto {
+  id: string;
+  email: string;
+  displayName: string;
+  slug: string;
+  actorId: string;
+  role: 'admin' | 'standard';
+  isActive: boolean;
+  passwordSetupPending: boolean;
+  createdAt: string;
+  updatedAt: string;
+  setupCode: string;
+  setupUrl: string;
+  setupCodeExpiresAt: string;
+}
+
 export interface AccountSetupStatusRequestDto {
   email: string;
+  code: string;
 }
 
 export interface AccountSetupStatusResponseDto {
@@ -233,6 +250,7 @@ export interface AccountSetupStatusResponseDto {
 
 export interface SetupManagedUserRequestDto {
   email: string;
+  code: string;
   displayName: string;
   slug: string;
   password: string;
@@ -1722,9 +1740,44 @@ export interface InviteWorkspaceMemberRequestDto {
   role: WorkspaceRole;
 }
 
+export interface WorkspaceInvitationResponseDto {
+  id: string;
+  email: string;
+  role: WorkspaceRole;
+  expiresAt: string;
+  createdAt: string;
+}
+
 export interface InviteWorkspaceMemberResponseDto {
-  member: WorkspaceMemberResponseDto;
-  accountCreated: boolean;
+  invitation: WorkspaceInvitationResponseDto;
+  inviteCode: string;
+  inviteUrl: string;
+}
+
+export interface InvitationCodeRequestDto {
+  code: string;
+}
+
+export interface InvitationPreviewResponseDto {
+  workspaceName: string;
+  workspaceSlug: string;
+  email: string;
+  role: WorkspaceRole;
+  expiresAt: string;
+}
+
+export interface AcceptInvitationNewAccountRequestDto {
+  code: string;
+  displayName: string;
+  slug: string;
+  password: string;
+}
+
+export interface AcceptInvitationResponseDto {
+  workspaceId: string;
+  workspaceSlug: string;
+  workspaceName: string;
+  role: WorkspaceRole;
 }
 
 export interface UpdateWorkspaceMemberRequestDto {

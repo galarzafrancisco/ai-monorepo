@@ -126,6 +126,13 @@ describe('Raw execution traces E2E', () => {
         }
         return original(token, ...args);
       });
+    // The synthetic workers above are no real actors; let them past the
+    // per-request membership check, and only them.
+    const originalMembership = validator.assertWorkspaceMember.bind(validator);
+    jest.spyOn(validator, 'assertWorkspaceMember').mockImplementation(async (auth) => {
+      if (['trace-owner', 'trace-stranger'].includes(auth.token)) return;
+      return originalMembership(auth);
+    });
     for (const clientId of ['trace-owner', 'trace-stranger']) {
       await db.getRepository(RegisteredClientEntity).save({
         clientId,

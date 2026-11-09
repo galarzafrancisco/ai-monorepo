@@ -1,3 +1,4 @@
+import { User } from '../../user.entity';
 import { UserRole } from '../../enums';
 import { WorkspaceRole } from '../../../workspaces/enums';
 
@@ -39,6 +40,8 @@ export type CreateManagedUserInput = {
 
 export type SetupManagedUserInput = {
   email: string;
+  /** The one-time setup code given when the account was created or reset. */
+  code: string;
   displayName: string;
   slug: string;
   password: string;
@@ -46,4 +49,12 @@ export type SetupManagedUserInput = {
 
 export type UpdateUserRoleInput = {
   role: UserRole;
+};
+
+/** A managed user with the one-time code that sets up its password. */
+export type ManagedUserWithSetupCode = {
+  user: User;
+  /** Shown once to the operator who created or reset the account. */
+  setupCode: string;
+  setupCodeExpiresAt: Date;
 };

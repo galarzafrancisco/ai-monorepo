@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -13,6 +13,7 @@ import {
   CreateManagedUserInput,
   SetupManagedUserInput,
   UpdateUserRoleInput,
+  ManagedUserWithSetupCode,
 } from './dto/service/identity-provider.service.types';
 import { ActorService, buildDeletedActorSlug } from './actor.service';
 import { ActorEntity } from './actor.entity';
@@ -29,6 +30,13 @@ import {
   UserNotFoundError,
   UserSlugConflictError,
 } from './errors/identity-provider.errors';
+
+/** How long an account setup code stays valid. */
+const SETUP_CODE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
 
 @Injectable()
 export class IdentityProviderService {
@@ -86,7 +94,9 @@ export class IdentityProviderService {
     });
   }
 
-  async createManagedUser(input: CreateManagedUserInput): Promise<User> {
+  async createManagedUser(
+    input: CreateManagedUserInput,
+  ): Promise<ManagedUserWithSetupCode> {
     const email = input.email.trim().toLowerCase();
     const existing = await this.userRepository.findOne({ where: { email } });
     if (existing) {
@@ -94,8 +104,9 @@ export class IdentityProviderService {
     }
 
     const displayName = email.split('@')[0] || email;
+    const setup = this.issueSetupCode();
 
-    return this.userRepository.manager.transaction(async (manager) => {
+    const user = await this.userRepository.manager.transaction(async (manager) => {
       const slug = await this.claimAvailableSlug(manager, email);
       const actor = await this.actorService.createUserActor(manager, {
         slug,
@@ -105,7 +116,7 @@ export class IdentityProviderService {
         User,
         manager.create(User, {
           email,
-          passwordHash: this.createPendingPasswordHash(),
+          passwordHash: setup.pendingHash,
           actorId: actor.id,
           role: input.role,
           isActive: true,
@@ -124,9 +135,17 @@ export class IdentityProviderService {
       savedUser.actor = actor;
       return savedUser;
     });
+    return { user, setupCode: setup.code, setupCodeExpiresAt: setup.expiresAt };
   }
 
-  async getManagedAccountSetupStatus(email: string): Promise<{ email: string; canSetup: boolean }> {
+  /**
+   * Whether `email` can be set up with `code`. Without the right code the
+   * answer is always false, so this can't be used to find pending accounts.
+   */
+  async getManagedAccountSetupStatus(
+    email: string,
+    code: string,
+  ): Promise<{ email: string; canSetup: boolean }> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.userRepository.findOne({
       where: { email: normalizedEmail, isActive: true },
@@ -134,7 +153,7 @@ export class IdentityProviderService {
 
     return {
       email: normalizedEmail,
-      canSetup: Boolean(user && this.isPasswordSetupPending(user)),
+      canSetup: Boolean(user && this.setupCodeMatches(user, code)),
     };
   }
 
@@ -156,7 +175,10 @@ export class IdentityProviderService {
           where: { email: normalizedEmail, isActive: true },
           lock: { mode: 'pessimistic_write' },
         });
-        if (!user || !this.isPasswordSetupPending(user)) {
+        // The setup code proves the person was given this account by whoever
+        // created or reset it. The email alone is never enough: anyone can
+        // type an email address.
+        if (!user || !this.setupCodeMatches(user, input.code)) {
           throw new InvalidCredentialsError();
         }
         const actor = await lockLiveActor(manager, user.actorId);
@@ -188,7 +210,9 @@ export class IdentityProviderService {
     return user;
   }
 
-  async resetManagedUserPassword(userId: string): Promise<User> {
+  async resetManagedUserPassword(
+    userId: string,
+  ): Promise<ManagedUserWithSetupCode> {
     const user = await this.userRepository.findOne({
       where: { id: userId, isActive: true },
       relations: { actor: true },
@@ -197,8 +221,13 @@ export class IdentityProviderService {
       throw new UserNotFoundError(userId);
     }
 
-    user.passwordHash = this.createPendingPasswordHash();
-    return this.userRepository.save(user);
+    const setup = this.issueSetupCode();
+    user.passwordHash = setup.pendingHash;
+    return {
+      user: await this.userRepository.save(user),
+      setupCode: setup.code,
+      setupCodeExpiresAt: setup.expiresAt,
+    };
   }
 
   async deactivateManagedUser(userId: string): Promise<User> {
@@ -434,8 +463,36 @@ export class IdentityProviderService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  private createPendingPasswordHash(): string {
-    return `${this.pendingPasswordPrefix}${randomBytes(24).toString('hex')}`;
+  /**
+   * A one-time setup code, and the pending password hash that stores it:
+   * `pending-password:v2:<expires at, ms>:<sha256 of the code>`. Only the
+   * hash is stored. Pending hashes from before codes existed match no code,
+   * so those accounts need a new reset.
+   */
+  private issueSetupCode(): { code: string; pendingHash: string; expiresAt: Date } {
+    const code = randomBytes(24).toString('base64url');
+    const expiresAt = new Date(Date.now() + SETUP_CODE_TTL_MS);
+    return {
+      code,
+      expiresAt,
+      pendingHash: `${this.pendingPasswordPrefix}v2:${expiresAt.getTime()}:${sha256(code)}`,
+    };
+  }
+
+  /** Whether the user's password is still to be set up, with this unexpired code. */
+  private setupCodeMatches(user: User, code: string | undefined): boolean {
+    if (!code || !this.isPasswordSetupPending(user)) {
+      return false;
+    }
+    const [version, expiresAt, hash] = user.passwordHash
+      .slice(this.pendingPasswordPrefix.length)
+      .split(':');
+    if (version !== 'v2' || !hash || Number(expiresAt) < Date.now()) {
+      return false;
+    }
+    const expected = Buffer.from(hash, 'hex');
+    const given = Buffer.from(sha256(code), 'hex');
+    return expected.length === given.length && timingSafeEqual(expected, given);
   }
 
   /**

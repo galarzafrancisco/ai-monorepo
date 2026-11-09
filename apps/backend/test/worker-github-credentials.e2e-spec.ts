@@ -84,6 +84,13 @@ describe('Worker GitHub credentials E2E', () => {
       }
       return original(token, ...args);
     });
+    // The synthetic workers above are no real actors; let them past the
+    // per-request membership check, and only them.
+    const originalMembership = validator.assertWorkspaceMember.bind(validator);
+    jest.spyOn(validator, 'assertWorkspaceMember').mockImplementation(async (auth) => {
+      if (['gh-owner', 'gh-stranger'].includes(auth.token)) return;
+      return originalMembership(auth);
+    });
   }, 60000);
 
   afterAll(async () => {

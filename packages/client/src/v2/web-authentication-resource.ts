@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AccountSetupStatusRequestDto, AccountSetupStatusResponseDto, ChangePasswordRequestDto, CreateManagedUserRequestDto, LoginRequestDto, LoginResponseDto, ManagedUserResponseDto, OnboardingRequestDto, OnboardingStatusResponseDto, SetupManagedUserRequestDto, SwitchWorkspaceRequestDto, UserResponseDto } from './types.js';
+import type { AccountSetupStatusRequestDto, AccountSetupStatusResponseDto, ChangePasswordRequestDto, CreateManagedUserRequestDto, LoginRequestDto, LoginResponseDto, ManagedUserResponseDto, ManagedUserSetupResponseDto, OnboardingRequestDto, OnboardingStatusResponseDto, SetupManagedUserRequestDto, SwitchWorkspaceRequestDto, UserResponseDto } from './types.js';
 
 export class WebAuthenticationResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -17,12 +17,12 @@ export class WebAuthenticationResource extends BaseClient {
   }
 
   /** Create an invited human user */
-  async WebAuthController_createUser(params: { body: CreateManagedUserRequestDto; signal?: AbortSignal }): Promise<ManagedUserResponseDto> {
+  async WebAuthController_createUser(params: { body: CreateManagedUserRequestDto; signal?: AbortSignal }): Promise<ManagedUserSetupResponseDto> {
     return this.request('POST', '/api/v1/auth/users', { body: params.body, signal: params?.signal });
   }
 
   /** Reset a managed user password so they can set a new one */
-  async WebAuthController_resetUserPassword(params: { userId: string; signal?: AbortSignal }): Promise<ManagedUserResponseDto> {
+  async WebAuthController_resetUserPassword(params: { userId: string; signal?: AbortSignal }): Promise<ManagedUserSetupResponseDto> {
     return this.request('POST', `/api/v1/auth/users/${params.userId}/reset-password`, { signal: params?.signal });
   }
 

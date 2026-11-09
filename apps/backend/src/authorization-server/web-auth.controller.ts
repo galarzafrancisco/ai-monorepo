@@ -34,6 +34,8 @@ import { UserRole } from 'src/identity-provider/enums';
 import { OnboardingNotAllowedError } from 'src/identity-provider/errors/identity-provider.errors';
 import { CreateManagedUserRequestDto } from './dto/create-managed-user-request.dto';
 import { ManagedUserResponseDto } from './dto/managed-user-response.dto';
+import { ManagedUserSetupResponseDto } from './dto/managed-user-setup-response.dto';
+import { getFrontendPath } from '../config/frontend.config';
 import { AccountSetupStatusRequestDto } from './dto/account-setup-status-request.dto';
 import { AccountSetupStatusResponseDto } from './dto/account-setup-status-response.dto';
 import { SetupManagedUserRequestDto } from './dto/setup-managed-user-request.dto';
@@ -115,16 +117,16 @@ export class WebAuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create an invited human user' })
   @ApiBody({ type: CreateManagedUserRequestDto })
-  @ApiResponse({ status: 201, type: ManagedUserResponseDto })
+  @ApiResponse({ status: 201, type: ManagedUserSetupResponseDto })
   async createUser(
     @Req() request: Request,
     @CurrentWorkspace() workspaceId: string,
     @Body() createUserDto: CreateManagedUserRequestDto,
-  ): Promise<ManagedUserResponseDto> {
+  ): Promise<ManagedUserSetupResponseDto> {
     await this.requireAdminUser(request);
     // The new person joins the operator's current workspace: as its admin
     // if they are an operator too, a member otherwise.
-    const user = await this.identityProviderService.createManagedUser({
+    const created = await this.identityProviderService.createManagedUser({
       ...createUserDto,
       workspace: {
         workspaceId,
@@ -134,7 +136,7 @@ export class WebAuthController {
             : WorkspaceRole.MEMBER,
       },
     });
-    return this.toManagedUserResponse(user);
+    return this.toManagedUserSetupResponse(created);
   }
 
   // Logins are installation-wide: requireAdminUser checks that the caller is
@@ -143,14 +145,14 @@ export class WebAuthController {
   @Post('users/:userId/reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset a managed user password so they can set a new one' })
-  @ApiResponse({ status: 200, type: ManagedUserResponseDto })
+  @ApiResponse({ status: 200, type: ManagedUserSetupResponseDto })
   async resetUserPassword(
     @Req() request: Request,
     @Param('userId') userId: string,
-  ): Promise<ManagedUserResponseDto> {
+  ): Promise<ManagedUserSetupResponseDto> {
     await this.requireAdminUser(request);
-    const user = await this.identityProviderService.resetManagedUserPassword(userId);
-    return this.toManagedUserResponse(user);
+    const reset = await this.identityProviderService.resetManagedUserPassword(userId);
+    return this.toManagedUserSetupResponse(reset);
   }
 
   // Logins are installation-wide: requireAdminUser checks that the caller is
@@ -181,7 +183,10 @@ export class WebAuthController {
   async getAccountSetupStatus(
     @Body() accountSetupDto: AccountSetupStatusRequestDto,
   ): Promise<AccountSetupStatusResponseDto> {
-    return this.identityProviderService.getManagedAccountSetupStatus(accountSetupDto.email);
+    return this.identityProviderService.getManagedAccountSetupStatus(
+      accountSetupDto.email,
+      accountSetupDto.code,
+    );
   }
 
   @Post('setup-account')
@@ -606,6 +611,23 @@ export class WebAuthController {
       ...cookieOptions,
       maxAge: 24 * 60 * 60 * 1000,
     });
+  }
+
+  private toManagedUserSetupResponse(created: {
+    user: User;
+    setupCode: string;
+    setupCodeExpiresAt: Date;
+  }): ManagedUserSetupResponseDto {
+    const params = new URLSearchParams({
+      setup: created.setupCode,
+      email: created.user.email,
+    });
+    return {
+      ...this.toManagedUserResponse(created.user),
+      setupCode: created.setupCode,
+      setupUrl: getFrontendPath(`/login?${params.toString()}`),
+      setupCodeExpiresAt: created.setupCodeExpiresAt,
+    };
   }
 
   private toManagedUserResponse(user: User): ManagedUserResponseDto {

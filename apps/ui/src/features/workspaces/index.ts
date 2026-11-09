@@ -4,3 +4,4 @@ export { WorkspaceSwitchPrompt } from './WorkspaceSwitchPrompt';
 export { LocatableRowKind } from './api';
 export { SettingsWorkspacePage } from './SettingsWorkspacePage';
 export { SettingsWorkspacesPage } from './SettingsWorkspacesPage';
+export { InvitePage } from './InvitePage';

@@ -101,15 +101,96 @@ export class WorkspaceMemberResponseDto {
   joinedAt!: string;
 }
 
+export class WorkspaceInvitationResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ description: 'The invited email address' })
+  email!: string;
+
+  @ApiProperty({ enum: WorkspaceRole, enumName: 'WorkspaceRole' })
+  role!: WorkspaceRole;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  expiresAt!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+}
+
 export class InviteWorkspaceMemberResponseDto {
-  @ApiProperty({ type: WorkspaceMemberResponseDto })
-  member!: WorkspaceMemberResponseDto;
+  @ApiProperty({ type: WorkspaceInvitationResponseDto })
+  invitation!: WorkspaceInvitationResponseDto;
 
   @ApiProperty({
     description:
-      'Whether an invited account was created for the email. They set a password through account setup before they can sign in.',
+      'One-time code that accepts the invitation. Shown once: give it, or the link, to the person by a channel you trust.',
   })
-  accountCreated!: boolean;
+  inviteCode!: string;
+
+  @ApiProperty({ description: 'Link that opens the invitation with the code filled in. Shown once.' })
+  inviteUrl!: string;
+}
+
+export class InvitationCodeRequestDto {
+  @ApiProperty({ description: 'The one-time invitation code' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  code!: string;
+}
+
+export class InvitationPreviewResponseDto {
+  @ApiProperty()
+  workspaceName!: string;
+
+  @ApiProperty()
+  workspaceSlug!: string;
+
+  @ApiProperty({ description: 'The invited email address' })
+  email!: string;
+
+  @ApiProperty({ enum: WorkspaceRole, enumName: 'WorkspaceRole' })
+  role!: WorkspaceRole;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  expiresAt!: string;
+}
+
+export class AcceptInvitationNewAccountRequestDto extends InvitationCodeRequestDto {
+  @ApiProperty({ description: 'Display name', example: 'Jane User' })
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  displayName!: string;
+
+  @ApiProperty({ description: 'Username (slug)', example: 'jane' })
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  slug!: string;
+
+  @ApiProperty({ description: 'Password for the new account', minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(200)
+  password!: string;
+}
+
+export class AcceptInvitationResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  workspaceId!: string;
+
+  @ApiProperty()
+  workspaceSlug!: string;
+
+  @ApiProperty()
+  workspaceName!: string;
+
+  @ApiProperty({ enum: WorkspaceRole, enumName: 'WorkspaceRole' })
+  role!: WorkspaceRole;
 }
 
 export class LocateRowQueryDto {

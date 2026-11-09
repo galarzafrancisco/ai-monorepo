@@ -101,12 +101,15 @@ export class AccessTokenGuard implements CanActivate {
     const authContext: AuthContext = createAuthContext(token, claims);
 
     // 5) Keep workspaces apart (fails closed when the route declares no mode)
-    enforceWorkspaceAccess(
-      workspaceAccessOf(this.reflector, context),
-      authContext,
-      entryPointName(context),
-    );
+    const workspaceAccess = workspaceAccessOf(this.reflector, context);
+    enforceWorkspaceAccess(workspaceAccess, authContext, entryPointName(context));
     enforceExpectedWorkspace(req.headers, authContext);
+    // 6) A person removed from the workspace loses access now, not when the
+    //    token expires. Installation routes (sign-in, your workspace list)
+    //    aren't workspace data.
+    if (workspaceAccess !== 'installation') {
+      await this.validator.assertWorkspaceMember(authContext);
+    }
 
     res.locals.auth = authContext;
 

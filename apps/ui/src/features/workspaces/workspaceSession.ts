@@ -17,6 +17,8 @@ import { WorkspacesService } from './api';
 
 export const EXPECTED_WORKSPACE_HEADER = 'x-taico-workspace';
 const WORKSPACE_CHANGED = 'WORKSPACE_CHANGED';
+/** The person was removed from the workspace this page shows. */
+const WORKSPACE_MEMBERSHIP_REVOKED = 'WORKSPACE_MEMBERSHIP_REVOKED';
 const CHANNEL_NAME = 'taico-workspace-session';
 
 type SwitchMessage = { type: 'switched'; workspaceId: string };
@@ -63,6 +65,16 @@ function isApiRequest(input: RequestInfo | URL): boolean {
   return !!url && url.origin === window.location.origin && url.pathname.startsWith('/api/');
 }
 
+async function isMembershipRevoked(response: Response): Promise<boolean> {
+  if (response.status !== 403) return false;
+  try {
+    const body = (await response.clone().json()) as { code?: unknown } | null;
+    return body?.code === WORKSPACE_MEMBERSHIP_REVOKED;
+  } catch {
+    return false;
+  }
+}
+
 async function isWorkspaceChanged(response: Response): Promise<boolean> {
   if (response.status !== 409) return false;
   try {
@@ -89,6 +101,11 @@ export function startWorkspaceSessionGuard(): () => void {
     headers.set(EXPECTED_WORKSPACE_HEADER, expected);
     const response = await originalFetch(input, { ...init, headers });
     if (await isWorkspaceChanged(response)) {
+      reloadPage();
+    } else if (await isMembershipRevoked(response)) {
+      // A refreshed session lands in a workspace they're still in (or none,
+      // which signs them out); then reload so nothing from this one stays.
+      await originalFetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' }).catch(() => undefined);
       reloadPage();
     }
     return response;

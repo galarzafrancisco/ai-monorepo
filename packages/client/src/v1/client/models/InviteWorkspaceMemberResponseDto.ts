@@ -2,12 +2,16 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { WorkspaceMemberResponseDto } from './WorkspaceMemberResponseDto.js';
+import type { WorkspaceInvitationResponseDto } from './WorkspaceInvitationResponseDto.js';
 export type InviteWorkspaceMemberResponseDto = {
-    member: WorkspaceMemberResponseDto;
+    invitation: WorkspaceInvitationResponseDto;
     /**
-     * Whether an invited account was created for the email. They set a password through account setup before they can sign in.
+     * One-time code that accepts the invitation. Shown once: give it, or the link, to the person by a channel you trust.
      */
-    accountCreated: boolean;
+    inviteCode: string;
+    /**
+     * Link that opens the invitation with the code filled in. Shown once.
+     */
+    inviteUrl: string;
 };
 

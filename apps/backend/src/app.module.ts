@@ -80,6 +80,7 @@ import { WorkspaceScopeIntegrationsMcpSearch1764000000000 } from './migrations/1
 import { RefreshTokenWorkspace1764100000000 } from './migrations/1764100000000-RefreshTokenWorkspace';
 import { WorkspaceMembersBackfilled1764100000001 } from './migrations/1764100000001-WorkspaceMembersBackfilled';
 import { AuthJourneyWorkspace1764200000000 } from './migrations/1764200000000-AuthJourneyWorkspace';
+import { WorkspaceInvitations1764300000000 } from './migrations/1764300000000-WorkspaceInvitations';
 import { McpAuthFlowRequestedWorkspace1764300000000 } from './migrations/1764300000000-McpAuthFlowRequestedWorkspace';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
@@ -144,6 +145,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
         RefreshTokenWorkspace1764100000000,
         WorkspaceMembersBackfilled1764100000001,
         AuthJourneyWorkspace1764200000000,
+        WorkspaceInvitations1764300000000,
         McpAuthFlowRequestedWorkspace1764300000000,
       ],
     }),

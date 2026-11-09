@@ -88,6 +88,19 @@ export class TasksService {
     private readonly workspacesService: WorkspacesService,
   ) {}
 
+  /**
+   * Checks that every id is a task of this workspace (a task elsewhere is
+   * reported as not found, like any other missing one).
+   *
+   * @throws {TaskNotFoundError} naming the first missing id.
+   */
+  async assertTasksInWorkspace(workspaceId: string, taskIds: string[]): Promise<void> {
+    const unique = [...new Set(taskIds)];
+    if (unique.length === 0) return;
+    const found = await this.taskRepository.findBy({ workspaceId, id: In(unique) });
+    throwIfMissing(unique, found);
+  }
+
   async createTask(
     workspaceId: string,
     input: CreateTaskInput,
@@ -131,9 +144,7 @@ export class TasksService {
         workspaceId,
         id: In(input.dependsOnIds),
       });
-      if (dependencyTasks.length !== input.dependsOnIds.length) {
-        throw new Error('One or more dependency tasks not found');
-      }
+      throwIfMissing(input.dependsOnIds, dependencyTasks);
     }
 
     const task = this.taskRepository.create({
@@ -382,9 +393,7 @@ export class TasksService {
               workspaceId,
               id: In(input.dependsOnIds),
             });
-          if (dependencyTasks.length !== input.dependsOnIds.length) {
-            throw new Error('One or more dependency tasks not found');
-          }
+          throwIfMissing(input.dependsOnIds, dependencyTasks);
           task.dependsOn = dependencyTasks;
         }
       }
@@ -1470,5 +1479,14 @@ export class TasksService {
         commentId: result.commentId,
         commentAuthor: result.commentAuthor,
       }));
+  }
+}
+
+/** @throws {TaskNotFoundError} for the first id with no task in `found`. */
+function throwIfMissing(ids: string[], found: { id: string }[]): void {
+  const foundIds = new Set(found.map((task) => task.id));
+  const missing = ids.find((id) => !foundIds.has(id));
+  if (missing) {
+    throw new TaskNotFoundError(missing);
   }
 }

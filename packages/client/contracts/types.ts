@@ -2940,9 +2940,103 @@ export interface paths {
         put?: never;
         /**
          * Workspace admin: invite a person by email
-         * @description A person with an account is added. Anyone else gets an invited account, which they set up through account setup.
+         * @description Creates an invitation with a one-time code; nobody is added until the person accepts it with that code. The answer is the same whether or not the email has an account.
          */
         post: operations["WorkspaceAdminController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/current/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workspace admin: invitations not yet accepted */
+        get: operations["WorkspaceAdminController_listInvitations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/current/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Workspace admin: revoke an invitation */
+        delete: operations["WorkspaceAdminController_revokeInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/invitations/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What an invitation is for, to whoever holds its code
+         * @description A wrong, used, revoked or expired code answers 404.
+         */
+        post: operations["WorkspaceAdminController_previewInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/invitations/accept-new-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept an invitation by creating the invited account
+         * @description Creates the account for the invited email, with this password, in the workspace. Then sign in. If the email already has an account, sign in to it and accept instead (409).
+         */
+        post: operations["WorkspaceAdminController_acceptInvitationWithNewAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept an invitation as the signed-in person
+         * @description The account must have the invited email. Joins the workspace; switch to it to work there.
+         */
+        post: operations["WorkspaceAdminController_acceptInvitation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3731,12 +3825,54 @@ export interface components {
              */
             role: "admin" | "standard";
         };
+        ManagedUserSetupResponseDto: {
+            /** @description User ID */
+            id: string;
+            /** @description User email address */
+            email: string;
+            /** @description Display name from the associated human actor */
+            displayName: string;
+            /** @description Actor slug/username */
+            slug: string;
+            /** @description Actor ID associated with this user */
+            actorId: string;
+            /**
+             * @description User role
+             * @enum {string}
+             */
+            role: "admin" | "standard";
+            /** @description Whether this user can currently sign in */
+            isActive: boolean;
+            /** @description Whether this user still needs to set a password */
+            passwordSetupPending: boolean;
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Last update timestamp
+             */
+            updatedAt: string;
+            /** @description One-time setup code. Shown once. */
+            setupCode: string;
+            /** @description Link that opens account setup with the code filled in. Shown once. */
+            setupUrl: string;
+            /**
+             * Format: date-time
+             * @description When the setup code stops working
+             */
+            setupCodeExpiresAt: string;
+        };
         AccountSetupStatusRequestDto: {
             /**
              * @description Email address to check
              * @example user@example.com
              */
             email: string;
+            /** @description The one-time setup code from the setup link */
+            code: string;
         };
         AccountSetupStatusResponseDto: {
             /** @description Normalized email address */
@@ -3750,6 +3886,8 @@ export interface components {
              * @example user@example.com
              */
             email: string;
+            /** @description The one-time setup code given when the account was created or reset (from the setup link). The email alone is never enough. */
+            code: string;
             /**
              * @description Display name for the user
              * @example Jane User
@@ -8395,10 +8533,59 @@ export interface components {
             email: string;
             role: components["schemas"]["WorkspaceRole"];
         };
+        WorkspaceInvitationResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description The invited email address */
+            email: string;
+            role: components["schemas"]["WorkspaceRole"];
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         InviteWorkspaceMemberResponseDto: {
-            member: components["schemas"]["WorkspaceMemberResponseDto"];
-            /** @description Whether an invited account was created for the email. They set a password through account setup before they can sign in. */
-            accountCreated: boolean;
+            invitation: components["schemas"]["WorkspaceInvitationResponseDto"];
+            /** @description One-time code that accepts the invitation. Shown once: give it, or the link, to the person by a channel you trust. */
+            inviteCode: string;
+            /** @description Link that opens the invitation with the code filled in. Shown once. */
+            inviteUrl: string;
+        };
+        InvitationCodeRequestDto: {
+            /** @description The one-time invitation code */
+            code: string;
+        };
+        InvitationPreviewResponseDto: {
+            workspaceName: string;
+            workspaceSlug: string;
+            /** @description The invited email address */
+            email: string;
+            role: components["schemas"]["WorkspaceRole"];
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        AcceptInvitationNewAccountRequestDto: {
+            /** @description The one-time invitation code */
+            code: string;
+            /**
+             * @description Display name
+             * @example Jane User
+             */
+            displayName: string;
+            /**
+             * @description Username (slug)
+             * @example jane
+             */
+            slug: string;
+            /** @description Password for the new account */
+            password: string;
+        };
+        AcceptInvitationResponseDto: {
+            /** Format: uuid */
+            workspaceId: string;
+            workspaceSlug: string;
+            workspaceName: string;
+            role: components["schemas"]["WorkspaceRole"];
         };
         UpdateWorkspaceMemberRequestDto: {
             role: components["schemas"]["WorkspaceRole"];
@@ -9294,7 +9481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ManagedUserResponseDto"];
+                    "application/json": components["schemas"]["ManagedUserSetupResponseDto"];
                 };
             };
         };
@@ -9315,7 +9502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ManagedUserResponseDto"];
+                    "application/json": components["schemas"]["ManagedUserSetupResponseDto"];
                 };
             };
         };
@@ -14794,6 +14981,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InviteWorkspaceMemberResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_listInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceInvitationResponseDto"][];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_revokeInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspaceAdminController_previewInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationCodeRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreviewResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_acceptInvitationWithNewAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInvitationNewAccountRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptInvitationResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceAdminController_acceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationCodeRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptInvitationResponseDto"];
                 };
             };
         };

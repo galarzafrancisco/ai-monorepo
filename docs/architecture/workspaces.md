@@ -54,7 +54,7 @@ Every transport builds the same `AuthContext` with `createAuthContext` (`apps/ba
 - **WebSocket gateways:** the same decorator works in `@SubscribeMessage` handlers guarded by `WsAccessTokenGuard`. Outside a handler (connection hooks, room joins), read `(client.data.auth as AuthContext).workspaceId`. The worker gateway builds its context the same way.
 - **MCP:** MCP endpoints are HTTP routes behind `AccessTokenGuard`, so the `AuthContext` handed to each MCP server (`authContext.workspaceId`) carries it.
 
-The workspace is not checked against membership on each request: the authorization server checked it when it minted the token. A removed member keeps access until the token expires (see [Removing a member](#members)).
+The workspace is also checked against membership on every request to workspace data, so a removed member loses access at once, not when their token expires (see [Removing a member](#members)).
 
 What it costs:
 
@@ -320,20 +320,30 @@ Members are always the token's workspace's: the routes are `/workspaces/current/
 | `GET /workspaces` | anyone signed in | Your workspaces, your role in each, and which one the token is for (`current`). |
 | `GET /workspaces/current` | members | The token's workspace and your role. |
 | `GET /workspaces/current/members` | members | People and agents. |
-| `POST /workspaces/current/members` | workspace admin | Invite by email, with a role. |
+| `POST /workspaces/current/members` | workspace admin | Invite by email, with a role. Returns a one-time invite code and link; adds nobody. |
+| `GET /workspaces/current/invitations` | workspace admin | Invitations not yet accepted. |
+| `DELETE /workspaces/current/invitations/:id` | workspace admin | Revoke an invitation; its code stops working. |
+| `POST /workspaces/invitations/preview` | anyone with the code | What the invitation is for (workspace, role, email, expiry). It never says whether the email has an account: the code holder may be the admin who sent it, so the invite page offers both signing in and creating the account. |
+| `POST /workspaces/invitations/accept` | signed in, with the code | Join, as the account with the invited email. |
+| `POST /workspaces/invitations/accept-new-account` | anyone with the code | Create the invited email's account, in the workspace, then sign in. |
 | `PATCH /workspaces/current/members/:actorId` | workspace admin | Change a person's role. |
 | `DELETE /workspaces/current/members/:actorId` | workspace admin | Remove a person. |
 
-- **Invite by email.** A person with an account is added (`accountCreated: false`), or `409` if already a member. Anyone else gets an invited account: installation role `standard`, member of this workspace only (`accountCreated: true`). They set a password through the usual account setup (`/auth/setup-account`) and then sign in. The response shows the person's name, so an invite tells a workspace admin whether an email already has an account.
+- **Invite by email** (see [Invitations](#invitations)). An invite adds nobody: it returns a one-time code and link (`/invite?code=…`) that the admin gives the person. The answer is the same whether or not the email has an account, so it doesn't reveal who has one. `409` if the email's account is already a member.
 - **The last admin** can be neither demoted nor removed (`409 WORKSPACE_LAST_ADMIN`). Role changes and removals lock the workspace row, so two at once can't both pass the check.
 - **Agents** are not invited, re-roled or removed here (`400 WORKSPACE_MEMBER_IS_AGENT`). An agent is created in its workspace and leaves it by being deleted.
 - **An actor who is not a member** of the token's workspace answers `404`, whether they exist elsewhere or not.
-- **Removing a member** takes effect at their next token. Tokens already minted stay valid until they expire, and that includes open WebSocket connections:
-  - web sessions: `WEB_ACCESS_TOKEN_DURATION_MINUTES`
-  - MCP tokens: `mcpAccessTokenDurationSeconds`
-  - issued agent tokens: their own lifetime
+- **Removing a member** takes effect at once. `AccessTokenGuard` and `WsAccessTokenGuard` check that a token's actor is still a member of its workspace on every request to workspace data (`scoped`, `worker` and `default-only` routes and socket messages), through `WorkspaceMembershipGate`. A refused request answers `403 WORKSPACE_MEMBERSHIP_REVOKED`; the web app then refreshes the session and reloads. The check is not cached: it is one lookup on the unique (`workspace_id`, `actor_id`) index per request, so every backend sees a removal on the next request, and a lookup still in flight when the member is removed cannot extend their access. The removed person's sockets for that workspace are disconnected: every authenticated socket joins `workspace:<id>:member:<actorId>`, and `WorkspaceMemberSocketsGateway` disconnects that room in every namespace, which the Postgres socket adapter carries to every backend. Installation routes (sign-in, your workspace list, switching) still work, and a refresh or switch lands in another of their workspaces. A person in no workspace gets no session at all (`403 NO_WORKSPACE_MEMBERSHIP` at sign-in and refresh). Refresh tokens, MCP refreshes and ChatGPT plan turns all check membership again.
 
-  After that, a refresh or switch lands in another of their workspaces. A person in no workspace gets no session at all (`403 NO_WORKSPACE_MEMBERSHIP` at sign-in and refresh). Refresh tokens, MCP refreshes and ChatGPT plan turns all check membership again.
+### Invitations
+
+Accounts aren't verified by email (Taico sends no mail). So an email address alone never adds anyone to anything, and never sets up an account: someone else could have typed it. Before this, an admin of any workspace could invite a victim's email (creating a pending account), claim that account with just the email, and be added to the victim's real company when it later invited the same email.
+
+- **An invitation** (`workspace_invitations`, migration `WorkspaceInvitations1764300000000`) holds the workspace, email, role, the sha256 of a one-time code, who invited, and an expiry (7 days). It adds nobody by itself.
+- **Accepting** needs the code. Signed in, the account must have the invited email (`403 WORKSPACE_INVITATION_EMAIL_MISMATCH` otherwise). Signed out, the person creates the invited email's account with the code (`409 WORKSPACE_INVITATION_ACCOUNT_EXISTS` if it has one: sign in and accept). No account exists before that, so there is nothing to pre-claim.
+- **Codes are single-use**, claimed by one atomic update. A wrong, used, revoked or expired code always answers `404 WORKSPACE_INVITATION_NOT_FOUND`. Inviting the same email again replaces the open invitation.
+- **The admin hands the link over** by a channel they trust. Whoever holds it can accept, once, as the invited email.
+- **Accounts an operator creates or resets** (`/auth/users`) work the same way: the response carries a one-time setup code and link (`/login?setup=…&email=…`), stored hashed with its expiry in the pending password. `POST /auth/setup-account` and `/auth/account-setup-status` need the code; without it the answer is the same as for any other email. Pending accounts from before setup codes need a new reset.
 
 ### Switching
 
@@ -355,7 +365,6 @@ The tests are in `test/workspace-membership.e2e-spec.ts`:
 - agents created in the caller's workspace
 
 **Still open after phase 4:**
-- Removal does not revoke tokens already minted or disconnect sockets.
 - The legacy fallback for tokens with no `workspace_id` claim remains (see the [launch checklist](https://taico.app/context/block/64d3ec50-6657-4cc3-98ca-25f5a4303c1f)).
 
 ## The UI (phase 5)
@@ -366,7 +375,7 @@ The UI lives in `apps/ui/src/features/workspaces/`. `WorkspacesProvider` (inside
 - **Startup gate.** `WorkspacesProvider` resolves the session's workspace (`GET /workspaces`) before anything workspace-bound mounts. It pins that workspace for the request header (`setShownWorkspace`) before the render that mounts children, so the first request of every provider, page, composer and socket (actors, threads, tasks, …) already carries it, and drafts load synchronously in the right scope. If the workspace can't be resolved, or the session is in none, the app doesn't start: it shows an error with a retry, so no request goes out without the header. A later list refresh that finds the session in a different workspace reloads the page instead of adopting it.
 - **Other tabs.** Session cookies are shared by every tab, so a switch in one tab moves them all. `workspaceSession.ts` keeps each tab honest in three ways. (1) Every same-origin `/api/` request carries the workspace the page shows in `x-taico-workspace`. `AccessTokenGuard` refuses it with `WORKSPACE_CHANGED` (409) when the token is for another workspace, and the page reloads, so a stale tab can't read or write in a workspace it doesn't show. Requests without the header (API clients, MCP, workers) are unaffected. (2) The switching tab announces it on a `BroadcastChannel` and the other tabs reload. (3) A tab coming back to the foreground re-checks `GET /workspaces/current`, which catches tabs that were asleep.
 - **Drafts.** `useDraftState` stores drafts under `draft:<actorId>:<workspaceId>:<key>` (`DraftScopeContext`, set by `WorkspacesProvider`) and loads nothing until both are known. A draft typed in one workspace never appears in another. Drafts saved before scoping (`new-task-draft`, `thread-chat-draft-*`, …) are deleted on load rather than imported into whichever workspace is open.
-- **Settings > Workspace** (`/settings/workspace`). The current workspace's people and agents. Workspace admins invite by email, change roles and remove people. Agents are listed but managed on the Agents page.
+- **Settings > Workspace** (`/settings/workspace`). The current workspace's people and agents. Workspace admins invite by email (getting a one-time invite link to pass on), see and revoke pending invitations, change roles and remove people. Agents are listed but managed on the Agents page.
 - **Settings > Workspaces** (`/settings/workspaces`). Your workspaces, each with Switch. Installation operators (`users.role = 'admin'`) also create workspaces here.
 - **Who edits what.** Pages about the workspace's shared settings decide from the workspace role (`isWorkspaceAdmin`), never from `user.role`. Settings > AI models is read-only for members, except their own ChatGPT plan connection and Test connection. `user.role` is still right for the installation operator's pages: Users, Access requests and creating workspaces.
 - **Links into another workspace.** A task, thread or context block that answers "not found" is looked up with `GET /workspaces/locate?kind=task|thread|context_block&id=` (`installation` mode). When it is in another of the person's workspaces, the page offers "Switch to <workspace>", which switches and reopens the same URL. The route answers the same `404` when the row does not exist, is deleted, or is in a workspace the person is not in, so ids cannot be probed. The kind maps to a fixed table name in `WorkspacesService.locateRowForActor`; it never reaches SQL as client input.

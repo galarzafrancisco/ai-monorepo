@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Building2, UserPlus } from 'lucide-react';
+import { Building2, Copy, UserPlus } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { Button, Card, Stack, Text } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useHomeCtx } from '../home/HomeProvider';
-import { WorkspaceMemberActorType, WorkspaceRole, WorkspacesService, type WorkspaceMemberResponseDto } from './api';
+import {
+  WorkspaceMemberActorType,
+  WorkspaceRole,
+  WorkspacesService,
+  type WorkspaceInvitationResponseDto,
+  type WorkspaceMemberResponseDto,
+} from './api';
 import { useWorkspacesCtx } from './WorkspacesProvider';
 import { readApiError } from './readApiError';
 import '../../auth/LoginPage.css';
@@ -20,6 +26,9 @@ export function SettingsWorkspacePage() {
   const { user } = useAuth();
   const { current, isWorkspaceAdmin, isLoading: workspacesLoading } = useWorkspacesCtx();
   const [members, setMembers] = useState<WorkspaceMemberResponseDto[]>([]);
+  const [invitations, setInvitations] = useState<WorkspaceInvitationResponseDto[]>([]);
+  // The one-time link from the last invite: shown once, never stored.
+  const [inviteLink, setInviteLink] = useState<{ email: string; url: string } | null>(null);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<WorkspaceRole>(WorkspaceRole.MEMBER);
   const [error, setError] = useState('');
@@ -35,12 +44,15 @@ export function SettingsWorkspacePage() {
     setIsLoading(true);
     try {
       setMembers(await WorkspacesService.workspaceAdminControllerListMembers());
+      if (isWorkspaceAdmin) {
+        setInvitations(await WorkspacesService.workspaceAdminControllerListInvitations());
+      }
     } catch (err) {
       setError(readApiError(err, 'Failed to load members.'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isWorkspaceAdmin]);
 
   useEffect(() => {
     void loadMembers();
@@ -62,11 +74,10 @@ export function SettingsWorkspacePage() {
     setIsSaving(true);
     await run(async () => {
       const result = await WorkspacesService.workspaceAdminControllerInvite({ email, role });
+      setInviteLink({ email: result.invitation.email, url: result.inviteUrl });
       setEmail('');
       setRole(WorkspaceRole.MEMBER);
-      return result.accountCreated
-        ? `Invited ${email}. They set up their account with Create account on the login screen.`
-        : `Added ${result.member.displayName} to the workspace.`;
+      return `Invited ${result.invitation.email}. They join when they open the invite link below.`;
     });
     setIsSaving(false);
   };
@@ -76,6 +87,14 @@ export function SettingsWorkspacePage() {
       await WorkspacesService.workspaceAdminControllerUpdateMember(member.actorId, { role: nextRole });
       return `${member.displayName} is now ${roleLabel(nextRole).toLowerCase()}. It applies from their next sign-in or token refresh.`;
     });
+
+  const revoke = (invitation: WorkspaceInvitationResponseDto) => {
+    if (!window.confirm(`Revoke the invitation for ${invitation.email}? Its link stops working.`)) return;
+    void run(async () => {
+      await WorkspacesService.workspaceAdminControllerRevokeInvitation(invitation.id);
+      return `The invitation for ${invitation.email} was revoked.`;
+    });
+  };
 
   const remove = (member: WorkspaceMemberResponseDto) => {
     if (!window.confirm(`Remove ${member.displayName} from ${current?.name ?? 'this workspace'}?`)) return;
@@ -118,7 +137,7 @@ export function SettingsWorkspacePage() {
               <Stack spacing="1">
                 <Text size="3" weight="semibold">Invite a person</Text>
                 <Text size="1" tone="muted">
-                  Someone with an account is added right away. Anyone else gets an account in this workspace only, which they set up from the login screen.
+                  Inviting adds nobody yet: you get a one-time link to give the person. They open it to join, signing in to their account or creating one.
                 </Text>
               </Stack>
               <div className="settings-users-page__create-grid">
@@ -144,7 +163,50 @@ export function SettingsWorkspacePage() {
       ) : null}
 
       {notice ? <Text size="2" tone="muted">{notice}</Text> : null}
+
+      {inviteLink ? (
+        <Card padding="5">
+          <Stack spacing="3">
+            <Text size="3" weight="semibold">Invite link for {inviteLink.email}</Text>
+            <Text size="1" tone="muted">
+              Shown once. Send it to them yourself, by a channel you trust: anyone with the link can use it, once, within 7 days.
+            </Text>
+            <div className="settings-users-page__create-grid settings-users-page__invite-link">
+              <input className="login-input" readOnly value={inviteLink.url} aria-label="Invite link" onFocus={(event) => event.currentTarget.select()} />
+              <Button type="button" variant="secondary" onClick={() => void navigator.clipboard?.writeText(inviteLink.url)}>
+                <Copy size={16} />
+                Copy
+              </Button>
+            </div>
+          </Stack>
+        </Card>
+      ) : null}
       {error ? <ErrorText size="2" weight="medium">{error}</ErrorText> : null}
+
+      {isWorkspaceAdmin && invitations.length > 0 ? (
+        <Card padding="0" className="settings-users-page__list-card">
+          <div className="settings-users-page__list-header">
+            <Text size="3" weight="semibold">Pending invitations</Text>
+            <Text size="1" tone="muted">Not joined yet. Links expire after 7 days.</Text>
+          </div>
+          <div className="settings-users-page__list">
+            {invitations.map((invitation) => (
+              <div className="settings-users-page__row" key={invitation.id}>
+                <div className="settings-users-page__identity">
+                  <Text size="2" weight="semibold">{invitation.email}</Text>
+                  <Text size="1" tone="muted">Expires {new Date(invitation.expiresAt).toLocaleDateString()}</Text>
+                </div>
+                <div className="settings-users-page__badges">
+                  <span className="settings-users-page__badge settings-users-page__badge--pending">{roleLabel(invitation.role)}</span>
+                </div>
+                <div className="settings-users-page__actions">
+                  <Button variant="secondary" size="sm" onClick={() => revoke(invitation)}>Revoke</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       <Card padding="0" className="settings-users-page__list-card">
         <div className="settings-users-page__list-header">

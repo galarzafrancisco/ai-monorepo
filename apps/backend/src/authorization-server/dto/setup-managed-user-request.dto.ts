@@ -6,6 +6,14 @@ export class SetupManagedUserRequestDto {
   @IsEmail()
   email!: string;
 
+  @ApiProperty({
+    description:
+      'The one-time setup code given when the account was created or reset (from the setup link). The email alone is never enough.',
+  })
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
   @ApiProperty({ description: 'Display name for the user', example: 'Jane User' })
   @IsString()
   @IsNotEmpty()

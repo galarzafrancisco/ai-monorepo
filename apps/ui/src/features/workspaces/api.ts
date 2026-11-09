@@ -5,4 +5,9 @@ export {
   WorkspaceRole,
   WorkspacesService,
 } from '@taico/client';
-export type { WorkspaceMemberResponseDto, WorkspaceResponseDto } from '@taico/client';
+export type {
+  InvitationPreviewResponseDto,
+  WorkspaceInvitationResponseDto,
+  WorkspaceMemberResponseDto,
+  WorkspaceResponseDto,
+} from '@taico/client';

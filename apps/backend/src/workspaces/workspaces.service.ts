@@ -1,3 +1,5 @@
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WorkspaceMemberRemovedEvent } from './workspace-member-removed.event';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -83,6 +85,7 @@ export class WorkspacesService implements OnModuleInit {
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
     @InjectRepository(WorkspaceMemberEntity)
     private readonly memberRepository: Repository<WorkspaceMemberEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -375,6 +378,12 @@ export class WorkspacesService implements OnModuleInit {
       }
       await manager.delete(WorkspaceMemberEntity, { id: member.id });
     });
+    // Their tokens are still signed for this workspace: the membership gate
+    // and the socket gateway end their access now.
+    this.eventEmitter.emit(
+      WorkspaceMemberRemovedEvent.INTERNAL,
+      new WorkspaceMemberRemovedEvent(workspaceId, actorId),
+    );
   }
 
   /**

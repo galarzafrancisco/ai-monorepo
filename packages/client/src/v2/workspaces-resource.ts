@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { CreateWorkspaceRequestDto, InviteWorkspaceMemberRequestDto, InviteWorkspaceMemberResponseDto, LocatableRowKind, UpdateWorkspaceMemberRequestDto, WorkspaceMemberResponseDto, WorkspaceResponseDto } from './types.js';
+import type { AcceptInvitationNewAccountRequestDto, AcceptInvitationResponseDto, CreateWorkspaceRequestDto, InvitationCodeRequestDto, InvitationPreviewResponseDto, InviteWorkspaceMemberRequestDto, InviteWorkspaceMemberResponseDto, LocatableRowKind, UpdateWorkspaceMemberRequestDto, WorkspaceInvitationResponseDto, WorkspaceMemberResponseDto, WorkspaceResponseDto } from './types.js';
 
 export class WorkspacesResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -34,6 +34,31 @@ export class WorkspacesResource extends BaseClient {
   /** Workspace admin: invite a person by email */
   async WorkspaceAdminController_invite(params: { body: InviteWorkspaceMemberRequestDto; signal?: AbortSignal }): Promise<InviteWorkspaceMemberResponseDto> {
     return this.request('POST', '/api/v1/workspaces/current/members', { body: params.body, signal: params?.signal });
+  }
+
+  /** Workspace admin: invitations not yet accepted */
+  async WorkspaceAdminController_listInvitations(params?: { signal?: AbortSignal }): Promise<WorkspaceInvitationResponseDto[]> {
+    return this.request('GET', '/api/v1/workspaces/current/invitations', { signal: params?.signal });
+  }
+
+  /** Workspace admin: revoke an invitation */
+  async WorkspaceAdminController_revokeInvitation(params: { invitationId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/workspaces/current/invitations/${params.invitationId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** What an invitation is for, to whoever holds its code */
+  async WorkspaceAdminController_previewInvitation(params: { body: InvitationCodeRequestDto; signal?: AbortSignal }): Promise<InvitationPreviewResponseDto> {
+    return this.request('POST', '/api/v1/workspaces/invitations/preview', { body: params.body, signal: params?.signal });
+  }
+
+  /** Accept an invitation by creating the invited account */
+  async WorkspaceAdminController_acceptInvitationWithNewAccount(params: { body: AcceptInvitationNewAccountRequestDto; signal?: AbortSignal }): Promise<AcceptInvitationResponseDto> {
+    return this.request('POST', '/api/v1/workspaces/invitations/accept-new-account', { body: params.body, signal: params?.signal });
+  }
+
+  /** Accept an invitation as the signed-in person */
+  async WorkspaceAdminController_acceptInvitation(params: { body: InvitationCodeRequestDto; signal?: AbortSignal }): Promise<AcceptInvitationResponseDto> {
+    return this.request('POST', '/api/v1/workspaces/invitations/accept', { body: params.body, signal: params?.signal });
   }
 
   /** Workspace admin: change a person's role */
