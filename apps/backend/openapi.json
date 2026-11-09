@@ -1232,7 +1232,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ManagedUserResponseDto"
+                  "$ref": "#/components/schemas/ManagedUserSetupResponseDto"
                 }
               }
             }
@@ -1263,7 +1263,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ManagedUserResponseDto"
+                  "$ref": "#/components/schemas/ManagedUserSetupResponseDto"
                 }
               }
             }
@@ -9368,7 +9368,7 @@
         ]
       },
       "post": {
-        "description": "A person with an account is added. Anyone else gets an invited account, which they set up through account setup.",
+        "description": "Creates an invitation with a one-time code; nobody is added until the person accepts it with that code. The answer is the same whether or not the email has an account.",
         "operationId": "WorkspaceAdminController_invite",
         "parameters": [],
         "requestBody": {
@@ -9399,6 +9399,179 @@
           }
         ],
         "summary": "Workspace admin: invite a person by email",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/current/invitations": {
+      "get": {
+        "operationId": "WorkspaceAdminController_listInvitations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceInvitationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Workspace admin: invitations not yet accepted",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/current/invitations/{invitationId}": {
+      "delete": {
+        "operationId": "WorkspaceAdminController_revokeInvitation",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Workspace admin: revoke an invitation",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/invitations/preview": {
+      "post": {
+        "description": "A wrong, used, revoked or expired code answers 404.",
+        "operationId": "WorkspaceAdminController_previewInvitation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationCodeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "What an invitation is for, to whoever holds its code",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/invitations/accept-new-account": {
+      "post": {
+        "description": "Creates the account for the invited email, with this password, in the workspace. Then sign in. If the email already has an account, sign in to it and accept instead (409).",
+        "operationId": "WorkspaceAdminController_acceptInvitationWithNewAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationNewAccountRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptInvitationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Accept an invitation by creating the invited account",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/invitations/accept": {
+      "post": {
+        "description": "The account must have the invited email. Joins the workspace; switch to it to work there.",
+        "operationId": "WorkspaceAdminController_acceptInvitation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationCodeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptInvitationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Accept an invitation as the signed-in person",
         "tags": [
           "Workspaces"
         ]
@@ -10635,6 +10808,85 @@
           "role"
         ]
       },
+      "ManagedUserSetupResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name from the associated human actor"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Actor slug/username"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Actor ID associated with this user"
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": [
+              "admin",
+              "standard"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this user can currently sign in"
+          },
+          "passwordSetupPending": {
+            "type": "boolean",
+            "description": "Whether this user still needs to set a password"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update timestamp"
+          },
+          "setupCode": {
+            "type": "string",
+            "description": "One-time setup code. Shown once."
+          },
+          "setupUrl": {
+            "type": "string",
+            "description": "Link that opens account setup with the code filled in. Shown once."
+          },
+          "setupCodeExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the setup code stops working"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName",
+          "slug",
+          "actorId",
+          "role",
+          "isActive",
+          "passwordSetupPending",
+          "createdAt",
+          "updatedAt",
+          "setupCode",
+          "setupUrl",
+          "setupCodeExpiresAt"
+        ]
+      },
       "AccountSetupStatusRequestDto": {
         "type": "object",
         "properties": {
@@ -10642,10 +10894,15 @@
             "type": "string",
             "description": "Email address to check",
             "example": "user@example.com"
+          },
+          "code": {
+            "type": "string",
+            "description": "The one-time setup code from the setup link"
           }
         },
         "required": [
-          "email"
+          "email",
+          "code"
         ]
       },
       "AccountSetupStatusResponseDto": {
@@ -10673,6 +10930,10 @@
             "description": "Invited or reset account email address",
             "example": "user@example.com"
           },
+          "code": {
+            "type": "string",
+            "description": "The one-time setup code given when the account was created or reset (from the setup link). The email alone is never enough."
+          },
           "displayName": {
             "type": "string",
             "description": "Display name for the user",
@@ -10691,6 +10952,7 @@
         },
         "required": [
           "email",
+          "code",
           "displayName",
           "slug",
           "password"
@@ -18337,20 +18599,168 @@
           "role"
         ]
       },
-      "InviteWorkspaceMemberResponseDto": {
+      "WorkspaceInvitationResponseDto": {
         "type": "object",
         "properties": {
-          "member": {
-            "$ref": "#/components/schemas/WorkspaceMemberResponseDto"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
-          "accountCreated": {
-            "type": "boolean",
-            "description": "Whether an invited account was created for the email. They set a password through account setup before they can sign in."
+          "email": {
+            "type": "string",
+            "description": "The invited email address"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
-          "member",
-          "accountCreated"
+          "id",
+          "email",
+          "role",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "InviteWorkspaceMemberResponseDto": {
+        "type": "object",
+        "properties": {
+          "invitation": {
+            "$ref": "#/components/schemas/WorkspaceInvitationResponseDto"
+          },
+          "inviteCode": {
+            "type": "string",
+            "description": "One-time code that accepts the invitation. Shown once: give it, or the link, to the person by a channel you trust."
+          },
+          "inviteUrl": {
+            "type": "string",
+            "description": "Link that opens the invitation with the code filled in. Shown once."
+          }
+        },
+        "required": [
+          "invitation",
+          "inviteCode",
+          "inviteUrl"
+        ]
+      },
+      "InvitationCodeRequestDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The one-time invitation code"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "InvitationPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspaceName": {
+            "type": "string"
+          },
+          "workspaceSlug": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "description": "The invited email address"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accountExists": {
+            "type": "boolean",
+            "description": "Whether an account with the invited email exists: sign in to accept, or create one."
+          }
+        },
+        "required": [
+          "workspaceName",
+          "workspaceSlug",
+          "email",
+          "role",
+          "expiresAt",
+          "accountExists"
+        ]
+      },
+      "AcceptInvitationNewAccountRequestDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The one-time invitation code"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name",
+            "example": "Jane User"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Username (slug)",
+            "example": "jane"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password for the new account",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "code",
+          "displayName",
+          "slug",
+          "password"
+        ]
+      },
+      "AcceptInvitationResponseDto": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspaceSlug": {
+            "type": "string"
+          },
+          "workspaceName": {
+            "type": "string"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              }
+            ]
+          }
+        },
+        "required": [
+          "workspaceId",
+          "workspaceSlug",
+          "workspaceName",
+          "role"
         ]
       },
       "UpdateWorkspaceMemberRequestDto": {

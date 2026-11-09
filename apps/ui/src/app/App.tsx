@@ -24,7 +24,7 @@ import { PublicSite } from '../features/marketing/PublicSite';
 import { isPublicPath } from '../features/marketing/publicPaths';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
 import { taicoLinkStore } from '../features/taico-links';
-import { WorkspacesProvider } from '../features/workspaces';
+import { InvitePage, WorkspacesProvider } from '../features/workspaces';
 
 /**
  * Redirects to /walkthrough during render if the user's display mode is FULL_PAGE,
@@ -120,6 +120,8 @@ function AuthenticatedApp() {
             <TaicoLinkIdentity />
             <Routes>
               <Route path="/onboarding" element={<OnboardingPage />} />
+              {/* Open signed in or not: the invitation code decides who joins. */}
+              <Route path="/invite" element={<InvitePage />} />
               <Route path="/login" element={
                 <OnboardingChecker>
                   <LoginPage />

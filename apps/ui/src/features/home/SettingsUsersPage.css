@@ -35,6 +35,10 @@
   align-items: end;
 }
 
+.settings-users-page__invite-link {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .settings-users-page__create-button {
   min-height: 46px;
 }

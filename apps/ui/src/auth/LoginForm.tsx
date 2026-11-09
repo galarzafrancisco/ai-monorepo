@@ -22,6 +22,8 @@ export type NavForm = {
 export function LoginForm() {
   const [mode, setMode] = useState<'sign-in' | 'setup-email' | 'setup-account'>('sign-in');
   const [email, setEmail] = useState('');
+  // One-time setup code from the link an operator gave (`/login?setup=…&email=…`).
+  const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [slug, setSlug] = useState('');
@@ -38,6 +40,18 @@ export function LoginForm() {
   const pathname = from?.pathname || '/';
   const search = from?.search || '';
   const redirect = pathname === "/logout" ? "/" : `${pathname}${search}`;
+
+  // A setup link opens account setup with the code filled in. The code is
+  // taken out of the address bar at once so it isn't kept in history.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const setupCode = params.get('setup');
+    if (!setupCode) return;
+    setCode(setupCode);
+    setEmail(params.get('email') ?? '');
+    setMode('setup-email');
+    navigate({ pathname: location.pathname, search: '' }, { replace: true, state: location.state });
+  }, []);
 
   // If we are already authenticated, redirect
   useEffect(() => {
@@ -70,7 +84,7 @@ export function LoginForm() {
     setOfferRequestAccess(false);
 
     try {
-      const status = await WebAuthenticationService.webAuthControllerGetAccountSetupStatus({ email });
+      const status = await WebAuthenticationService.webAuthControllerGetAccountSetupStatus({ email, code: setupCodeFrom(code) });
       const next = accountSetupNextStep(status);
       if (next.kind === 'request-access') {
         setOfferRequestAccess(true);
@@ -93,6 +107,7 @@ export function LoginForm() {
     try {
       await WebAuthenticationService.webAuthControllerSetupAccount({
         email,
+        code: setupCodeFrom(code),
         displayName,
         slug,
         password,
@@ -112,7 +127,7 @@ export function LoginForm() {
         <Stack spacing="6">
           <Stack spacing="2" align="center">
             <Text size="6" weight="bold" className='login__copy'>Create account</Text>
-            <Text tone="muted" className='login__copy'>Enter the email an admin invited or reset for you.</Text>
+            <Text tone="muted" className='login__copy'>Use the setup link an admin gave you, or enter its email and code.</Text>
           </Stack>
 
           <Stack spacing="4">
@@ -121,13 +136,18 @@ export function LoginForm() {
               <input id="setup-email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setOfferRequestAccess(false); }} className="login-input" placeholder="name@work.com" required disabled={isLoading} autoComplete="email" />
             </Stack>
 
+            <Stack spacing="2">
+              <label htmlFor="setup-code" className="login-label"><Text size="2" weight="medium">Setup code</Text></label>
+              <input id="setup-code" type="text" value={code} onChange={(e) => { setCode(e.target.value); setOfferRequestAccess(false); }} className="login-input" placeholder="From your setup link" required disabled={isLoading} autoComplete="one-time-code" />
+            </Stack>
+
             {error && <ErrorText size="2" weight="medium">{error}</ErrorText>}
 
             {offerRequestAccess && (
               <div className="login-request-access" role="status">
-                <Text size="2" weight="semibold">We can’t set up an account for that email.</Text>
+                <Text size="2" weight="semibold">That email and code don’t match an account waiting to be set up.</Text>
                 <Text size="2" tone="muted">
-                  Taico is invite-only for now. If you already have an account, sign in instead. Otherwise, tell us you’re interested and we’ll take a look.
+                  Check the link you were given: codes work once and expire after 7 days. If you already have an account, sign in instead. Otherwise, tell us you’re interested and we’ll take a look.
                 </Text>
                 <Button type="button" variant="primary" size="lg" className="login-button" onClick={() => navigate('/join', { state: joinNavigationState(email) })}>
                   Request early access
@@ -265,4 +285,14 @@ export function LoginForm() {
 
 function readAuthError(err: any, fallback: string) {
   return err?.body?.detail || err?.body?.title || err?.message || fallback;
+}
+
+/** Accepts a pasted setup link as well as the bare code. */
+export function setupCodeFrom(value: string): string {
+  const trimmed = value.trim();
+  try {
+    return new URL(trimmed).searchParams.get('setup') ?? trimmed;
+  } catch {
+    return trimmed;
+  }
 }

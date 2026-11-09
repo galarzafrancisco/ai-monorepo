@@ -8,6 +8,7 @@ import { WorkspacesService } from './workspaces.service';
 /** How long a membership answer is reused on one backend. */
 const MEMBERSHIP_CACHE_TTL_MS = 10_000;
 const MEMBERSHIP_CACHE_MAX = 10_000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Whether a token's actor is still a member of the token's workspace, checked
@@ -32,7 +33,11 @@ export class WorkspaceMembershipGate {
     if (cached && cached.until > now) {
       return cached.member;
     }
-    const member = await this.workspacesService.isMember(auth.workspaceId, authActorId(auth));
+    // Signed tokens always name actors by UUID; anything else is no member.
+    const member =
+      UUID.test(authActorId(auth)) && UUID.test(auth.workspaceId)
+        ? await this.workspacesService.isMember(auth.workspaceId, authActorId(auth))
+        : false;
     if (this.cache.size >= MEMBERSHIP_CACHE_MAX) {
       this.cache.clear();
     }

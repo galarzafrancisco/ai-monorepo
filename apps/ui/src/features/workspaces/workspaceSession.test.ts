@@ -72,6 +72,30 @@ describe('workspace session guard', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
+  it('refreshes the session, then reloads, when the person was removed from the workspace', async () => {
+    setShownWorkspace('ws-a');
+    backendFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ code: 'WORKSPACE_MEMBERSHIP_REVOKED' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    const response = await window.fetch('/api/v1/tasks/tasks');
+    expect(response.status).toBe(403);
+    expect(backendFetch.mock.calls[1][0]).toBe('/api/v1/auth/refresh');
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reload on other forbidden answers', async () => {
+    setShownWorkspace('ws-a');
+    backendFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ code: 'INSUFFICIENT_SCOPE' }), { status: 403, headers: { 'content-type': 'application/json' } }),
+    );
+    await window.fetch('/api/v1/tasks/tasks');
+    expect(backendFetch).toHaveBeenCalledTimes(1);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
   it('does not reload on other conflicts', async () => {
     setShownWorkspace('ws-a');
     backendFetch.mockResolvedValueOnce(

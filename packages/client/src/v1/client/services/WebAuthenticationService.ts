@@ -9,6 +9,7 @@ import type { CreateManagedUserRequestDto } from '../models/CreateManagedUserReq
 import type { LoginRequestDto } from '../models/LoginRequestDto.js';
 import type { LoginResponseDto } from '../models/LoginResponseDto.js';
 import type { ManagedUserResponseDto } from '../models/ManagedUserResponseDto.js';
+import type { ManagedUserSetupResponseDto } from '../models/ManagedUserSetupResponseDto.js';
 import type { OnboardingRequestDto } from '../models/OnboardingRequestDto.js';
 import type { OnboardingStatusResponseDto } from '../models/OnboardingStatusResponseDto.js';
 import type { SetupManagedUserRequestDto } from '../models/SetupManagedUserRequestDto.js';
@@ -53,13 +54,13 @@ export class WebAuthenticationService {
     /**
      * Create an invited human user
      * @param requestBody
-     * @returns ManagedUserResponseDto
+     * @returns ManagedUserSetupResponseDto
      * @throws ApiError
      */
     public static webAuthControllerCreateUser(
         requestBody: CreateManagedUserRequestDto,
         config: OpenAPIConfig = OpenAPI,
-    ): CancelablePromise<ManagedUserResponseDto> {
+    ): CancelablePromise<ManagedUserSetupResponseDto> {
         return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/users',
@@ -70,13 +71,13 @@ export class WebAuthenticationService {
     /**
      * Reset a managed user password so they can set a new one
      * @param userId
-     * @returns ManagedUserResponseDto
+     * @returns ManagedUserSetupResponseDto
      * @throws ApiError
      */
     public static webAuthControllerResetUserPassword(
         userId: string,
         config: OpenAPIConfig = OpenAPI,
-    ): CancelablePromise<ManagedUserResponseDto> {
+    ): CancelablePromise<ManagedUserSetupResponseDto> {
         return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/users/{userId}/reset-password',

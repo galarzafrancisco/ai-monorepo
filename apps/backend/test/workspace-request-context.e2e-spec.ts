@@ -30,6 +30,7 @@ import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.ty
 import { getConfig } from '../src/config/env.config';
 import { ActorType, UserRole } from '../src/identity-provider/enums';
 import { User } from '../src/identity-provider/user.entity';
+import { WorkspaceEntity } from '../src/workspaces/workspace.entity';
 import { WorkspaceMemberEntity } from '../src/workspaces/workspace-member.entity';
 import { WorkspaceRole } from '../src/workspaces/enums';
 import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
@@ -168,6 +169,14 @@ describe('Workspace request context (e2e)', () => {
     users = app.get(getRepositoryToken(User));
     originalRole = (await users.findOneByOrFail({ email: TEST_USER_EMAIL }))
       .role as UserRole;
+    // Requests are checked against membership, so the other workspace has to
+    // exist and the test user has to be in it.
+    await app.get<Repository<WorkspaceEntity>>(getRepositoryToken(WorkspaceEntity))
+      .upsert({ id: OTHER_WORKSPACE_ID, slug: 'request-context-other', name: 'Request context other' }, ['id']);
+    await members.upsert(
+      { workspaceId: OTHER_WORKSPACE_ID, actorId, role: WorkspaceRole.MEMBER },
+      ['workspaceId', 'actorId'],
+    );
   }, 30000);
 
   afterAll(async () => {

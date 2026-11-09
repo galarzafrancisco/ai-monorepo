@@ -2,11 +2,16 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AcceptInvitationNewAccountRequestDto } from '../models/AcceptInvitationNewAccountRequestDto.js';
+import type { AcceptInvitationResponseDto } from '../models/AcceptInvitationResponseDto.js';
 import type { CreateWorkspaceRequestDto } from '../models/CreateWorkspaceRequestDto.js';
+import type { InvitationCodeRequestDto } from '../models/InvitationCodeRequestDto.js';
+import type { InvitationPreviewResponseDto } from '../models/InvitationPreviewResponseDto.js';
 import type { InviteWorkspaceMemberRequestDto } from '../models/InviteWorkspaceMemberRequestDto.js';
 import type { InviteWorkspaceMemberResponseDto } from '../models/InviteWorkspaceMemberResponseDto.js';
 import type { LocatableRowKind } from '../models/LocatableRowKind.js';
 import type { UpdateWorkspaceMemberRequestDto } from '../models/UpdateWorkspaceMemberRequestDto.js';
+import type { WorkspaceInvitationResponseDto } from '../models/WorkspaceInvitationResponseDto.js';
 import type { WorkspaceMemberResponseDto } from '../models/WorkspaceMemberResponseDto.js';
 import type { WorkspaceResponseDto } from '../models/WorkspaceResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -89,7 +94,7 @@ export class WorkspacesService {
     }
     /**
      * Workspace admin: invite a person by email
-     * A person with an account is added. Anyone else gets an invited account, which they set up through account setup.
+     * Creates an invitation with a one-time code; nobody is added until the person accepts it with that code. The answer is the same whether or not the email has an account.
      * @param requestBody
      * @returns InviteWorkspaceMemberResponseDto
      * @throws ApiError
@@ -101,6 +106,89 @@ export class WorkspacesService {
         return __request(config, {
             method: 'POST',
             url: '/api/v1/workspaces/current/members',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Workspace admin: invitations not yet accepted
+     * @returns WorkspaceInvitationResponseDto
+     * @throws ApiError
+     */
+    public static workspaceAdminControllerListInvitations(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<WorkspaceInvitationResponseDto>> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/workspaces/current/invitations',
+        });
+    }
+    /**
+     * Workspace admin: revoke an invitation
+     * @param invitationId
+     * @returns void
+     * @throws ApiError
+     */
+    public static workspaceAdminControllerRevokeInvitation(
+        invitationId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/workspaces/current/invitations/{invitationId}',
+            path: {
+                'invitationId': invitationId,
+            },
+        });
+    }
+    /**
+     * What an invitation is for, to whoever holds its code
+     * A wrong, used, revoked or expired code answers 404.
+     * @param requestBody
+     * @returns InvitationPreviewResponseDto
+     * @throws ApiError
+     */
+    public static workspaceAdminControllerPreviewInvitation(
+        requestBody: InvitationCodeRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<InvitationPreviewResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/workspaces/invitations/preview',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Accept an invitation by creating the invited account
+     * Creates the account for the invited email, with this password, in the workspace. Then sign in. If the email already has an account, sign in to it and accept instead (409).
+     * @param requestBody
+     * @returns AcceptInvitationResponseDto
+     * @throws ApiError
+     */
+    public static workspaceAdminControllerAcceptInvitationWithNewAccount(
+        requestBody: AcceptInvitationNewAccountRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<AcceptInvitationResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/workspaces/invitations/accept-new-account',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Accept an invitation as the signed-in person
+     * The account must have the invited email. Joins the workspace; switch to it to work there.
+     * @param requestBody
+     * @returns AcceptInvitationResponseDto
+     * @throws ApiError
+     */
+    public static workspaceAdminControllerAcceptInvitation(
+        requestBody: InvitationCodeRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<AcceptInvitationResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/workspaces/invitations/accept',
             body: requestBody,
             mediaType: 'application/json',
         });

@@ -235,6 +235,7 @@ export class WorkspaceAdminController {
 
   @Post('invitations/preview')
   @Public()
+  @WorkspaceAccess('installation')
   @HttpCode(200)
   @ApiOperation({
     summary: 'What an invitation is for, to whoever holds its code',
@@ -248,6 +249,7 @@ export class WorkspaceAdminController {
 
   @Post('invitations/accept-new-account')
   @Public()
+  @WorkspaceAccess('installation')
   @HttpCode(201)
   @ApiOperation({
     summary: 'Accept an invitation by creating the invited account',

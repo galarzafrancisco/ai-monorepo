@@ -21,6 +21,8 @@ export function SettingsUsersPage() {
   const [role, setRole] = useState<UserRole>(CreateManagedUserRequestDto.role.STANDARD);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  // The one-time setup link from the last create or reset: shown once, never stored.
+  const [setupLink, setSetupLink] = useState<{ email: string; url: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -55,10 +57,11 @@ export function SettingsUsersPage() {
     setError('');
     setNotice('');
     try {
-      await WebAuthenticationService.webAuthControllerCreateUser({ email, role });
+      const created = await WebAuthenticationService.webAuthControllerCreateUser({ email, role });
+      setSetupLink({ email: created.email, url: created.setupUrl });
       setEmail('');
       setRole(CreateManagedUserRequestDto.role.STANDARD);
-      setNotice('User created. They can use Create account on the login screen to set their profile and password.');
+      setNotice('User created. Send them the setup link below: it sets their profile and password.');
       await loadUsers();
     } catch (err: any) {
       setError(readError(err, 'Failed to create user.'));
@@ -71,8 +74,9 @@ export function SettingsUsersPage() {
     setError('');
     setNotice('');
     try {
-      await WebAuthenticationService.webAuthControllerResetUserPassword(managedUser.id);
-      setNotice(`${managedUser.email} can now set a new password from the login screen.`);
+      const reset = await WebAuthenticationService.webAuthControllerResetUserPassword(managedUser.id);
+      setSetupLink({ email: reset.email, url: reset.setupUrl });
+      setNotice(`${managedUser.email} can set a new password with the setup link below.`);
       await loadUsers();
     } catch (err: any) {
       setError(readError(err, 'Failed to reset password.'));
@@ -146,6 +150,20 @@ export function SettingsUsersPage() {
               </Button>
             </div>
             {notice ? <Text size="2" tone="muted">{notice}</Text> : null}
+            {setupLink ? (
+              <Stack spacing="2">
+                <Text size="2" weight="semibold">Setup link for {setupLink.email}</Text>
+                <Text size="1" tone="muted">
+                  Shown once. Send it yourself, by a channel you trust: it works once, within 7 days.
+                </Text>
+                <div className="settings-users-page__create-grid settings-users-page__invite-link">
+                  <input className="login-input" readOnly value={setupLink.url} aria-label="Setup link" onFocus={(event) => event.currentTarget.select()} />
+                  <Button type="button" variant="secondary" onClick={() => void navigator.clipboard?.writeText(setupLink.url)}>
+                    Copy
+                  </Button>
+                </div>
+              </Stack>
+            ) : null}
             {error ? <ErrorText size="2" weight="medium">{error}</ErrorText> : null}
           </Stack>
         </form>

@@ -93,7 +93,7 @@ describe('Workspaces (e2e)', () => {
 
   it('puts a new person in the workspace they are created in, and users.role no longer changes it', async () => {
     const identity = app.get(IdentityProviderService);
-    const user = await identity.createManagedUser({
+    const { user } = await identity.createManagedUser({
       email: `ws-${Math.random().toString(36).slice(2, 10)}@example.com`,
       role: UserRole.ADMIN,
     });
@@ -118,13 +118,13 @@ describe('Workspaces (e2e)', () => {
     // run and its actors have no membership.
     const dataSource = app.get(DataSource);
     const identity = app.get(IdentityProviderService);
-    const admin = await identity.createManagedUser({
+    const { user: admin } = await identity.createManagedUser({
       email: `ws-old-${Math.random().toString(36).slice(2, 10)}@example.com`,
       role: UserRole.ADMIN,
     });
     const people = [admin.actorId];
     for (let i = 0; i < 2; i++) {
-      const user = await identity.createManagedUser({
+      const { user } = await identity.createManagedUser({
         email: `ws-old-${Math.random().toString(36).slice(2, 10)}@example.com`,
         role: UserRole.STANDARD,
       });

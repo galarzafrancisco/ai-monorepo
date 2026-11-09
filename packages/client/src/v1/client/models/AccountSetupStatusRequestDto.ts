@@ -7,5 +7,9 @@ export type AccountSetupStatusRequestDto = {
      * Email address to check
      */
     email: string;
+    /**
+     * The one-time setup code from the setup link
+     */
+    code: string;
 };
 

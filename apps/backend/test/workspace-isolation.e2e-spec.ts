@@ -1085,14 +1085,14 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
         await expect(newPerson(slug)).rejects.toBeInstanceOf(UserSlugConflictError);
 
         const email = `iso-invited-${suffix}@example.test`;
-        await identity().createManagedUser({ email, role: UserRole.STANDARD });
+        const { setupCode } = await identity().createManagedUser({ email, role: UserRole.STANDARD });
         await expect(
-          identity().setupManagedUser({ email, displayName: 'Invited', slug, password }),
+          identity().setupManagedUser({ email, code: setupCode, displayName: 'Invited', slug, password }),
         ).rejects.toBeInstanceOf(UserSlugConflictError);
       });
 
       it("gives an invited person a slug other than an agent's", async () => {
-        const user = await identity().createManagedUser({
+        const { user } = await identity().createManagedUser({
           email: `${slug}@example.test`,
           role: UserRole.STANDARD,
         });
@@ -1102,8 +1102,8 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       it("refuses an agent a slug a person took through account setup", async () => {
         const email = `iso-setup-${suffix}@example.test`;
         const personSlug = `iso-setup-slug-${suffix}`;
-        await identity().createManagedUser({ email, role: UserRole.STANDARD });
-        await identity().setupManagedUser({ email, displayName: 'Setup', slug: personSlug, password });
+        const { setupCode } = await identity().createManagedUser({ email, role: UserRole.STANDARD });
+        await identity().setupManagedUser({ email, code: setupCode, displayName: 'Setup', slug: personSlug, password });
         await createAgent(tokenB, { slug: personSlug, name: 'After person' }).expect(409);
       });
 
@@ -1220,14 +1220,14 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
       it("does not let account setup undo a person's deactivation", async () => {
         const email = `iso-stale-setup-${suffix}@example.test`;
         const identity = app.get(IdentityProviderService);
-        const invited = await identity.createManagedUser({ email, role: UserRole.STANDARD });
+        const { user: invited, setupCode } = await identity.createManagedUser({ email, role: UserRole.STANDARD });
         const writer = await holdRows(
           [`SELECT 1 FROM users WHERE id = $1 FOR UPDATE`],
           invited.id,
         );
         await writer.query(`SELECT 1 FROM actors WHERE id = $1 FOR UPDATE`, [invited.actorId]);
         const setup = identity
-          .setupManagedUser({ email, displayName: 'Late', slug: `iso-stale-p-${suffix}`, password: 'password-123' })
+          .setupManagedUser({ email, code: setupCode, displayName: 'Late', slug: `iso-stale-p-${suffix}`, password: 'password-123' })
           .then(
             () => 'set up',
             (error: unknown) => error,
@@ -1545,20 +1545,16 @@ describe('Workspace isolation: tasks, context, meta and threads (e2e)', () => {
     });
 
     it('does not create a task depending on a task of another workspace', async () => {
-      const blueprintB = (
-        await as(tokenB)
-          .post('/task-blueprints')
-          .send({
-            name: `Blueprint with A dependency ${suffix}`,
-            description: 'Depends on A',
-            dependsOnIds: [taskA.id],
-          })
-          .expect(201)
-      ).body;
-      const res = await as(tokenB).post(
-        `/task-blueprints/${blueprintB.id}/create-task`,
-      );
-      expect(res.status).toBeGreaterThanOrEqual(400);
+      // Refused when the blueprint is saved, so it never holds A's id.
+      const refused = await as(tokenB)
+        .post('/task-blueprints')
+        .send({
+          name: `Blueprint with A dependency ${suffix}`,
+          description: 'Depends on A',
+          dependsOnIds: [taskA.id],
+        })
+        .expect(404);
+      expect(refused.body.code).toBe('TASK_NOT_FOUND');
       const tasksB = (
         await as(tokenB).get('/tasks/tasks?limit=100').expect(200)
       ).body;
