@@ -18,6 +18,8 @@ const REFRESH_SKEW_MS = 60_000;
 type WorkerAuthOptions = {
   serverUrl: string;
   credentialsPath?: string;
+  /** Slug of the workspace to connect to; the consent must be given there. */
+  workspace?: string;
 };
 
 type BootstrapResult = {
@@ -42,6 +44,10 @@ export class WorkerAuth {
 
   get serverUrl(): string {
     return normalizeBaseUrl(this.options.serverUrl);
+  }
+
+  get workspace(): string | undefined {
+    return this.options.workspace;
   }
 
   getCredentialsPath(): string {
@@ -112,10 +118,12 @@ export class WorkerAuth {
     const storedCredentials = await readWorkerCredentials(
       this.credentialsPath,
       this.serverUrl,
+      this.workspace,
     );
     if (
       storedCredentials &&
       storedCredentials.serverUrl === this.serverUrl &&
+      storedCredentials.workspace === this.workspace &&
       hasRequiredScopes(storedCredentials, requiredScopes)
     ) {
       this.credentials = storedCredentials;
@@ -206,11 +214,19 @@ export class WorkerAuth {
     authorizationUrl.searchParams.set('state', state);
     authorizationUrl.searchParams.set('code_challenge', codeChallenge);
     authorizationUrl.searchParams.set('code_challenge_method', 'S256');
+    // Taico extension: the server refuses approval from any other workspace.
+    if (this.workspace) {
+      authorizationUrl.searchParams.set('workspace', this.workspace);
+    }
     // No `resource`: the worker target is identified by the authorization URL,
     // and the server binds the token to its own canonical API URL. The URL this
     // worker reaches the server on may differ from that public URL.
 
-    console.log('[worker] Open this URL in your browser to authorize the worker:');
+    console.log(
+      this.workspace
+        ? `[worker] Open this URL in your browser, in the "${this.workspace}" workspace, to authorize the worker:`
+        : '[worker] Open this URL in your browser to authorize the worker. It will connect to the workspace you approve it in:',
+    );
     console.log(authorizationUrl.toString());
 
     const callbackResult = await callback.waitForCode(state);
@@ -231,6 +247,7 @@ export class WorkerAuth {
 
     return {
       serverUrl: this.serverUrl,
+      ...(this.workspace ? { workspace: this.workspace } : {}),
       clientId: registration.client_id,
       redirectUri,
       scope: tokenResponse.scope ?? getWorkerScope(),

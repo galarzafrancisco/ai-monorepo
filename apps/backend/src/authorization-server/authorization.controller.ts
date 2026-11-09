@@ -398,6 +398,7 @@ export class AuthorizationController {
       server: consentMetadata.server,
       client: consentMetadata.client,
       workspace: consentMetadata.workspace,
+      requestedWorkspaceSlug: consentMetadata.requestedWorkspaceSlug,
       redirectUri: consentMetadata.redirectUri,
       createdAt: consentMetadata.createdAt.toISOString(),
     };

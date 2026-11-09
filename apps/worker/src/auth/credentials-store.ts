@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile, unlink } from 'fs/promises';
+import { mkdir, readFile, rename, unlink, writeFile } from 'fs/promises';
+import lockfile from 'proper-lockfile';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
 import type {
@@ -26,11 +27,13 @@ export const DEFAULT_WORKER_WORKSPACES_PATH = join(
  *
  * @param credentialsPath - Path to the credentials file
  * @param serverUrl - Server URL to get credentials for
+ * @param workspace - Workspace slug the worker was started for, if any
  * @returns WorkerCredentials for the specified server, or null if not found or migration needed
  */
 export async function readWorkerCredentials(
   credentialsPath: string,
   serverUrl: string,
+  workspace?: string,
 ): Promise<WorkerCredentials | null> {
   try {
     const content = await readFile(credentialsPath, 'utf8');
@@ -39,8 +42,7 @@ export async function readWorkerCredentials(
     // Check if this is the new multi-server format
     if (isMultiServerConfig(parsed)) {
       const config = parsed as MultiServerConfig;
-      const normalizedUrl = normalizeServerUrl(serverUrl);
-      return config.servers[normalizedUrl] ?? null;
+      return config.servers[credentialsKey(serverUrl, workspace)] ?? null;
     }
 
     // Legacy format detected - delete file to trigger re-authentication
@@ -74,36 +76,50 @@ export async function writeWorkerCredentials(
 ): Promise<void> {
   await mkdir(dirname(credentialsPath), { recursive: true });
 
-  let config: MultiServerConfig;
-
+  // Several workers (one per workspace, say) share this file. The lock makes
+  // each read/merge/write whole across processes, so no worker writes back a
+  // stale copy over another's entry; the rename means readers never see a
+  // half-written file.
+  let compromised: Error | undefined;
+  const release = await lockfile.lock(credentialsPath, {
+    // The file may not exist yet on the first authorization.
+    realpath: false,
+    // The lock is refreshed while held, so only a dead holder goes stale.
+    stale: 10_000,
+    retries: { retries: 100, minTimeout: 20, maxTimeout: 200 },
+    onCompromised: (error) => {
+      compromised = error;
+    },
+  });
+  const tempPath = `${credentialsPath}.${process.pid}.${Date.now()}.tmp`;
   try {
-    const content = await readFile(credentialsPath, 'utf8');
-    const parsed = JSON.parse(content) as unknown;
-
-    if (isMultiServerConfig(parsed)) {
-      config = parsed as MultiServerConfig;
-    } else {
-      // Create new config if existing file is not multi-server format
-      config = {
-        servers: {},
-      };
+    let config: MultiServerConfig = { servers: {} };
+    try {
+      const parsed = JSON.parse(await readFile(credentialsPath, 'utf8')) as unknown;
+      if (isMultiServerConfig(parsed)) {
+        config = parsed as MultiServerConfig;
+      }
+    } catch {
+      // No file yet (or unreadable): start a new one
     }
-  } catch {
-    // Create new config if file doesn't exist
-    config = {
-      servers: {},
-    };
+
+    // Update credentials for this server (and workspace)
+    config.servers[credentialsKey(credentials.serverUrl, credentials.workspace)] =
+      credentials;
+
+    await writeFile(tempPath, JSON.stringify(config, null, 2), {
+      encoding: 'utf8',
+      mode: 0o600,
+    });
+    // Another process took the lock over while this one was stalled: writing
+    // now could overwrite its entry.
+    if (compromised) throw compromised;
+    await rename(tempPath, credentialsPath);
+  } finally {
+    await unlink(tempPath).catch(() => undefined);
+    // Releasing a lock that was taken over fails; the new holder keeps it.
+    await release().catch(() => undefined);
   }
-
-  // Update credentials for this server
-  const normalizedUrl = normalizeServerUrl(credentials.serverUrl);
-  config.servers[normalizedUrl] = credentials;
-
-  await writeFile(
-    credentialsPath,
-    JSON.stringify(config, null, 2),
-    'utf8',
-  );
 }
 
 /**
@@ -160,6 +176,17 @@ function isLegacyCredentials(value: unknown): boolean {
     typeof obj.accessToken === 'string' &&
     typeof obj.refreshToken === 'string'
   );
+}
+
+/**
+ * Where a worker's credentials are kept in the file. A worker started with
+ * `--workspace` has its own entry per workspace, so several workers on one
+ * machine can each work in another workspace of the same server. Without
+ * it, the entry is the server URL, as before.
+ */
+export function credentialsKey(serverUrl: string, workspace?: string): string {
+  const normalizedUrl = normalizeServerUrl(serverUrl);
+  return workspace ? `${normalizedUrl}#workspace=${workspace}` : normalizedUrl;
 }
 
 function normalizeServerUrl(url: string): string {

@@ -117,6 +117,15 @@ export class GetConsentMetadataResponseDto {
   workspace!: FlowWorkspaceDto;
 
   @ApiProperty({
+    description:
+      'The slug of the workspace the client asked for (a worker started with --workspace), or null if it did not ask. Approval is refused unless the person is in that workspace.',
+    example: 'acme',
+    type: String,
+    nullable: true,
+  })
+  requestedWorkspaceSlug!: string | null;
+
+  @ApiProperty({
     description: 'Redirect URI provided in the authorization request',
     example: 'http://localhost:4001/callback',
   })

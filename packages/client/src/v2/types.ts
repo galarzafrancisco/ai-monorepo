@@ -111,6 +111,7 @@ export interface GetConsentMetadataResponseDto {
   server: FlowServerDto;
   client: FlowClientDto;
   workspace: FlowWorkspaceDto;
+  requestedWorkspaceSlug: string | null;
   redirectUri: string;
   createdAt: string;
 }

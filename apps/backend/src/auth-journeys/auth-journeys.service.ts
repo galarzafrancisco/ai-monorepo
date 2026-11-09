@@ -189,6 +189,22 @@ export class AuthJourneysService {
   }
 
   /*
+  Public API: Find the MCP authorization flow a client started on a server with
+  a given PKCE code challenge. Used by AuthorizationService to recognise an
+  authorization link opened again.
+  */
+  async findMcpAuthFlowByClientAndChallenge(
+    clientId: string,
+    serverId: string,
+    codeChallenge: string,
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: { clientId, serverId, codeChallenge },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /*
   Public API: Find MCP authorization flow by flow ID
   Used by AuthorizationService for consent flow
   */
@@ -224,6 +240,36 @@ export class AuthJourneysService {
     mcpAuthFlow: McpAuthorizationFlowEntity,
   ): Promise<McpAuthorizationFlowEntity> {
     return this.mcpAuthorizationFlowRepository.save(mcpAuthFlow);
+  }
+
+  /*
+  Public API: Start the authorization request on the flow a client got when it
+  registered, only if no other request started it first. The check and the
+  write are one conditional UPDATE, so of two requests arriving together
+  exactly one wins, and the loser can never overwrite what the winner's
+  consent screen shows. Returns whether this request won.
+  */
+  async claimRegisteredMcpAuthFlow(
+    flowId: string,
+    request: Pick<
+      McpAuthorizationFlowEntity,
+      | 'codeChallenge'
+      | 'codeChallengeMethod'
+      | 'state'
+      | 'redirectUri'
+      | 'resource'
+      | 'scopes'
+      | 'requestedWorkspaceSlug'
+    >,
+  ): Promise<boolean> {
+    const result = await this.mcpAuthorizationFlowRepository.update(
+      { id: flowId, status: McpAuthorizationFlowStatus.CLIENT_REGISTERED },
+      {
+        ...request,
+        status: McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED,
+      },
+    );
+    return (result.affected ?? 0) > 0;
   }
 
   /*

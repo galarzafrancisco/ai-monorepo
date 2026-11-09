@@ -25,6 +25,12 @@ export type ConsentMetadata = {
     slug: string;
     name: string;
   };
+  /**
+   * The slug of the workspace the client asked for (a worker started with
+   * `--workspace`); null if it did not ask. Approval is refused unless the
+   * person is in that workspace.
+   */
+  requestedWorkspaceSlug: string | null;
   redirectUri: string;
   createdAt: Date;
 };

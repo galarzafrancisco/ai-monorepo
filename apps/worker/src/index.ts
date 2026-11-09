@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { DEFAULT_WORKER_WORKSPACES_PATH } from './auth/credentials-store.js';
 import { startWorkerApp } from './worker-app.js';
 
+const WORKSPACE_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = join(__filename, '..');
 
@@ -25,6 +27,12 @@ async function main(): Promise<void> {
 
   const credentialsPath =
     readCliOption(args, '--credentials-path') ?? undefined;
+  const workspace = readCliOption(args, '--workspace') ?? undefined;
+  if (workspace !== undefined && !WORKSPACE_SLUG_PATTERN.test(workspace)) {
+    throw new Error(
+      `Invalid --workspace "${workspace}": use the workspace slug (lowercase letters, digits and hyphens), as shown in Settings.`,
+    );
+  }
   const workingDirectory = resolve(
     readCliOption(args, '--working-directory') ?? DEFAULT_WORKER_WORKSPACES_PATH,
   );
@@ -35,6 +43,7 @@ async function main(): Promise<void> {
   await startWorkerApp({
     serverUrl,
     credentialsPath,
+    workspace,
     workingDirectory,
   });
 }
@@ -42,8 +51,11 @@ async function main(): Promise<void> {
 function printUsage(): void {
   console.log(`taico-worker usage:
 
-  taico-worker --serverurl <url> [--credentials-path <path>] [--working-directory <path>]
+  taico-worker --serverurl <url> [--workspace <slug>] [--credentials-path <path>] [--working-directory <path>]
     Start worker mode against an existing Taico server.
+    --workspace connects the worker to that workspace: it must be approved
+    there, and its credentials are kept apart from workers of other
+    workspaces. Without it, the worker joins the workspace it is approved in.
     Working directory defaults to ~/.taico/workspaces.
 `);
 }

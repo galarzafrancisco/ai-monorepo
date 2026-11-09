@@ -1,4 +1,7 @@
-import { mcpServerRequiresTaicoAuth } from '@taico/shared';
+import {
+  INTERNAL_WORKER_AUTH_TARGET_ID,
+  mcpServerRequiresTaicoAuth,
+} from '@taico/shared';
 import { WorkspacesService } from 'src/workspaces/workspaces.service';
 import { workspaceIdFromClaims } from 'src/auth/guards/context/auth-context.factory';
 import { Injectable, Logger } from '@nestjs/common';
@@ -37,6 +40,10 @@ import {
   ConnectionFlowNotFoundError,
   TokenExchangeFailedError,
   ResourceMismatchError,
+  AuthorizationLinkAlreadyUsedError,
+  AuthorizationRequestChangedError,
+  WorkerAlreadyAuthorizedError,
+  ConsentWorkspaceNotRequestedError,
 } from './errors/authorization.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { ConsentMetadata } from './dto/service/authorization.service.types';
@@ -119,32 +126,22 @@ export class AuthorizationService {
       scopes = requestedScopes.filter((s) => allowedScopes.includes(s));
     }
 
-    const mcpAuthFlow = await this.startMcpAuthFlow(
-      client,
-      mcpServer.id,
-      serverIdentifier,
-    );
-
-    // Change status
-    mcpAuthFlow.status =
-      McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED;
-
-    // Store the PKCE parameters and other OAuth request data
-    mcpAuthFlow.codeChallenge = authRequest.code_challenge;
-    mcpAuthFlow.codeChallengeMethod = authRequest.code_challenge_method;
-    mcpAuthFlow.state = authRequest.state;
-    mcpAuthFlow.redirectUri = authRequest.redirect_uri;
-    mcpAuthFlow.resource = serverResource;
-    mcpAuthFlow.scopes = scopes;
-
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-    await this.authJourneysService.updateAuthJourneyStatus(
-      mcpAuthFlow.authorizationJourneyId,
-      AuthJourneyStatus.MCP_AUTH_FLOW_STARTED,
-    );
+    const requested: RequestedAuthorization = {
+      codeChallenge: authRequest.code_challenge,
+      codeChallengeMethod: authRequest.code_challenge_method,
+      state: authRequest.state ?? null,
+      redirectUri: authRequest.redirect_uri,
+      resource: serverResource,
+      scopes,
+      // Only Taico's own servers serve several workspaces; any other server's
+      // tokens are for its own workspace whatever the client asks for.
+      requestedWorkspaceSlug: mcpServerRequiresTaicoAuth(mcpServer.providedId)
+        ? (authRequest.workspace ?? null)
+        : null,
+    };
 
     // Return the flow ID to be used in the consent screen
-    return mcpAuthFlow.id;
+    return this.startMcpAuthFlow(client, mcpServer, requested);
   }
 
   /**
@@ -175,12 +172,39 @@ export class AuthorizationService {
    * authorize again after its tokens expire and the users of one metadata
    * document client do not share state. The one exception is the flow created
    * when a client registers, which its first authorization request picks up.
+   *
+   * An authorization link opened again (same client and PKCE challenge) is
+   * not a new request: before the person decided, the very same request
+   * reopens its flow untouched (a reload); one that differs in anything the
+   * grant depends on (scopes, workspace, redirect, state) is refused, so what
+   * an open consent screen shows is what its approval grants. After the
+   * person decided, the link is refused, because the client has long stopped
+   * waiting for that answer. A worker client authorizes once (a worker
+   * registers a new client every time it asks), so it can never be approved
+   * into a second workspace.
+   *
+   * The registration flow is claimed atomically: of two first requests
+   * arriving together exactly one starts it, and the other is then treated
+   * like any later request (reopen if identical, else refused or, for clients
+   * that may authorize again, a flow of its own). Returns the flow ID.
    */
   private async startMcpAuthFlow(
     client: RegisteredClientEntity,
-    mcpServerId: string,
-    serverIdentifier: string,
-  ): Promise<McpAuthorizationFlowEntity> {
+    mcpServer: { id: string; providedId: string },
+    requested: RequestedAuthorization,
+  ): Promise<string> {
+    const mcpServerId = mcpServer.id;
+    const isWorker = mcpServer.providedId === INTERNAL_WORKER_AUTH_TARGET_ID;
+    const sameLink =
+      await this.authJourneysService.findMcpAuthFlowByClientAndChallenge(
+        client.id,
+        mcpServerId,
+        requested.codeChallenge,
+      );
+    if (sameLink) {
+      return this.reopenPendingFlow(sameLink, client, requested);
+    }
+
     if (
       client.registrationMethod ===
       ClientRegistrationMethod.DYNAMIC_REGISTRATION
@@ -193,14 +217,39 @@ export class AuthorizationService {
       // A registered client belongs to the MCP server it registered with
       if (flows.length === 0) {
         throw new AuthFlowNotFoundError(
-          `client: ${client.clientId}, server: ${serverIdentifier}`,
+          `client: ${client.clientId}, server: ${mcpServer.providedId}`,
         );
       }
       const unusedFlow = flows.find(
         (flow) => flow.status === McpAuthorizationFlowStatus.CLIENT_REGISTERED,
       );
-      if (unusedFlow) {
-        return unusedFlow;
+      if (
+        unusedFlow &&
+        (await this.authJourneysService.claimRegisteredMcpAuthFlow(
+          unusedFlow.id,
+          toFlowFields(requested),
+        ))
+      ) {
+        await this.authJourneysService.updateAuthJourneyStatus(
+          unusedFlow.authorizationJourneyId,
+          AuthJourneyStatus.MCP_AUTH_FLOW_STARTED,
+        );
+        return unusedFlow.id;
+      }
+      // Another request may have started the registration flow since the
+      // lookup above. If that was this same link, it is a reopen (or refused
+      // if it differs).
+      const winner =
+        await this.authJourneysService.findMcpAuthFlowByClientAndChallenge(
+          client.id,
+          mcpServerId,
+          requested.codeChallenge,
+        );
+      if (winner) {
+        return this.reopenPendingFlow(winner, client, requested);
+      }
+      if (isWorker) {
+        throw new WorkerAlreadyAuthorizedError(client.clientId);
       }
     }
 
@@ -209,7 +258,32 @@ export class AuthorizationService {
         mcpServerId,
         mcpClientId: client.id,
       });
-    return mcpAuthorizationFlow;
+    // The flow is brand new and its ID not yet known to anyone, so it is safe
+    // to fill in with a plain save.
+    Object.assign(mcpAuthorizationFlow, toFlowFields(requested));
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthorizationFlow);
+    return mcpAuthorizationFlow.id;
+  }
+
+  /**
+   * An authorization link opened again: the same pending request reopens its
+   * flow untouched; anything else is refused.
+   */
+  private reopenPendingFlow(
+    flow: McpAuthorizationFlowEntity,
+    client: RegisteredClientEntity,
+    requested: RequestedAuthorization,
+  ): string {
+    const pending =
+      flow.status === McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED &&
+      !flow.authorizationCode;
+    if (!pending) {
+      throw new AuthorizationLinkAlreadyUsedError(client.clientId);
+    }
+    if (!isSameRequest(flow, requested)) {
+      throw new AuthorizationRequestChangedError(client.clientId);
+    }
+    return flow.id;
   }
 
   /**
@@ -251,6 +325,7 @@ export class AuthorizationService {
         mcpAuthFlow.server,
         sessionWorkspaceId,
       ),
+      requestedWorkspaceSlug: mcpAuthFlow.requestedWorkspaceSlug ?? null,
       redirectUri: mcpAuthFlow.redirectUri!,
       createdAt: mcpAuthFlow.createdAt,
     };
@@ -372,6 +447,22 @@ export class AuthorizationService {
         consentDecision.workspace_id,
         sessionWorkspaceId,
       );
+    }
+    // The client asked for one workspace (a worker started with
+    // `--workspace`): approving from another would connect it to the wrong one.
+    if (
+      mcpAuthFlow.requestedWorkspaceSlug &&
+      mcpServerRequiresTaicoAuth(mcpAuthFlow.server.providedId)
+    ) {
+      const sessionWorkspace = sessionWorkspaceId
+        ? await this.workspacesService.findWorkspace(sessionWorkspaceId)
+        : null;
+      if (sessionWorkspace?.slug !== mcpAuthFlow.requestedWorkspaceSlug) {
+        throw new ConsentWorkspaceNotRequestedError(
+          mcpAuthFlow.requestedWorkspaceSlug,
+          sessionWorkspaceId,
+        );
+      }
     }
     if (mcpAuthFlow.authJourney?.actorId) {
       await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
@@ -679,4 +770,45 @@ export class AuthorizationService {
       throw error;
     }
   }
+}
+
+/** What an authorization request asks for: everything its grant depends on. */
+interface RequestedAuthorization {
+  codeChallenge: string;
+  codeChallengeMethod: string;
+  state: string | null;
+  redirectUri: string;
+  resource: string;
+  scopes: string[];
+  requestedWorkspaceSlug: string | null;
+}
+
+/** The flow columns an authorization request fills in. */
+function toFlowFields(requested: RequestedAuthorization) {
+  return {
+    codeChallenge: requested.codeChallenge,
+    codeChallengeMethod: requested.codeChallengeMethod,
+    state: requested.state ?? undefined,
+    redirectUri: requested.redirectUri,
+    resource: requested.resource,
+    scopes: requested.scopes,
+    requestedWorkspaceSlug: requested.requestedWorkspaceSlug,
+  };
+}
+
+/** Whether a pending flow was started by exactly this request. */
+function isSameRequest(
+  flow: McpAuthorizationFlowEntity,
+  requested: RequestedAuthorization,
+): boolean {
+  const flowScopes = flow.scopes ?? [];
+  return (
+    flow.codeChallengeMethod === requested.codeChallengeMethod &&
+    (flow.state ?? null) === requested.state &&
+    flow.redirectUri === requested.redirectUri &&
+    flow.resource === requested.resource &&
+    (flow.requestedWorkspaceSlug ?? null) === requested.requestedWorkspaceSlug &&
+    flowScopes.length === requested.scopes.length &&
+    flowScopes.every((scope, i) => scope === requested.scopes[i])
+  );
 }

@@ -95,6 +95,7 @@ export class AuthorizationServerService {
      * @param version
      * @param scope Space-delimited list of scopes being requested
      * @param resource Resource server URL that the client wants to access
+     * @param workspace Taico extension: the slug of the workspace the client wants a token for (a worker started with --workspace). Only for Taico's own servers; consent from any other workspace is refused.
      * @returns void
      * @throws ApiError
      */
@@ -109,6 +110,7 @@ export class AuthorizationServerService {
         version: string,
         scope?: string,
         resource?: string,
+        workspace?: string,
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
         return __request(config, {
@@ -127,6 +129,7 @@ export class AuthorizationServerService {
                 'redirect_uri': redirectUri,
                 'state': state,
                 'resource': resource,
+                'workspace': workspace,
             },
             errors: {
                 302: `Redirects to consent screen with authorization request ID`,

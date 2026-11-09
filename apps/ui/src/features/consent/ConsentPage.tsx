@@ -5,6 +5,7 @@ import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Card, DataRow, Stack, Text, ErrorText, Row, ListRow, Button } from "../../ui/primitives";
 import { mcpServerRequiresTaicoAuth } from "@taico/shared";
 import { ConsentWorkspaceCard } from "./ConsentWorkspaceCard";
+import { RequestedWorkspaceNotice } from './RequestedWorkspaceNotice';
 import './ConsentPage.css';
 
 export function ConsentPage() {
@@ -47,7 +48,7 @@ export function ConsentPage() {
   const decisionLocked = isApproving || isSwitchingWorkspace;
 
   const handleApprove = () => {
-    if (!consentMetadata || decisionLocked) return;
+    if (!consentMetadata || decisionLocked || inOtherWorkspace) return;
     submitConsent(flowId, server.providedId, true, consentMetadata.workspace.id);
   };
 
@@ -79,6 +80,9 @@ export function ConsentPage() {
   // Taico's own servers (tasks, context, workers) work in the workspace the
   // person is in now; any other server only works in its own workspace.
   const workspaceFollowsSession = mcpServerRequiresTaicoAuth(server.providedId);
+  // A worker started with --workspace can only be approved from that workspace.
+  const requestedSlug = consentMetadata.requestedWorkspaceSlug ?? null;
+  const inOtherWorkspace = workspaceFollowsSession && requestedSlug !== null && requestedSlug !== workspace.slug;
 
   // The client name is whatever the client says it is. What can be checked is
   // where its metadata document is published and where the user is sent next.
@@ -107,6 +111,14 @@ export function ConsentPage() {
             setIsSwitching={setIsSwitchingWorkspace}
             isSubmitting={isApproving}
           />
+          {inOtherWorkspace && requestedSlug ? (
+            <RequestedWorkspaceNotice
+              requestedSlug={requestedSlug}
+              isSwitching={isSwitchingWorkspace}
+              setIsSwitching={setIsSwitchingWorkspace}
+              isSubmitting={isApproving}
+            />
+          ) : null}
 
           <Card className="detail-section">
             <h2>WHO is requesting access</h2>
@@ -196,7 +208,7 @@ export function ConsentPage() {
 
       <div className="consent-actions">
         <Button variant="danger" onClick={handleDeny} disabled={decisionLocked}>Deny</Button>
-        <Button variant="primary" onClick={handleApprove} disabled={decisionLocked}>{isApproving ? 'Approving...' : 'Approve'}</Button>
+        <Button variant="primary" onClick={handleApprove} disabled={decisionLocked || inOtherWorkspace}>{isApproving ? 'Approving...' : 'Approve'}</Button>
       </div>
 
       <div className="consent-footer">

@@ -3378,6 +3378,11 @@ export interface components {
             /** @description The workspace the token will work in: for Taico's own servers (tasks, context, workers), the workspace the person is in now; for any other server, the server's workspace. */
             workspace: components["schemas"]["FlowWorkspaceDto"];
             /**
+             * @description The slug of the workspace the client asked for (a worker started with --workspace), or null if it did not ask. Approval is refused unless the person is in that workspace.
+             * @example acme
+             */
+            requestedWorkspaceSlug: string | null;
+            /**
              * @description Redirect URI provided in the authorization request
              * @example http://localhost:4001/callback
              */
@@ -8910,6 +8915,8 @@ export interface operations {
                 state: string;
                 /** @description Resource server URL that the client wants to access */
                 resource?: string;
+                /** @description Taico extension: the slug of the workspace the client wants a token for (a worker started with --workspace). Only for Taico's own servers; consent from any other workspace is refused. */
+                workspace?: string;
             };
             header?: never;
             path: {
