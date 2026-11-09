@@ -73,3 +73,46 @@ export class WorkspaceMemberIsAgentError extends Error {
     this.name = WorkspaceMemberIsAgentError.name;
   }
 }
+
+/**
+ * No open invitation has this code: wrong, already used, revoked or expired.
+ * One answer for all of them, so codes can't be probed.
+ */
+export class WorkspaceInvitationNotFoundError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_INVITATION_NOT_FOUND;
+  constructor() {
+    super('Invitation not found or no longer valid');
+    this.name = WorkspaceInvitationNotFoundError.name;
+  }
+}
+
+/** The signed-in account's email isn't the one the invitation was sent to. */
+export class WorkspaceInvitationEmailMismatchError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_INVITATION_EMAIL_MISMATCH;
+  constructor() {
+    super('This invitation is for another email address');
+    this.name = WorkspaceInvitationEmailMismatchError.name;
+  }
+}
+
+/** An account with the invited email exists: sign in to it to accept. */
+export class WorkspaceInvitationAccountExistsError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_INVITATION_ACCOUNT_EXISTS;
+  constructor() {
+    super('An account with this email exists. Sign in to accept the invitation.');
+    this.name = WorkspaceInvitationAccountExistsError.name;
+  }
+}
+
+/**
+ * The token is for a workspace its actor is no longer a member of (they were
+ * removed after it was minted). Refreshing the session moves them to a
+ * workspace they are still in.
+ */
+export class WorkspaceMembershipRevokedError extends Error {
+  readonly code = ErrorCodes.WORKSPACE_MEMBERSHIP_REVOKED;
+  constructor() {
+    super('You are no longer a member of this workspace');
+    this.name = WorkspaceMembershipRevokedError.name;
+  }
+}

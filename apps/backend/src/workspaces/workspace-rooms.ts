@@ -22,3 +22,17 @@ export function socketWorkspaceId(client: Socket): string {
   }
   return auth.workspaceId;
 }
+
+/**
+ * Every authenticated socket of an actor in a workspace joins this room, so a
+ * removal can disconnect them all, on every backend (the socket adapter
+ * carries `disconnectSockets` across instances).
+ */
+export function workspaceMemberRoom(workspaceId: string, actorId: string): string {
+  return workspaceRoom(workspaceId, `member:${actorId}`);
+}
+
+/** The actor an auth context acts as (the token's subject). */
+export function authActorId(auth: AuthContext): string {
+  return auth.claims.actor_id || auth.subject;
+}

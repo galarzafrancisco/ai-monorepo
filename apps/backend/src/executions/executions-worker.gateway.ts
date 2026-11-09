@@ -34,6 +34,7 @@ import {
   ActiveTaskExecutionWorkerMismatchError,
 } from './errors/executions.errors';
 import { workerCaller, type WorkerCaller } from './worker-execution-access';
+import { authActorId, workspaceMemberRoom } from '../workspaces/workspace-rooms';
 import { AuthContext } from '../auth/guards/context/auth-context.types';
 import { createAuthContext } from '../auth/guards/context/auth-context.factory';
 import { WorkersService } from '../workers/workers.service';
@@ -392,8 +393,12 @@ export class ExecutionsWorkerGateway
     }
 
     const authContext: AuthContext = createAuthContext(token, claims);
+    // Only a member's worker connects, and it joins their member room so a
+    // removal from the workspace disconnects it.
+    await this.accessTokenValidationService.assertWorkspaceMember(authContext);
     // Connecting records the worker in the token's workspace.
     client.data.auth = authContext;
+    client.join(workspaceMemberRoom(authContext.workspaceId, authActorId(authContext)));
   }
 
   private getSocketToken(client: Socket): string | null {

@@ -87,8 +87,10 @@ export class TaskBlueprintsService {
       createdByActorId,
     });
 
-    // Handle dependsOnIds
+    // Handle dependsOnIds: only tasks of this workspace, checked now so a
+    // blueprint never stores an id it can't create a task from.
     if (input.dependsOnIds && input.dependsOnIds.length > 0) {
+      await this.tasksService.assertTasksInWorkspace(workspaceId, input.dependsOnIds);
       blueprint.dependsOnIds = input.dependsOnIds;
     }
 
@@ -176,8 +178,9 @@ export class TaskBlueprintsService {
       }
     }
 
-    // Handle dependencies if provided
+    // Handle dependencies if provided (only tasks of this workspace)
     if (input.dependsOnIds !== undefined) {
+      await this.tasksService.assertTasksInWorkspace(workspaceId, input.dependsOnIds);
       blueprint.dependsOnIds = input.dependsOnIds;
     }
 

@@ -93,14 +93,38 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
     return { email, password, actorId: user.actorId };
   }
 
-  /** Sets up an invited account and returns its session cookies. */
-  async function setUpInvitedAccount(email: string) {
-    const password = 'password-p4-invited';
+  /** Invites `email` into the admin's current workspace; returns the one-time code. */
+  async function invite(adminCookies: string, email: string, role: WorkspaceRole): Promise<string> {
     const res = await request(http)
-      .post('/api/v1/auth/setup-account')
-      .send({ email, password, displayName: 'Invited', slug: `inv-${unique()}` })
-      .expect(200);
-    return { cookies: cookiesFrom(res), password };
+      .post('/api/v1/workspaces/current/members')
+      .set('Cookie', adminCookies)
+      .send({ email, role })
+      .expect(201);
+    return res.body.inviteCode;
+  }
+
+  /**
+   * Adds a person with an account to the admin's current workspace the only
+   * way there is: invite, then they sign in and accept with the code.
+   * Returns their own session (in their oldest workspace).
+   */
+  async function addMember(adminCookies: string, person: { email: string; password: string }, role: WorkspaceRole) {
+    const code = await invite(adminCookies, person.email, role);
+    const own = cookiesFrom(await login(person.email, person.password).expect(200));
+    await request(http).post('/api/v1/workspaces/invitations/accept').set('Cookie', own).send({ code }).expect(200);
+    return own;
+  }
+
+  /** Accepts an invitation by creating the account, then signs in. */
+  async function setUpInvitedAccount(email: string, code: string) {
+    const password = 'password-p4-invited';
+    await request(http)
+      .post('/api/v1/workspaces/invitations/accept-new-account')
+      .send({ code, password, displayName: 'Invited', slug: `inv-${unique()}` })
+      .expect(201);
+    const cookies = cookiesFrom(await login(email, password).expect(200));
+    const actorId = (decodeJwt(accessToken(cookies)) as { actor_id: string }).actor_id;
+    return { cookies, password, actorId };
   }
 
   beforeAll(async () => {
@@ -295,23 +319,29 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
   });
 
   describe('members', () => {
-    it('invites a new person, who sets up an account in that workspace only', async () => {
+    it('invites a new person, who joins only by creating their account with the code', async () => {
       const workspace = await createWorkspace(operator);
       const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
       const email = `p4-new-${unique()}@example.com`;
 
-      const invite = await request(http)
+      const res = await request(http)
         .post('/api/v1/workspaces/current/members')
         .set('Cookie', admin)
         .send({ email, role: WorkspaceRole.MEMBER })
         .expect(201);
-      expect(invite.body.accountCreated).toBe(true);
-      expect(invite.body.member.role).toBe(WorkspaceRole.MEMBER);
+      expect(res.body.invitation).toMatchObject({ email, role: WorkspaceRole.MEMBER });
+      expect(res.body.inviteUrl).toContain(encodeURIComponent(res.body.inviteCode));
+      // Nothing exists yet: no account, so nothing for anyone to claim.
+      await request(http).post('/api/v1/auth/account-setup-status').send({ email, code: 'guess' })
+        .expect(200).expect(({ body }) => expect(body.canSetup).toBe(false));
+      await login(email, 'anything-at-all').expect(401);
 
-      const { cookies } = await setUpInvitedAccount(email);
+      const { cookies, actorId } = await setUpInvitedAccount(email, res.body.inviteCode);
       expect(claims(cookies).workspace_id).toBe(workspace.id);
       expect(claims(cookies).scope).not.toContain('user:admin');
-      expect(await members.countBy({ actorId: invite.body.member.actorId })).toBe(1);
+      expect(await members.countBy({ actorId })).toBe(1);
+      // The code is used up.
+      await request(http).post('/api/v1/workspaces/invitations/preview').send({ code: res.body.inviteCode }).expect(404);
 
       // Not a member of the default workspace.
       await switchTo(cookies, DEFAULT_WORKSPACE_ID).expect(404);
@@ -321,7 +351,7 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .set('Cookie', cookies)
         .expect(200);
       expect(list.body.map((m: { actorId: string }) => m.actorId)).toEqual(
-        expect.arrayContaining([operatorActorId, invite.body.member.actorId]),
+        expect.arrayContaining([operatorActorId, actorId]),
       );
       await request(http)
         .post('/api/v1/workspaces/current/members')
@@ -330,41 +360,49 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .expect(403);
     });
 
-    it('adds a person who already has an account, once', async () => {
+    it('adds a person who already has an account only when they accept, once', async () => {
       const workspace = await createWorkspace(operator);
       const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
       const person = await createPerson();
 
-      const invite = await request(http)
+      const first = await invite(admin, person.email, WorkspaceRole.MEMBER);
+      // The answer doesn't say whether the email has an account.
+      const res = await request(http)
         .post('/api/v1/workspaces/current/members')
         .set('Cookie', admin)
         .send({ email: person.email, role: WorkspaceRole.ADMIN })
         .expect(201);
-      expect(invite.body).toMatchObject({
-        accountCreated: false,
-        member: { actorId: person.actorId, role: WorkspaceRole.ADMIN },
-      });
+      expect(Object.keys(res.body).sort()).toEqual(['invitation', 'inviteCode', 'inviteUrl']);
+      expect(JSON.stringify(res.body)).not.toContain(person.actorId);
+
+      const own = cookiesFrom(await login(person.email, person.password).expect(200));
+      // Not a member until they accept; inviting again replaced the first code.
+      await switchTo(own, workspace.id).expect(404);
+      await request(http).post('/api/v1/workspaces/invitations/accept').set('Cookie', own).send({ code: first }).expect(404);
+      const preview = await request(http).post('/api/v1/workspaces/invitations/preview').send({ code: res.body.inviteCode }).expect(200);
+      expect(preview.body).toMatchObject({ workspaceName: workspace.name, email: person.email, accountExists: true });
+
+      const accepted = await request(http)
+        .post('/api/v1/workspaces/invitations/accept')
+        .set('Cookie', own)
+        .send({ code: res.body.inviteCode })
+        .expect(200);
+      expect(accepted.body).toMatchObject({ workspaceId: workspace.id, role: WorkspaceRole.ADMIN });
+      const there = await switchTo(own, workspace.id).expect(200);
+      expect(claims(cookiesFrom(there)).scope).toContain('user:admin');
+
       await request(http)
         .post('/api/v1/workspaces/current/members')
         .set('Cookie', admin)
         .send({ email: person.email, role: WorkspaceRole.MEMBER })
         .expect(409);
-
-      const own = cookiesFrom(await login(person.email, person.password).expect(200));
-      const there = await switchTo(own, workspace.id).expect(200);
-      expect(claims(cookiesFrom(there)).scope).toContain('user:admin');
     });
 
     it('changes roles, in the next token, but never demotes the last admin', async () => {
       const workspace = await createWorkspace(operator);
       const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
       const person = await createPerson();
-      await request(http)
-        .post('/api/v1/workspaces/current/members')
-        .set('Cookie', admin)
-        .send({ email: person.email, role: WorkspaceRole.MEMBER })
-        .expect(201);
-      const own = cookiesFrom(await login(person.email, person.password).expect(200));
+      const own = await addMember(admin, person, WorkspaceRole.MEMBER);
 
       await request(http)
         .patch(`/api/v1/workspaces/current/members/${operatorActorId}`)
@@ -390,16 +428,11 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       expect(claims(cookiesFrom(demoted)).scope).not.toContain('user:admin');
     });
 
-    it('removes a member, who loses the workspace at their next token', async () => {
+    it('removes a member, who loses the workspace at once', async () => {
       const workspace = await createWorkspace(operator);
       const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
       const person = await createPerson();
-      await request(http)
-        .post('/api/v1/workspaces/current/members')
-        .set('Cookie', admin)
-        .send({ email: person.email, role: WorkspaceRole.MEMBER })
-        .expect(201);
-      const own = cookiesFrom(await login(person.email, person.password).expect(200));
+      const own = await addMember(admin, person, WorkspaceRole.MEMBER);
       const inWorkspace = cookiesFrom(await switchTo(own, workspace.id).expect(200));
 
       await request(http)
@@ -410,6 +443,13 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
         .delete(`/api/v1/workspaces/current/members/${person.actorId}`)
         .set('Cookie', admin)
         .expect(404);
+
+      // The token they hold is refused at once, not when it expires.
+      const revoked = await request(http)
+        .get('/api/v1/tasks/tasks')
+        .set('Cookie', inWorkspace)
+        .expect(403);
+      expect(revoked.body.code).toBe('WORKSPACE_MEMBERSHIP_REVOKED');
 
       // Their next token is for the workspace they are still in.
       const refreshed = await request(http)
@@ -424,15 +464,11 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       const workspace = await createWorkspace(operator);
       const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
       const email = `p4-only-${unique()}@example.com`;
-      const invite = await request(http)
-        .post('/api/v1/workspaces/current/members')
-        .set('Cookie', admin)
-        .send({ email, role: WorkspaceRole.MEMBER })
-        .expect(201);
-      const { cookies, password } = await setUpInvitedAccount(email);
+      const code = await invite(admin, email, WorkspaceRole.MEMBER);
+      const { cookies, password, actorId } = await setUpInvitedAccount(email, code);
 
       await request(http)
-        .delete(`/api/v1/workspaces/current/members/${invite.body.member.actorId}`)
+        .delete(`/api/v1/workspaces/current/members/${actorId}`)
         .set('Cookie', admin)
         .expect(204);
 
@@ -743,12 +779,7 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       const workspace = await createWorkspace(operator);
       const admin = cookiesFrom(await switchTo(operator, workspace.id).expect(200));
       const person = await createPerson();
-      await request(http)
-        .post('/api/v1/workspaces/current/members')
-        .set('Cookie', admin)
-        .send({ email: person.email, role: WorkspaceRole.MEMBER })
-        .expect(201);
-      const own = cookiesFrom(await login(person.email, person.password).expect(200));
+      const own = await addMember(admin, person, WorkspaceRole.MEMBER);
       const inWorkspace = cookiesFrom(await switchTo(own, workspace.id).expect(200));
       const worker = await authorizeWorker(inWorkspace);
       expect(worker.workspaceId).toBe(workspace.id);

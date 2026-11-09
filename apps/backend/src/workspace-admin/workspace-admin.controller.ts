@@ -36,10 +36,19 @@ import {
   WorkspacesService,
 } from '../workspaces/workspaces.service';
 import { WorkspaceAdminService } from './workspace-admin.service';
+import { WorkspaceInvitationsService } from './workspace-invitations.service';
+import { WorkspaceInvitationEntity } from '../workspaces/workspace-invitation.entity';
+import { Public } from '../auth/guards/decorators/public.decorator';
+import { getFrontendPath } from '../config/frontend.config';
 import {
   CreateWorkspaceRequestDto,
   InviteWorkspaceMemberRequestDto,
   InviteWorkspaceMemberResponseDto,
+  InvitationCodeRequestDto,
+  InvitationPreviewResponseDto,
+  AcceptInvitationResponseDto,
+  AcceptInvitationNewAccountRequestDto,
+  WorkspaceInvitationResponseDto,
   LocateRowQueryDto,
   UpdateWorkspaceMemberRequestDto,
   WorkspaceMemberResponseDto,
@@ -60,6 +69,7 @@ export class WorkspaceAdminController {
   constructor(
     private readonly workspacesService: WorkspacesService,
     private readonly workspaceAdminService: WorkspaceAdminService,
+    private readonly invitationsService: WorkspaceInvitationsService,
   ) {}
 
   @Get()
@@ -179,19 +189,97 @@ export class WorkspaceAdminController {
   @ApiOperation({
     summary: 'Workspace admin: invite a person by email',
     description:
-      'A person with an account is added. Anyone else gets an invited account, which they set up through account setup.',
+      'Creates an invitation with a one-time code; nobody is added until the person accepts it with that code. The answer is the same whether or not the email has an account.',
   })
   @ApiCreatedResponse({ type: InviteWorkspaceMemberResponseDto })
   async invite(
     @CurrentWorkspace() workspaceId: string,
+    @CurrentUser() user: UserContext,
     @Body() dto: InviteWorkspaceMemberRequestDto,
   ): Promise<InviteWorkspaceMemberResponseDto> {
-    const { member, accountCreated } =
-      await this.workspaceAdminService.inviteMember(workspaceId, {
-        email: dto.email,
-        role: dto.role,
-      });
-    return { member: toMemberDto(member), accountCreated };
+    const { invitation, code } = await this.invitationsService.invite({
+      workspaceId,
+      invitedByActorId: user.actorId,
+      email: dto.email,
+      role: dto.role,
+    });
+    return {
+      invitation: toInvitationDto(invitation),
+      inviteCode: code,
+      inviteUrl: getFrontendPath(`/invite?code=${encodeURIComponent(code)}`),
+    };
+  }
+
+  @Get('current/invitations')
+  @WorkspaceAccess('scoped')
+  @RequireScopes(UserScopes.ADMIN.id)
+  @ApiOperation({ summary: 'Workspace admin: invitations not yet accepted' })
+  @ApiOkResponse({ type: [WorkspaceInvitationResponseDto] })
+  async listInvitations(
+    @CurrentWorkspace() workspaceId: string,
+  ): Promise<WorkspaceInvitationResponseDto[]> {
+    return (await this.invitationsService.listOpen(workspaceId)).map(toInvitationDto);
+  }
+
+  @Delete('current/invitations/:invitationId')
+  @WorkspaceAccess('scoped')
+  @RequireScopes(UserScopes.ADMIN.id)
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Workspace admin: revoke an invitation' })
+  async revokeInvitation(
+    @CurrentWorkspace() workspaceId: string,
+    @Param('invitationId', ParseUUIDPipe) invitationId: string,
+  ): Promise<void> {
+    await this.invitationsService.revoke(workspaceId, invitationId);
+  }
+
+  @Post('invitations/preview')
+  @Public()
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'What an invitation is for, to whoever holds its code',
+    description: 'A wrong, used, revoked or expired code answers 404.',
+  })
+  @ApiOkResponse({ type: InvitationPreviewResponseDto })
+  async previewInvitation(@Body() dto: InvitationCodeRequestDto): Promise<InvitationPreviewResponseDto> {
+    const preview = await this.invitationsService.preview(dto.code);
+    return { ...preview, expiresAt: preview.expiresAt.toISOString() };
+  }
+
+  @Post('invitations/accept-new-account')
+  @Public()
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Accept an invitation by creating the invited account',
+    description:
+      'Creates the account for the invited email, with this password, in the workspace. Then sign in. If the email already has an account, sign in to it and accept instead (409).',
+  })
+  @ApiCreatedResponse({ type: AcceptInvitationResponseDto })
+  async acceptInvitationWithNewAccount(
+    @Body() dto: AcceptInvitationNewAccountRequestDto,
+  ): Promise<AcceptInvitationResponseDto> {
+    const { workspace } = await this.invitationsService.acceptWithNewAccount(dto.code, {
+      displayName: dto.displayName,
+      slug: dto.slug,
+      password: dto.password,
+    });
+    return workspace;
+  }
+
+  @Post('invitations/accept')
+  @WorkspaceAccess('installation')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Accept an invitation as the signed-in person',
+    description:
+      'The account must have the invited email. Joins the workspace; switch to it to work there.',
+  })
+  @ApiOkResponse({ type: AcceptInvitationResponseDto })
+  async acceptInvitation(
+    @CurrentUser() user: UserContext,
+    @Body() dto: InvitationCodeRequestDto,
+  ): Promise<AcceptInvitationResponseDto> {
+    return this.invitationsService.acceptAsActor(dto.code, user.actorId);
   }
 
   @Patch('current/members/:actorId')
@@ -239,5 +327,15 @@ function toMemberDto(member: WorkspaceMemberResult): WorkspaceMemberResponseDto 
     avatarUrl: member.avatarUrl,
     role: member.role,
     joinedAt: member.joinedAt.toISOString(),
+  };
+}
+
+function toInvitationDto(invitation: WorkspaceInvitationEntity): WorkspaceInvitationResponseDto {
+  return {
+    id: invitation.id,
+    email: invitation.email,
+    role: invitation.role,
+    expiresAt: invitation.expiresAt.toISOString(),
+    createdAt: invitation.createdAt.toISOString(),
   };
 }

@@ -97,39 +97,4 @@ export class WorkspaceAdminService {
     }
   }
 
-  /**
-   * Invites a person by email. Someone with an account is added. Anyone else
-   * gets an invited account (installation role `standard`), set up through
-   * the usual account setup, and is a member of this workspace only.
-   */
-  async inviteMember(
-    workspaceId: string,
-    input: { email: string; role: WorkspaceRole },
-  ): Promise<{ member: WorkspaceMemberResult; accountCreated: boolean }> {
-    const email = input.email.trim().toLowerCase();
-    const existing = await this.identityProviderService.getUserByEmail(email);
-    if (existing) {
-      return {
-        member: await this.workspacesService.addMember(
-          workspaceId,
-          existing.actorId,
-          input.role,
-        ),
-        accountCreated: false,
-      };
-    }
-    const user = await this.identityProviderService.createManagedUser({
-      email,
-      role: UserRole.STANDARD,
-      workspace: { workspaceId, role: input.role },
-    });
-    const member = await this.workspacesService.getMember(
-      workspaceId,
-      user.actorId,
-    );
-    if (!member) {
-      throw new Error(`Invited ${user.actorId} is not a member of ${workspaceId}`);
-    }
-    return { member, accountCreated: true };
-  }
 }

@@ -12,6 +12,7 @@ import * as cookie from 'cookie';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { AuthContext } from '../context/auth-context.types';
 import { createAuthContext } from '../context/auth-context.factory';
+import { authActorId, workspaceMemberRoom } from '../../../workspaces/workspace-rooms';
 import { isFirstPartyAudience } from 'src/auth/core/resource-audience';
 import { Reflector } from '@nestjs/core';
 import {
@@ -38,9 +39,13 @@ export class WsAccessTokenGuard implements CanActivate {
 
     // Keep workspaces apart, on every message (fails closed when the handler
     // declares no mode). Refused messages answer with an `exception` event.
+    const workspaceAccess = workspaceAccessOf(this.reflector, context);
+    if (workspaceAccess !== 'installation' && !(await this.isStillMember(client, auth))) {
+      return false;
+    }
     try {
       enforceWorkspaceAccess(
-        workspaceAccessOf(this.reflector, context),
+        workspaceAccess,
         auth,
         entryPointName(context),
       );
@@ -88,6 +93,23 @@ export class WsAccessTokenGuard implements CanActivate {
     // 4) Attach context (same shape as HTTP)
     const authContext: AuthContext = createAuthContext(token, claims);
     client.data.auth = authContext;
+
+    // 5) Only members, and in their member room so a removal disconnects them.
+    if (!(await this.isStillMember(client, authContext))) {
+      return undefined;
+    }
+    client.join(workspaceMemberRoom(authContext.workspaceId, authActorId(authContext)));
     return authContext;
+  }
+
+  /** Disconnects a socket whose actor is no longer a member of its workspace. */
+  private async isStillMember(client: Socket, auth: AuthContext): Promise<boolean> {
+    try {
+      await this.validator.assertWorkspaceMember(auth);
+      return true;
+    } catch {
+      client.disconnect(true);
+      return false;
+    }
   }
 }

@@ -473,6 +473,30 @@ export const ErrorCatalog: Record<
     type: '/errors/workspaces/member-not-found',
     retryable: false,
   },
+  [ErrorCodes.WORKSPACE_INVITATION_NOT_FOUND]: {
+    status: 404,
+    title: 'Invitation not found',
+    type: '/errors/workspaces/invitation-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_INVITATION_EMAIL_MISMATCH]: {
+    status: 403,
+    title: 'This invitation is for another email address',
+    type: '/errors/workspaces/invitation-email-mismatch',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_INVITATION_ACCOUNT_EXISTS]: {
+    status: 409,
+    title: 'Sign in to accept this invitation',
+    type: '/errors/workspaces/invitation-account-exists',
+    retryable: false,
+  },
+  [ErrorCodes.WORKSPACE_MEMBERSHIP_REVOKED]: {
+    status: 403,
+    title: 'You are no longer a member of this workspace',
+    type: '/errors/workspaces/membership-revoked',
+    retryable: false,
+  },
   [ErrorCodes.WORKSPACE_MEMBER_ALREADY_EXISTS]: {
     status: 409,
     title: 'Already a member of the workspace',
@@ -561,6 +585,24 @@ export const ErrorCatalog: Record<
     status: 404,
     title: 'Secret not found',
     type: '/errors/secrets/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.THREAD_NOT_FOUND]: {
+    status: 404,
+    title: 'Thread not found',
+    type: '/errors/threads/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.THREAD_ACTOR_NOT_FOUND]: {
+    status: 404,
+    title: 'Actor not found',
+    type: '/errors/threads/actor-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.THREAD_PARENT_TASK_CONFLICT]: {
+    status: 409,
+    title: 'A thread already exists for this task',
+    type: '/errors/threads/parent-task-conflict',
     retryable: false,
   },
   [ErrorCodes.INVALID_THREAD_TITLE]: {
