@@ -1,8 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Copied to spark-ops/k8s/taico-live/overlays/main by prepare-deployment.sh.
-# This uses a separate copy of the base: main never changes production.
+# CI copies this overlay and the base into the development deployment directory.
 namespace: taico-live
 
 resources:

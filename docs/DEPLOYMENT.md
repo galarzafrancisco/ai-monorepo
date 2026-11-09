@@ -182,10 +182,14 @@ does not deploy again. Release tags must point to a commit whose main image has
 already been built successfully: CI promotes `main-<short SHA>` without rebuilding
 it, and fails if that image does not exist. Do not move published version tags.
 
-`scripts/prepare-deployment.sh` prepares independent manifest trees for the two
-environments. Each uses its own base so changes on main cannot alter production
-resources. Keep environment provisioning, database identities, network endpoints,
-hostnames and operational runbooks in the private deployment repository.
+The copy commands are directly in `.github/workflows/test.yml`: copy the base
+and the selected overlay, set the image tag in the copied Deployment, and open
+a PR in the deployment repository. That repository hydrates the environment
+configuration. ArgoCD renders Kustomize when deploying.
+
+Each environment has its own copy of the base. Keep environment provisioning,
+database identities, network endpoints, hostnames and operational runbooks in
+the private deployment repository.
 
 ### 2. Deployment Repository CI
 
