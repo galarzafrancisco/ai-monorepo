@@ -380,7 +380,8 @@ describe('Workspaces phase 4: many workspaces (e2e)', () => {
       await switchTo(own, workspace.id).expect(404);
       await request(http).post('/api/v1/workspaces/invitations/accept').set('Cookie', own).send({ code: first }).expect(404);
       const preview = await request(http).post('/api/v1/workspaces/invitations/preview').send({ code: res.body.inviteCode }).expect(200);
-      expect(preview.body).toMatchObject({ workspaceName: workspace.name, email: person.email, accountExists: true });
+      expect(preview.body).toMatchObject({ workspaceName: workspace.name, email: person.email });
+      expect(preview.body).not.toHaveProperty('accountExists');
 
       const accepted = await request(http)
         .post('/api/v1/workspaces/invitations/accept')

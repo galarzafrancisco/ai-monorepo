@@ -12,9 +12,5 @@ export type InvitationPreviewResponseDto = {
     email: string;
     role: WorkspaceRole;
     expiresAt: string;
-    /**
-     * Whether an account with the invited email exists: sign in to accept, or create one.
-     */
-    accountExists: boolean;
 };
 

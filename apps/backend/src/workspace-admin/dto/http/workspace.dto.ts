@@ -155,11 +155,6 @@ export class InvitationPreviewResponseDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   expiresAt!: string;
-
-  @ApiProperty({
-    description: 'Whether an account with the invited email exists: sign in to accept, or create one.',
-  })
-  accountExists!: boolean;
 }
 
 export class AcceptInvitationNewAccountRequestDto extends InvitationCodeRequestDto {

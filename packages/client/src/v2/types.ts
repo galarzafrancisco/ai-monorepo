@@ -1764,7 +1764,6 @@ export interface InvitationPreviewResponseDto {
   email: string;
   role: WorkspaceRole;
   expiresAt: string;
-  accountExists: boolean;
 }
 
 export interface AcceptInvitationNewAccountRequestDto {

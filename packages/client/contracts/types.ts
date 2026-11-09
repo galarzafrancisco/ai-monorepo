@@ -8563,8 +8563,6 @@ export interface components {
             role: components["schemas"]["WorkspaceRole"];
             /** Format: date-time */
             expiresAt: string;
-            /** @description Whether an account with the invited email exists: sign in to accept, or create one. */
-            accountExists: boolean;
         };
         AcceptInvitationNewAccountRequestDto: {
             /** @description The one-time invitation code */

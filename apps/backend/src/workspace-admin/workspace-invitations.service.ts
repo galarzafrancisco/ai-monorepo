@@ -97,16 +97,15 @@ export class WorkspaceInvitationsService {
     }
   }
 
-  /** What an invitation is for, to whoever holds its code. */
-  async preview(code: string): Promise<InvitationWorkspace & { email: string; expiresAt: Date; accountExists: boolean }> {
+  /**
+   * What an invitation is for, to whoever holds its code. It never says
+   * whether the email has an account: the admin who invited holds the code
+   * too, and could otherwise look up any email.
+   */
+  async preview(code: string): Promise<InvitationWorkspace & { email: string; expiresAt: Date }> {
     const invitation = await this.findOpen(code);
     const workspace = await this.workspace(invitation);
-    return {
-      ...workspace,
-      email: invitation.email,
-      expiresAt: invitation.expiresAt,
-      accountExists: Boolean(await this.identityProviderService.getUserByEmail(invitation.email)),
-    };
+    return { ...workspace, email: invitation.email, expiresAt: invitation.expiresAt };
   }
 
   /**

@@ -60,7 +60,10 @@ export function InvitePage() {
       await login(preview.email, password);
       navigate('/home', { replace: true });
     } catch (err) {
-      setError(readApiError(err, 'Could not create the account.'));
+      const errorCode = (err as { body?: { code?: string } } | null)?.body?.code;
+      setError(errorCode === 'WORKSPACE_INVITATION_ACCOUNT_EXISTS'
+        ? `An account for ${preview.email} already exists. Sign in to join.`
+        : readApiError(err, 'Could not create the account.'));
       setBusy(false);
     }
   };
@@ -101,14 +104,17 @@ export function InvitePage() {
               <Link to="/logout">Sign out</Link>
             </Stack>
           )
-        ) : preview.accountExists ? (
+        ) : (
+          // The preview never says whether the invited email has an account,
+          // so both ways in are offered; creating one for an existing email
+          // is refused (409) and points back to signing in.
+          <Stack spacing="5">
           <Button variant="primary" size="lg" className="login-button" onClick={signInToAccept}>
             Sign in as {preview.email} to join
           </Button>
-        ) : (
           <form onSubmit={createAccount}>
             <Stack spacing="4">
-              <Text size="2" tone="muted">Create your account to join.</Text>
+              <Text size="2" tone="muted">New here? Create your account to join.</Text>
               <Stack spacing="2">
                 <label htmlFor="invite-display-name" className="login-label"><Text size="2" weight="medium">Display name</Text></label>
                 <input id="invite-display-name" className="login-input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Jane User" required disabled={busy} autoComplete="name" />
@@ -126,6 +132,7 @@ export function InvitePage() {
               </Button>
             </Stack>
           </form>
+          </Stack>
         )}
       </Stack>
     </LoginShell>

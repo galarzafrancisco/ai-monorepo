@@ -134,6 +134,39 @@ describe('Workspace boundaries (e2e)', () => {
       await request(http).post('/api/v1/workspaces/invitations/accept').set('Cookie', own).send({ code }).expect(404);
     });
 
+    it("don't tell the code holder whether the invited email has an account", async () => {
+      // An admin inviting an email gets its code, so the preview must not
+      // turn into a way to look up who has an account here.
+      const w = await workspaceWithAdmin();
+      const existing = await person();
+      const absent = `bnd-absent-${unique()}@example.com`;
+      const preview = async (email: string) => {
+        const res = await request(http).post('/api/v1/workspaces/invitations/preview')
+          .send({ code: await invite(w.admin, email) }).expect(200);
+        const { email: shown, expiresAt, ...rest } = res.body;
+        expect(shown).toBe(email);
+        expect(typeof expiresAt).toBe('string');
+        return rest;
+      };
+      const forExisting = await preview(existing.email);
+      const forAbsent = await preview(absent);
+      expect(forExisting).toEqual(forAbsent);
+      expect(Object.keys(forExisting).sort()).toEqual(['role', 'workspaceId', 'workspaceName', 'workspaceSlug']);
+    });
+
+    it('refuse to create an account for an email that already has one', async () => {
+      const w = await workspaceWithAdmin();
+      const existing = await person();
+      const code = await invite(w.admin, existing.email);
+      const res = await request(http).post('/api/v1/workspaces/invitations/accept-new-account')
+        .send({ code, password: 'another-password', displayName: 'X', slug: `x-${unique()}` })
+        .expect(409);
+      expect(res.body.code).toBe('WORKSPACE_INVITATION_ACCOUNT_EXISTS');
+      // The account's password is unchanged and the code still works for its owner.
+      const own = cookiesFrom(await login(existing.email, existing.password).expect(200));
+      await request(http).post('/api/v1/workspaces/invitations/accept').set('Cookie', own).send({ code }).expect(200);
+    });
+
     it('are listed and revoked by admins; a revoked code is dead', async () => {
       const w = await workspaceWithAdmin();
       const email = `bnd-rev-${unique()}@example.com`;

@@ -18690,10 +18690,6 @@
           "expiresAt": {
             "type": "string",
             "format": "date-time"
-          },
-          "accountExists": {
-            "type": "boolean",
-            "description": "Whether an account with the invited email exists: sign in to accept, or create one."
           }
         },
         "required": [
@@ -18701,8 +18697,7 @@
           "workspaceSlug",
           "email",
           "role",
-          "expiresAt",
-          "accountExists"
+          "expiresAt"
         ]
       },
       "AcceptInvitationNewAccountRequestDto": {
