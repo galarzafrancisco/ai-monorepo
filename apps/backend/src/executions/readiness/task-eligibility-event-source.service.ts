@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BeforeApplicationShutdown, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   InputRequestAnsweredEvent,
@@ -9,10 +9,14 @@ import {
 } from '../../tasks/events/tasks.events';
 import { TaskExecutionQueuePopulatorService } from './task-execution-queue-populator.service';
 import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
+import { BackgroundWork } from '../background-work';
 
 @Injectable()
-export class TaskEligibilityEventSourceService {
+export class TaskEligibilityEventSourceService implements BeforeApplicationShutdown {
   private readonly logger = new Logger(TaskEligibilityEventSourceService.name);
+  private readonly work = new BackgroundWork();
+  private sweepTimer: NodeJS.Timeout | undefined;
+  private sweepRunning: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly taskExecutionQueuePopulatorService: TaskExecutionQueuePopulatorService,
@@ -53,18 +57,32 @@ export class TaskEligibilityEventSourceService {
    */
   @OnEvent(ActiveExecutionsChangedEvent.INTERNAL)
   onActiveExecutionsChanged(): void {
-    if (this.sweepPending) return;
-    this.sweepPending = true;
-    setTimeout(() => void this.sweepAfterExecutionChange(), 250);
+    if (this.sweepTimer || this.work.isStopped) return;
+    this.sweepTimer = setTimeout(() => {
+      this.sweepTimer = undefined;
+      void this.sweepAfterExecutionChange();
+    }, 250);
   }
 
-  private sweepPending = false;
-  private sweepRunning: Promise<void> = Promise.resolve();
+  /**
+   * Runs before TypeORM closes its connection (that happens in
+   * `onApplicationShutdown`): drop a sweep that has not started, refuse new
+   * work, and wait for what is running.
+   */
+  async beforeApplicationShutdown(): Promise<void> {
+    clearTimeout(this.sweepTimer);
+    this.sweepTimer = undefined;
+    await this.work.stop();
+    await this.sweepRunning;
+  }
 
   private async sweepAfterExecutionChange(): Promise<void> {
-    this.sweepPending = false;
     this.sweepRunning = this.sweepRunning
-      .then(() => this.taskExecutionQueuePopulatorService.populateAllTasks())
+      .then(() =>
+        this.work.run(() =>
+          this.taskExecutionQueuePopulatorService.populateAllTasks(),
+        ),
+      )
       .catch((error: unknown) =>
         this.logger.error({
           message: 'Queue re-check after an execution change failed',
@@ -81,6 +99,8 @@ export class TaskEligibilityEventSourceService {
       trigger,
     });
 
-    await this.taskExecutionQueuePopulatorService.populateTask(taskId);
+    await this.work.run(() =>
+      this.taskExecutionQueuePopulatorService.populateTask(taskId),
+    );
   }
 }

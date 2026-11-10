@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BeforeApplicationShutdown, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { BackgroundWork } from '../background-work';
 import { StaleActiveTaskExecutionDetectorService } from './stale-active-task-execution-detector.service';
 import { StaleActiveTaskExecutionPrunerService } from './stale-active-task-execution-pruner.service';
 
@@ -10,10 +11,11 @@ const STALE_SCAN_CRON_EXPRESSION =
   DEFAULT_STALE_SCAN_CRON;
 
 @Injectable()
-export class StaleActiveTaskExecutionSchedulerService {
+export class StaleActiveTaskExecutionSchedulerService implements BeforeApplicationShutdown {
   private readonly logger = new Logger(
     StaleActiveTaskExecutionSchedulerService.name,
   );
+  private readonly work = new BackgroundWork();
 
   constructor(
     private readonly staleExecutionDetector: StaleActiveTaskExecutionDetectorService,
@@ -21,7 +23,16 @@ export class StaleActiveTaskExecutionSchedulerService {
   ) {}
 
   @Cron(STALE_SCAN_CRON_EXPRESSION)
-  async pruneStaleExecutions(): Promise<void> {
+  pruneStaleExecutions(): Promise<void> {
+    return this.work.run(() => this.pruneOnce());
+  }
+
+  /** Waits for a scan in flight; cron jobs are only stopped later, without waiting. */
+  async beforeApplicationShutdown(): Promise<void> {
+    await this.work.stop();
+  }
+
+  private async pruneOnce(): Promise<void> {
     try {
       const staleExecutions =
         await this.staleExecutionDetector.findStaleExecutions();
