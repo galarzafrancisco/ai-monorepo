@@ -13,6 +13,7 @@ import {
 import { ExecutionTraceSpool } from './execution-trace-spool.js';
 import { WorkerAuth } from './auth/worker-auth.js';
 import { WORKER_VERSION } from './version.js';
+import { socketProxyAgent } from './helpers/proxy.js';
 import { detectWorkerCapabilities } from './worker-capabilities.js';
 
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
@@ -231,7 +232,13 @@ export class ExecutionActivityGatewayClient {
 
     this.clearReconnectRetryTimer();
 
+    // Behind a proxy (HTTPS_PROXY, honouring NO_PROXY), the socket must be
+    // handed an agent: the `ws` transport ignores proxy settings by itself.
+    const agent = socketProxyAgent(url);
     this.socket = io(url, {
+      // socket.io types `agent` for browsers (string | boolean); in Node it is
+      // handed to `ws`, which takes an http.Agent.
+      ...(agent ? { agent: agent as unknown as string } : {}),
       transports,
       auth: { token: credentials.accessToken, workerVersion: WORKER_VERSION },
       reconnection,

@@ -5,12 +5,14 @@ import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 import { TaskStatus } from '../../tasks/enums';
 import { StaleActiveTaskExecutionPrunerService } from './stale-active-task-execution-pruner.service';
+import { StaleActiveTaskExecutionDetectorService } from './stale-active-task-execution-detector.service';
 
 describe('StaleActiveTaskExecutionPrunerService', () => {
   let dataSource: DataSource;
   let eventEmitter: EventEmitter2;
   let emit: jest.Mock;
   let service: StaleActiveTaskExecutionPrunerService;
+  let findStaleExecutions: jest.Mock;
 
   beforeEach(() => {
     dataSource = {
@@ -20,9 +22,11 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
     eventEmitter = {
       emit,
     } as unknown as EventEmitter2;
+    findStaleExecutions = jest.fn();
     service = new StaleActiveTaskExecutionPrunerService(
       dataSource,
       eventEmitter,
+      { findStaleExecutions } as unknown as StaleActiveTaskExecutionDetectorService,
     );
   });
 
@@ -51,9 +55,7 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
       tags: [],
     };
     const manager = {
-      findOne: jest.fn()
-        .mockResolvedValueOnce(execution)
-        .mockResolvedValueOnce(task),
+      findOne: jest.fn().mockResolvedValueOnce(task),
       save: jest.fn(),
       delete: jest.fn(),
       create: jest.fn((_, value) => value),
@@ -64,7 +66,12 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
         callback(manager),
     );
 
+    findStaleExecutions.mockResolvedValue([execution]);
+
     await expect(service.pruneExecutionById(execution.id)).resolves.toBe(true);
+
+    // Staleness is rechecked, row locked, in the pruning transaction.
+    expect(findStaleExecutions).toHaveBeenCalledWith({ manager, executionId: execution.id });
 
     expect(manager.delete).toHaveBeenCalledWith(ActiveTaskExecutionEntity, {
       id: execution.id,
@@ -92,10 +99,12 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
     );
   });
 
-  it('does not emit an interrupt request when no execution is pruned', async () => {
+  it('prunes nothing when the execution is gone or no longer stale', async () => {
     const manager = {
-      findOne: jest.fn().mockResolvedValue(null),
+      findOne: jest.fn(),
+      delete: jest.fn(),
     } as unknown as jest.Mocked<EntityManager>;
+    findStaleExecutions.mockResolvedValue([]);
 
     (dataSource.transaction as jest.Mock).mockImplementation(
       async (callback: (manager: EntityManager) => Promise<unknown>) =>
@@ -104,6 +113,7 @@ describe('StaleActiveTaskExecutionPrunerService', () => {
 
     await expect(service.pruneExecutionById('missing-execution')).resolves.toBe(false);
 
+    expect(manager.delete).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskExecutionQueuePopulatorService } from './task-execution-queue-populator.service';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
@@ -20,6 +20,13 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
   let agentsService: jest.Mocked<AgentsService>;
   let readinessCandidateRepository: jest.Mocked<ReadinessCandidateRepository>;
   let taskExecutionHistoryService: jest.Mocked<TaskExecutionHistoryService>;
+  const insert = { insert: jest.fn(), into: jest.fn(), values: jest.fn(), orIgnore: jest.fn(), execute: jest.fn() };
+  for (const step of ['insert', 'into', 'values', 'orIgnore'] as const) insert[step].mockReturnValue(insert);
+  const manager = {
+    query: jest.fn(),
+    delete: jest.fn(),
+    createQueryBuilder: jest.fn(() => insert),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -44,13 +51,19 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           useValue: {
             findCandidateTaskById: jest.fn(),
             listCandidateTasks: jest.fn(),
-            countActiveExecutionsForAgent: jest.fn(),
+            countSlotsTakenForAgent: jest.fn(),
           },
         },
         {
           provide: EventEmitter2,
           useValue: {
             emit: jest.fn(),
+          },
+        },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn((work: (m: unknown) => unknown) => work(manager)),
           },
         },
         {
@@ -73,103 +86,60 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
     taskExecutionHistoryService = module.get(TaskExecutionHistoryService);
   });
 
-  describe('upsertQueueEntry', () => {
-    it('should emit TaskExecutionQueuedEvent when a new row is inserted (SQLite changes > 0)', async () => {
-      const taskId = 'test-task-id';
+  describe('reconcileTask', () => {
+    const task = {
+      id: 'task-1', workspaceId: 'ws-1', name: 'T', status: TaskStatus.NOT_STARTED,
+      assigneeActorId: 'agent-actor-id', tags: [],
+    } as unknown as TaskEntity;
+    const agent = (concurrencyLimit: number | null) => ({
+      actorId: 'agent-actor-id', slug: 'a', statusTriggers: [TaskStatus.NOT_STARTED], tagTriggers: [], concurrencyLimit,
+    }) as any;
 
-      // Mock the query builder chain
-      const executeResult = {
-        raw: { changes: 1 }, // SQLite returns changes: 1 when a row is inserted
-        identifiers: [{ taskId }],
-      };
-
-      const mockQueryBuilder = {
-        insert: jest.fn().mockReturnThis(),
-        into: jest.fn().mockReturnThis(),
-        values: jest.fn().mockReturnThis(),
-        orIgnore: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue(executeResult),
-      };
-
-      queueRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder as any,
-      );
-
-      // Call the private method through reflection
-      await (service as any).upsertQueueEntry(taskId);
-
-      // Verify the event was emitted
-      expect(eventEmitter.emit).toHaveBeenCalledWith(
-        TaskExecutionQueuedEvent.INTERNAL,
-        expect.objectContaining({
-          taskId,
-        }),
-      );
-      expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
+    beforeEach(() => {
+      jest.clearAllMocks();
+      taskExecutionHistoryService.getLatestHistoryForTask.mockResolvedValue(null);
     });
 
-    it('should NOT emit TaskExecutionQueuedEvent when insert is ignored (SQLite changes = 0)', async () => {
-      const taskId = 'test-task-id';
+    it('queues under the agent slot lock when a slot is free, and announces it', async () => {
+      agentsService.getActiveAgentsByActorIds.mockResolvedValue([agent(2)]);
+      readinessCandidateRepository.countSlotsTakenForAgent.mockResolvedValue(1);
 
-      // Mock the query builder chain
-      const executeResult = {
-        raw: { changes: 0 }, // SQLite returns changes: 0 when insert is ignored due to duplicate
-        identifiers: [],
-      };
+      await (service as any).reconcileTask(task);
 
-      const mockQueryBuilder = {
-        insert: jest.fn().mockReturnThis(),
-        into: jest.fn().mockReturnThis(),
-        values: jest.fn().mockReturnThis(),
-        orIgnore: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue(executeResult),
-      };
+      expect(manager.query).toHaveBeenCalledWith(expect.stringContaining('pg_advisory_xact_lock'), ['agent-concurrency:agent-actor-id']);
+      expect(readinessCandidateRepository.countSlotsTakenForAgent).toHaveBeenCalledWith(manager, 'ws-1', 'agent-actor-id', 'task-1');
+      expect(insert.values).toHaveBeenCalledWith({ workspaceId: 'ws-1', taskId: 'task-1' });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(TaskExecutionQueuedEvent.INTERNAL, expect.objectContaining({ taskId: 'task-1' }));
+    });
 
-      queueRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder as any,
-      );
+    it('takes the task out of the queue when every slot is taken', async () => {
+      agentsService.getActiveAgentsByActorIds.mockResolvedValue([agent(1)]);
+      readinessCandidateRepository.countSlotsTakenForAgent.mockResolvedValue(1);
 
-      // Call the private method through reflection
-      await (service as any).upsertQueueEntry(taskId);
+      await (service as any).reconcileTask(task);
 
-      // Verify the event was NOT emitted
+      expect(insert.execute).not.toHaveBeenCalled();
+      expect(manager.delete).toHaveBeenCalledWith(TaskExecutionQueueEntity, { taskId: 'task-1' });
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
-    it('should handle missing raw result gracefully', async () => {
-      const taskId = 'test-task-id';
+    it('needs no lock or count for an agent without a limit', async () => {
+      agentsService.getActiveAgentsByActorIds.mockResolvedValue([agent(null)]);
 
-      // Mock the query builder chain with no raw result
-      const executeResult = {
-        identifiers: [],
-      };
+      await (service as any).reconcileTask(task);
 
-      const mockQueryBuilder = {
-        insert: jest.fn().mockReturnThis(),
-        into: jest.fn().mockReturnThis(),
-        values: jest.fn().mockReturnThis(),
-        orIgnore: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue(executeResult),
-      };
-
-      queueRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder as any,
-      );
-
-      // Call the private method through reflection
-      await (service as any).upsertQueueEntry(taskId);
-
-      // Verify the event was NOT emitted
-      expect(eventEmitter.emit).not.toHaveBeenCalled();
+      expect(manager.query).not.toHaveBeenCalled();
+      expect(insert.execute).toHaveBeenCalled();
     });
   });
 
-  describe('shouldQueueTask - Delay Retry Logic', () => {
+  describe('eligibleAgent - Delay Retry Logic', () => {
     const createMockTask = (overrides: Partial<TaskEntity> = {}): TaskEntity => {
       return {
         id: 'test-task-id',
         name: 'Test Task',
         status: TaskStatus.NOT_STARTED,
+        workspaceId: 'ws-1',
         assigneeActorId: 'agent-actor-id',
         tags: [],
         ...overrides,
@@ -195,9 +165,6 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       agentsService.getActiveAgentsByActorIds.mockResolvedValue([
         createMockAgent(),
       ]);
-      readinessCandidateRepository.countActiveExecutionsForAgent.mockResolvedValue(
-        0,
-      );
       taskExecutionHistoryService.getLatestHistoryForTask.mockResolvedValue(
         null,
       );
@@ -218,12 +185,12 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           transitionedAt: cancelledAt,
         } as any);
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(false);
         expect(
           taskExecutionHistoryService.getLatestHistoryForTask,
-        ).toHaveBeenCalledWith(task.id);
+        ).toHaveBeenCalledWith(task.workspaceId, task.id);
       });
 
       it('should queue task when cancelled 10 minutes ago or more', async () => {
@@ -237,7 +204,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           transitionedAt: cancelledAt,
         } as any);
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -253,7 +220,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           transitionedAt: cancelledAt,
         } as any);
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -274,12 +241,12 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           1,
         );
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(false);
         expect(
           taskExecutionHistoryService.countConsecutiveQuotaErrors,
-        ).toHaveBeenCalledWith(task.id);
+        ).toHaveBeenCalledWith(task.workspaceId, task.id);
       });
 
       it('should queue task with 1 quota error 10 minutes ago or more', async () => {
@@ -296,7 +263,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           1,
         );
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -315,7 +282,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           3,
         ); // 3 * 10 = 30 minutes
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(false);
       });
@@ -334,7 +301,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           3,
         );
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -353,7 +320,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           10,
         ); // 10 * 10 = 100 minutes, capped at 60
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         // Should not queue because 50 minutes < 60 minutes (max cap)
         expect(result).toBe(false);
@@ -373,7 +340,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           10,
         ); // Would be 100 minutes but capped at 60
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -387,7 +354,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           null,
         );
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -403,7 +370,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           transitionedAt: successAt,
         } as any);
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });
@@ -419,7 +386,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
           transitionedAt: failedAt,
         } as any);
 
-        const result = await (service as any).shouldQueueTask(task);
+        const result = (await (service as any).eligibleAgent(task)) !== null;
 
         expect(result).toBe(true);
       });

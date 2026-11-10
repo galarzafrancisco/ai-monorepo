@@ -81,6 +81,7 @@ import { RefreshTokenWorkspace1764100000000 } from './migrations/1764100000000-R
 import { WorkspaceMembersBackfilled1764100000001 } from './migrations/1764100000001-WorkspaceMembersBackfilled';
 import { AuthJourneyWorkspace1764200000000 } from './migrations/1764200000000-AuthJourneyWorkspace';
 import { WorkspaceInvitations1764300000000 } from './migrations/1764300000000-WorkspaceInvitations';
+import { WorkerLastHeartbeat1764400000000 } from './migrations/1764400000000-WorkerLastHeartbeat';
 import { McpAuthFlowRequestedWorkspace1764300000000 } from './migrations/1764300000000-McpAuthFlowRequestedWorkspace';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
@@ -147,6 +148,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
         AuthJourneyWorkspace1764200000000,
         WorkspaceInvitations1764300000000,
         McpAuthFlowRequestedWorkspace1764300000000,
+        WorkerLastHeartbeat1764400000000,
       ],
     }),
     EventEmitterModule.forRoot(),

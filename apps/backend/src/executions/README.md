@@ -1,5 +1,5 @@
 # Sources
-We react to task events (reconcile just that task) or cron events (reconcile all tasks every X minutes).
+We react to task events (reconcile just that task), execution changes (reconcile all tasks, so a freed slot is used at once) and a cron sweep (all tasks, every minute). See ARCHITECTURE.md.
 
 # What to reconcile
 
@@ -20,7 +20,7 @@ all_tasks:
 - fetch all agents
 - for each task:
   - agent = agents[task.assignee]     # could be null if assigned to a human, in which case, stop
-  - agent.concurrency > count of active executions for this agent
+  - agent.concurrency > count of active executions + queued tasks for this agent (also enforced at claim time)
   - task.status in agent.status_triggers
   - at least one of task.tags in agent.tag_triggers
 ```

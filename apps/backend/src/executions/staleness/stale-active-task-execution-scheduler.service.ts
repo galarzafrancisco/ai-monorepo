@@ -3,7 +3,8 @@ import { Cron } from '@nestjs/schedule';
 import { StaleActiveTaskExecutionDetectorService } from './stale-active-task-execution-detector.service';
 import { StaleActiveTaskExecutionPrunerService } from './stale-active-task-execution-pruner.service';
 
-const DEFAULT_STALE_SCAN_CRON = '*/5 * * * *';
+// Every minute, so a worker that stopped is released within ~3 minutes.
+const DEFAULT_STALE_SCAN_CRON = '* * * * *';
 const STALE_SCAN_CRON_EXPRESSION =
   process.env.EXECUTIONS_STALENESS_SCAN_CRON?.trim() ||
   DEFAULT_STALE_SCAN_CRON;

@@ -37,6 +37,10 @@ export class WorkerEntity {
   @Column({ type: 'timestamptz', name: 'last_seen_at' })
   lastSeenAt!: Date;
 
+  /** The last worker heartbeat. Null for workers that never sent one (older workers). */
+  @Column({ type: 'timestamptz', name: 'last_heartbeat_at', nullable: true })
+  lastHeartbeatAt!: Date | null;
+
   @Column({ type: 'text', name: 'worker_version', nullable: true })
   workerVersion!: string | null;
 

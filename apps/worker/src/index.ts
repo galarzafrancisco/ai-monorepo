@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_WORKER_WORKSPACES_PATH } from './auth/credentials-store.js';
 import { startWorkerApp } from './worker-app.js';
+import { installFetchProxy } from './helpers/proxy.js';
 
 const WORKSPACE_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
@@ -12,6 +13,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = join(__filename, '..');
 
 async function main(): Promise<void> {
+  // Behind a proxy, Node's fetch ignores HTTPS_PROXY unless told otherwise.
+  if (installFetchProxy()) {
+    console.log('[worker] Using the proxy from HTTPS_PROXY (NO_PROXY honoured).');
+  }
   const args = process.argv.slice(2);
   const help = args.includes('--help') || args.includes('-h');
 

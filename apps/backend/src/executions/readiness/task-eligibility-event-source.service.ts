@@ -8,6 +8,7 @@ import {
   TaskUpdatedEvent,
 } from '../../tasks/events/tasks.events';
 import { TaskExecutionQueuePopulatorService } from './task-execution-queue-populator.service';
+import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
 
 @Injectable()
 export class TaskEligibilityEventSourceService {
@@ -42,6 +43,35 @@ export class TaskEligibilityEventSourceService {
     event: InputRequestAnsweredEvent,
   ): Promise<void> {
     await this.reconcileTask(event.payload.taskId, 'input_request_answered');
+  }
+
+  /**
+   * An execution started or ended (claim, stop, unclaim, prune), so an
+   * agent's slot may be free: re-check waiting tasks now instead of at the
+   * next minute's sweep. Bursts are coalesced into one run, and runs never
+   * overlap.
+   */
+  @OnEvent(ActiveExecutionsChangedEvent.INTERNAL)
+  onActiveExecutionsChanged(): void {
+    if (this.sweepPending) return;
+    this.sweepPending = true;
+    setTimeout(() => void this.sweepAfterExecutionChange(), 250);
+  }
+
+  private sweepPending = false;
+  private sweepRunning: Promise<void> = Promise.resolve();
+
+  private async sweepAfterExecutionChange(): Promise<void> {
+    this.sweepPending = false;
+    this.sweepRunning = this.sweepRunning
+      .then(() => this.taskExecutionQueuePopulatorService.populateAllTasks())
+      .catch((error: unknown) =>
+        this.logger.error({
+          message: 'Queue re-check after an execution change failed',
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    await this.sweepRunning;
   }
 
   private async reconcileTask(taskId: string, trigger: string): Promise<void> {

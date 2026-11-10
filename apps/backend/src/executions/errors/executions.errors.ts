@@ -17,6 +17,16 @@ export class TaskAlreadyClaimedError extends ExecutionsError {
   }
 }
 
+/** The agent already runs as many executions as its concurrency limit allows. */
+export class AgentConcurrencyLimitReachedError extends ExecutionsError {
+  constructor(agentActorId: string, limit: number) {
+    super('The agent is already running as many tasks as its concurrency limit allows.', {
+      agentActorId,
+      limit,
+    });
+  }
+}
+
 export class ActiveTaskExecutionNotFoundError extends ExecutionsError {
   constructor(executionId: string) {
     super('Active execution was not found.', { executionId });
