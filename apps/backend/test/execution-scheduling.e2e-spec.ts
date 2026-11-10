@@ -41,6 +41,7 @@ describe('Execution scheduling (e2e)', () => {
   let cookies: string;
   let db: DataSource;
   let actorId: string;
+  let workerBearer: string;
   const WORKER = `sched-worker-${randomUUID().slice(0, 8)}`;
   /** A worker that never sends worker heartbeats (an older worker). */
   const OLD_WORKER = `sched-old-worker-${randomUUID().slice(0, 8)}`;
@@ -110,10 +111,10 @@ describe('Execution scheduling (e2e)', () => {
     return app.get(TokenSignerService).signToken(claims);
   }
 
-  const claimOverHttp = async (taskId: string) =>
+  const claimOverHttp = (taskId: string) =>
     request(app.getHttpServer())
       .post(`/api/v1/executions/queue/${taskId}/claim`)
-      .set('Authorization', `Bearer ${await workerToken(WORKER)}`);
+      .set('Authorization', `Bearer ${workerBearer}`);
 
   const setStatus = (taskId: string, status: TaskStatus) =>
     db.query('UPDATE tasks SET status = $1 WHERE id = $2', [status, taskId]);
@@ -145,6 +146,7 @@ describe('Execution scheduling (e2e)', () => {
         tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
       });
     }
+    workerBearer = await workerToken(WORKER);
   }, 60000);
 
   afterAll(async () => {
