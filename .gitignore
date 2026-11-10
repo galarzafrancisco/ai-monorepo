@@ -174,3 +174,6 @@ ENV/
 .ruff_cache/
 *.pyc
 uv.lock
+
+# Agent eval run records (full per-sample results)
+apps/backend/evals/.results/
