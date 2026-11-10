@@ -1,11 +1,16 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
-import { randomUUID } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
+import { ErrorCodes } from '@taico/errors';
 import { AgentsService } from '../src/agents/agents.service';
+import { AccessTokenClaims } from '../src/auth/core/types/access-token-claims.type';
+import { TokenSignerService } from '../src/auth/crypto/token-signer.service';
+import { getConfig } from '../src/config/env.config';
+import { ActorType } from '../src/identity-provider/enums';
 import { AppModule } from '../src/app.module';
 import { RegisteredClientEntity } from '../src/authorization-server/entities/registered-client.entity';
 import { TokenEndpointAuthMethod } from '../src/authorization-server/enums/token-endpoint-auth-method.enum';
@@ -20,9 +25,10 @@ import { WorkersScopes } from '../src/executions/workers.scopes';
 import { AppValidationPipe } from '../src/http/app-validation.pipe';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { TaskStatus } from '../src/tasks/enums/task-status.enum';
+import { TasksScopes } from '../src/tasks/tasks.scopes';
 import { WorkersService } from '../src/workers/workers.service';
 import { DEFAULT_WORKSPACE_ID } from '../src/workspaces/workspaces.constants';
-import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import { ensureTestUser, getAuthCookies, TEST_USER_SLUG } from './helpers/auth.helper';
 
 /**
  * Regressions for the scheduling bugs found running real tasks through a
@@ -34,6 +40,7 @@ describe('Execution scheduling (e2e)', () => {
   let app: INestApplication<App>;
   let cookies: string;
   let db: DataSource;
+  let actorId: string;
   const WORKER = `sched-worker-${randomUUID().slice(0, 8)}`;
   /** A worker that never sends worker heartbeats (an older worker). */
   const OLD_WORKER = `sched-old-worker-${randomUUID().slice(0, 8)}`;
@@ -80,6 +87,34 @@ describe('Execution scheduling (e2e)', () => {
     return value;
   }
 
+  /** A worker access token, as the worker sends on its HTTP calls. */
+  async function workerToken(clientId: string): Promise<string> {
+    const config = getConfig();
+    const now = Math.floor(Date.now() / 1000);
+    const claims: AccessTokenClaims = {
+      iss: config.issuerUrl,
+      sub: actorId,
+      workspace_id: ws,
+      actor_id: actorId,
+      actor_slug: TEST_USER_SLUG,
+      actor_type: ActorType.HUMAN,
+      aud: config.issuerUrl,
+      exp: now + 1800,
+      iat: now,
+      jti: randomBytes(16).toString('hex'),
+      client_id: clientId,
+      scope: [TasksScopes.READ.id, WorkersScopes.CONNECT.id],
+      resource: config.issuerUrl,
+      version: '0.0.0',
+    };
+    return app.get(TokenSignerService).signToken(claims);
+  }
+
+  const claimOverHttp = async (taskId: string) =>
+    request(app.getHttpServer())
+      .post(`/api/v1/executions/queue/${taskId}/claim`)
+      .set('Authorization', `Bearer ${await workerToken(WORKER)}`);
+
   const setStatus = (taskId: string, status: TaskStatus) =>
     db.query('UPDATE tasks SET status = $1 WHERE id = $2', [status, taskId]);
 
@@ -98,7 +133,7 @@ describe('Execution scheduling (e2e)', () => {
     app.setGlobalPrefix('api/v1');
     await app.init();
     db = app.get(DataSource);
-    await ensureTestUser(app);
+    actorId = await ensureTestUser(app);
     cookies = await getAuthCookies(app.getHttpServer());
     for (const clientId of [WORKER, OLD_WORKER]) {
       await db.getRepository(RegisteredClientEntity).save({
@@ -229,6 +264,50 @@ describe('Execution scheduling (e2e)', () => {
         .rejects.toBeInstanceOf(AgentConcurrencyLimitReachedError);
       // Nothing started for it; it waits for the slot (see the last test).
       expect(await executions().countBy({ taskId: second })).toBe(0);
+    });
+
+    it('answer a claim over the limit with 409 AGENT_CONCURRENCY_LIMIT_REACHED', async () => {
+      const a = await agent(1);
+      const first = await task(a);
+      const second = await task(a);
+      await queue().upsert([{ workspaceId: ws, taskId: first }, { workspaceId: ws, taskId: second }], ['taskId']);
+      await claimOverHttp(first).expect(201);
+
+      const res = await claimOverHttp(second).expect(409);
+      expect(res.body).toMatchObject({
+        status: 409,
+        code: ErrorCodes.AGENT_CONCURRENCY_LIMIT_REACHED,
+        title: 'Agent concurrency limit reached',
+        context: { agentActorId: a, limit: 1 },
+      });
+    });
+  });
+
+  describe('claim errors over HTTP', () => {
+    it('answer a second claim of the same task with 409 TASK_EXECUTION_ALREADY_CLAIMED', async () => {
+      const a = await agent();
+      const t = await task(a);
+      await queue().upsert([{ workspaceId: ws, taskId: t }], ['taskId']);
+      await claimOverHttp(t).expect(201);
+
+      const res = await claimOverHttp(t).expect(409);
+      expect(res.body).toMatchObject({ status: 409, code: ErrorCodes.TASK_EXECUTION_ALREADY_CLAIMED });
+    });
+
+    it('answer a claim of a task that is not queued with 404 TASK_EXECUTION_QUEUE_ENTRY_NOT_FOUND', async () => {
+      const a = await agent();
+      const t = await task(a);
+      // Let the populator queue it first, so it can't re-add it after the delete.
+      await eventually(() => queue().countBy({ taskId: t }), (n) => n === 1);
+      await db.query('DELETE FROM task_execution_queue WHERE task_id = $1', [t]);
+
+      const res = await claimOverHttp(t).expect(404);
+      expect(res.body).toMatchObject({ status: 404, code: ErrorCodes.TASK_EXECUTION_QUEUE_ENTRY_NOT_FOUND });
+    });
+
+    it('answer a claim of an unknown task with 404 TASK_NOT_FOUND', async () => {
+      const res = await claimOverHttp(randomUUID()).expect(404);
+      expect(res.body).toMatchObject({ status: 404, code: ErrorCodes.TASK_NOT_FOUND });
     });
   });
 

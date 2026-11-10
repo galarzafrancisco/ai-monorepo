@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Query,
@@ -18,7 +17,6 @@ import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from '../../tasks/tasks.scopes';
 import { ExecutionTracesService } from './execution-traces.service';
-import { ExecutionTraceNotFoundError } from './execution-traces.errors';
 import { ListExecutionTracesQueryDto } from './dto/http/list-execution-traces-query.dto';
 import {
   ExecutionTraceResponseDto,
@@ -46,24 +44,18 @@ export class ExecutionTracesController {
     @Query() query: ListExecutionTracesQueryDto,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<ExecutionTracesResponseDto> {
-    try {
-      const result = await this.traces.list(
-        workspaceId,
-        executionId,
-        query.afterSequence,
-        query.limit,
-        { latest: query.latest, beforeSequence: query.beforeSequence },
-      );
-      return {
-        items: result.items.map(ExecutionTraceResponseDto.fromEntity),
-        lifecycle: result.lifecycle.map(ExecutionTraceResponseDto.fromEntity),
-        nextAfterSequence: result.nextAfterSequence,
-        hasMoreBefore: result.hasMoreBefore,
-      };
-    } catch (error) {
-      if (error instanceof ExecutionTraceNotFoundError)
-        throw new NotFoundException(error.message);
-      throw error;
-    }
+    const result = await this.traces.list(
+      workspaceId,
+      executionId,
+      query.afterSequence,
+      query.limit,
+      { latest: query.latest, beforeSequence: query.beforeSequence },
+    );
+    return {
+      items: result.items.map(ExecutionTraceResponseDto.fromEntity),
+      lifecycle: result.lifecycle.map(ExecutionTraceResponseDto.fromEntity),
+      nextAfterSequence: result.nextAfterSequence,
+      hasMoreBefore: result.hasMoreBefore,
+    };
   }
 }

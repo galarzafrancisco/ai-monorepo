@@ -141,6 +141,42 @@ export const ErrorCatalog: Record<
     type: '/errors/executions/not-found',
     retryable: false,
   },
+  [ErrorCodes.TASK_EXECUTION_ALREADY_CLAIMED]: {
+    status: 409,
+    title: 'Task already claimed',
+    type: '/errors/executions/already-claimed',
+    retryable: false,
+  },
+  [ErrorCodes.TASK_EXECUTION_QUEUE_ENTRY_NOT_FOUND]: {
+    status: 404,
+    title: 'Task not in execution queue',
+    type: '/errors/executions/queue-entry-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.TASK_EXECUTION_WORKER_MISMATCH]: {
+    status: 403,
+    title: 'Execution claimed by another worker',
+    type: '/errors/executions/worker-mismatch',
+    retryable: false,
+  },
+  [ErrorCodes.AGENT_CONCURRENCY_LIMIT_REACHED]: {
+    status: 409,
+    title: 'Agent concurrency limit reached',
+    type: '/errors/executions/agent-concurrency-limit-reached',
+    retryable: true,
+  },
+  [ErrorCodes.EXECUTION_STATS_NOT_FOUND]: {
+    status: 404,
+    title: 'Execution stats not found',
+    type: '/errors/executions/stats-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.INVALID_EXECUTION_TRACE]: {
+    status: 400,
+    title: 'Invalid execution trace',
+    type: '/errors/executions/invalid-trace',
+    retryable: false,
+  },
   [ErrorCodes.CLIENT_ALREADY_REGISTERED]: {
     status: 409,
     title: 'Client already registered',

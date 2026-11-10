@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Query,
@@ -14,7 +13,6 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { TaskExecutionHistoryEntryNotFoundError } from '../errors/executions.errors';
 import { AccessTokenGuard } from '../../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
@@ -77,14 +75,8 @@ export class TaskExecutionHistoryController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<TaskExecutionHistoryResponseDto> {
-    try {
-      return TaskExecutionHistoryResponseDto.fromResult(
-        await this.taskExecutionHistoryService.getHistoryEntry(workspaceId, id),
-      );
-    } catch (error) {
-      if (error instanceof TaskExecutionHistoryEntryNotFoundError)
-        throw new NotFoundException(error.message);
-      throw error;
-    }
+    return TaskExecutionHistoryResponseDto.fromResult(
+      await this.taskExecutionHistoryService.getHistoryEntry(workspaceId, id),
+    );
   }
 }

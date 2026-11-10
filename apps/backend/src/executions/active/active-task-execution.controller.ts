@@ -1,10 +1,8 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -26,11 +24,6 @@ import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decor
 import type { AuthContext } from '../../auth/guards/context/auth-context.types';
 import { TasksScopes } from '../../tasks/tasks.scopes';
 import { WorkersScopes } from '../workers.scopes';
-import {
-  ActiveTaskExecutionNotFoundError,
-  ActiveTaskExecutionWorkerMismatchError,
-  ExecutionStatsNotFoundError,
-} from '../errors/executions.errors';
 import { ActiveTaskExecutionService } from './active-task-execution.service';
 import { ActiveTaskExecutionResponseDto } from './dto/http/active-task-execution-response.dto';
 import { ActiveTaskExecutionListResponseDto } from './dto/http/active-task-execution-list-response.dto';
@@ -100,26 +93,14 @@ export class ActiveTaskExecutionController {
     @Body() dto: StopActiveTaskExecutionDto,
     @CurrentAuth() auth: AuthContext,
   ): Promise<TaskExecutionHistoryResponseDto> {
-    try {
-      const historyEntry = await this.activeTaskExecutionService.stopTask(workerCaller(auth), {
-        executionId,
-        status: dto.status,
-        errorCode: dto.errorCode,
-        errorMessage: dto.errorMessage,
-      });
+    const historyEntry = await this.activeTaskExecutionService.stopTask(workerCaller(auth), {
+      executionId,
+      status: dto.status,
+      errorCode: dto.errorCode,
+      errorMessage: dto.errorMessage,
+    });
 
-      return TaskExecutionHistoryResponseDto.fromResult(historyEntry);
-    } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
-        throw new ForbiddenException(error.message);
-      }
-
-      throw error;
-    }
+    return TaskExecutionHistoryResponseDto.fromResult(historyEntry);
   }
 
   @WorkspaceAccess('worker')
@@ -136,19 +117,7 @@ export class ActiveTaskExecutionController {
     @Param('executionId') executionId: string,
     @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
-    try {
-      await this.activeTaskExecutionService.unclaimTask(workerCaller(auth), { executionId });
-    } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
-        throw new ForbiddenException(error.message);
-      }
-
-      throw error;
-    }
+    await this.activeTaskExecutionService.unclaimTask(workerCaller(auth), { executionId });
   }
 
   @WorkspaceAccess('worker')
@@ -166,35 +135,25 @@ export class ActiveTaskExecutionController {
     @Param('executionId') executionId: string,
     @CurrentAuth() auth: AuthContext,
   ): Promise<WorkerGithubCredentialsResponseDto> {
-    try {
-      const caller = workerCaller(auth);
-      const taskId = await this.activeTaskExecutionService.getTaskIdForWorker(caller, executionId);
-      // The execution was found in the caller's workspace, so its task is there too.
-      const credentials = await this.workerGithubCredentials.issueForTask(caller.workspaceId, taskId, {
-        executionId,
-        workerClientId: caller.workerClientId,
-      });
-      return {
-        credentials: credentials.map((credential) => ({
-          projectSlug: credential.projectSlug,
-          cloneUrl: credential.cloneUrl,
-          host: credential.host,
-          owner: credential.owner,
-          repo: credential.repo,
-          token: credential.token,
-          expiresAt: credential.expiresAt?.toISOString() ?? null,
-          authType: credential.authType,
-        })),
-      };
-    } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
-        throw new ForbiddenException(error.message);
-      }
-      throw error;
-    }
+    const caller = workerCaller(auth);
+    const taskId = await this.activeTaskExecutionService.getTaskIdForWorker(caller, executionId);
+    // The execution was found in the caller's workspace, so its task is there too.
+    const credentials = await this.workerGithubCredentials.issueForTask(caller.workspaceId, taskId, {
+      executionId,
+      workerClientId: caller.workerClientId,
+    });
+    return {
+      credentials: credentials.map((credential) => ({
+        projectSlug: credential.projectSlug,
+        cloneUrl: credential.cloneUrl,
+        host: credential.host,
+        owner: credential.owner,
+        repo: credential.repo,
+        token: credential.token,
+        expiresAt: credential.expiresAt?.toISOString() ?? null,
+        authType: credential.authType,
+      })),
+    };
   }
 
   @WorkspaceAccess('worker')
@@ -212,22 +171,10 @@ export class ActiveTaskExecutionController {
     @Body() dto: UpdateRunnerSessionIdDto,
     @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
-    try {
-      await this.activeTaskExecutionService.updateRunnerSessionId(workerCaller(auth), {
-        executionId,
-        runnerSessionId: dto.sessionId,
-      });
-    } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
-        throw new ForbiddenException(error.message);
-      }
-
-      throw error;
-    }
+    await this.activeTaskExecutionService.updateRunnerSessionId(workerCaller(auth), {
+      executionId,
+      runnerSessionId: dto.sessionId,
+    });
   }
 
   @WorkspaceAccess('worker')
@@ -244,21 +191,9 @@ export class ActiveTaskExecutionController {
     @Param('executionId') executionId: string,
     @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
-    try {
-      await this.activeTaskExecutionService.incrementToolCallCount(workerCaller(auth), {
-        executionId,
-      });
-    } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
-        throw new ForbiddenException(error.message);
-      }
-
-      throw error;
-    }
+    await this.activeTaskExecutionService.incrementToolCallCount(workerCaller(auth), {
+      executionId,
+    });
   }
 
   @WorkspaceAccess('worker')
@@ -276,28 +211,16 @@ export class ActiveTaskExecutionController {
     @Body() dto: UpdateExecutionStatsDto,
     @CurrentAuth() auth: AuthContext,
   ): Promise<void> {
-    try {
-      await this.activeTaskExecutionService.updateExecutionStats(workerCaller(auth), {
-        executionId,
-        harness: dto.harness,
-        providerId: dto.providerId,
-        modelId: dto.modelId,
-        workerVersion: dto.workerVersion,
-        inputTokens: dto.inputTokens,
-        outputTokens: dto.outputTokens,
-        totalTokens: dto.totalTokens,
-      });
-    } catch (error) {
-      if (error instanceof ExecutionStatsNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
-        throw new ForbiddenException(error.message);
-      }
-
-      throw error;
-    }
+    await this.activeTaskExecutionService.updateExecutionStats(workerCaller(auth), {
+      executionId,
+      harness: dto.harness,
+      providerId: dto.providerId,
+      modelId: dto.modelId,
+      workerVersion: dto.workerVersion,
+      inputTokens: dto.inputTokens,
+      outputTokens: dto.outputTokens,
+      totalTokens: dto.totalTokens,
+    });
   }
 
   @Post(':executionId/interrupt')
@@ -314,18 +237,10 @@ export class ActiveTaskExecutionController {
     @CurrentAuth() auth: AuthContext,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<void> {
-    try {
-      await this.activeTaskExecutionService.interruptExecution(
-        workspaceId,
-        { executionId },
-        auth.subject,
-      );
-    } catch (error) {
-      if (error instanceof ActiveTaskExecutionNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      throw error;
-    }
+    await this.activeTaskExecutionService.interruptExecution(
+      workspaceId,
+      { executionId },
+      auth.subject,
+    );
   }
 }

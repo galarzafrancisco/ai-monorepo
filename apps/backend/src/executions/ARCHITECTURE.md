@@ -167,7 +167,7 @@ The current queue population logic uses these rules:
 Queueing and claiming both take a slot, so both hold the agent's transaction-scoped advisory lock (`agent-concurrency:<actorId>`, `lockAgentSlots`) while they count and write:
 
 - **Queueing** (`TaskExecutionQueuePopulatorService`) counts running plus queued and inserts the queue entry in one transaction. Without the lock, two of the agent's tasks reconciled at once (two task events) could both see the last free slot and both be queued.
-- **Claiming** (`ActiveTaskExecutionService.claimTask`) counts what the agent already runs and refuses at the limit with `AgentConcurrencyLimitReachedError` (409). The refusal rolls back, so nothing is claimed. This guards entries queued before the limit was lowered, or by hand.
+- **Claiming** (`ActiveTaskExecutionService.claimTask`) counts what the agent already runs and refuses at the limit with `AgentConcurrencyLimitReachedError` (409, code `AGENT_CONCURRENCY_LIMIT_REACHED`). The refusal rolls back, so nothing is claimed. This guards entries queued before the limit was lowered, or by hand.
 
 ## When the queue is re-checked
 

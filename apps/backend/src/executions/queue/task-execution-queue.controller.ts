@@ -1,8 +1,6 @@
 import {
-  ConflictException,
   Controller,
   Get,
-  NotFoundException,
   Param,
   Post,
   Query,
@@ -10,7 +8,9 @@ import {
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -23,15 +23,9 @@ import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
 import type { AuthContext } from '../../auth/guards/context/auth-context.types';
 import { TasksScopes } from '../../tasks/tasks.scopes';
-import { TaskNotFoundError } from '../../tasks/errors/tasks.errors';
 import { WorkersScopes } from '../workers.scopes';
 import { ActiveTaskExecutionResponseDto } from '../active/dto/http/active-task-execution-response.dto';
 import { ActiveTaskExecutionService } from '../active/active-task-execution.service';
-import {
-  TaskAlreadyClaimedError,
-  AgentConcurrencyLimitReachedError,
-  TaskExecutionQueueEntryNotFoundError,
-} from '../errors/executions.errors';
 import { TaskExecutionQueueService } from './task-execution-queue.service';
 import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-queue-entry-response.dto';
 import { TaskExecutionQueueListResponseDto } from './dto/http/task-execution-queue-list-response.dto';
@@ -86,33 +80,24 @@ export class TaskExecutionQueueController {
   })
   @ApiParam({ name: 'taskId', description: 'Task ID to claim' })
   @ApiCreatedResponse({ type: ActiveTaskExecutionResponseDto })
+  @ApiNotFoundResponse({
+    description: 'Task not found (TASK_NOT_FOUND) or not in the queue (TASK_EXECUTION_QUEUE_ENTRY_NOT_FOUND)',
+  })
+  @ApiConflictResponse({
+    description:
+      'Task already has an active execution (TASK_EXECUTION_ALREADY_CLAIMED) or its agent is at its concurrency limit (AGENT_CONCURRENCY_LIMIT_REACHED)',
+  })
   async claimTask(
     @Param('taskId') taskId: string,
     @CurrentAuth() auth: AuthContext,
     @CurrentWorkspace() workspaceId: string,
   ): Promise<ActiveTaskExecutionResponseDto> {
-    try {
-      const execution = await this.activeTaskExecutionService.claimTask(workspaceId, {
-        taskId,
-        workerClientId: auth.claims.client_id,
-      });
+    const execution = await this.activeTaskExecutionService.claimTask(workspaceId, {
+      taskId,
+      workerClientId: auth.claims.client_id,
+    });
 
-      return ActiveTaskExecutionResponseDto.fromResult(execution);
-    } catch (error) {
-      if (error instanceof TaskNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof TaskExecutionQueueEntryNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof TaskAlreadyClaimedError || error instanceof AgentConcurrencyLimitReachedError) {
-        throw new ConflictException(error.message);
-      }
-
-      throw error;
-    }
+    return ActiveTaskExecutionResponseDto.fromResult(execution);
   }
 
   private mapQueueEntryToResponse(
