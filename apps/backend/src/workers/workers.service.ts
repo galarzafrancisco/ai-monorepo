@@ -40,11 +40,13 @@ export class WorkersService {
   ): Promise<WorkerEntity> {
     // Upsert only supplied fields: a heartbeat must never write back a stale
     // capability report read before another socket message updated it.
+    const seenAt = input.seenAt ?? new Date();
     await this.workersRepository.upsert(
       {
         workspaceId,
         oauthClientId: input.oauthClientId,
-        lastSeenAt: input.seenAt ?? new Date(),
+        lastSeenAt: seenAt,
+        ...(input.heartbeat && { lastHeartbeatAt: seenAt }),
         ...(input.workerVersion !== undefined && {
           workerVersion: normalizeWorkerVersion(input.workerVersion),
         }),

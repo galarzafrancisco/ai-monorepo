@@ -35,6 +35,8 @@ describe('Execution scheduling (e2e)', () => {
   let cookies: string;
   let db: DataSource;
   const WORKER = `sched-worker-${randomUUID().slice(0, 8)}`;
+  /** A worker that never sends worker heartbeats (an older worker). */
+  const OLD_WORKER = `sched-old-worker-${randomUUID().slice(0, 8)}`;
   const ws = DEFAULT_WORKSPACE_ID;
 
   const claims = () => app.get(ActiveTaskExecutionService);
@@ -81,6 +83,12 @@ describe('Execution scheduling (e2e)', () => {
   const setStatus = (taskId: string, status: TaskStatus) =>
     db.query('UPDATE tasks SET status = $1 WHERE id = $2', [status, taskId]);
 
+  /** Backdates an execution past the 10-minute rule, so the pruner takes it. */
+  const makeStale = (executionId: string) =>
+    executions().update({ id: executionId }, {
+      claimedAt: new Date(Date.now() - 11 * 60_000), lastHeartbeatAt: new Date(Date.now() - 11 * 60_000),
+    });
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleFixture.createNestApplication();
@@ -92,14 +100,16 @@ describe('Execution scheduling (e2e)', () => {
     db = app.get(DataSource);
     await ensureTestUser(app);
     cookies = await getAuthCookies(app.getHttpServer());
-    await db.getRepository(RegisteredClientEntity).save({
-      clientId: WORKER,
-      clientName: WORKER,
-      redirectUris: ['http://127.0.0.1/callback'],
-      grantTypes: [],
-      scopes: [WorkersScopes.CONNECT.id],
-      tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
-    });
+    for (const clientId of [WORKER, OLD_WORKER]) {
+      await db.getRepository(RegisteredClientEntity).save({
+        clientId,
+        clientName: clientId,
+        redirectUris: ['http://127.0.0.1/callback'],
+        grantTypes: [],
+        scopes: [WorkersScopes.CONNECT.id],
+        tokenEndpointAuthMethod: TokenEndpointAuthMethod.NONE,
+      });
+    }
   }, 60000);
 
   afterAll(async () => {
@@ -117,6 +127,8 @@ describe('Execution scheduling (e2e)', () => {
       await setStatus(finished, TaskStatus.DONE);
       await setStatus(unfinished, TaskStatus.IN_PROGRESS);
 
+      await makeStale(e1.id);
+      await makeStale(e2.id);
       const pruner = app.get(StaleActiveTaskExecutionPrunerService);
       expect(await pruner.pruneExecutionById(e1.id)).toBe(true);
       expect(await pruner.pruneExecutionById(e2.id)).toBe(true);
@@ -129,27 +141,59 @@ describe('Execution scheduling (e2e)', () => {
       expect(history.map((h: { status: string }) => h.status)).toEqual(['STALE', 'STALE']);
     });
 
-    it("count a stopped worker's executions as stale after 2 minutes, but not an old worker's", async () => {
+    it("count a stopped worker's executions as stale 2 minutes after the claim, even if it died right after claiming", async () => {
       const a = await agent();
       const t = await task(a);
       await eventually(() => queuedFor(a), (n) => n === 1);
       const execution = await claims().claimTask(ws, { taskId: t, workerClientId: WORKER });
       const now = Date.now();
-      // Claimed 5 min ago; the agent was last heard from 3 min ago (under the
-      // 10-min rule); the worker heartbeated after the claim, then went quiet.
-      await executions().update({ id: execution.id }, {
-        claimedAt: new Date(now - 5 * 60_000), lastHeartbeatAt: new Date(now - 3 * 60_000),
-      });
+      // The worker heartbeated 3s before claiming, 3 minutes ago, and was
+      // never heard from again: no heartbeat after the claim.
+      await executions().update({ id: execution.id }, { claimedAt: new Date(now - 3 * 60_000), lastHeartbeatAt: null });
       const workers = app.get(WorkersService);
-      await workers.recordWorkerSeen(ws, { oauthClientId: WORKER, seenAt: new Date(now - 3 * 60_000) });
+      await workers.recordWorkerSeen(ws, { oauthClientId: WORKER, seenAt: new Date(now - 3 * 60_000 - 3000), heartbeat: true });
       const detector = app.get(StaleActiveTaskExecutionDetectorService);
       expect((await detector.findStaleExecutions()).map((e) => e.id)).toContain(execution.id);
 
-      // A worker last seen before the claim never heartbeated during it (an
-      // old worker): only the 10-min rule applies.
-      await workers.recordWorkerSeen(ws, { oauthClientId: WORKER, seenAt: new Date(now - 6 * 60_000) });
+      // Not yet 2 minutes since the claim: still running.
+      await executions().update({ id: execution.id }, { claimedAt: new Date(now - 60_000) });
       expect((await detector.findStaleExecutions()).map((e) => e.id)).not.toContain(execution.id);
+      await makeStale(execution.id);
       await app.get(StaleActiveTaskExecutionPrunerService).pruneExecutionById(execution.id);
+    });
+
+    it("keep only the 10-minute rule for a worker that never sends worker heartbeats", async () => {
+      const a = await agent();
+      const t = await task(a);
+      await eventually(() => queuedFor(a), (n) => n === 1);
+      const execution = await claims().claimTask(ws, { taskId: t, workerClientId: OLD_WORKER });
+      const now = Date.now();
+      await executions().update({ id: execution.id }, { claimedAt: new Date(now - 5 * 60_000), lastHeartbeatAt: new Date(now - 3 * 60_000) });
+      await app.get(WorkersService).recordWorkerSeen(ws, { oauthClientId: OLD_WORKER, seenAt: new Date(now - 6 * 60_000) });
+      const detector = app.get(StaleActiveTaskExecutionDetectorService);
+      expect((await detector.findStaleExecutions()).map((e) => e.id)).not.toContain(execution.id);
+      await makeStale(execution.id);
+      expect((await detector.findStaleExecutions()).map((e) => e.id)).toContain(execution.id);
+      await app.get(StaleActiveTaskExecutionPrunerService).pruneExecutionById(execution.id);
+    });
+
+    it('are not pruned if they recovered after the scan found them', async () => {
+      const a = await agent();
+      const t = await task(a);
+      await eventually(() => queuedFor(a), (n) => n === 1);
+      const execution = await claims().claimTask(ws, { taskId: t, workerClientId: WORKER });
+      await makeStale(execution.id);
+      const found = await app.get(StaleActiveTaskExecutionDetectorService).findStaleExecutions();
+      expect(found.map((e) => e.id)).toContain(execution.id);
+
+      // The agent heartbeats between the scan and the prune.
+      await executions().update({ id: execution.id }, { lastHeartbeatAt: new Date() });
+      const pruner = app.get(StaleActiveTaskExecutionPrunerService);
+      expect(await pruner.pruneExecutionById(execution.id)).toBe(false);
+      expect(await executions().countBy({ id: execution.id })).toBe(1);
+
+      await makeStale(execution.id);
+      expect(await pruner.pruneExecutionById(execution.id)).toBe(true);
     });
   });
 
@@ -161,6 +205,17 @@ describe('Execution scheduling (e2e)', () => {
       await task(a);
       await app.get(TaskExecutionQueuePopulatorService).populateAllTasks();
       expect(await queuedFor(a)).toBe(1);
+    });
+
+    it('hold when several of an agent’s tasks are reconciled at once', async () => {
+      const a = await agent(1);
+      const ids = [await task(a), await task(a), await task(a), await task(a)];
+      const populator = app.get(TaskExecutionQueuePopulatorService);
+      for (let round = 0; round < 5; round++) {
+        await db.query('DELETE FROM task_execution_queue WHERE task_id = ANY($1)', [ids]);
+        await Promise.all(ids.map((id) => populator.populateTask(id)));
+        expect(await queuedFor(a)).toBe(1);
+      }
     });
 
     it('are enforced when claiming, even when the queue holds more', async () => {
@@ -187,6 +242,7 @@ describe('Execution scheduling (e2e)', () => {
     expect(await queue().countBy({ taskId: second })).toBe(0);
 
     await setStatus(first, TaskStatus.DONE);
+    await makeStale(execution.id);
     await app.get(StaleActiveTaskExecutionPrunerService).pruneExecutionById(execution.id);
     expect(await eventually(() => queue().countBy({ taskId: second }), (n) => n === 1)).toBe(1);
   });

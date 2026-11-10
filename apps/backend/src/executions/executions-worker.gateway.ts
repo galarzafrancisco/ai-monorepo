@@ -240,7 +240,7 @@ export class ExecutionsWorkerGateway
     @MessageBody() body?: PostWorkerHeartbeatPayload,
   ) {
     try {
-      await this.recordAuthenticatedWorkerSeen(client, body?.workerVersion);
+      await this.recordAuthenticatedWorkerSeen(client, body?.workerVersion, { heartbeat: true });
       return { ok: true };
     } catch (error) {
       this.logger.error({
@@ -314,6 +314,7 @@ export class ExecutionsWorkerGateway
   private async recordWorkerSeen(
     client: Socket,
     workerVersion?: string | null,
+    options?: { heartbeat?: boolean },
   ): Promise<boolean> {
     const oauthClientId = this.getOauthClientId(client);
     if (!oauthClientId) {
@@ -323,6 +324,7 @@ export class ExecutionsWorkerGateway
     await this.workersService.recordWorkerSeen(socketWorkspaceId(client), {
       oauthClientId,
       workerVersion: workerVersion ?? this.getHandshakeWorkerVersion(client),
+      heartbeat: options?.heartbeat,
     });
     return true;
   }
@@ -330,8 +332,9 @@ export class ExecutionsWorkerGateway
   private async recordAuthenticatedWorkerSeen(
     client: Socket,
     workerVersion?: string | null,
+    options?: { heartbeat?: boolean },
   ): Promise<void> {
-    if (!(await this.recordWorkerSeen(client, workerVersion))) {
+    if (!(await this.recordWorkerSeen(client, workerVersion, options))) {
       return;
     }
 

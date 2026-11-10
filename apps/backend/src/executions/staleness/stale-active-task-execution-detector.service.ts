@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 import { ActiveTaskExecutionEntity } from '../active/active-task-execution.entity';
 
 const DEFAULT_STALE_THRESHOLD_MS = 10 * 60 * 1000;
@@ -14,6 +14,10 @@ export type FindStaleExecutionsInput = {
   now?: Date;
   staleThresholdMs?: number;
   workerGoneMs?: number;
+  /** Look only at this execution. */
+  executionId?: string;
+  /** Read in this transaction, locking the rows found (`FOR UPDATE`). */
+  manager?: EntityManager;
 };
 
 @Injectable()
@@ -36,9 +40,15 @@ export class StaleActiveTaskExecutionDetectorService {
    * Executions that stopped making progress, either way:
    * - no execution heartbeat for `staleThresholdMs` (10 min). Agents only
    *   heartbeat on activity, and a quiet tool call can legitimately run long;
-   * - their worker stopped heartbeating for `workerGoneMs` (2 min). Only for
-   *   workers that have heartbeated since the claim, which proves they send
-   *   worker heartbeats (older workers don't, and keep the first rule only).
+   * - their worker went quiet for `workerGoneMs` (2 min), counted from the
+   *   later of its last contact and the claim, with no execution heartbeat
+   *   in that time either. Only for workers that have ever sent a worker
+   *   heartbeat (`last_heartbeat_at`), which proves they send them every 30s;
+   *   older workers don't, and keep the first rule only.
+   *
+   * With `manager`, the rows are locked and the conditions are rechecked
+   * against their latest version, so the pruner can confirm an execution is
+   * still stale in the transaction that deletes it.
    */
   async findStaleExecutions(
     input?: FindStaleExecutionsInput,
@@ -49,28 +59,42 @@ export class StaleActiveTaskExecutionDetectorService {
     const staleCutoff = new Date(now.getTime() - staleThresholdMs);
     const workerCutoff = new Date(now.getTime() - workerGoneMs);
 
-    return this.activeTaskExecutionRepository
-      .createQueryBuilder('execution')
+    const query = (input?.manager ?? this.activeTaskExecutionRepository.manager)
+      .createQueryBuilder(ActiveTaskExecutionEntity, 'execution')
       .where(
-        '(execution.lastHeartbeatAt IS NOT NULL AND execution.lastHeartbeatAt <= :staleCutoff)',
-        { staleCutoff },
-      )
-      .orWhere(
-        '(execution.lastHeartbeatAt IS NULL AND execution.claimedAt <= :staleCutoff)',
-        { staleCutoff },
-      )
-      .orWhere(
-        `EXISTS (
-          SELECT 1 FROM workers w
-          WHERE w.workspace_id = execution.workspace_id
-            AND w.oauth_client_id = execution.worker_client_id
-            AND w.last_seen_at > execution.claimed_at
-            AND w.last_seen_at <= :workerCutoff
-        )`,
-        { workerCutoff },
-      )
-      .orderBy('execution.claimedAt', 'ASC')
-      .getMany();
+        new Brackets((stale) => {
+          stale
+            .where(
+              '(execution.lastHeartbeatAt IS NOT NULL AND execution.lastHeartbeatAt <= :staleCutoff)',
+              { staleCutoff },
+            )
+            .orWhere(
+              '(execution.lastHeartbeatAt IS NULL AND execution.claimedAt <= :staleCutoff)',
+              { staleCutoff },
+            )
+            .orWhere(
+              `(execution.claimedAt <= :workerCutoff
+                AND (execution.lastHeartbeatAt IS NULL OR execution.lastHeartbeatAt <= :workerCutoff)
+                AND EXISTS (
+                  SELECT 1 FROM workers w
+                  WHERE w.workspace_id = execution.workspace_id
+                    AND w.oauth_client_id = execution.worker_client_id
+                    AND w.last_heartbeat_at IS NOT NULL
+                    AND w.last_seen_at <= :workerCutoff
+                ))`,
+              { workerCutoff },
+            );
+        }),
+      );
+
+    if (input?.executionId) {
+      query.andWhere('execution.id = :executionId', { executionId: input.executionId });
+    }
+    if (input?.manager) {
+      query.setLock('pessimistic_write');
+    }
+
+    return query.orderBy('execution.claimedAt', 'ASC').getMany();
   }
 }
 

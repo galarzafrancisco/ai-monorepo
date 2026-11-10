@@ -164,7 +164,10 @@ The current queue population logic uses these rules:
 6. all dependency tasks must already be `DONE`
 7. agent concurrency must not be exceeded, counting the agent's active executions **and** its tasks already in the queue (counting only running ones let one sweep queue every waiting task at once)
 
-The limit is also enforced when a worker claims (`ActiveTaskExecutionService.claimTask`): claims for one agent take turns on a transaction-scoped advisory lock (`agent-concurrency:<actorId>`), count what the agent already runs, and refuse at the limit with `AgentConcurrencyLimitReachedError` (409). The refusal rolls back, so nothing is claimed. The queue alone can't guarantee the limit: two workers can race for two queued tasks.
+Queueing and claiming both take a slot, so both hold the agent's transaction-scoped advisory lock (`agent-concurrency:<actorId>`, `lockAgentSlots`) while they count and write:
+
+- **Queueing** (`TaskExecutionQueuePopulatorService`) counts running plus queued and inserts the queue entry in one transaction. Without the lock, two of the agent's tasks reconciled at once (two task events) could both see the last free slot and both be queued.
+- **Claiming** (`ActiveTaskExecutionService.claimTask`) counts what the agent already runs and refuses at the limit with `AgentConcurrencyLimitReachedError` (409). The refusal rolls back, so nothing is claimed. This guards entries queued before the limit was lowered, or by hand.
 
 ## When the queue is re-checked
 
@@ -177,9 +180,11 @@ The limit is also enforced when a worker claims (`ActiveTaskExecutionService.cla
 An active execution is stale when either:
 
 - it hasn't sent an execution heartbeat for `EXECUTIONS_STALENESS_THRESHOLD_MS` (default 10 min). Agents only heartbeat on activity, and a quiet tool call can legitimately run long; or
-- its worker stopped heartbeating for `EXECUTIONS_WORKER_GONE_MS` (default 2 min). Workers heartbeat every 30s whatever their agent is doing. This applies only to workers that have heartbeated since the claim, which proves they send worker heartbeats; older workers keep the first rule.
+- its worker went quiet for `EXECUTIONS_WORKER_GONE_MS` (default 2 min): both the claim and the worker's last contact are older than that, and the execution hasn't heartbeated in that time either. Workers heartbeat every 30s whatever their agent is doing, so this catches a worker that dies right after claiming. It applies only to workers that have ever sent a worker heartbeat (`workers.last_heartbeat_at`, set only by heartbeats); older workers that never do keep the first rule.
 
 The scan runs every minute (`EXECUTIONS_STALENESS_SCAN_CRON`, default `* * * * *`), so a worker that stops releases its agent's slots within about 3 minutes.
+
+The scan only nominates executions. The pruner checks each one again in the transaction that deletes it, with the row locked (`findStaleExecutions({ manager, executionId })`), so one whose worker came back or whose agent heartbeated since the scan is left running.
 
 Pruning records `STALE` in history and puts the task back as it was before the claim, so it runs again, **but only if the agent left it unfinished**: same assignee, and status unchanged or In progress. A task the agent finished (Done, For review) or handed to someone else is left as it is; rolling it back would run finished work a second time.
 

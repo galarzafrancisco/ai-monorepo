@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { In, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AgentsService } from '../../agents/agents.service';
@@ -11,6 +11,7 @@ import { TaskExecutionQueuedEvent } from '../queue/task-execution-queued.event';
 import { TaskExecutionHistoryService } from '../history/task-execution-history.service';
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 import { TaskExecutionHistoryErrorCode } from '../history/task-execution-history-error-code.enum';
+import { lockAgentSlots } from '../agent-slots';
 
 /**
  * Keeps the queue in step with what is ready to run. Runs across every
@@ -28,6 +29,7 @@ export class TaskExecutionQueuePopulatorService {
     private readonly readinessCandidateRepository: ReadinessCandidateRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly taskExecutionHistoryService: TaskExecutionHistoryService,
+    private readonly dataSource: DataSource,
   ) { }
 
   async populateTask(taskId: string): Promise<void> {
@@ -68,11 +70,11 @@ export class TaskExecutionQueuePopulatorService {
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
   ): Promise<void> {
-    const shouldBeQueued = await this.shouldQueueTask(task, agentsByActorId);
+    const agent = await this.eligibleAgent(task, agentsByActorId);
+    const queued = agent ? await this.queueIfAgentHasSlot(task, agent) : false;
 
-    if (shouldBeQueued) {
+    if (queued) {
       this.logger.debug(`Queueing task ${task.id} (${task.name})`);
-      await this.upsertQueueEntry(task.workspaceId, task.id);
       this.eventEmitter.emit(
         TaskExecutionQueuedEvent.INTERNAL,
         new TaskExecutionQueuedEvent(task.workspaceId, task.id),
@@ -81,13 +83,16 @@ export class TaskExecutionQueuePopulatorService {
     }
 
     this.logger.debug(`Not queueing task ${task.id} (${task.name})`);
-    await this.deleteQueueEntry(task.id);
+    if (!agent) {
+      await this.deleteQueueEntry(task.id);
+    }
   }
 
-  private async shouldQueueTask(
+  /** The agent that should run the task now, slots aside; null if none. */
+  private async eligibleAgent(
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
-  ): Promise<boolean> {
+  ): Promise<AgentResult | null> {
     const agent = agentsByActorId
       ? agentsByActorId.get(agentKey(task.workspaceId, task.assigneeActorId!))
       : (
@@ -100,52 +105,65 @@ export class TaskExecutionQueuePopulatorService {
       this.logger.debug(
         `Task ${task.id} is not queueable: no active agent for actor ${task.assigneeActorId}`,
       );
-      return false;
+      return null;
     }
 
     if (!agent.statusTriggers.includes(task.status)) {
       this.logger.debug(
         `Task ${task.id} is not queueable: agent ${agent.slug} does not react to status ${task.status}`,
       );
-      return false;
+      return null;
     }
 
     if (!this.matchesTagTriggers(task, agent)) {
       this.logger.debug(
         `Task ${task.id} is not queueable: task tags do not satisfy agent ${agent.slug} tag triggers`,
       );
-      return false;
-    }
-
-    // Running and already-queued tasks both take a slot: counting only the
-    // running ones let one sweep queue every waiting task at once.
-    const agentSlotsTaken =
-      (await this.readinessCandidateRepository.countActiveExecutionsForAgent(
-        task.workspaceId,
-        agent.actorId,
-      )) +
-      (await this.readinessCandidateRepository.countQueuedTasksForAgent(
-        task.workspaceId,
-        agent.actorId,
-        task.id,
-      ));
-
-    if (
-      agent.concurrencyLimit !== null &&
-      agentSlotsTaken >= agent.concurrencyLimit
-    ) {
-      this.logger.debug(
-        `Task ${task.id} is not queueable: agent ${agent.slug} is at concurrency limit ${agent.concurrencyLimit}`,
-      );
-      return false;
+      return null;
     }
 
     // Check if task should be delayed due to recent errors or cancellation
     if (await this.shouldDelayTask(task.workspaceId, task.id)) {
-      return false;
+      return null;
     }
 
-    return true;
+    return agent;
+  }
+
+  /**
+   * Queues the task if its agent has a free slot, else takes it out of the
+   * queue. Running and already-queued tasks both take a slot (counting only
+   * the running ones let one sweep queue every waiting task), and the count
+   * and insert run under the agent's slot lock, so two tasks reconciled at
+   * once can't both see the last free slot.
+   */
+  private async queueIfAgentHasSlot(task: TaskEntity, agent: AgentResult): Promise<boolean> {
+    return this.dataSource.transaction(async (manager) => {
+      if (agent.concurrencyLimit !== null) {
+        await lockAgentSlots(manager, agent.actorId);
+        const slotsTaken = await this.readinessCandidateRepository.countSlotsTakenForAgent(
+          manager,
+          task.workspaceId,
+          agent.actorId,
+          task.id,
+        );
+        if (slotsTaken >= agent.concurrencyLimit) {
+          this.logger.debug(
+            `Task ${task.id} is not queueable: agent ${agent.slug} is at concurrency limit ${agent.concurrencyLimit}`,
+          );
+          await manager.delete(TaskExecutionQueueEntity, { taskId: task.id });
+          return false;
+        }
+      }
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(TaskExecutionQueueEntity)
+        .values({ workspaceId: task.workspaceId, taskId: task.id })
+        .orIgnore()
+        .execute();
+      return true;
+    });
   }
 
   private async shouldDelayTask(
@@ -238,16 +256,6 @@ export class TaskExecutionQueuePopulatorService {
       }
     }
     return agentsByKey;
-  }
-
-  private async upsertQueueEntry(workspaceId: string, taskId: string): Promise<void> {
-    await this.taskExecutionQueueRepository
-      .createQueryBuilder()
-      .insert()
-      .into(TaskExecutionQueueEntity)
-      .values({ workspaceId, taskId })
-      .orIgnore()
-      .execute();
   }
 
   private async deleteQueueEntry(taskId: string): Promise<void> {

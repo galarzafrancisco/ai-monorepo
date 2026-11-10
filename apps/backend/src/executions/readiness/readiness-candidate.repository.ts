@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { TaskStatus } from '../../tasks/enums';
 import { TaskEntity } from '../../tasks/task.entity';
 import { ActiveTaskExecutionEntity } from '../active/active-task-execution.entity';
@@ -10,8 +10,6 @@ export class ReadinessCandidateRepository {
   constructor(
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
-    @InjectRepository(ActiveTaskExecutionEntity)
-    private readonly activeTaskExecutionRepository: Repository<ActiveTaskExecutionEntity>,
   ) {}
 
   async findCandidateTaskById(taskId: string): Promise<TaskEntity | null> {
@@ -63,33 +61,28 @@ export class ReadinessCandidateRepository {
       );
   }
 
-  async countActiveExecutionsForAgent(
-    workspaceId: string,
-    agentActorId: string,
-  ): Promise<number> {
-    return this.activeTaskExecutionRepository
-      .createQueryBuilder('execution')
-      .where('execution.workspace_id = :workspaceId', { workspaceId })
-      .andWhere('execution.agent_actor_id = :agentActorId', { agentActorId })
-      .getCount();
-  }
-
   /**
-   * Tasks of the agent already in the queue, other than `excludingTaskId`.
-   * A queued task holds one of the agent's slots as surely as a running one.
+   * The agent's slots in use: its running executions plus its tasks already
+   * in the queue (other than `excludingTaskId`). A queued task holds a slot as
+   * surely as a running one. Run it under `lockAgentSlots` in `manager`'s
+   * transaction, so nothing takes a slot between this count and the insert.
    */
-  async countQueuedTasksForAgent(
+  async countSlotsTakenForAgent(
+    manager: EntityManager,
     workspaceId: string,
     agentActorId: string,
     excludingTaskId: string,
   ): Promise<number> {
-    const [{ count }] = await this.activeTaskExecutionRepository.manager.query(
-      `SELECT count(*)::int AS count
-         FROM task_execution_queue queue
-         JOIN tasks task ON task.id = queue.task_id
-        WHERE queue.workspace_id = $1
-          AND task.assignee_actor_id = $2
-          AND queue.task_id <> $3`,
+    const [{ count }] = await manager.query(
+      `SELECT (
+         (SELECT count(*) FROM active_task_executions execution
+           WHERE execution.workspace_id = $1 AND execution.agent_actor_id = $2)
+       + (SELECT count(*) FROM task_execution_queue queue
+           JOIN tasks task ON task.id = queue.task_id
+          WHERE queue.workspace_id = $1
+            AND task.assignee_actor_id = $2
+            AND queue.task_id <> $3)
+       )::int AS count`,
       [workspaceId, agentActorId, excludingTaskId],
     );
     return count;

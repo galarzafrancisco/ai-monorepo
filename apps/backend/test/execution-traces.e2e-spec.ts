@@ -331,6 +331,9 @@ describe('Raw execution traces E2E', () => {
 
   it('preserves stale execution IDs so their traces remain available', async () => {
     await post(owner, payload());
+    // Past the 10-minute rule, so the pruner takes it.
+    const longAgo = new Date(Date.now() - 11 * 60_000);
+    await db.getRepository(ActiveTaskExecutionEntity).update({ id: executionId }, { claimedAt: longAgo, lastHeartbeatAt: longAgo });
     await app
       .get(StaleActiveTaskExecutionPrunerService)
       .pruneExecutionById(executionId);

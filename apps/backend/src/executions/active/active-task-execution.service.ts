@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { lockAgentSlots } from '../agent-slots';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -236,9 +237,7 @@ export class ActiveTaskExecutionService {
     workspaceId: string,
     agentActorId: string,
   ): Promise<void> {
-    await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
-      `agent-concurrency:${agentActorId}`,
-    ]);
+    await lockAgentSlots(manager, agentActorId);
     const [agent] = await manager.query(
       'SELECT concurrency_limit FROM agents WHERE workspace_id = $1 AND actor_id = $2',
       [workspaceId, agentActorId],

@@ -12,6 +12,7 @@ import { TaskExecutionHistoryEntity } from '../history/task-execution-history.en
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
 import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
+import { StaleActiveTaskExecutionDetectorService } from './stale-active-task-execution-detector.service';
 
 const STALE_EXECUTION_INTERRUPT_ACTOR_ID = 'system';
 
@@ -20,6 +21,7 @@ export class StaleActiveTaskExecutionPrunerService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
+    private readonly staleExecutionDetector: StaleActiveTaskExecutionDetectorService,
   ) {}
 
   async pruneExecutions(executions: ActiveTaskExecutionEntity[]): Promise<number> {
@@ -33,10 +35,17 @@ export class StaleActiveTaskExecutionPrunerService {
     return prunedCount;
   }
 
+  /**
+   * Prunes the execution if it is still stale. The scan that found it ran
+   * earlier: its worker may have come back or the agent made progress since,
+   * so staleness is checked again here, with the row locked, in the
+   * transaction that deletes it.
+   */
   async pruneExecutionById(executionId: string): Promise<boolean> {
     const prunedExecution = await this.dataSource.transaction(async (manager) => {
-      const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
-        where: { id: executionId },
+      const [activeExecution] = await this.staleExecutionDetector.findStaleExecutions({
+        manager,
+        executionId,
       });
 
       if (!activeExecution) {
