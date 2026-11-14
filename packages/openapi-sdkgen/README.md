@@ -16,6 +16,10 @@ npm install @taico/openapi-sdkgen
 openapi-sdkgen ./openapi.json ./generated
 ```
 
+Generated clients support TypeScript `strict`, `verbatimModuleSyntax`, and
+`exactOptionalPropertyTypes`. The test suite compiles the generated test API
+with these settings, including browser Fetch API types.
+
 ## Motivation
 
 The existing `@taico/client` package uses `openapi-typescript-codegen` with multiple post-processing scripts to work around limitations:
