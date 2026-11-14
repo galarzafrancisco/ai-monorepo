@@ -1,3 +1,4 @@
+import { toCamelCase, toKebabCase } from './naming.js';
 import type { ParsedSpec, Resource, Operation, Parameter, SchemaInfo } from './types.js';
 
 export function generateClient(spec: ParsedSpec): Map<string, string> {
@@ -793,32 +794,6 @@ function generateIndex(spec: ParsedSpec): string {
   ];
 
   return lines.join('\n');
-}
-
-function toCamelCase(str: string): string {
-  // Convert to camelCase by:
-  // 1. Replace special chars and separators with spaces
-  // 2. Split on whitespace/separators
-  // 3. Lowercase first word, capitalize rest
-  // 4. Join without spaces
-  const words = str
-    .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
-    .split(/\s+/) // Split on whitespace
-    .filter(word => word.length > 0); // Remove empty strings
-
-  if (words.length === 0) return str;
-
-  return words[0].toLowerCase() +
-    words.slice(1)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join('');
-}
-
-function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
 }
 
 function needsQuoting(identifier: string): boolean {

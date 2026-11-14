@@ -1,3 +1,4 @@
+import { toPascalCase } from './naming.js';
 import type {
   ParsedSpec,
   Resource,
@@ -207,22 +208,4 @@ function parseSchemas(schemas: any): Map<string, SchemaInfo> {
   }
 
   return result;
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function toPascalCase(str: string): string {
-  // Convert to PascalCase by:
-  // 1. Replace special chars and separators with spaces
-  // 2. Split on whitespace/separators
-  // 3. Capitalize first letter of each word
-  // 4. Join without spaces
-  return str
-    .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
-    .split(/\s+/) // Split on whitespace
-    .filter(word => word.length > 0) // Remove empty strings
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
 }
