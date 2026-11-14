@@ -257,7 +257,7 @@ export class BaseClient {
       signal?: AbortSignal | undefined;
     }
   ): Promise<T> {
-    const url = new URL(path, this.config.baseUrl);
+    const url = new URL(this.config.baseUrl.replace(/\\/+$/, '') + path);
 
     // Add query parameters
     if (options?.params) {
@@ -333,7 +333,7 @@ export class BaseClient {
       signal?: AbortSignal | undefined;
     }
   ): AsyncIterable<T> {
-    const url = new URL(path, this.config.baseUrl);
+    const url = new URL(this.config.baseUrl.replace(/\\/+$/, '') + path);
 
     if (options?.params) {
       for (const [key, value] of Object.entries(options.params)) {

@@ -1,6 +1,6 @@
 # @taico/openapi-sdkgen
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.6)](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.6)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.7)](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.7)
 
 A TypeScript SDK generator from OpenAPI specs with focus on developer ergonomics and maintainability.
 
@@ -19,6 +19,15 @@ openapi-sdkgen ./openapi.json ./generated
 Generated clients support TypeScript `strict`, `verbatimModuleSyntax`, and
 `exactOptionalPropertyTypes`. The test suite compiles the generated test API
 with these settings, including browser Fetch API types.
+
+`baseUrl` may include a path prefix. It is everything before the operation path;
+trailing slashes are removed before joining. For example, an operation at
+`/api/email/messages` with this client requests
+`https://host/s/sim_x/api/email/messages`:
+
+```typescript
+const client = new ApiClient({ baseUrl: 'https://host/s/sim_x' });
+```
 
 ## Motivation
 
