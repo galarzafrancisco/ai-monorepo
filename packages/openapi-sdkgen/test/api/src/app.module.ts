@@ -9,7 +9,7 @@ import { ResponsesController } from './responses.controller';
 import { FilesController } from './files.controller';
 import { PolymorphismController } from './polymorphism.controller';
 import { PaginationController } from './pagination.controller';
-import { EdgeCasesController } from './edge-cases.controller';
+import { EdgeCasesController, PunctuatedTagController } from './edge-cases.controller';
 
 @Module({
   controllers: [
@@ -24,6 +24,7 @@ import { EdgeCasesController } from './edge-cases.controller';
     PolymorphismController,
     PaginationController,
     EdgeCasesController,
+    PunctuatedTagController,
   ],
 })
 export class AppModule {}

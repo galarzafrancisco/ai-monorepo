@@ -1,3 +1,4 @@
+import { toCamelCase, toKebabCase } from './naming.js';
 import type { ParsedSpec, Resource, Operation, Parameter, SchemaInfo } from './types.js';
 
 export function generateClient(spec: ParsedSpec): Map<string, string> {
@@ -252,8 +253,8 @@ export class BaseClient {
       body?: any;
       bodyType?: 'json' | 'form-data' | 'raw';
       responseType?: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void';
-      headers?: Record<string, string>;
-      signal?: AbortSignal;
+      headers?: Record<string, unknown>;
+      signal?: AbortSignal | undefined;
     }
   ): Promise<T> {
     const url = new URL(path, this.config.baseUrl);
@@ -312,8 +313,8 @@ export class BaseClient {
       method,
       headers,
       body: requestBody,
-      signal: options?.signal,
-      credentials: this.config.credentials,
+      ...(options?.signal !== undefined ? { signal: options.signal } : {}),
+      ...(this.config.credentials !== undefined ? { credentials: this.config.credentials } : {}),
     });
 
     if (!response.ok) {
@@ -328,8 +329,8 @@ export class BaseClient {
     path: string,
     options?: {
       params?: Record<string, any>;
-      headers?: Record<string, string>;
-      signal?: AbortSignal;
+      headers?: Record<string, unknown>;
+      signal?: AbortSignal | undefined;
     }
   ): AsyncIterable<T> {
     const url = new URL(path, this.config.baseUrl);
@@ -371,8 +372,8 @@ export class BaseClient {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers,
-      signal: options?.signal,
-      credentials: this.config.credentials,
+      ...(options?.signal !== undefined ? { signal: options.signal } : {}),
+      ...(this.config.credentials !== undefined ? { credentials: this.config.credentials } : {}),
     });
 
     if (!response.ok) {
@@ -442,7 +443,7 @@ function generateResource(resource: Resource): string {
   }
 
   const lines: string[] = [
-    `import { BaseClient, ClientConfig } from './base-client.js';`,
+    `import { BaseClient, type ClientConfig } from './base-client.js';`,
   ];
 
   // Add type imports if any types are referenced
@@ -652,7 +653,7 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
       }
     }
 
-    paramFields.push('signal?: AbortSignal');
+    paramFields.push('signal?: AbortSignal | undefined');
 
     // Check if params object should be optional (all fields are optional)
     const hasRequiredParams = pathParams.some(p => p.required) ||
@@ -664,7 +665,7 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
     const paramsOptional = isParamsOptional ? '?' : '';
     params.push(`params${paramsOptional}: { ${paramFields.join('; ')} }`);
   } else {
-    params.push('params?: { signal?: AbortSignal }');
+    params.push('params?: { signal?: AbortSignal | undefined }');
     isParamsOptional = true;
   }
 
@@ -756,7 +757,7 @@ function inferResponseMode(op: Operation): 'auto' | 'json' | 'text' | 'arrayBuff
 
 function generateMainClient(spec: ParsedSpec): string {
   const lines: string[] = [
-    `import { ClientConfig } from './base-client.js';`,
+    `import type { ClientConfig } from './base-client.js';`,
   ];
 
   for (const resource of spec.resources) {
@@ -793,32 +794,6 @@ function generateIndex(spec: ParsedSpec): string {
   ];
 
   return lines.join('\n');
-}
-
-function toCamelCase(str: string): string {
-  // Convert to camelCase by:
-  // 1. Replace special chars and separators with spaces
-  // 2. Split on whitespace/separators
-  // 3. Lowercase first word, capitalize rest
-  // 4. Join without spaces
-  const words = str
-    .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
-    .split(/\s+/) // Split on whitespace
-    .filter(word => word.length > 0); // Remove empty strings
-
-  if (words.length === 0) return str;
-
-  return words[0].toLowerCase() +
-    words.slice(1)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join('');
-}
-
-function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
 }
 
 function needsQuoting(identifier: string): boolean {

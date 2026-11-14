@@ -1,6 +1,6 @@
 {
   "name": "@taico/openapi-sdkgen",
-  "version": "0.11.4",
+  "version": "0.11.6",
   "type": "module",
   "private": false,
   "license": "PolyForm-Small-Business-1.0.0",
@@ -31,7 +31,7 @@
     "generate:spec": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts --generate-spec",
     "clean": "rm -rf test/client/generated",
     "generate": "tsx src/cli.ts test/api/openapi.json test/client/generated",
-    "lint:generated": "tsc --noEmit --project test/client/tsconfig.json",
+    "lint:generated": "tsc --noEmit --project test/client/tsconfig.json && tsc --project test/client/tsconfig.strict.json",
     "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && npm run test:contract && node test/run.mjs",
     "pack": "npm run build && npm pack",
     "release": "npm run build && npm publish --access public",
