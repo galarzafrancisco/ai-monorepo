@@ -1,3 +1,4 @@
+import { toCamelCase, toKebabCase } from './naming.js';
 import type { ParsedSpec, Resource, Operation, Parameter, SchemaInfo } from './types.js';
 
 export function generateClient(spec: ParsedSpec): Map<string, string> {
@@ -114,6 +115,17 @@ function schemaToTypeScript(schema: SchemaInfo): string {
 
 function generateBaseClient(): string {
   return `// Base client with fetch wrapper
+export interface RetryPolicy {
+  /** Total attempts, including the initial request. Default: 5. */
+  maxAttempts?: number;
+  /** First retry delay in milliseconds. Default: 1000. */
+  initialDelayMs?: number;
+  /** Maximum exponential delay in milliseconds. Default: 30000. */
+  maxDelayMs?: number;
+  /** Exponential multiplier. Default: 2. */
+  backoffMultiplier?: number;
+}
+
 export interface ClientConfig {
   baseUrl: string;
   /** Bearer token auth: sets Authorization: Bearer <token> */
@@ -123,6 +135,8 @@ export interface ClientConfig {
   /** Cookie auth for browsers: passed as fetch credentials option (e.g. 'include') */
   credentials?: 'include' | 'same-origin' | 'omit';
   headers?: Record<string, string>;
+  /** Retry 429 and 5xx responses. Set false to disable. */
+  retry?: RetryPolicy | false;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -244,6 +258,70 @@ export class BaseClient {
     return headers;
   }
 
+  private async fetchWithRetry(url: string, init: RequestInit, override?: RetryPolicy | false): Promise<Response> {
+    const configured = override ?? this.config.retry;
+    const policy = {
+      maxAttempts: 5,
+      initialDelayMs: 1000,
+      maxDelayMs: 30000,
+      backoffMultiplier: 2,
+      ...(this.config.retry || {}),
+      ...(override || {}),
+    };
+    if (!Number.isInteger(policy.maxAttempts) || policy.maxAttempts < 1 ||
+        !Number.isFinite(policy.initialDelayMs) || policy.initialDelayMs < 0 ||
+        !Number.isFinite(policy.maxDelayMs) || policy.maxDelayMs < 0 ||
+        !Number.isFinite(policy.backoffMultiplier) || policy.backoffMultiplier < 1) {
+      throw new RangeError('Invalid retry policy');
+    }
+    // A consumed request stream cannot be replayed safely.
+    const replayable = !(typeof ReadableStream !== 'undefined' && init.body instanceof ReadableStream);
+    const maxAttempts = configured === false || !replayable ? 1 : policy.maxAttempts;
+    let delay = Math.min(policy.initialDelayMs, policy.maxDelayMs);
+    for (let attempt = 1; ; attempt++) {
+      init.signal?.throwIfAborted();
+      const response = await fetch(url, init);
+      if (attempt >= maxAttempts || (response.status !== 429 && (response.status < 500 || response.status > 599))) {
+        return response;
+      }
+      const retryAfter = response.headers.get('Retry-After');
+      let serverDelay = 0;
+      if (retryAfter !== null) {
+        const seconds = Number(retryAfter);
+        const parsed = retryAfter.trim() !== '' && Number.isFinite(seconds)
+          ? seconds * 1000
+          : Date.parse(retryAfter) - Date.now();
+        if (Number.isFinite(parsed)) serverDelay = Math.max(0, parsed);
+      }
+      // Release the failed response before opening another connection.
+      await response.body?.cancel();
+      await this.waitForRetry(Math.max(delay, serverDelay), init.signal);
+      delay = Math.min(policy.maxDelayMs, delay * policy.backoffMultiplier);
+    }
+  }
+
+  private async waitForRetry(delay: number, signal?: AbortSignal | null): Promise<void> {
+    signal?.throwIfAborted();
+    // Chunk long Retry-After values to avoid setTimeout's 32-bit overflow.
+    do {
+      const chunk = Math.min(delay, 2147483647);
+      await new Promise<void>((resolve, reject) => {
+        const abort = () => {
+          clearTimeout(timer);
+          signal?.removeEventListener('abort', abort);
+          reject(signal?.reason);
+        };
+        const timer = setTimeout(() => {
+          signal?.removeEventListener('abort', abort);
+          resolve();
+        }, chunk);
+        signal?.addEventListener('abort', abort, { once: true });
+        if (signal?.aborted) abort();
+      });
+      delay -= chunk;
+    } while (delay > 0);
+  }
+
   protected async request<T>(
     method: string,
     path: string,
@@ -252,11 +330,12 @@ export class BaseClient {
       body?: any;
       bodyType?: 'json' | 'form-data' | 'raw';
       responseType?: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void';
-      headers?: Record<string, string>;
-      signal?: AbortSignal;
+      headers?: Record<string, unknown>;
+      signal?: AbortSignal | undefined;
+      retry?: RetryPolicy | false | undefined;
     }
   ): Promise<T> {
-    const url = new URL(path, this.config.baseUrl);
+    const url = new URL(this.config.baseUrl.replace(/\\/+$/, '') + path);
 
     // Add query parameters
     if (options?.params) {
@@ -308,13 +387,13 @@ export class BaseClient {
       }
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method,
       headers,
       body: requestBody,
-      signal: options?.signal,
-      credentials: this.config.credentials,
-    });
+      ...(options?.signal !== undefined ? { signal: options.signal } : {}),
+      ...(this.config.credentials !== undefined ? { credentials: this.config.credentials } : {}),
+    }, options?.retry);
 
     if (!response.ok) {
       const errorBody = await this.parseResponseBody(response, 'auto');
@@ -328,11 +407,12 @@ export class BaseClient {
     path: string,
     options?: {
       params?: Record<string, any>;
-      headers?: Record<string, string>;
-      signal?: AbortSignal;
+      headers?: Record<string, unknown>;
+      signal?: AbortSignal | undefined;
+      retry?: RetryPolicy | false | undefined;
     }
   ): AsyncIterable<T> {
-    const url = new URL(path, this.config.baseUrl);
+    const url = new URL(this.config.baseUrl.replace(/\\/+$/, '') + path);
 
     if (options?.params) {
       for (const [key, value] of Object.entries(options.params)) {
@@ -368,12 +448,12 @@ export class BaseClient {
     // Add auth headers
     Object.assign(headers, await this.buildAuthHeaders());
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'GET',
       headers,
-      signal: options?.signal,
-      credentials: this.config.credentials,
-    });
+      ...(options?.signal !== undefined ? { signal: options.signal } : {}),
+      ...(this.config.credentials !== undefined ? { credentials: this.config.credentials } : {}),
+    }, options?.retry);
 
     if (!response.ok) {
       const errorBody = await this.parseResponseBody(response);
@@ -442,7 +522,7 @@ function generateResource(resource: Resource): string {
   }
 
   const lines: string[] = [
-    `import { BaseClient, ClientConfig } from './base-client.js';`,
+    `import { BaseClient, type ClientConfig, type RetryPolicy } from './base-client.js';`,
   ];
 
   // Add type imports if any types are referenced
@@ -582,6 +662,7 @@ function generateOperation(op: Operation): string {
 
   if (params.includes('signal')) {
     requestOptions.push('signal: params?.signal');
+    requestOptions.push('retry: params?.retry');
   }
 
   if (isStreaming) {
@@ -652,7 +733,8 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
       }
     }
 
-    paramFields.push('signal?: AbortSignal');
+    paramFields.push('signal?: AbortSignal | undefined');
+    paramFields.push('retry?: RetryPolicy | false | undefined');
 
     // Check if params object should be optional (all fields are optional)
     const hasRequiredParams = pathParams.some(p => p.required) ||
@@ -664,7 +746,7 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
     const paramsOptional = isParamsOptional ? '?' : '';
     params.push(`params${paramsOptional}: { ${paramFields.join('; ')} }`);
   } else {
-    params.push('params?: { signal?: AbortSignal }');
+    params.push('params?: { signal?: AbortSignal | undefined; retry?: RetryPolicy | false | undefined }');
     isParamsOptional = true;
   }
 
@@ -756,7 +838,7 @@ function inferResponseMode(op: Operation): 'auto' | 'json' | 'text' | 'arrayBuff
 
 function generateMainClient(spec: ParsedSpec): string {
   const lines: string[] = [
-    `import { ClientConfig } from './base-client.js';`,
+    `import type { ClientConfig } from './base-client.js';`,
   ];
 
   for (const resource of spec.resources) {
@@ -788,37 +870,11 @@ function generateMainClient(spec: ParsedSpec): string {
 function generateIndex(spec: ParsedSpec): string {
   const lines: string[] = [
     `export { ApiClient } from './client.js';`,
-    `export type { ClientConfig } from './base-client.js';`,
+    `export type { ClientConfig, RetryPolicy } from './base-client.js';`,
     `export * from './types.js';`,
   ];
 
   return lines.join('\n');
-}
-
-function toCamelCase(str: string): string {
-  // Convert to camelCase by:
-  // 1. Replace special chars and separators with spaces
-  // 2. Split on whitespace/separators
-  // 3. Lowercase first word, capitalize rest
-  // 4. Join without spaces
-  const words = str
-    .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
-    .split(/\s+/) // Split on whitespace
-    .filter(word => word.length > 0); // Remove empty strings
-
-  if (words.length === 0) return str;
-
-  return words[0].toLowerCase() +
-    words.slice(1)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join('');
-}
-
-function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
 }
 
 function needsQuoting(identifier: string): boolean {

@@ -432,3 +432,14 @@ export class EdgeCasesController {
     return dto;
   }
 }
+
+// Tags are display labels and may contain punctuation.
+@ApiTags('Developer: events, webhooks, tokens')
+@Controller('developer-tag')
+export class PunctuatedTagController {
+  @Get()
+  @ApiResponse({ status: 200, type: CollisionTestDto })
+  getInfo(): CollisionTestDto {
+    return { name: 'punctuated tag' };
+  }
+}

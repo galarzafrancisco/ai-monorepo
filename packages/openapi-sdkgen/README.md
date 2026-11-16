@@ -1,6 +1,6 @@
 # @taico/openapi-sdkgen
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.4)](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.4)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.8)](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.11.8)
 
 A TypeScript SDK generator from OpenAPI specs with focus on developer ergonomics and maintainability.
 
@@ -15,6 +15,50 @@ npm install @taico/openapi-sdkgen
 ```bash
 openapi-sdkgen ./openapi.json ./generated
 ```
+
+Generated clients support TypeScript `strict`, `verbatimModuleSyntax`, and
+`exactOptionalPropertyTypes`. The test suite compiles the generated test API
+with these settings, including browser Fetch API types.
+
+`baseUrl` may include a path prefix. It is everything before the operation path;
+trailing slashes are removed before joining. For example, an operation at
+`/api/email/messages` with this client requests
+`https://host/s/sim_x/api/email/messages`:
+
+```typescript
+const client = new ApiClient({ baseUrl: 'https://host/s/sim_x' });
+```
+
+## Retries
+
+Generated clients retry HTTP 429 and 500–599 responses by default, for up to
+**5 total attempts** (the initial request plus four retries). Delays are 1, 2,
+4, and 8 seconds. Exponential delays cap at 30 seconds; `Retry-After` (seconds
+or an HTTP date) can require a longer wait. Network errors and other statuses
+are not retried. The final failure is reported as the usual `ApiError`.
+
+```typescript
+const client = new ApiClient({
+  baseUrl: 'https://host/s/sim_x',
+  retry: { maxAttempts: 5, initialDelayMs: 1000, maxDelayMs: 30000, backoffMultiplier: 2 },
+});
+
+// Override selected client settings for this call.
+await client.mail.EmailController_list({ retry: { maxAttempts: 2, initialDelayMs: 500 } });
+// Disable retries for a single operation.
+await client.mail.EmailController_list({ retry: false });
+```
+
+Set `retry: false` in `ClientConfig` to disable retries globally. A per-call
+policy object re-enables them; omitted fields inherit client settings and then
+the defaults. `maxAttempts: 1` also means one request with no retries.
+
+Retries apply to all HTTP methods. A write may have succeeded before a server
+returned a 5xx response, so use an API's idempotency mechanism or disable retries
+for writes that must not be repeated. Raw `ReadableStream` request bodies are
+sent only once because they cannot be replayed. Aborting the supplied signal
+also cancels a pending backoff. Stream connections retry HTTP failures before
+reading events; they do not reconnect or replay events after streaming begins.
 
 ## Motivation
 

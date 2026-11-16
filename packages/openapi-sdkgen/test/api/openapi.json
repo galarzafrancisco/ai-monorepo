@@ -3546,6 +3546,27 @@
           "edge-cases"
         ]
       }
+    },
+    "/developer-tag": {
+      "get": {
+        "operationId": "PunctuatedTagController_getInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollisionTestDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Developer: events, webhooks, tokens"
+        ]
+      }
     }
   },
   "info": {

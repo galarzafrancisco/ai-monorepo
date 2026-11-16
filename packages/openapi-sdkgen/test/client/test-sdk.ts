@@ -3,6 +3,8 @@
  * Run this against the test-api server
  */
 
+import assert from 'node:assert/strict';
+
 import { ApiClient } from './generated/index.js';
 
 async function main() {
@@ -14,6 +16,9 @@ async function main() {
   });
 
   try {
+    const info = await client.developerEventsWebhooksTokens.PunctuatedTagController_getInfo();
+    assert.equal(info.name, 'punctuated tag');
+
     // Test 1: GET all users
     console.log('✓ Test 1: GET /users');
     const users = await client.users.UsersController_getUsers({ signal: undefined });
