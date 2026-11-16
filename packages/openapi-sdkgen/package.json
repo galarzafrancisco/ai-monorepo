@@ -1,6 +1,6 @@
 {
   "name": "@taico/openapi-sdkgen",
-  "version": "0.11.7",
+  "version": "0.11.8",
   "type": "module",
   "private": false,
   "license": "PolyForm-Small-Business-1.0.0",
@@ -35,7 +35,7 @@
     "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && npm run test:contract && node test/run.mjs",
     "pack": "npm run build && npm pack",
     "release": "npm run build && npm publish --access public",
-    "test:contract": "tsx test/client/nullable-contract.ts && tsx test/client/url-joining.ts"
+    "test:contract": "tsx test/client/nullable-contract.ts && tsx test/client/url-joining.ts && tsx test/client/retry.ts"
   },
   "devDependencies": {
     "@nestjs/common": "^11.1.17",
